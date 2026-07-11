@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node node_modules/prisma/build/index.js validate)",
+      "Bash(node node_modules/vite/bin/vite.js build)",
+      "Bash(timeout 120 npm install @rolldown/binding-linux-x64-gnu@1.0.0-rc.17 --no-save --no-audit --no-fund)",
+      "Bash(timeout 60 npm view vite-plugin-pwa version peerDependencies)"
+    ]
+  }
+}

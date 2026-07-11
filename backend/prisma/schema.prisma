@@ -1,0 +1,598 @@
+// ============================================
+// GymMaster — Schema Prisma Completo
+// Database: PostgreSQL 17
+// ============================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Ruolo {
+  UTENTE
+  PERSONAL_TRAINER
+  SUPERADMIN
+}
+
+enum StatoUtente {
+  IN_ATTESA
+  ATTIVO
+  BANNATO
+}
+
+enum CategoriaAttrezzatura {
+  CARDIO
+  PESI_LIBERI
+  MACCHINE
+  CAVI
+  FUNZIONALE
+}
+
+enum Livello {
+  BASE
+  INTERMEDIO
+  AVANZATO
+}
+
+enum Visibilita {
+  GLOBALE
+  PERSONALE
+}
+
+enum StatoRichiesta {
+  IN_ATTESA
+  ACCETTATA
+  RIFIUTATA
+  BLOCCATA
+}
+
+enum StatoSuggerimento {
+  IN_ATTESA
+  APPROVATO
+  RIFIUTATO
+}
+
+enum TipoChat {
+  PRIVATA
+  PERSONAL_TRAINER
+}
+
+enum StatoIscrizione {
+  IN_ATTESA
+  ATTIVA
+  RIFIUTATA
+  TERMINATA
+}
+
+// ============================================
+// UTENTI & SICUREZZA
+// ============================================
+
+model Utente {
+  id                Int         @id @default(autoincrement())
+  email             String      @unique
+  passwordHash      String      @map("password_hash")
+  nome              String
+  ruolo             Ruolo       @default(UTENTE)
+  palestraId        Int?        @map("palestra_id")
+  stato             StatoUtente @default(IN_ATTESA)
+  puntiEsperienza   Int         @default(0) @map("punti_esperienza")
+  dataRegistrazione DateTime    @default(now()) @map("data_registrazione")
+
+  // Preferenze chat
+  chatRetentionGiorni Int @default(7) @map("chat_retention_giorni")
+
+  // Profilo esteso
+  immagineProfilo      String?   @map("immagine_profilo")      // Base64 avatar (max ~200KB)
+  dataNascita          DateTime? @map("data_nascita")
+  pesoKg               Float?    @map("peso_kg")
+  altezzaCm            Int?      @map("altezza_cm")
+  genere               String?                                 // "M", "F", "Altro"
+  bio                  String?                                 // Breve descrizione
+  obiettivoFitness     String?   @map("obiettivo_fitness")     // "Massa", "Definizione", ecc.
+  preferenzeVisibilita String?   @map("preferenze_visibilita") // JSON: {"palestra":true,...}
+
+  // Onboarding & Conformità
+  profiloCompletato    Boolean   @default(false) @map("profilo_completato")
+  gamificationAttiva   Boolean   @default(true)  @map("gamification_attiva")
+  ruoloRichiesto       Ruolo?    @map("ruolo_richiesto")       // Se ha richiesto cambio ruolo (es. PT)
+  accettazioneToS      DateTime? @map("accettazione_tos")
+  accettazionePrivacy  DateTime? @map("accettazione_privacy")
+  consensoCookie       String?   @map("consenso_cookie")       // JSON: {"necessari":true,"analytics":false}
+
+  // Verifica email (attiva solo se RESEND_API_KEY è configurata; default true per non bloccare gli account esistenti)
+  emailVerificata       Boolean   @default(true)  @map("email_verificata")
+  tokenVerificaEmail    String?   @map("token_verifica_email")
+  tokenVerificaScadenza DateTime? @map("token_verifica_scadenza")
+
+  // Profilo Personal Trainer (compilati nell'onboarding professionale)
+  specializzazioni     String?   @map("specializzazioni")     // JSON array di stringhe
+  anniEsperienza       Int?      @map("anni_esperienza")
+  certificazioni       String?   @map("certificazioni")
+  contattoPubblico     String?   @map("contatto_pubblico")
+  tariffaIndicativa    String?   @map("tariffa_indicativa")
+
+  // Attività / presenza
+  ultimoAccesso        DateTime? @map("ultimo_accesso")
+
+  // Recupero password
+  tokenResetPassword   String?   @map("token_reset_password")
+  tokenResetScadenza   DateTime? @map("token_reset_scadenza")
+
+  // Reset Progressi (Opzione B)
+  dataResetStatistiche   DateTime? @map("data_reset_statistiche")
+  dataResetGamification  DateTime? @map("data_reset_gamification")
+
+  // Relazioni
+  palestra            Palestra?             @relation(fields: [palestraId], references: [id])
+  recordPersonali     RecordPersonale[]
+  misurazioni         MisurazioneCorporea[] @relation("MisurazioniUtente")
+  schedeCreate        SchedaAllenamento[]   @relation("CreatoreSchede")
+  sessioni            SessioneAllenamento[]
+  refreshTokens       RefreshToken[]
+  richiesteInviate    RichiestaContatto[]   @relation("RichiesteInviate")
+  richiesteRicevute   RichiestaContatto[]   @relation("RichiesteRicevute")
+  partecipazioni      PartecipanteChat[]
+  messaggiInviati     Messaggio[]
+  conversazioniAI     ConversazioneAI[]
+  suggerimentiEsercizi SuggerimentoEsercizio[]
+
+  // Relazioni Personal Trainer
+  iscrizioniComeCliente IscrizionePT[]    @relation("IscrizioniUtente")
+  clientiComePT         IscrizionePT[]    @relation("ClientiPT")
+  appuntamentiTrainer   AppuntamentoPT[]  @relation("AppuntamentiPTTrainer")
+  appuntamentiCliente   AppuntamentoPT[]  @relation("AppuntamentiPTCliente")
+  annunciPT             AnnuncioPT[]      @relation("AnnunciPT")
+  annunciRicevuti       AnnuncioPT[]      @relation("AnnunciDestinatario")
+  schedeAssegnateDaPT   SchedaAllenamento[] @relation("SchedeAssegnatePT")
+
+  // Collegamento bot Telegram
+  collegamentoTelegram  CollegamentoTelegram?
+
+  @@map("utenti")
+}
+
+model RefreshToken {
+  id                  Int       @id @default(autoincrement())
+  token               String    @unique
+  utenteId            Int       @map("utente_id")
+  scadenza            DateTime
+  creato              DateTime  @default(now())
+  revocato            Boolean   @default(false)
+  revocoEffettivoDopo DateTime? @map("revoco_effettivo_dopo") // Grace period: token ancora valido fino a questo timestamp
+  durataGiorni        Int       @default(7) @map("durata_giorni") // Durata originale per propagare al refresh
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// Collegamento tra un account Utente e una chat Telegram (per il bot).
+// `codice` è un token usa-e-getta per il collegamento iniziale.
+model CollegamentoTelegram {
+  id             Int       @id @default(autoincrement())
+  utenteId       Int       @unique @map("utente_id")
+  telegramChatId BigInt?   @unique @map("telegram_chat_id")
+  codice         String?   @unique
+  codiceScadenza DateTime? @map("codice_scadenza")
+  collegatoIl    DateTime? @map("collegato_il")
+  creatoIl       DateTime  @default(now()) @map("creato_il")
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@map("collegamenti_telegram")
+}
+
+// ============================================
+// PALESTRE & ATTREZZATURA
+// ============================================
+
+model Palestra {
+  id              Int    @id @default(autoincrement())
+  nomeCatena      String @map("nome_catena")
+  citta           String
+  indirizzo       String
+  nazione         String @default("Italia")
+  googlePlaceId   String? @map("google_place_id")
+
+  utenti          Utente[]
+  attrezzature    PalestraAttrezzatura[]
+  affluenzaDati   AfluenzaPalestra[]
+
+  @@map("palestre")
+}
+
+model AfluenzaPalestra {
+  id                 Int      @id @default(autoincrement())
+  palestraId         Int      @map("palestra_id")
+  giornoSettimana    Int      @map("giorno_settimana") // 0=Lun, 6=Dom
+  ora                Int                               // 0-23
+  livelloPercentuale Int      @map("livello_percentuale") // 0-100 (pattern storico)
+  liveLivello        Int?     @map("live_livello")     // 0-100 (dato real-time)
+  liveDescrizione    String?  @map("live_descrizione") // "Più affollata del solito"
+  aggiornatoIl       DateTime @default(now()) @map("aggiornato_il")
+
+  palestra Palestra @relation(fields: [palestraId], references: [id], onDelete: Cascade)
+
+  @@unique([palestraId, giornoSettimana, ora])
+  @@map("affluenza_palestra")
+}
+
+model Attrezzatura {
+  id               Int                   @id @default(autoincrement())
+  nome             String
+  categoria        CategoriaAttrezzatura
+  muscoliBersaglio String?               @map("muscoli_bersaglio")
+
+  palestre PalestraAttrezzatura[]
+  esercizi Esercizio[]
+
+  @@map("attrezzature")
+}
+
+model PalestraAttrezzatura {
+  palestraId     Int @map("palestra_id")
+  attrezzaturaId Int @map("attrezzatura_id")
+
+  palestra     Palestra     @relation(fields: [palestraId], references: [id], onDelete: Cascade)
+  attrezzatura Attrezzatura @relation(fields: [attrezzaturaId], references: [id], onDelete: Cascade)
+
+  @@id([palestraId, attrezzaturaId])
+  @@map("palestra_attrezzatura")
+}
+
+// ============================================
+// ESERCIZI & SCHEDE
+// ============================================
+
+model Esercizio {
+  id                      Int     @id @default(autoincrement())
+  nome                    String
+  gruppoMuscoloPrimario   String  @map("gruppo_muscolare_primario")
+  gruppoMuscoloSecondario String? @map("gruppo_muscolare_secondario")
+  attrezzaturaRichiestaId Int?    @map("attrezzatura_richiesta_id")
+  descrizione             String?
+  linkVideo               String? @map("link_video")
+
+  // Campi aggiuntivi dal database Functional Fitness v2.9
+  difficulty              String?                                   // Principiante, Novizio, Intermedio, Avanzato, Esperto, Master, Gran Master, Leggendario
+  bodyRegion              String? @map("body_region")               // Core, Parte Superiore, Parte Inferiore, Tutto il Corpo
+  mechanics               String?                                   // Composto, Isolamento
+  posture                 String?                                   // Supine, Prone, Standing, Seated, etc.
+  movementPattern         String? @map("movement_pattern")          // Anti-Extension, Hip Extension, Horizontal Push, etc.
+  laterality              String?                                   // Bilateral, Unilateral, Contralateral
+  forceType               String? @map("force_type")                // Push, Pull, Other
+  classification          String?                                   // Bodybuilding, Calisthenics, Postural, etc.
+
+  attrezzatura    Attrezzatura?    @relation(fields: [attrezzaturaRichiestaId], references: [id])
+  recordPersonali RecordPersonale[]
+  eserciziScheda  EsercizioScheda[]
+  logSerie        LogSerie[]
+  suggerimenti    SuggerimentoEsercizio[]
+
+  @@map("esercizi")
+}
+
+model SchedaAllenamento {
+  id              Int        @id @default(autoincrement())
+  creatoreId      Int        @map("creatore_id")
+  titolo          String
+  descrizione     String?
+  livello         Livello    @default(BASE)
+  visibilita      Visibilita @default(PERSONALE)
+  assegnataDaPTId Int?       @map("assegnata_da_pt_id")
+  creatoIl        DateTime   @default(now()) @map("creato_il")
+
+  creatore      Utente            @relation("CreatoreSchede", fields: [creatoreId], references: [id])
+  assegnataDaPT Utente?           @relation("SchedeAssegnatePT", fields: [assegnataDaPTId], references: [id])
+  esercizi      EsercizioScheda[]
+  sessioni      SessioneAllenamento[]
+
+  @@map("schede_allenamento")
+}
+
+model EsercizioScheda {
+  id               Int     @id @default(autoincrement())
+  schedaId         Int     @map("scheda_id")
+  esercizioId      Int     @map("esercizio_id")
+  serieTarget      Int?    @map("serie_target")
+  repTarget        String? @map("rep_target") // Formato range: "8-12" (null per cardio)
+  recuperoSecondi  Int?    @map("recupero_secondi")
+  ordineEsecuzione Int     @map("ordine_esecuzione")
+
+  // Target cardio (opzionali; usati per voci cardio e riscaldamento)
+  riscaldamento     Boolean @default(false)
+  durataMinuti      Int?    @map("durata_minuti")
+  velocitaKmh       Float?  @map("velocita_kmh")
+  inclinazione      Float?
+  livelloResistenza Int?    @map("livello_resistenza")
+  distanzaKm        Float?  @map("distanza_km")
+
+  scheda    SchedaAllenamento @relation(fields: [schedaId], references: [id], onDelete: Cascade)
+  esercizio Esercizio         @relation(fields: [esercizioId], references: [id])
+
+  @@map("esercizi_scheda")
+}
+
+// ============================================
+// TRACKING: SESSIONI & LOG
+// ============================================
+
+model SessioneAllenamento {
+  id                  Int       @id @default(autoincrement())
+  utenteId            Int       @map("utente_id")
+  schedaId            Int       @map("scheda_id")
+  dataInizio          DateTime  @map("data_inizio")
+  dataFine            DateTime? @map("data_fine")
+  durataMinuti        Int?      @map("durata_minuti")
+  minutiRiscaldamento Int?      @map("minuti_riscaldamento")
+  volumeTotaleKg      Float?    @map("volume_totale_kg")
+  noteFinali          String?   @map("note_finali")
+
+  utente   Utente              @relation(fields: [utenteId], references: [id])
+  scheda   SchedaAllenamento   @relation(fields: [schedaId], references: [id])
+  logSerie LogSerie[]
+
+  @@map("sessioni_allenamento")
+}
+
+model LogSerie {
+  id                   Int     @id @default(autoincrement())
+  sessioneId           Int     @map("sessione_id")
+  esercizioId          Int     @map("esercizio_id")
+  serieNumero          Int     @map("serie_numero")
+  pesoEffettivo        Float   @map("peso_effettivo")
+  repEffettive         Int     @map("rep_effettive")
+  rpe                  Int?    // Rate of Perceived Exertion 1-10
+  completato           Boolean @default(true)
+  motivoSaltoEsercizio String? @map("motivo_salto_esercizio")
+  noteSerie            String? @map("note_serie")
+
+  // Campi opzionali per CARDIO
+  distanzaKm           Float?  @map("distanza_km")
+  durataMinuti         Int?    @map("durata_minuti")
+  livelloResistenza    Int?    @map("livello_resistenza")
+  velocitaKmh          Float?  @map("velocita_kmh")
+  inclinazione         Float?  @map("inclinazione")
+
+  sessione  SessioneAllenamento @relation(fields: [sessioneId], references: [id], onDelete: Cascade)
+  esercizio Esercizio            @relation(fields: [esercizioId], references: [id])
+
+  @@map("log_serie")
+}
+
+model RecordPersonale {
+  id               Int      @id @default(autoincrement())
+  utenteId         Int      @map("utente_id")
+  esercizioId      Int      @map("esercizio_id")
+  pesoMaxRaggiunto Float    @map("peso_max_raggiunto")
+  dataRecord       DateTime @default(now()) @map("data_record")
+
+  utente    Utente    @relation(fields: [utenteId], references: [id])
+  esercizio Esercizio @relation(fields: [esercizioId], references: [id])
+
+  @@map("record_personali")
+}
+
+// ============================================
+// SUGGERIMENTI ESERCIZI
+// ============================================
+
+model SuggerimentoEsercizio {
+  id                      Int                @id @default(autoincrement())
+  utenteId                Int                @map("utente_id")
+  nome                    String
+  gruppoMuscoloPrimario   String             @map("gruppo_muscolare_primario")
+  gruppoMuscoloSecondario String?            @map("gruppo_muscolare_secondario")
+  attrezzaturaSuggerita   String?            @map("attrezzatura_suggerita")
+  descrizione             String?
+  stato                   StatoSuggerimento  @default(IN_ATTESA)
+  motivoRifiuto           String?            @map("motivo_rifiuto")
+  esercizioCreato         Int?               @map("esercizio_creato_id")
+  creatoIl                DateTime           @default(now()) @map("creato_il")
+  gestitoIl               DateTime?          @map("gestito_il")
+
+  utente    Utente     @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  esercizio Esercizio? @relation(fields: [esercizioCreato], references: [id])
+
+  @@map("suggerimenti_esercizi")
+}
+
+// ============================================
+// PERSONAL TRAINER
+// ============================================
+
+model IscrizionePT {
+  id                  Int              @id @default(autoincrement())
+  utenteId            Int              @map("utente_id")
+  trainerId           Int              @map("trainer_id")
+  stato               StatoIscrizione  @default(IN_ATTESA)
+  messaggioRichiesta  String?          @map("messaggio_richiesta")
+  dataRichiesta       DateTime         @default(now()) @map("data_richiesta")
+  dataRisposta        DateTime?        @map("data_risposta")
+  notePT              String?          @map("note_pt")
+
+  utente  Utente @relation("IscrizioniUtente", fields: [utenteId], references: [id], onDelete: Cascade)
+  trainer Utente @relation("ClientiPT", fields: [trainerId], references: [id], onDelete: Cascade)
+
+  @@unique([utenteId, trainerId])
+  @@map("iscrizioni_pt")
+}
+
+model AppuntamentoPT {
+  id            Int      @id @default(autoincrement())
+  trainerId     Int      @map("trainer_id")
+  clienteId     Int      @map("cliente_id")
+  titolo        String
+  descrizione   String?
+  dataOra       DateTime @map("data_ora")
+  durataMinuti  Int      @default(60) @map("durata_minuti")
+  completato    Boolean  @default(false)
+  note          String?
+  creatoIl      DateTime @default(now()) @map("creato_il")
+
+  trainer Utente @relation("AppuntamentiPTTrainer", fields: [trainerId], references: [id], onDelete: Cascade)
+  cliente Utente @relation("AppuntamentiPTCliente", fields: [clienteId], references: [id], onDelete: Cascade)
+
+  @@map("appuntamenti_pt")
+}
+
+// ============================================
+// CHAT & MESSAGGISTICA
+// ============================================
+
+model RichiestaContatto {
+  id             Int            @id @default(autoincrement())
+  mittenteId     Int            @map("mittente_id")
+  destinatarioId Int            @map("destinatario_id")
+  stato          StatoRichiesta @default(IN_ATTESA)
+  dataRichiesta  DateTime       @default(now()) @map("data_richiesta")
+  dataRisposta   DateTime?      @map("data_risposta")
+
+  mittente     Utente @relation("RichiesteInviate", fields: [mittenteId], references: [id], onDelete: Cascade)
+  destinatario Utente @relation("RichiesteRicevute", fields: [destinatarioId], references: [id], onDelete: Cascade)
+
+  @@unique([mittenteId, destinatarioId])
+  @@map("richieste_contatto")
+}
+
+model Conversazione {
+  id       Int      @id @default(autoincrement())
+  tipo     TipoChat @default(PRIVATA)
+  creatoIl DateTime @default(now()) @map("creato_il")
+
+  partecipanti PartecipanteChat[]
+  messaggi     Messaggio[]
+
+  @@map("conversazioni")
+}
+
+model PartecipanteChat {
+  conversazioneId Int @map("conversazione_id")
+  utenteId        Int @map("utente_id")
+
+  conversazione Conversazione @relation(fields: [conversazioneId], references: [id], onDelete: Cascade)
+  utente        Utente        @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@id([conversazioneId, utenteId])
+  @@map("partecipanti_chat")
+}
+
+model Messaggio {
+  id              Int      @id @default(autoincrement())
+  conversazioneId Int      @map("conversazione_id")
+  mittenteId      Int      @map("mittente_id")
+  contenuto       String
+  letto           Boolean  @default(false)
+  inviatoIl       DateTime @default(now()) @map("inviato_il")
+
+  conversazione Conversazione @relation(fields: [conversazioneId], references: [id], onDelete: Cascade)
+  mittente      Utente        @relation(fields: [mittenteId], references: [id])
+
+  @@map("messaggi")
+}
+
+// ============================================
+// ASSISTENTE AI
+// ============================================
+
+model ConversazioneAI {
+  id       Int      @id @default(autoincrement())
+  utenteId Int      @map("utente_id")
+  contesto String   // es. "analisi_scheda", "suggerimento", "domanda_libera"
+  creatoIl DateTime @default(now()) @map("creato_il")
+
+  utente   Utente        @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  messaggi MessaggioAI[]
+
+  @@map("conversazioni_ai")
+}
+
+model MessaggioAI {
+  id                Int      @id @default(autoincrement())
+  conversazioneAiId Int      @map("conversazione_ai_id")
+  ruolo             String   // "utente" o "assistente"
+  contenuto         String
+  inviatoIl         DateTime @default(now()) @map("inviato_il")
+
+  conversazione ConversazioneAI @relation(fields: [conversazioneAiId], references: [id], onDelete: Cascade)
+
+  @@map("messaggi_ai")
+}
+
+// ============================================
+// BACHECA ANNUNCI PT
+// ============================================
+
+model AnnuncioPT {
+  id              Int      @id @default(autoincrement())
+  trainerId       Int      @map("trainer_id")
+  destinatarioId  Int?     @map("destinatario_id")
+  titolo          String
+  contenuto       String
+  priorita        String   @default("normale") // "normale", "importante", "urgente"
+  creatoIl        DateTime @default(now()) @map("creato_il")
+
+  trainer      Utente  @relation("AnnunciPT", fields: [trainerId], references: [id], onDelete: Cascade)
+  destinatario Utente? @relation("AnnunciDestinatario", fields: [destinatarioId], references: [id], onDelete: SetNull)
+
+  @@map("annunci_pt")
+}
+
+// ============================================
+// NOVITÀ (storie in-app, gestite dall'admin)
+// ============================================
+
+model Novita {
+  id           Int      @id @default(autoincrement())
+  titolo       String
+  sottotitolo  String?
+  punti        String?  // JSON: [{ "icona": "ti-...", "testo": "..." }]
+  icona        String?  // nome icona (lucide) o emoji per l'header
+  immagine     String?  // opzionale: immagine header (base64/url)
+  ctaTesto     String?  @map("cta_testo")
+  ctaRotta     String?  @map("cta_rotta")     // es. "/profilo"
+  coloreInizio String?  @map("colore_inizio") // gradiente header (hex)
+  coloreFine   String?  @map("colore_fine")
+  attiva       Boolean  @default(true)
+  ordine       Int      @default(0)
+  creatoIl     DateTime @default(now()) @map("creato_il")
+
+  @@map("novita")
+}
+
+// Misurazione della composizione corporea (serie temporale: bilancia smart)
+model MisurazioneCorporea {
+  id                    Int      @id @default(autoincrement())
+  utenteId              Int      @map("utente_id")
+  data                  DateTime @default(now())
+  peso                  Float?
+  bmi                   Float?
+  grassoCorporeoPct     Float?   @map("grasso_corporeo_pct")
+  muscoloScheletricoPct Float?   @map("muscolo_scheletrico_pct")
+  massaMagraKg          Float?   @map("massa_magra_kg")
+  grassoSottocutaneoPct Float?   @map("grasso_sottocutaneo_pct")
+  grassoViscerale       Float?   @map("grasso_viscerale")
+  acquaPct              Float?   @map("acqua_pct")
+  massaMuscolareKg      Float?   @map("massa_muscolare_kg")
+  massaOsseaKg          Float?   @map("massa_ossea_kg")
+  proteinePct           Float?   @map("proteine_pct")
+  bmr                   Int?
+  etaMetabolica         Int?     @map("eta_metabolica")
+  note                  String?
+  inseritaDaPTId        Int?     @map("inserita_da_pt_id")
+  creatoIl              DateTime @default(now()) @map("creato_il")
+
+  utente Utente @relation("MisurazioniUtente", fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@index([utenteId, data])
+  @@map("misurazioni_corporee")
+}

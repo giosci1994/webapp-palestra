@@ -1,0 +1,37 @@
+# Dipendenze
+node_modules/
+*/node_modules/
+
+# Variabili d'ambiente
+.env
+.env.local
+.env.production
+
+# Build
+dist/
+build/
+.next/
+
+# Docker
+docker-volumes/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Prisma
+# NB: le migrazioni NON vanno ignorate — sono necessarie a `prisma migrate deploy`
+# e devono essere versionate.
+
+# Cache
+.cache/

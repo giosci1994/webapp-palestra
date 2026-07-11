@@ -1,0 +1,117 @@
+# ============================================
+# GymMaster — Docker Compose
+# Deploy: docker compose up --build -d
+# ============================================
+
+services:
+  # --- Database PostgreSQL ---
+  db:
+    image: postgres:17-alpine
+    container_name: gymmaster-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gymmaster-rete
+
+  # --- Redis (Sessioni WebSocket & Cache) ---
+  redis:
+    image: redis:7-alpine
+    container_name: gymmaster-redis
+    restart: always
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - gymmaster-rete
+
+  # --- Backend Node.js ---
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: gymmaster-backend
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - ./version.json:/version.json:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gymmaster-rete
+
+  # --- Nginx Reverse Proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: gymmaster-nginx
+    restart: always
+    ports:
+      - "6969:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+    networks:
+      - gymmaster-rete
+
+  # --- Scraper Affluenza (Playwright + Cron) ---
+  scraper:
+    build:
+      context: .
+      dockerfile: scraper/Dockerfile
+    container_name: gymmaster-scraper
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PROXY_URL: ${PROXY_URL:-}
+      TZ: Europe/Copenhagen
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - gymmaster-rete
+
+  # --- Bot Telegram (grammY, long-polling) ---
+  bot:
+    build:
+      context: .
+      dockerfile: bot/Dockerfile
+    container_name: gymmaster-bot
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      BACKEND_URL: http://backend:3000
+    depends_on:
+      - backend
+    networks:
+      - gymmaster-rete
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  gymmaster-rete:
+    driver: bridge

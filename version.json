@@ -1,0 +1,950 @@
+{
+  "versione": "1.1.125",
+  "build": "2026-07-06",
+  "changelog": [
+    {
+      "versione": "1.1.125",
+      "data": "2026-07-06",
+      "modifiche": [
+        "Sicurezza: corrette autorizzazioni su schede/sessioni/chat (un utente non può più toccare dati altrui)",
+        "Reset password admin: ora genera una password temporanea casuale",
+        "Migliorie minori di robustezza"
+      ]
+    },
+    {
+      "versione": "1.1.124",
+      "data": "2026-07-06",
+      "modifiche": [
+        "Risolto il problema 'Token di accesso mancante' durante l'allenamento dopo un blocco schermo",
+        "Sessione più stabile: niente più logout imprevisti; i progressi dell'allenamento restano salvati"
+      ]
+    },
+    {
+      "versione": "1.1.123",
+      "data": "2026-06-20",
+      "modifiche": [
+        "Bot: corretto l'errore della creazione guidata quando scegli una parte del corpo",
+        "Bot: menu comandi completo e testi aggiornati (si scrive, non si parla)"
+      ]
+    },
+    {
+      "versione": "1.1.122",
+      "data": "2026-06-20",
+      "modifiche": [
+        "Bot Telegram: /guidata — crea una scheda scegliendo a pulsanti per categorie italiane",
+        "Propone per primi i tuoi esercizi più usati"
+      ]
+    },
+    {
+      "versione": "1.1.121",
+      "data": "2026-06-20",
+      "modifiche": [
+        "Bot Telegram: nuovo comando /statistiche con il riepilogo dei tuoi allenamenti"
+      ]
+    },
+    {
+      "versione": "1.1.120",
+      "data": "2026-06-20",
+      "modifiche": [
+        "Bot Telegram: ricevi una notifica su Telegram quando ti scrivono in chat e non sei online",
+        "(Richiede aver collegato Telegram dal Profilo)"
+      ]
+    },
+    {
+      "versione": "1.1.119",
+      "data": "2026-06-20",
+      "modifiche": [
+        "Nuovo: Composizione corporea con storico (peso, grasso, muscolo, acqua, BMR, età metabolica…) e grafico andamento",
+        "Profilo → 📊 Composizione corporea. Il tuo PT può aggiungere le misurazioni dal dettaglio cliente"
+      ]
+    },
+    {
+      "versione": "1.1.118",
+      "data": "2026-06-20",
+      "modifiche": [
+        "Dashboard PT più professionale: azioni rapide, KPI ridisegnati e anteprima clienti con ultima attività",
+        "Se non hai clienti, invito a condividere il profilo pubblico per acquisirli"
+      ]
+    },
+    {
+      "versione": "1.1.117",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Foto profilo: ora carichi una foto normale, la ritagli (zoom + trascina) e viene compressa in automatico",
+        "Niente più limite di dimensione da gestire a mano"
+      ]
+    },
+    {
+      "versione": "1.1.116",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Admin Utenti: ora mostra ultima connessione, schede/sessioni, palestra e stato verifica email",
+        "Avatar utente nella lista"
+      ]
+    },
+    {
+      "versione": "1.1.115",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Recupero password: link 'Password dimenticata?' nel login → ricevi un'email per reimpostarla",
+        "Reset password sicuro con link a scadenza (1 ora)"
+      ]
+    },
+    {
+      "versione": "1.1.114",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Chat: lo stato online/offline ora è quello reale dell'altra persona (non più sempre online)",
+        "Mostra 'visto' con l'ultimo accesso quando offline"
+      ]
+    },
+    {
+      "versione": "1.1.113",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Gestione Novità: campi Punti sistemati + selettore di emoji a griglia",
+        "Admin: non puoi più bannare/declassare/eliminare il tuo stesso account"
+      ]
+    },
+    {
+      "versione": "1.1.112",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Onboarding dedicato per i Personal Trainer: bio, specializzazioni, esperienza, certificazioni, tariffe",
+        "Il profilo pubblico del PT mostra ora le info professionali"
+      ]
+    },
+    {
+      "versione": "1.1.111",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Predisposta la verifica dell'email alla registrazione (si attiva quando configurata)",
+        "Sicurezza account migliorata"
+      ]
+    },
+    {
+      "versione": "1.1.110",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Registrazione semplificata: l'account è attivo subito, niente attesa di approvazione",
+        "Accesso automatico dopo la registrazione",
+        "Il ruolo Personal Trainer resta soggetto ad approvazione"
+      ]
+    },
+    {
+      "versione": "1.1.109",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Ora puoi richiedere di diventare Personal Trainer dal tuo Profilo (anche dopo la registrazione)",
+        "La richiesta arriva all'amministratore per l'approvazione"
+      ]
+    },
+    {
+      "versione": "1.1.108",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Ora puoi clonare una scheda pubblica (di un PT/admin) come tua copia personale modificabile",
+        "Apri una scheda globale e tocca ⧉ Clona"
+      ]
+    },
+    {
+      "versione": "1.1.107",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Nuova pagina \"Trova un Personal Trainer\" con ricerca",
+        "Dashboard: invito discreto a trovare un PT (solo se non ne hai uno)"
+      ]
+    },
+    {
+      "versione": "1.1.106",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Nuovo: profilo pubblico dei Personal Trainer (bio, statistiche, schede) — tocca un PT per vederlo",
+        "Più facile valutare e iscriversi a un Personal Trainer"
+      ]
+    },
+    {
+      "versione": "1.1.105",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Fix importante: le spaziature (margini) ora funzionano in tutta l'app — un reset CSS le annullava ovunque",
+        "Sezioni e card ora correttamente distanziate in Profilo, Statistiche e tutte le pagine"
+      ]
+    },
+    {
+      "versione": "1.1.104",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Profilo: più spazio tra le card in tutte le sezioni (non più attaccate)"
+      ]
+    },
+    {
+      "versione": "1.1.103",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Ombra delle card più morbida: niente più alone/intersezione tra riquadri vicini su sfondo scuro"
+      ]
+    },
+    {
+      "versione": "1.1.102",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Statistiche: KPI più distanziate tra loro e spaziatura sezioni leggermente ridotta (28px)"
+      ]
+    },
+    {
+      "versione": "1.1.101",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Statistiche: più spazio tra KPI e grafici e tra i grafici (32px, come la Dashboard)"
+      ]
+    },
+    {
+      "versione": "1.1.100",
+      "data": "2026-06-19",
+      "modifiche": [
+        "Statistiche: spaziatura tra le sezioni uniformata",
+        "Fix: modificando una scheda con cardio non si perdono più durata/velocità/inclinazione"
+      ]
+    },
+    {
+      "versione": "1.1.99",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Popup novità rifinito: tolta la X, barra di avanzamento nascosta con una sola novità, bottone d'azione più grande"
+      ]
+    },
+    {
+      "versione": "1.1.98",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Popup novità: aggiunto il badge \"Novità\" (più vicino al design previsto)"
+      ]
+    },
+    {
+      "versione": "1.1.97",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Colori corretti su Android: impedito al browser di scurire automaticamente il tema (color-scheme: dark)"
+      ]
+    },
+    {
+      "versione": "1.1.96",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Auto-aggiornamento dell'app più affidabile (si ricarica da sola alla nuova versione)",
+        "Profilo > Informazioni mostra la versione dell'app oltre a quella del server"
+      ]
+    },
+    {
+      "versione": "1.1.95",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Grafico affluenza: barre a colore pieno (verde/ambra/rosso) senza trasparenza"
+      ]
+    },
+    {
+      "versione": "1.1.94",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Grafico affluenza più leggibile su smartphone (tracce e barre con più contrasto)"
+      ]
+    },
+    {
+      "versione": "1.1.93",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Nuovo: sezione Novità in stile storie — al primo avvio si apre, poi resta una bolla per rivederle",
+        "Pannello admin per creare e gestire le novità da mostrare agli utenti"
+      ]
+    },
+    {
+      "versione": "1.1.92",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Grafico affluenza ridisegnato: stile orari di punta con segnaposto ora corrente e animazione"
+      ]
+    },
+    {
+      "versione": "1.1.91",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Mobile: tap target più comodi nella barra di navigazione + accessibilità",
+        "Pulsanti d'azione a tutta larghezza su smartphone"
+      ]
+    },
+    {
+      "versione": "1.1.90",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Allenamento live: voci cardio mostrano durata/velocità/inclinazione invece di serie×rep"
+      ]
+    },
+    {
+      "versione": "1.1.89",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Dashboard più rifinita: caricamento con skeleton, card Messaggi cliccabile",
+        "Empty state migliorato per le attività recenti"
+      ]
+    },
+    {
+      "versione": "1.1.88",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Bot: schede con cardio (tapis roulant, cyclette, ellittica, vogatore, stepper, air bike) e riscaldamento",
+        "Cardio con target di durata, velocità, inclinazione e resistenza nella scheda",
+        "Aggiunti gli esercizi cardio al catalogo"
+      ]
+    },
+    {
+      "versione": "1.1.87",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Nuovo: bot Telegram per leggere le tue schede e crearle parlando con l'assistente",
+        "Creazione schede conversazionale (Gemini) con riconoscimento esercizi dal catalogo",
+        "Collegamento account Telegram dalla sezione Profilo > Sicurezza"
+      ]
+    },
+    {
+      "versione": "1.1.86",
+      "data": "2026-06-18",
+      "modifiche": [
+        "Aggiornato vite-plugin-pwa a 1.3.0 (compatibilità Vite 8)",
+        "Shutdown del backend ora chiude le connessioni in modo pulito",
+        "Seeding del database con guard di idempotenza (riavvii più rapidi)",
+        "Endpoint /salute e banner di avvio riportano la versione reale",
+        "Migrazioni Prisma ripristinate nel versionamento (no .gitignore)",
+        "Ripristinato /version.json per il controllo auto-aggiornamento"
+      ]
+    },
+    {
+      "versione": "1.1.85",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.84",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.83",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.82",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.81",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.80",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.79",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.78",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.77",
+      "data": "2026-05-27",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.76",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.75",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.74",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.73",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.72",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.71",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.70",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.69",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.68",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.67",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.66",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.65",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.64",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.63",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.62",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.61",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.60",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.59",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.58",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.57",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.56",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.55",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.54",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.53",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.52",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.51",
+      "data": "2026-05-15",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.50",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.49",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.48",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.47",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.46",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.45",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.44",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.43",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.42",
+      "data": "2026-05-13",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.41",
+      "data": "2026-05-12",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.40",
+      "data": "2026-05-12",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.39",
+      "data": "2026-05-12",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.38",
+      "data": "2026-05-12",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.37",
+      "data": "2026-05-12",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.36",
+      "data": "2026-05-12",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.35",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.34",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.33",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.32",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.31",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.30",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.29",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.28",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.27",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.26",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.25",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.24",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.23",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.22",
+      "data": "2026-05-11",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.21",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.20",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.19",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.18",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.17",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.16",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.15",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.14",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.13",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.12",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.11",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.10",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.9",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.8",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.7",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.6",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.5",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.4",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.3",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.2",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.1",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Build automatica"
+      ]
+    },
+    {
+      "versione": "1.1.0",
+      "data": "2026-05-05",
+      "modifiche": [
+        "Aggiunto Storico Allenamenti con dettaglio completo delle sessioni",
+        "Banner riferimento precedente nel Workout Live",
+        "Profilo utente esteso con immagine, dati personali e privacy",
+        "Modifica password dal profilo",
+        "Popup Info App con specifiche tecniche e changelog"
+      ]
+    },
+    {
+      "versione": "1.0.0",
+      "data": "2026-04-28",
+      "modifiche": [
+        "Release iniziale GymMaster",
+        "Dashboard con statistiche e raccomandazioni AI",
+        "Gestione schede di allenamento con drag-and-drop",
+        "Workout Live con timer, RPE e supporto cardio",
+        "Chat e messaggistica real-time",
+        "Assistente AI integrato",
+        "Gamification e classifiche",
+        "PWA con supporto offline"
+      ]
+    }
+  ],
+  "stack": {
+    "frontend": "React 19 + Vite 8 + TailwindCSS 4 + Framer Motion",
+    "backend": "Node.js 22 + Express 4 + Prisma 6 + Socket.io 4",
+    "database": "PostgreSQL 17 + Redis 7",
+    "proxy": "Nginx Alpine",
+    "hosting": "Docker (self-hosted)",
+    "sicurezza": "Argon2id + JWT + Helmet + CORS"
+  }
+}
