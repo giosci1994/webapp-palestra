@@ -13,11 +13,14 @@
 
 A complete, modern microservice architecture platform designed for comprehensive gym management. It integrates a web dashboard, an automated Telegram bot, and background services for data aggregation to provide a unified experience for both gym members and administrators.
 
-<p align="center">
-  <img src="docs/pics/Home.jpg" width="450" alt="Home Dashboard" />
-  &nbsp;&nbsp;
-  <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram Bot" />
-</p>
+## 📸 UI Previews & Screenshots
+
+| Authentication & Profile | Dashboard & Management | Workouts & Bot |
+|:---:|:---:|:---:|
+| <img src="docs/pics/Login.jpg" width="250" alt="Login" /><br><em>Login Page</em> | <img src="docs/pics/Home.jpg" width="250" alt="Home" /><br><em>Main Dashboard</em> | <img src="docs/pics/Inizio_allenamento.jpg" width="250" alt="Start Workout" /><br><em>Start Workout</em> |
+| <img src="docs/pics/Registrazione.jpg" width="250" alt="Register" /><br><em>Registration</em> | <img src="docs/pics/Home-BotAI.jpg" width="250" alt="AI Bot" /><br><em>Dashboard with AI Bot</em> | <img src="docs/pics/Allenamento.jpg" width="250" alt="Training" /><br><em>Active Training Session</em> |
+| <img src="docs/pics/Profilo.jpg" width="250" alt="Profile" /><br><em>User Profile</em> | <img src="docs/pics/Statistiche.jpg" width="250" alt="Stats" /><br><em>User Statistics</em> | <img src="docs/pics/Allenamento_con_video.jpg" width="250" alt="Video" /><br><em>Exercise Video Integration</em> |
+| <img src="docs/pics/News_notifiche.jpg" width="250" alt="News" /><br><em>News & Notifications</em> | <img src="docs/pics/Gestione_schede.jpg" width="250" alt="Plans" /><br><em>Manage Workout Plans</em> | <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram Bot" /><br><em>Integrated Telegram Bot</em> |
 
 ---
 
@@ -127,11 +130,14 @@ Copyright © 2026 giosci1994. All Rights Reserved.
 
 Una piattaforma web completa e strutturata per la gestione di una palestra, sviluppata con un'architettura a microservizi moderna per garantire scalabilità e performance elevate sia lato utente che lato server.
 
-<p align="center">
-  <img src="docs/pics/Home.jpg" width="450" alt="Home Dashboard" />
-  &nbsp;&nbsp;
-  <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram Bot" />
-</p>
+## 📸 UI Previews & Screenshot
+
+| Autenticazione & Profilo | Dashboard & Gestione | Allenamenti & Bot |
+|:---:|:---:|:---:|
+| <img src="docs/pics/Login.jpg" width="250" alt="Login" /><br><em>Pagina di Login</em> | <img src="docs/pics/Home.jpg" width="250" alt="Home" /><br><em>Dashboard Principale</em> | <img src="docs/pics/Inizio_allenamento.jpg" width="250" alt="Start Workout" /><br><em>Avvio Allenamento</em> |
+| <img src="docs/pics/Registrazione.jpg" width="250" alt="Register" /><br><em>Registrazione</em> | <img src="docs/pics/Home-BotAI.jpg" width="250" alt="AI Bot" /><br><em>Dashboard con Bot AI</em> | <img src="docs/pics/Allenamento.jpg" width="250" alt="Training" /><br><em>Sessione Attiva</em> |
+| <img src="docs/pics/Profilo.jpg" width="250" alt="Profile" /><br><em>Profilo Utente</em> | <img src="docs/pics/Statistiche.jpg" width="250" alt="Stats" /><br><em>Statistiche Utente</em> | <img src="docs/pics/Allenamento_con_video.jpg" width="250" alt="Video" /><br><em>Esecuzione con Video</em> |
+| <img src="docs/pics/News_notifiche.jpg" width="250" alt="News" /><br><em>News & Notifiche</em> | <img src="docs/pics/Gestione_schede.jpg" width="250" alt="Plans" /><br><em>Gestione Schede</em> | <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram Bot" /><br><em>Bot Telegram Integrato</em> |
 
 ---
 
