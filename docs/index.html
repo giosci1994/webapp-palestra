@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#070b0a" />
+  <meta name="description"
+    content="GymMaster — A complete, modern microservice architecture platform designed for comprehensive gym management." />
+  <title>GymMaster — Web-App Palestra</title>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="GymMaster — Web-App Palestra" />
+  <meta property="og:description"
+    content="Gym management reinvented. A microservice architecture platform with a web dashboard and Telegram bot." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://giosci1994.github.io/webapp-palestra/" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+
+<body>
+  <div class="bg">
+    <div class="bg-grid"></div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav-inner">
+      <div class="brand">
+        <a class="brand-main" href="#top" aria-label="GymMaster Home">
+          <span>GymMaster</span>
+        </a>
+      </div>
+
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#quickstart">Quick Start</a>
+      </nav>
+
+      <div class="nav-cta">
+        <a class="btn primary small" href="https://github.com/giosci1994/webapp-palestra" target="_blank"
+          rel="noreferrer">GitHub</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="container">
+    <section class="hero">
+      <div class="hero-left">
+        <div class="kicker">
+          <span class="dot"></span>
+          <span>Open Source Architecture</span>
+        </div>
+
+        <h1>
+          Gym management, <span class="accent-text">reinvented</span>.
+        </h1>
+
+        <p class="lead">
+          A complete microservice architecture platform. Integrates a modern web dashboard, an automated Telegram bot, and background services to provide a unified experience for both members and administrators.
+        </p>
+
+        <div class="hero-actions">
+          <a class="btn primary" href="#quickstart">Get started</a>
+          <a class="btn ghost" href="https://github.com/giosci1994/webapp-palestra" target="_blank"
+            rel="noreferrer">View on GitHub</a>
+        </div>
+
+        <div class="topics" role="list" aria-label="Topics">
+          <span class="pill" role="listitem">react</span>
+          <span class="pill" role="listitem">node.js</span>
+          <span class="pill" role="listitem">postgresql</span>
+          <span class="pill" role="listitem">prisma</span>
+          <span class="pill" role="listitem">docker</span>
+        </div>
+      </div>
+
+      <div class="hero-right" aria-hidden="true">
+        <div class="window">
+          <div class="win-bar">
+            <span class="win-dot r"></span>
+            <span class="win-dot y"></span>
+            <span class="win-dot g"></span>
+            <span class="win-title">gymmaster — dashboard</span>
+          </div>
+          <img src="./pics/Home.jpg" alt="GymMaster Dashboard" loading="lazy" />
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section">
+      <div class="section-head reveal">
+        <span class="section-label">// features</span>
+        <h2>Everything your gym needs</h2>
+        <p>Built with modern technologies to ensure scalability, security, and an amazing user experience.</p>
+      </div>
+
+      <div class="cards-grid">
+        <article class="card reveal">
+          <span class="card-icon">📊</span>
+          <h3>Interactive Dashboard</h3>
+          <p>Modern, responsive UI built with React and Vite for user management and workout tracking.</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">🤖</span>
+          <h3>Telegram Bot</h3>
+          <p>Automated notifications and interactions via grammY framework for quick member access.</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">🔄</span>
+          <h3>Real-Time Data</h3>
+          <p>Redis caching for fast data retrieval and WebSocket support for live updates.</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">📈</span>
+          <h3>Automated Scraper</h3>
+          <p>Playwright-powered microservice extracting real-time gym attendance and population.</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">🔐</span>
+          <h3>Secure & Scalable</h3>
+          <p>Isolated containerized microservices with robust PKCE OAuth flows and JWT authentication.</p>
+        </article>
+
+        <article class="card reveal">
+          <span class="card-icon">🧠</span>
+          <h3>Graphify Ready</h3>
+          <p>Fully compatible with Graphify AI for deep architectural understanding and mapping.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="screenshots" class="section">
+      <div class="section-head reveal">
+        <span class="section-label">// screenshots</span>
+        <h2>Take a look around</h2>
+        <p>A clean, unified UI for both web dashboard and mobile integrations.</p>
+      </div>
+
+      <div class="shots-grid">
+        <figure class="shot reveal">
+          <div class="window">
+            <div class="win-bar">
+              <span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span>
+              <span class="win-title">login</span>
+            </div>
+            <img src="./pics/Login.jpg" alt="Login page" loading="lazy" />
+          </div>
+          <figcaption>Authentication & Login</figcaption>
+        </figure>
+
+        <figure class="shot reveal">
+          <div class="window">
+            <div class="win-bar">
+              <span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span>
+              <span class="win-title">dashboard-ai</span>
+            </div>
+            <img src="./pics/Home-BotAI.jpg" alt="Dashboard with AI bot" loading="lazy" />
+          </div>
+          <figcaption>Dashboard with AI Assistant integration</figcaption>
+        </figure>
+
+        <figure class="shot reveal">
+          <div class="window">
+            <div class="win-bar">
+              <span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span>
+              <span class="win-title">training</span>
+            </div>
+            <img src="./pics/Allenamento_con_video.jpg" alt="Training Session" loading="lazy" />
+          </div>
+          <figcaption>Active training session with video guides</figcaption>
+        </figure>
+
+        <figure class="shot reveal">
+          <div class="window">
+            <div class="win-bar">
+              <span class="win-dot r"></span><span class="win-dot y"></span><span class="win-dot g"></span>
+              <span class="win-title">telegram-bot</span>
+            </div>
+            <img src="./pics/Bot_telegram.jpg" alt="Telegram Bot" loading="lazy" />
+          </div>
+          <figcaption>Integrated Telegram Bot for quick actions</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="quickstart" class="section">
+      <div class="section-head reveal">
+        <span class="section-label">// quick-start</span>
+        <h2>Up and running locally</h2>
+        <p>Clone the repository and start the microservices stack via Docker Compose.</p>
+      </div>
+
+      <div class="quickstart reveal">
+        <pre><code><span class="code-comment"># Clone the repository</span>
+git clone https://github.com/giosci1994/webapp-palestra.git
+cd webapp-palestra
+
+<span class="code-comment"># Setup environment and start</span>
+cp .env.esempio .env
+docker-compose up -d --build</code></pre>
+        <p class="hint">
+          Then open <a href="http://localhost:6969"><code>http://localhost:6969</code></a>.
+        </p>
+      </div>
+
+      <div class="cta-box reveal">
+        <div>
+          <h3>Want to contribute?</h3>
+          <p>Check out our issues page or submit a PR on GitHub.</p>
+        </div>
+        <a class="btn primary" href="https://github.com/giosci1994/webapp-palestra/issues" target="_blank"
+          rel="noreferrer">Open an issue</a>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer-left">
+        <span>© <span id="year">2026</span> GymMaster · A project by <a href="https://giosci1994.github.io/" target="_blank"
+            rel="noreferrer">giosci1994</a></span>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/giosci1994/webapp-palestra" target="_blank" rel="noreferrer">GitHub Repo</a>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reveals = document.querySelectorAll('.reveal');
+
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      reveals.forEach(el => el.classList.add('visible'));
+    } else {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      reveals.forEach(el => io.observe(el));
+    }
+  </script>
+</body>
+
+</html>
