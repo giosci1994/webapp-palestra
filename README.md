@@ -14,10 +14,9 @@
 A complete, modern microservice architecture platform designed for comprehensive gym management. It integrates a web dashboard, an automated Telegram bot, and background services for data aggregation to provide a unified experience for both gym members and administrators.
 
 <p align="center">
-  <!-- Placeholders for future screenshots -->
-  <img src="https://via.placeholder.com/400x250.png?text=Dashboard+Preview" width="400" alt="Dashboard Preview" />
+  <img src="docs/pics/Home.jpg" width="450" alt="Home Dashboard" />
   &nbsp;&nbsp;
-  <img src="https://via.placeholder.com/200x250.png?text=Mobile+App" width="200" alt="Mobile App" />
+  <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram Bot" />
 </p>
 
 ---
@@ -129,10 +128,9 @@ Copyright © 2026 giosci1994. All Rights Reserved.
 Una piattaforma web completa e strutturata per la gestione di una palestra, sviluppata con un'architettura a microservizi moderna per garantire scalabilità e performance elevate sia lato utente che lato server.
 
 <p align="center">
-  <!-- Placeholders per futuri screenshot -->
-  <img src="https://via.placeholder.com/400x250.png?text=Anteprima+Dashboard" width="400" alt="Anteprima Dashboard" />
+  <img src="docs/pics/Home.jpg" width="450" alt="Home Dashboard" />
   &nbsp;&nbsp;
-  <img src="https://via.placeholder.com/200x250.png?text=Bot+Telegram" width="200" alt="Bot Telegram" />
+  <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram Bot" />
 </p>
 
 ---
