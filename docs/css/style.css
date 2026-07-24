@@ -3,22 +3,21 @@
 */
 
 :root {
-  /* Brand palette */
+  /* Brand palette — allineata ad Arborae */
   --bg: #070b0a;
   --bg-soft: #0b1110;
   --panel: rgba(255, 255, 255, 0.03);
   --panel-hover: rgba(255, 255, 255, 0.055);
   --border: rgba(255, 255, 255, 0.09);
-  --border-hover: rgba(59, 130, 246, 0.35);
+  --border-hover: rgba(95, 179, 166, 0.35);
 
   --text: #eef4f2;
   --muted: #9db3ad;
   --dim: #64756f;
 
-  /* Colori personalizzati per GymMaster: Blu/Azzurro invece di Verde Smeraldo */
-  --brand: #3b82f6; /* Tailwind Blue 500 */
-  --brand-soft: #60a5fa; /* Tailwind Blue 400 */
-  --teal: #2dd4bf; /* Tailwind Teal 400 */
+  --brand: #00b585;
+  --brand-soft: #34d399;
+  --teal: #5fb3a6;
 
   --gradient: linear-gradient(120deg, var(--brand-soft), var(--teal));
 
@@ -44,7 +43,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: rgba(59, 130, 246, 0.35); }
+::selection { background: rgba(0, 181, 133, 0.35); }
 
 img { max-width: 100%; border-radius: 8px; }
 
@@ -54,8 +53,8 @@ img { max-width: 100%; border-radius: 8px; }
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(ellipse 80% 50% at 70% -10%, rgba(59, 130, 246, 0.14), transparent 60%),
-    radial-gradient(ellipse 60% 40% at 10% 110%, rgba(45, 212, 191, 0.08), transparent 60%),
+    radial-gradient(ellipse 80% 50% at 70% -10%, rgba(0, 181, 133, 0.14), transparent 60%),
+    radial-gradient(ellipse 60% 40% at 10% 110%, rgba(95, 179, 166, 0.08), transparent 60%),
     var(--bg);
 }
 
@@ -174,13 +173,13 @@ a { color: inherit; text-decoration: none; }
 
 .btn.primary {
   background: var(--brand);
-  color: #fff;
+  color: #04110d;
 }
 
 .btn.primary:hover {
   background: var(--brand-soft);
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 181, 133, 0.25);
 }
 
 .btn.ghost {
@@ -212,8 +211,8 @@ a { color: inherit; text-decoration: none; }
   gap: 10px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: rgba(59, 130, 246, 0.08);
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: rgba(0, 181, 133, 0.08);
+  border: 1px solid rgba(0, 181, 133, 0.25);
   font-family: var(--font-mono);
   font-size: 0.78rem;
   color: var(--brand-soft);
@@ -266,7 +265,7 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
   box-shadow:
     0 30px 60px -20px rgba(0, 0, 0, 0.6),
-    0 0 80px -30px rgba(59, 130, 246, 0.25);
+    0 0 80px -30px rgba(0, 181, 133, 0.25);
 }
 
 .hero .window {
@@ -278,7 +277,7 @@ a { color: inherit; text-decoration: none; }
   transform: perspective(1200px) rotateY(0) rotateX(0);
   box-shadow:
     0 30px 60px -20px rgba(0, 0, 0, 0.6),
-    0 0 100px -20px rgba(59, 130, 246, 0.35);
+    0 0 100px -20px rgba(0, 181, 133, 0.35);
 }
 
 .win-bar {
@@ -399,8 +398,8 @@ pre code { background: none; border: none; padding: 0; font-size: inherit; }
   margin-top: 24px;
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(45, 212, 191, 0.05));
-  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: linear-gradient(135deg, rgba(0, 181, 133, 0.1), rgba(95, 179, 166, 0.05));
+  border: 1px solid rgba(0, 181, 133, 0.25);
   border-radius: var(--radius-lg);
   padding: 44px;
   display: flex;
