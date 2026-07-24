@@ -269,10 +269,31 @@ a { color: inherit; text-decoration: none; }
 }
 
 .hero .window {
-  max-width: 500px;
+  max-width: 320px;
+  max-height: 480px;
   margin-left: auto;
+  position: relative;
   transform: perspective(1200px) rotateY(-4deg) rotateX(2deg);
   transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+
+.hero .window::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, rgba(10, 16, 15, 0.98));
+  pointer-events: none;
+}
+
+.hero .window img {
+  display: block;
+  width: 100%;
+  height: 446px;
+  object-fit: cover;
+  object-position: top;
 }
 
 .hero .window:hover {
