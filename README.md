@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/PostgreSQL-Database-blue.svg?logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/Prisma-ORM-black.svg?logo=prisma" alt="Prisma">
   <img src="https://img.shields.io/badge/Docker-Microservices-2496ED.svg?logo=docker" alt="Docker">
-  <img src="https://img.shields.io/badge/License-Proprietary-red.svg" alt="License">
+  <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License">
 </p>
 
 *Read this in other languages: [Italiano](#italiano)*
@@ -116,8 +116,7 @@ This repository is fully compatible with **Graphify**. Through `.claude/skills/g
 ---
 
 ## 📄 License
-This project is **Proprietary**. See the [LICENSE](LICENSE) file for details.
-Copyright © 2026 giosci1994. All Rights Reserved.
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. See the [LICENSE](LICENSE) file for details.
 
 <br>
 
@@ -224,5 +223,4 @@ Questo progetto include l'integrazione con **Graphify**. Grazie a `.claude/skill
 ---
 
 ## 📄 Licenza
-Il progetto è **Proprietario** (Tutti i diritti riservati). Leggi il file [LICENSE](LICENSE) per ulteriori dettagli.
-Copyright © 2026 giosci1994. Tutti i diritti riservati.
+Questo progetto è distribuito sotto licenza **GNU General Public License v3.0 (GPLv3)**. Vedi il file [LICENSE](LICENSE) per ulteriori dettagli.
