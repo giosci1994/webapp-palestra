@@ -3,6 +3,14 @@
 # Deploy: docker compose up --build -d
 # ============================================
 
+# Nome progetto fissato esplicitamente. Senza questa riga Compose lo deriva dal
+# nome della cartella: spostando il repo da "Web-App Palestra" a
+# "Web-App_Palestra" il progetto diventava "web-app_palestra" e i volumi
+# puntavano a "web-app_palestra_pgdata" (vuoto) invece che a
+# "web-apppalestra_pgdata" (il database reale). Non toccare: cambiarlo
+# scollega lo stack dai suoi dati.
+name: web-apppalestra
+
 services:
   # --- Database PostgreSQL ---
   db:
