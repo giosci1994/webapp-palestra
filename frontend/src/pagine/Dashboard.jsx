@@ -16,6 +16,7 @@ import {
   CalendarHeart, FileText, CheckCircle, CalendarClock
 } from 'lucide-react';
 import Statistiche from './Statistiche.jsx';
+import CaroselloAzioni from '../componenti/specifici/CaroselloAzioni.jsx';
 
 export default function Dashboard() {
   const { utente, isAdmin } = useAuth();
@@ -43,6 +44,9 @@ export default function Dashboard() {
   // Calendario state
   const [dataCalendario, setDataCalendario] = useState(new Date());
 
+  // Messaggi non letti: la slide dei messaggi compare solo se ce ne sono
+  const [messaggiNonLetti, setMessaggiNonLetti] = useState(0);
+
   // Affluenza palestra
   const [affluenza, setAffluenza] = useState(null);
   const [affluenzaCaricamento, setAffluenzaCaricamento] = useState(false);
@@ -60,6 +64,11 @@ export default function Dashboard() {
         api.get('/schede').catch(() => ({ dati: [] })),
         api.get('/statistiche/gruppi-muscolari').catch(() => ({ dati: [] }))
       ]);
+
+      // Conteggio messaggi non letti (non bloccante)
+      api.get('/chat/non-letti')
+        .then(r => setMessaggiNonLetti(r.dati?.totale || 0))
+        .catch(() => setMessaggiNonLetti(0));
 
       // Carica info PT (non bloccante)
       api.get('/utenti/mio-pt').then(r => {
@@ -259,6 +268,38 @@ export default function Dashboard() {
     );
   }
 
+  // Inviti contestuali della dashboard, raccolti in un unico banner scorrevole.
+  // Ogni voce entra nell'elenco solo quando ha davvero senso mostrarla: se non
+  // ne resta nessuna, CaroselloAzioni non rende nulla.
+  const slideAzioni = [
+    ...(senzaPT && !isAdmin && utente?.ruolo !== 'PERSONAL_TRAINER' ? [{
+      id: 'trova-pt',
+      Icona: Dumbbell,
+      titolo: 'Vuoi una guida esperta?',
+      sottotitolo: 'Trova un Personal Trainer e allenati con schede su misura.',
+      etichetta: 'Trova un PT',
+      a: '/trova-pt'
+    }] : []),
+    ...(messaggiNonLetti > 0 ? [{
+      id: 'messaggi',
+      Icona: MessageCircle,
+      titolo: messaggiNonLetti === 1 ? 'Hai 1 messaggio non letto' : `Hai ${messaggiNonLetti} messaggi non letti`,
+      sottotitolo: 'Apri la chat per leggerli e rispondere.',
+      etichetta: 'Apri la chat',
+      a: '/chat'
+    }] : []),
+    ...(raccomandazione.scheda ? [{
+      id: 'consiglio-ai',
+      Icona: Bot,
+      titolo: raccomandazione.scheda.titolo,
+      sottotitolo: raccomandazione.testo,
+      etichetta: avviando ? 'Avvio...' : 'Inizia scheda',
+      onClick: () => avviaAllenamento(raccomandazione.scheda.id),
+      disabilitato: avviando
+    }] : [])
+  ];
+
+
   return (
     <div className="py-4 md:py-8 pb-12">
       {/* Header Saluto */}
@@ -330,22 +371,8 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Invito contestuale: trova un PT (solo utenti normali senza PT) */}
-      {senzaPT && !isAdmin && utente?.ruolo !== 'PERSONAL_TRAINER' && (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-12">
-          <Link to="/trova-pt" className="glass-card p-card-inner flex items-center gap-4 hover:border-[var(--accent)] transition-colors group relative overflow-hidden">
-            <div className="absolute inset-0 opacity-[0.07] pointer-events-none" style={{ background: 'linear-gradient(120deg, var(--accent), transparent 60%)' }} />
-            <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 relative" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-              <Dumbbell size={24} />
-            </div>
-            <div className="flex-1 min-w-0 relative">
-              <p className="font-bold text-sm md:text-base">Vuoi una guida esperta?</p>
-              <p className="text-xs text-[var(--testo-secondario)]">Trova un Personal Trainer e allenati con schede su misura.</p>
-            </div>
-            <ChevronRight size={20} className="text-[var(--testo-terziario)] group-hover:text-[var(--accent)] transition-colors shrink-0 relative" />
-          </Link>
-        </motion.div>
-      )}
+      {/* Inviti contestuali raccolti in un unico banner scorrevole */}
+      <CaroselloAzioni slide={slideAzioni} />
 
       {/* Tabs */}
       <div style={{ paddingTop: '15px', paddingBottom: '25px', width: '100%' }}>
@@ -392,18 +419,6 @@ export default function Dashboard() {
             {/* Colonna Principale */}
             <div className="flex flex-col gap-8">
               
-              {/* Messaggi */}
-              <Link to="/chat" className="glass-card p-card-inner flex items-center justify-between group cursor-pointer transition-colors hover:bg-[var(--bg-terziario)]">
-                <div className="flex items-center gap-3">
-                  <MessageCircle className="text-[var(--testo-secondario)] group-hover:text-[var(--accent)] transition-colors" size={24} />
-                  <span className="font-bold">Messaggi</span>
-                </div>
-                <span className="text-xs text-[var(--testo-terziario)] group-hover:text-[var(--testo-primario)] transition-colors flex items-center gap-1">
-                  Apri la chat <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                </span>
-              </Link>
-
-
               {/* Allenati e gestisci schede */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex justify-between items-center border-b border-[var(--bordo-light)]">
@@ -478,34 +493,6 @@ export default function Dashboard() {
             {/* Colonna Laterale (Consigli AI / In calendario) */}
             <div className="flex flex-col gap-8">
               
-              {/* Suggerimento AI */}
-              <div className="glass-card flex flex-col relative overflow-hidden group">
-                <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-700 pointer-events-none" style={{ background: 'linear-gradient(45deg, var(--accent), transparent)' }} />
-                <div className="p-card-inner border-b border-[var(--bordo-light)] flex items-center gap-3 relative z-10">
-                  <Bot size={22} className="text-[var(--accent)]" />
-                  <h3 className="font-bold text-lg">Consiglio AI</h3>
-                </div>
-                <div className="flex-1 p-card-inner relative z-10">
-                  {raccomandazione.scheda ? (
-                    <div className="flex flex-col h-full justify-between">
-                      <div>
-                        <p className="text-sm text-[var(--testo-secondario)] mb-3">{raccomandazione.testo}</p>
-                        <h4 className="font-bold text-lg text-[var(--testo-primario)] mb-2">{raccomandazione.scheda.titolo}</h4>
-                      </div>
-                      <button 
-                        onClick={() => avviaAllenamento(raccomandazione.scheda.id)}
-                        disabled={avviando}
-                        className="mt-4 w-full py-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)] flex items-center justify-center gap-2"
-                      >
-                        {avviando ? 'Avvio...' : 'Inizia Scheda'}
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-sm text-[var(--testo-terziario)]">Nessun consiglio disponibile al momento.</p>
-                  )}
-                </div>
-              </div>
-
               {/* In Calendario (Storico) */}
               <div className="glass-card flex flex-col">
                 <div className="p-card-inner pb-4 flex items-center gap-3">

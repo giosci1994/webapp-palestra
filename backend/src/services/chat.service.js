@@ -245,3 +245,17 @@ export async function pulisciMessaggiScaduti() {
 
   return messaggiEliminati;
 }
+
+/**
+ * Conta i messaggi non ancora letti indirizzati all'utente.
+ * Esclude i propri messaggi: "non letto" ha senso solo per quelli ricevuti.
+ */
+export async function contaNonLetti(utenteId) {
+  return prisma.messaggio.count({
+    where: {
+      letto: false,
+      mittenteId: { not: utenteId },
+      conversazione: { partecipanti: { some: { utenteId } } }
+    }
+  });
+}

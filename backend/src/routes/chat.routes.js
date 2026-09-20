@@ -4,7 +4,7 @@
 // ============================================
 
 import { Router } from 'express';
-import { inviaRichiesta, rispondiRichiesta, richiesteRicevute, listaConversazioni, messaggiConversazione } from '../controllers/chat.controller.js';
+import { inviaRichiesta, rispondiRichiesta, richiesteRicevute, listaConversazioni, messaggiConversazione, contatoreNonLetti } from '../controllers/chat.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { valida } from '../middleware/validazione.js';
 import { schemaRichiestaContatto, schemaRispostaContatto } from '../validators/chat.schema.js';
@@ -30,5 +30,8 @@ router.get('/conversazioni', listaConversazioni);
 
 // GET /api/v1/chat/conversazioni/:id/messaggi — Messaggi di una conversazione
 router.get('/conversazioni/:id/messaggi', messaggiConversazione);
+
+// GET /api/v1/chat/non-letti — Conteggio messaggi non letti (per il carosello in dashboard)
+router.get('/non-letti', contatoreNonLetti);
 
 export default router;

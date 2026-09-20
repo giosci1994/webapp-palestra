@@ -66,3 +66,13 @@ export async function messaggiConversazione(req, res, next) {
     next(errore);
   }
 }
+
+/** GET /api/v1/chat/non-letti — Numero di messaggi non letti */
+export async function contatoreNonLetti(req, res, next) {
+  try {
+    const totale = await chatService.contaNonLetti(req.utente.id);
+    res.json({ successo: true, dati: { totale } });
+  } catch (errore) {
+    next(errore);
+  }
+}
