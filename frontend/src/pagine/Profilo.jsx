@@ -78,6 +78,8 @@ export default function Profilo() {
   // Eliminazione account
   const [confermaElimina, setConfermaElimina] = useState('');
   const [eliminando, setEliminando] = useState(false);
+  const [passwordElimina, setPasswordElimina] = useState('');
+  const [erroreElimina, setErroreElimina] = useState('');
 
   // Palestre
   const [listaPalestre, setListaPalestre] = useState([]);
@@ -717,13 +719,32 @@ export default function Profilo() {
                   </div>
                   <p className="text-xs text-[var(--testo-terziario)] mb-3">Per procedere, scrivi <strong>ELIMINA IL MIO ACCOUNT</strong> nel campo sottostante.</p>
                   <input type="text" value={confermaElimina} onChange={e => setConfermaElimina(e.target.value)} placeholder="ELIMINA IL MIO ACCOUNT"
-                         className="campo-input text-center text-[var(--pericolo)] font-bold mb-4" />
+                         className="campo-input text-center text-[var(--pericolo)] font-bold mb-3" />
+
+                  <p className="text-xs text-[var(--testo-terziario)] mb-2">Conferma con la tua password.</p>
+                  <input type="password" value={passwordElimina} onChange={e => setPasswordElimina(e.target.value)}
+                         autoComplete="current-password" placeholder="Password"
+                         className="campo-input mb-3" />
+
+                  {erroreElimina && (
+                    <p className="text-xs text-[var(--pericolo)] mb-3">{erroreElimina}</p>
+                  )}
                   <div className="flex gap-3">
-                    <button onClick={() => setConfermaElimina('')} className="flex-1 py-2.5 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium">Annulla</button>
-                    <button disabled={confermaElimina !== 'ELIMINA IL MIO ACCOUNT' || eliminando}
+                    <button onClick={() => { setConfermaElimina(''); setPasswordElimina(''); setErroreElimina(''); }} className="flex-1 py-2.5 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium">Annulla</button>
+                    <button disabled={confermaElimina !== 'ELIMINA IL MIO ACCOUNT' || !passwordElimina || eliminando}
                             onClick={async () => {
-                              try { setEliminando(true); /* TODO: API eliminazione account */ alert('Funzionalità in fase di implementazione.'); }
-                              catch (err) { alert(err.message); } finally { setEliminando(false); }
+                              setErroreElimina('');
+                              setEliminando(true);
+                              try {
+                                await api.delete('/utenti/account', { password: passwordElimina, conferma: 'ELIMINA' });
+                                // L'account non esiste piu': si esce dalla sessione
+                                // corrente, altrimenti l'app continuerebbe a chiamare
+                                // l'API con il token di un utente cancellato.
+                                logout();
+                              } catch (err) {
+                                setErroreElimina(err?.message || 'Eliminazione non riuscita');
+                                setEliminando(false);
+                              }
                             }}
                             className="flex-1 py-2.5 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
                       {eliminando ? 'Eliminazione...' : '🗑️ Elimina Definitivamente'}

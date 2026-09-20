@@ -633,13 +633,13 @@ model AllenamentoPianificato {
   schedaId   Int                         @map("scheda_id")
   data       DateTime                    @db.Date
   stato      StatoAllenamentoPianificato @default(PIANIFICATO)
-  creatoDaId Int                         @map("creato_da_id")
+  creatoDaId Int?                        @map("creato_da_id")
   sessioneId Int?                        @unique @map("sessione_id")
   note       String?
   creatoIl   DateTime                    @default(now()) @map("creato_il")
 
   utente   Utente               @relation("AllenamentiPianificatiUtente", fields: [utenteId], references: [id], onDelete: Cascade)
-  creatoDa Utente               @relation("AllenamentiPianificatiCreatore", fields: [creatoDaId], references: [id])
+  creatoDa Utente?              @relation("AllenamentiPianificatiCreatore", fields: [creatoDaId], references: [id], onDelete: SetNull)
   scheda   SchedaAllenamento    @relation(fields: [schedaId], references: [id], onDelete: Cascade)
   sessione SessioneAllenamento? @relation(fields: [sessioneId], references: [id], onDelete: SetNull)
 

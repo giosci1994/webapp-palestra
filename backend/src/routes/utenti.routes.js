@@ -49,6 +49,53 @@ router.get('/cerca', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
+// DELETE /api/v1/utenti/account — Elimina definitivamente il proprio account
+// Richiede la password: e' irreversibile, e un token rubato o una sessione
+// lasciata aperta non devono poter cancellare l'account di qualcuno.
+router.delete('/account', async (req, res, next) => {
+  try {
+    const { default: prisma } = await import('../config/database.js');
+    const { default: argon2 } = await import('argon2');
+    const { ErroreValidazione, ErroreNonTrovato, ErroreNonAutorizzato } = await import('../utils/errori.js');
+    const { eliminaAccount } = await import('../services/eliminazioneAccount.service.js');
+
+    const { password, conferma } = req.body || {};
+
+    if (conferma !== 'ELIMINA') {
+      throw new ErroreValidazione('Conferma mancante');
+    }
+    if (!password || typeof password !== 'string') {
+      throw new ErroreValidazione('Password richiesta per confermare l\'eliminazione');
+    }
+
+    const utente = await prisma.utente.findUnique({
+      where: { id: req.utente.id },
+      select: { id: true, passwordHash: true, ruolo: true }
+    });
+    if (!utente) throw new ErroreNonTrovato('Utente');
+
+    if (!await argon2.verify(utente.passwordHash, password)) {
+      throw new ErroreNonAutorizzato('Password non corretta');
+    }
+
+    // L'ultimo amministratore non puo' sparire: resterebbe un'installazione
+    // senza nessuno in grado di amministrarla.
+    if (utente.ruolo === 'SUPERADMIN') {
+      const altri = await prisma.utente.count({ where: { ruolo: 'SUPERADMIN', id: { not: utente.id } } });
+      if (altri === 0) {
+        throw new ErroreNonAutorizzato('Sei l\'unico amministratore: nominane un altro prima di eliminare l\'account');
+      }
+    }
+
+    const riepilogo = await eliminaAccount(utente.id);
+
+    // Senza rimuovere il cookie il browser continuerebbe a tentare di rinnovare
+    // la sessione di un utente che non esiste piu'.
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', path: '/' });
+    res.json({ successo: true, messaggio: 'Account eliminato definitivamente', dati: riepilogo });
+  } catch (errore) { next(errore); }
+});
+
 // POST /api/v1/utenti/reset-statistiche
 router.post('/reset-statistiche', async (req, res, next) => {
   try {

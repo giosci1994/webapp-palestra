@@ -219,5 +219,7 @@ export const api = {
   post: (percorso, body) => apiChiamata(percorso, { metodo: 'POST', body }),
   patch: (percorso, body) => apiChiamata(percorso, { metodo: 'PATCH', body }),
   put: (percorso, body) => apiChiamata(percorso, { metodo: 'PUT', body }),
-  delete: (percorso) => apiChiamata(percorso, { metodo: 'DELETE' })
+  // Il body e' facoltativo: serve alle DELETE che richiedono una conferma
+  // (es. l'eliminazione dell'account, che vuole la password)
+  delete: (percorso, body) => apiChiamata(percorso, { metodo: 'DELETE', body })
 };
