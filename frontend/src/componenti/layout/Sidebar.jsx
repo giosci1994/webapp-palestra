@@ -11,12 +11,14 @@ import { api } from '../../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, ClipboardList, Dumbbell, History, BarChart2, MessageCircle,
-  Bot, Trophy, Users, Building, BookOpen, LogOut, Menu, Library, UserCheck, Sparkles
+  Bot, Trophy, Users, Building, BookOpen, LogOut, Menu, Library, UserCheck, Sparkles,
+  CalendarClock
 } from 'lucide-react';
 
 const MENU_PRINCIPALE = [
   { percorso: '/dashboard', Icona: Home, etichetta: 'Dashboard' },
   { percorso: '/schede', Icona: ClipboardList, etichetta: 'Schede' },
+  { percorso: '/pianificazione', Icona: CalendarClock, etichetta: 'Pianificazione' },
   { percorso: '/catalogo', Icona: Library, etichetta: 'Catalogo' },
   { percorso: '/allenamento', Icona: Dumbbell, etichetta: 'Allenamento' },
   { percorso: '/storico', Icona: History, etichetta: 'Storico' },

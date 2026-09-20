@@ -65,6 +65,12 @@ enum TipoChat {
   PERSONAL_TRAINER
 }
 
+enum StatoAllenamentoPianificato {
+  PIANIFICATO
+  COMPLETATO
+  SALTATO
+}
+
 enum StatoIscrizione {
   IN_ATTESA
   ATTIVA
@@ -156,6 +162,10 @@ model Utente {
 
   // Collegamento bot Telegram
   collegamentoTelegram  CollegamentoTelegram?
+
+  // Pianificazione allenamenti
+  allenamentiPianificati       AllenamentoPianificato[] @relation("AllenamentiPianificatiUtente")
+  allenamentiPianificatiCreati AllenamentoPianificato[] @relation("AllenamentiPianificatiCreatore")
 
   @@map("utenti")
 }
@@ -295,6 +305,7 @@ model SchedaAllenamento {
   assegnataDaPT Utente?           @relation("SchedeAssegnatePT", fields: [assegnataDaPTId], references: [id])
   esercizi      EsercizioScheda[]
   sessioni      SessioneAllenamento[]
+  pianificazioni AllenamentoPianificato[]
 
   @@map("schede_allenamento")
 }
@@ -340,6 +351,7 @@ model SessioneAllenamento {
   utente   Utente              @relation(fields: [utenteId], references: [id])
   scheda   SchedaAllenamento   @relation(fields: [schedaId], references: [id])
   logSerie LogSerie[]
+  pianificazione AllenamentoPianificato?
 
   @@map("sessioni_allenamento")
 }
@@ -595,4 +607,32 @@ model MisurazioneCorporea {
 
   @@index([utenteId, data])
   @@map("misurazioni_corporee")
+}
+
+// Allenamento messo in calendario per un giorno preciso.
+// Si e' scelto di salvare occorrenze concrete invece di una regola di
+// ricorrenza: spostare o rimandare un singolo allenamento diventa un semplice
+// cambio di data, senza dover gestire eccezioni alla regola. La distribuzione
+// settimanale ("scheda A il lunedi, B il mercoledi, C il venerdi, per 4
+// settimane") viene espansa in occorrenze dal servizio di pianificazione.
+model AllenamentoPianificato {
+  id         Int                         @id @default(autoincrement())
+  utenteId   Int                         @map("utente_id")
+  schedaId   Int                         @map("scheda_id")
+  data       DateTime                    @db.Date
+  stato      StatoAllenamentoPianificato @default(PIANIFICATO)
+  creatoDaId Int                         @map("creato_da_id")
+  sessioneId Int?                        @unique @map("sessione_id")
+  note       String?
+  creatoIl   DateTime                    @default(now()) @map("creato_il")
+
+  utente   Utente               @relation("AllenamentiPianificatiUtente", fields: [utenteId], references: [id], onDelete: Cascade)
+  creatoDa Utente               @relation("AllenamentiPianificatiCreatore", fields: [creatoDaId], references: [id])
+  scheda   SchedaAllenamento    @relation(fields: [schedaId], references: [id], onDelete: Cascade)
+  sessione SessioneAllenamento? @relation(fields: [sessioneId], references: [id], onDelete: SetNull)
+
+  // Stessa scheda due volte nello stesso giorno per lo stesso utente non ha senso
+  @@unique([utenteId, data, schedaId])
+  @@index([utenteId, data])
+  @@map("allenamenti_pianificati")
 }

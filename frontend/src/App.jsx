@@ -46,6 +46,7 @@ import DashboardPT from './pagine/DashboardPT.jsx';
 import TrainerProfilo from './pagine/TrainerProfilo.jsx';
 import TrovaPT from './pagine/TrovaPT.jsx';
 import Composizione from './pagine/Composizione.jsx';
+import Pianificazione from './pagine/Pianificazione.jsx';
 
 // --- Redirect intelligente: torna all'ultima rotta visitata ---
 function RedirectIniziale() {
@@ -122,6 +123,7 @@ export default function App() {
               <Route path="/trainer/:id" element={<TrainerProfilo />} />
               <Route path="/trova-pt" element={<TrovaPT />} />
               <Route path="/composizione" element={<Composizione />} />
+              <Route path="/pianificazione" element={<Pianificazione />} />
               {/* Allenamento live: dentro il layout (gating auth) ma reso immersivo dal layout */}
               <Route path="/allenamento/:id" element={<WorkoutLive />} />
             </Route>

@@ -480,7 +480,7 @@ export default function Dashboard() {
                         <p className="font-semibold text-[var(--testo-primario)]">Ancora nessun allenamento</p>
                         <p className="text-sm text-[var(--testo-terziario)] mt-1">Inizia da una scheda: comparirà qui.</p>
                       </div>
-                      <Link to="/schede" className="mt-1 w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold transition-colors shadow-[var(--ombra-accent)]">
+                      <Link to="/schede" style={{ color: '#fff' }} className="mt-1 w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold transition-colors shadow-[var(--ombra-accent)]">
                         Vai alle schede
                       </Link>
                     </div>
