@@ -4,7 +4,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
-import { generaDocxScheda, nomeFileScheda } from '../services/schedaDocx.service.js';
+import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.service.js';
 
 // Mappa una voce esercizio (dal client) in dati EsercizioScheda, preservando
 // i campi cardio (durata/velocità/inclinazione/resistenza/distanza + riscaldamento).
@@ -312,8 +312,48 @@ export async function rimuoviEsercizio(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+const INCLUDI_PER_DOCX = {
+  creatore: { select: { id: true, nome: true } },
+  esercizi: {
+    include: { esercizio: { include: { attrezzatura: { select: { nome: true } } } } },
+    orderBy: { ordineEsecuzione: 'asc' }
+  }
+};
+
+/** Carica le schede richieste verificando l'accesso una per una. */
+async function caricaSchedePerDocx(ids, utente) {
+  const schede = await prisma.schedaAllenamento.findMany({
+    where: { id: { in: ids } },
+    include: INCLUDI_PER_DOCX
+  });
+
+  const trovate = new Map(schede.map(s => [s.id, s]));
+
+  // Si rispetta l'ordine richiesto dal client: definisce quale scheda diventa
+  // la sessione 1, la 2 e cosi' via.
+  const ordinate = [];
+  for (const id of ids) {
+    const scheda = trovate.get(id);
+    if (!scheda) throw new ErroreNonTrovato(`Scheda ${id}`);
+    // Stesso criterio del dettaglio: proprietario o scheda globale
+    if (scheda.creatoreId !== utente.id && scheda.visibilita !== 'GLOBALE') {
+      throw new ErroreNonAutorizzato(`Non hai accesso alla scheda "${scheda.titolo}"`);
+    }
+    ordinate.push(scheda);
+  }
+  return ordinate;
+}
+
+function inviaDocx(res, buffer, titolo) {
+  const nomeFile = nomeFileDocumento(titolo);
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+  res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"`);
+  res.setHeader('Content-Length', buffer.length);
+  res.send(buffer);
+}
+
 /**
- * GET /api/v1/schede/:id/docx — Scarica la scheda come documento Word
+ * GET /api/v1/schede/:id/docx — Scarica una scheda come documento Word
  *
  * Serve ad avere la scheda sottomano in palestra anche senza connessione,
  * aprendola con Word, Google Docs o LibreOffice.
@@ -323,30 +363,33 @@ export async function esportaSchedaDocx(req, res, next) {
     const id = parseInt(req.params.id);
     if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
 
-    const scheda = await prisma.schedaAllenamento.findUnique({
-      where: { id },
-      include: {
-        creatore: { select: { id: true, nome: true } },
-        esercizi: {
-          include: { esercizio: { include: { attrezzatura: { select: { nome: true } } } } },
-          orderBy: { ordineEsecuzione: 'asc' }
-        }
-      }
-    });
+    const schede = await caricaSchedePerDocx([id], req.utente);
+    const buffer = await generaDocxSchede(schede);
+    inviaDocx(res, buffer, schede[0].titolo);
+  } catch (errore) { next(errore); }
+}
 
-    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+/**
+ * GET /api/v1/schede/docx?ids=3,4,6&titolo=... — Piu' schede in un solo documento
+ *
+ * Un programma settimanale non e' una scheda ripetuta ogni giorno ma sedute
+ * diverse distribuite sulla settimana: qui ciascuna scheda diventa una
+ * sessione numerata dello stesso documento, nell'ordine in cui e' richiesta.
+ */
+export async function esportaSchedeDocxMultiplo(req, res, next) {
+  try {
+    const grezzi = String(req.query.ids || '').split(',').map(v => v.trim()).filter(Boolean);
+    const ids = grezzi.map(v => parseInt(v, 10));
 
-    // Stesso criterio di accesso del dettaglio: proprietario o scheda globale
-    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
-      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
-    }
+    if (ids.length === 0) throw new ErroreValidazione('Indicare almeno una scheda in "ids"');
+    if (ids.some(Number.isNaN)) throw new ErroreValidazione('Parametro "ids" non valido');
+    if (ids.length > 10) throw new ErroreValidazione('Massimo 10 schede per documento');
+    if (new Set(ids).size !== ids.length) throw new ErroreValidazione('La stessa scheda e\' indicata piu\' volte');
 
-    const buffer = await generaDocxScheda(scheda);
-    const nomeFile = nomeFileScheda(scheda);
+    const schede = await caricaSchedePerDocx(ids, req.utente);
+    const titolo = req.query.titolo?.toString().slice(0, 120);
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"`);
-    res.setHeader('Content-Length', buffer.length);
-    res.send(buffer);
+    const buffer = await generaDocxSchede(schede, { titolo });
+    inviaDocx(res, buffer, titolo || `Programma ${schede.length} sedute`);
   } catch (errore) { next(errore); }
 }

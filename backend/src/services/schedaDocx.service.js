@@ -1,175 +1,270 @@
 // ============================================
-// GymMaster — Esportazione Scheda in .docx
+// GymMaster — Esportazione Schede in .docx
 // Documento Word apribile offline (Word, Google Docs, LibreOffice)
 // ============================================
 
 import {
-  Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
+  Document, Packer, Paragraph, TextRun, AlignmentType, LevelFormat,
   Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType
 } from 'docx';
 
-const GRIGIO_INTESTAZIONE = 'EDEDF2';
-const GRIGIO_RIGA = 'F8F8FB';
+// Palette e misure ricalcate sul modello fornito dall'utente: blu navy per
+// intestazioni e titoli di sessione, grigi neutri per il corpo.
+const C = {
+  titolo: '0F2038',
+  sottotitolo: '666666',
+  sezione: '2C5282',
+  sessione: '1B365D',
+  intestazioneSfondo: '1B365D',
+  intestazioneTesto: 'FFFFFF',
+  cellaForte: '111827',
+  cellaNormale: '374151',
+  bordo: 'D5D5E0'
+};
 
-// Il documento è pensato per essere stampato o letto su carta e in Google Docs:
-// niente colori di sfondo scuri, niente dipendenze da font particolari.
-const bordoSottile = { style: BorderStyle.SINGLE, size: 1, color: 'D5D5E0' };
+const FONT = 'Arial';
+
+// Quattro colonne di pari larghezza. Vanno dichiarate sia sulla tabella sia su
+// ogni cella, in DXA: con le percentuali Google Docs sbaglia il layout.
+const LARGHEZZA_COLONNA = 2484;
+const COLONNE = [LARGHEZZA_COLONNA, LARGHEZZA_COLONNA, LARGHEZZA_COLONNA, LARGHEZZA_COLONNA];
+
+const bordoSottile = { style: BorderStyle.SINGLE, size: 1, color: C.bordo };
 const BORDI = { top: bordoSottile, bottom: bordoSottile, left: bordoSottile, right: bordoSottile };
 
-function cella(testo, { grassetto = false, sfondo = null, larghezza = null } = {}) {
+function cella(testo, { grassetto = false, sfondo = 'FFFFFF', colore = C.cellaNormale, dimensione = 18 } = {}) {
   return new TableCell({
     borders: BORDI,
-    ...(sfondo ? { shading: { type: ShadingType.CLEAR, fill: sfondo } } : {}),
-    ...(larghezza ? { width: { size: larghezza, type: WidthType.PERCENTAGE } } : {}),
-    margins: { top: 60, bottom: 60, left: 100, right: 100 },
+    width: { size: LARGHEZZA_COLONNA, type: WidthType.DXA },
+    shading: { type: ShadingType.CLEAR, color: 'auto', fill: sfondo },
+    margins: { top: 70, bottom: 70, left: 110, right: 110 },
     children: [new Paragraph({
-      children: [new TextRun({ text: String(testo ?? '—'), bold: grassetto, size: 19 })]
+      spacing: { before: 0, after: 0 },
+      children: [new TextRun({ text: String(testo ?? ''), bold: grassetto, color: colore, size: dimensione, font: FONT })]
     })]
   });
 }
 
+/** "4 x 8-10", oppure la descrizione della voce cardio, che non ha serie. */
+function serieEReps(voce) {
+  const cardio = [];
+  if (voce.durataMinuti) cardio.push(`${voce.durataMinuti} min`);
+  if (voce.distanzaKm) cardio.push(`${voce.distanzaKm} km`);
+  if (cardio.length > 0) return cardio.join(' · ');
+
+  if (voce.serieTarget && voce.repTarget) return `${voce.serieTarget} x ${voce.repTarget}`;
+  if (voce.serieTarget) return `${voce.serieTarget} serie`;
+  return voce.repTarget || '—';
+}
+
+/** Recupero nella notazione del modello: 90" invece di 90s. */
+function recupero(voce) {
+  return voce.recuperoSecondi ? `${voce.recuperoSecondi}"` : '—';
+}
+
 /**
- * Descrive un esercizio in una riga leggibile.
- * Le voci cardio non hanno serie/ripetizioni ma durata, velocità e pendenza:
- * vanno rese in modo diverso, altrimenti la riga risulterebbe vuota.
+ * Colonna "Note Tecniche".
+ *
+ * Le note tecniche per singolo esercizio dentro una scheda non esistono come
+ * campo: si ripiega su cio' che c'e', nell'ordine piu' utile a chi legge in
+ * palestra — la descrizione dell'esercizio quando presente, altrimenti gruppo
+ * muscolare e attrezzatura, piu' i parametri cardio se e' una voce cardio.
  */
-function dettagliEsercizio(voce) {
+function note(voce) {
   const parti = [];
-  if (voce.durataMinuti) parti.push(`${voce.durataMinuti} min`);
-  if (voce.velocitaKmh) parti.push(`${voce.velocitaKmh} km/h`);
-  if (voce.inclinazione) parti.push(`pendenza ${voce.inclinazione}%`);
-  if (voce.livelloResistenza) parti.push(`resistenza ${voce.livelloResistenza}`);
-  if (voce.distanzaKm) parti.push(`${voce.distanzaKm} km`);
-  return parti.join(' · ');
+
+  if (voce.riscaldamento) parti.push('Riscaldamento');
+
+  const cardio = [];
+  if (voce.velocitaKmh) cardio.push(`${voce.velocitaKmh} km/h`);
+  if (voce.inclinazione) cardio.push(`pendenza ${voce.inclinazione}%`);
+  if (voce.livelloResistenza) cardio.push(`resistenza ${voce.livelloResistenza}`);
+  if (cardio.length > 0) parti.push(cardio.join(', '));
+
+  const descrizione = voce.esercizio?.descrizione?.trim();
+  if (descrizione) {
+    parti.push(descrizione);
+  } else {
+    const contesto = [voce.esercizio?.gruppoMuscoloPrimario, voce.esercizio?.attrezzatura?.nome]
+      .filter(Boolean).join(' · ');
+    if (contesto) parti.push(contesto);
+  }
+
+  return parti.join(' — ') || '—';
 }
 
-function righeTabella(esercizi) {
-  const intestazione = new TableRow({
-    tableHeader: true,
-    children: [
-      cella('#', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 5 }),
-      cella('Esercizio', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 34 }),
-      cella('Gruppo', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 16 }),
-      cella('Serie', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 8 }),
-      cella('Ripetizioni', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 13 }),
-      cella('Recupero', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 11 }),
-      cella('Note', { grassetto: true, sfondo: GRIGIO_INTESTAZIONE, larghezza: 13 })
-    ]
-  });
+function tabellaEsercizi(esercizi) {
+  const intestazioni = ['Esercizio', 'Serie x Reps', 'Recupero', 'Note Tecniche'];
 
-  const righe = esercizi.map((voce, i) => {
-    const cardio = dettagliEsercizio(voce);
-    const sfondo = i % 2 === 1 ? GRIGIO_RIGA : null;
-    return new TableRow({
-      children: [
-        cella(i + 1, { sfondo }),
-        cella(voce.esercizio?.nome, { grassetto: true, sfondo }),
-        cella(voce.esercizio?.gruppoMuscoloPrimario, { sfondo }),
-        cella(voce.serieTarget ?? '—', { sfondo }),
-        cella(voce.repTarget ?? (cardio ? '—' : ''), { sfondo }),
-        cella(voce.recuperoSecondi ? `${voce.recuperoSecondi}s` : '—', { sfondo }),
-        cella(cardio || (voce.riscaldamento ? 'Riscaldamento' : '—'), { sfondo })
-      ]
-    });
-  });
-
-  return [intestazione, ...righe];
-}
-
-function sezione(titolo, esercizi) {
-  if (esercizi.length === 0) return [];
-  return [
-    new Paragraph({
-      spacing: { before: 320, after: 140 },
-      children: [new TextRun({ text: titolo, bold: true, size: 24 })]
+  const righe = [
+    new TableRow({
+      tableHeader: true,
+      children: intestazioni.map(t => cella(t, {
+        grassetto: true,
+        sfondo: C.intestazioneSfondo,
+        colore: C.intestazioneTesto,
+        dimensione: 19
+      }))
     }),
-    new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      rows: righeTabella(esercizi)
-    })
+    ...esercizi.map(voce => new TableRow({
+      children: [
+        cella(voce.esercizio?.nome, { grassetto: true, colore: C.cellaForte }),
+        cella(serieEReps(voce)),
+        cella(recupero(voce)),
+        cella(note(voce))
+      ]
+    }))
   ];
+
+  return new Table({ columnWidths: COLONNE, width: { size: 9936, type: WidthType.DXA }, rows: righe });
+}
+
+function paragrafoTitolo(testo) {
+  return new Paragraph({
+    spacing: { after: 60 },
+    children: [new TextRun({ text: testo, bold: true, size: 40, color: C.titolo, font: FONT })]
+  });
+}
+
+function paragrafoSottotitolo(testo) {
+  return new Paragraph({
+    spacing: { after: 240 },
+    children: [new TextRun({ text: testo, italics: true, size: 22, color: C.sottotitolo, font: FONT })]
+  });
+}
+
+function paragrafoSezione(testo) {
+  return new Paragraph({
+    spacing: { before: 280, after: 120 },
+    children: [new TextRun({ text: testo, bold: true, size: 25, color: C.sezione, font: FONT })]
+  });
+}
+
+function paragrafoSessione(testo) {
+  return new Paragraph({
+    spacing: { before: 360, after: 140 },
+    children: [new TextRun({ text: testo, bold: true, size: 30, color: C.sessione, font: FONT })]
+  });
 }
 
 /**
- * Genera il .docx di una scheda e lo restituisce come Buffer.
- * @param {object} scheda - Scheda con `esercizi[].esercizio` già inclusi
+ * Ricava le linee guida dalla descrizione: se contiene piu' righe o e' divisa
+ * da punti e virgola diventa un elenco puntato, altrimenti resta un paragrafo.
  */
-export async function generaDocxScheda(scheda) {
-  const esercizi = scheda.esercizi || [];
-  const riscaldamento = esercizi.filter(e => e.riscaldamento);
-  const principali = esercizi.filter(e => !e.riscaldamento);
+function lineeGuida(testo) {
+  if (!testo?.trim()) return [];
+  const voci = testo.split(/\r?\n|(?<=[.;])\s{2,}/).map(v => v.trim()).filter(Boolean);
 
-  const sottotitolo = [
-    scheda.livello ? `Livello: ${scheda.livello}` : null,
-    scheda.creatore?.nome ? `Creata da ${scheda.creatore.nome}` : null,
-    `${esercizi.length} eserciz${esercizi.length === 1 ? 'io' : 'i'}`
-  ].filter(Boolean).join('  ·  ');
-
-  const corpo = [
-    new Paragraph({
-      heading: HeadingLevel.HEADING_1,
-      spacing: { after: 80 },
-      children: [new TextRun({ text: scheda.titolo || 'Scheda di allenamento', bold: true, size: 36 })]
-    }),
-    new Paragraph({
-      spacing: { after: 200 },
-      children: [new TextRun({ text: sottotitolo, size: 19, color: '666677' })]
-    })
-  ];
-
-  if (scheda.descrizione) {
-    corpo.push(new Paragraph({
-      spacing: { after: 160 },
-      children: [new TextRun({ text: scheda.descrizione, size: 21 })]
-    }));
+  if (voci.length <= 1) {
+    return [new Paragraph({
+      spacing: { after: 120 },
+      children: [new TextRun({ text: testo.trim(), size: 20, color: C.cellaNormale, font: FONT })]
+    })];
   }
 
-  if (esercizi.length === 0) {
-    corpo.push(new Paragraph({
-      children: [new TextRun({ text: 'Questa scheda non contiene ancora esercizi.', italics: true, size: 21 })]
-    }));
-  } else {
-    corpo.push(...sezione('Riscaldamento', riscaldamento));
-    corpo.push(...sezione(riscaldamento.length > 0 ? 'Allenamento' : 'Esercizi', principali));
-  }
-
-  // Spazio per gli appunti a mano: il documento nasce per essere usato in
-  // palestra senza connessione, dove si segnano i carichi effettivi.
-  corpo.push(new Paragraph({
-    spacing: { before: 400, after: 100 },
-    children: [new TextRun({ text: 'Note', bold: true, size: 24 })]
+  return voci.map(v => new Paragraph({
+    numbering: { reference: 'elenco-guida', level: 0 },
+    spacing: { after: 80 },
+    children: [new TextRun({ text: v, size: 20, color: C.cellaNormale, font: FONT })]
   }));
+}
+
+/** Righe vuote per segnare i carichi a mano: il documento si usa in palestra. */
+function spazioNote() {
+  const righe = [paragrafoSezione('Note')];
   for (let i = 0; i < 4; i++) {
-    corpo.push(new Paragraph({
-      spacing: { after: 60 },
-      border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'D5D5E0', space: 6 } },
-      children: [new TextRun({ text: '', size: 21 })]
+    righe.push(new Paragraph({
+      spacing: { after: 80 },
+      border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: C.bordo, space: 8 } },
+      children: [new TextRun({ text: '', size: 20, font: FONT })]
     }));
   }
+  return righe;
+}
+
+/**
+ * Genera il documento di una o piu' schede.
+ *
+ * Con piu' schede ciascuna diventa una sessione numerata, che e' il modo in cui
+ * un programma settimanale viene normalmente scritto: non una scheda ripetuta
+ * ogni giorno, ma sedute diverse distribuite sulla settimana.
+ *
+ * @param {object[]} schede - Schede con `esercizi[].esercizio` inclusi
+ * @param {{titolo?: string, sottotitolo?: string}} [opzioni]
+ * @returns {Promise<Buffer>}
+ */
+export async function generaDocxSchede(schede, opzioni = {}) {
+  const multipla = schede.length > 1;
+
+  const titolo = opzioni.titolo?.trim()
+    || (multipla ? 'Programma di Allenamento' : (schede[0]?.titolo || 'Scheda di Allenamento'));
+
+  const totaleEsercizi = schede.reduce((t, s) => t + (s.esercizi?.length || 0), 0);
+  const sottotitolo = opzioni.sottotitolo?.trim() || (multipla
+    ? `Programma settimanale su ${schede.length} sedute — ${totaleEsercizi} esercizi complessivi`
+    : [schede[0]?.livello && `Livello: ${schede[0].livello}`,
+       schede[0]?.creatore?.nome && `Creata da ${schede[0].creatore.nome}`,
+       `${totaleEsercizi} eserciz${totaleEsercizi === 1 ? 'io' : 'i'}`].filter(Boolean).join('  ·  '));
+
+  const corpo = [paragrafoTitolo(titolo), paragrafoSottotitolo(sottotitolo)];
+
+  // Le descrizioni delle schede diventano le linee guida in testa al documento
+  const descrizioni = schede.map(s => s.descrizione).filter(d => d?.trim());
+  if (descrizioni.length > 0) {
+    corpo.push(paragrafoSezione('Linee Guida'));
+    for (const d of descrizioni) corpo.push(...lineeGuida(d));
+  }
+
+  schede.forEach((scheda, i) => {
+    const esercizi = scheda.esercizi || [];
+    corpo.push(paragrafoSessione(multipla ? `Sessione ${i + 1}: ${scheda.titolo}` : 'Esercizi'));
+
+    if (esercizi.length === 0) {
+      corpo.push(new Paragraph({
+        children: [new TextRun({ text: 'Questa scheda non contiene ancora esercizi.', italics: true, size: 20, color: C.sottotitolo, font: FONT })]
+      }));
+    } else {
+      corpo.push(tabellaEsercizi(esercizi));
+    }
+  });
+
+  corpo.push(...spazioNote());
 
   corpo.push(new Paragraph({
     alignment: AlignmentType.CENTER,
     spacing: { before: 400 },
     children: [new TextRun({
       text: `Esportata da GymMaster il ${new Date().toLocaleDateString('it-IT')}`,
-      size: 16,
-      color: '9999AA'
+      size: 16, color: '9999AA', font: FONT
     })]
   }));
 
   const documento = new Document({
     creator: 'GymMaster',
-    title: scheda.titolo || 'Scheda di allenamento',
-    description: scheda.descrizione || 'Scheda di allenamento esportata da GymMaster',
+    title: titolo,
+    description: sottotitolo,
+    styles: { default: { document: { run: { font: FONT, size: 20 } } } },
+    numbering: {
+      config: [{
+        reference: 'elenco-guida',
+        levels: [{
+          level: 0,
+          format: LevelFormat.BULLET,
+          text: '•',
+          alignment: AlignmentType.LEFT,
+          style: { paragraph: { indent: { left: 460, hanging: 240 } } }
+        }]
+      }]
+    },
     sections: [{ properties: {}, children: corpo }]
   });
 
   return Packer.toBuffer(documento);
 }
 
-/** Nome file sicuro: solo caratteri innocui, così nessun titolo può alterare l'header HTTP. */
-export function nomeFileScheda(scheda) {
-  const base = (scheda.titolo || 'scheda')
+/** Nome file sicuro: solo caratteri innocui, cosi' nessun titolo puo' alterare l'header HTTP. */
+export function nomeFileDocumento(titolo) {
+  const base = (titolo || 'scheda')
     .normalize('NFD').replace(/[̀-ͯ]/g, '')   // toglie gli accenti
     .replace(/[^a-zA-Z0-9 _-]/g, '')
     .trim().replace(/\s+/g, '-')

@@ -6,7 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
-import { api } from '../config/api.js';
+import { api, scaricaFile } from '../config/api.js';
 import { LIVELLI } from '../utils/costanti.js';
 import { formattaData } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,42 @@ export default function SchedeAllenamento() {
   const [caricamento, setCaricamento] = useState(true);
   const [mostraCrea, setMostraCrea] = useState(false);
   const [filtro, setFiltro] = useState('mie'); // Default: "Le mie"
+
+  // Selezione multipla per l'esportazione in Word: un programma settimanale
+  // sono piu' schede in un unico documento, una per sessione.
+  const [modalitaSelezione, setModalitaSelezione] = useState(false);
+  const [selezionate, setSelezionate] = useState([]);
+  const [titoloDocumento, setTitoloDocumento] = useState('');
+  const [scaricando, setScaricando] = useState(false);
+  const [erroreDownload, setErroreDownload] = useState('');
+
+  // L'ordine di selezione decide quale scheda diventa la Sessione 1, la 2, ecc.
+  const alternaSelezione = (id) =>
+    setSelezionate(prec => prec.includes(id) ? prec.filter(x => x !== id) : [...prec, id]);
+
+  const chiudiSelezione = () => {
+    setModalitaSelezione(false);
+    setSelezionate([]);
+    setTitoloDocumento('');
+    setErroreDownload('');
+  };
+
+  const scaricaSelezionate = async () => {
+    if (selezionate.length === 0) return;
+    try {
+      setErroreDownload('');
+      setScaricando(true);
+      const titolo = titoloDocumento.trim();
+      const percorso = `/schede/docx?ids=${selezionate.join(',')}` +
+        (titolo ? `&titolo=${encodeURIComponent(titolo)}` : '');
+      await scaricaFile(percorso, `${titolo || 'programma'}.docx`);
+      chiudiSelezione();
+    } catch (err) {
+      setErroreDownload(err?.message || 'Download non riuscito');
+    } finally {
+      setScaricando(false);
+    }
+  };
 
   // Filtri avanzati
   const [ricercaNome, setRicercaNome] = useState('');
@@ -94,10 +130,58 @@ export default function SchedeAllenamento() {
             Crea, modifica e gestisci le tue schede di allenamento ({schede.length} totali)
           </p>
         </div>
-        <button onClick={() => setMostraCrea(true)} className="btn-primario">
-          ＋ Nuova Scheda
-        </button>
+        <div className="flex items-center gap-2">
+          {!modalitaSelezione && (
+            <button
+              onClick={() => setModalitaSelezione(true)}
+              title="Unisci piu' schede in un unico documento Word"
+              className="text-sm font-semibold px-3 py-2 rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondary,var(--testo-secondario))] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
+            >
+              ⬇ Word
+            </button>
+          )}
+          <button onClick={() => setMostraCrea(true)} className="btn-primario">
+            ＋ Nuova Scheda
+          </button>
+        </div>
       </div>
+
+      {/* Barra selezione per l'esportazione */}
+      <AnimatePresence>
+        {modalitaSelezione && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mb-4"
+          >
+            <div className="glass-card p-card-inner">
+              <p className="text-sm font-bold mb-1">Esporta in Word</p>
+              <p className="text-xs text-[var(--testo-secondario)] mb-3">
+                Tocca le schede da includere: diventeranno Sessione 1, 2, 3… nell'ordine in cui le scegli.
+              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="text"
+                  value={titoloDocumento}
+                  onChange={e => setTitoloDocumento(e.target.value)}
+                  placeholder="Titolo del documento (facoltativo)"
+                  className="campo-input flex-1 min-w-[200px] text-sm"
+                />
+                <button
+                  onClick={scaricaSelezionate}
+                  disabled={selezionate.length === 0 || scaricando}
+                  className="btn-primario text-sm disabled:opacity-50"
+                >
+                  {scaricando ? 'Preparo…' : `Scarica ${selezionate.length || ''}`}
+                </button>
+                <button onClick={chiudiSelezione} className="text-sm px-3 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">
+                  Annulla
+                </button>
+              </div>
+              {erroreDownload && <p className="text-xs text-[var(--pericolo)] mt-2">{erroreDownload}</p>}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Tab Filtro Categoria */}
       <div className="schede-tab-container">
@@ -188,10 +272,26 @@ export default function SchedeAllenamento() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: i * 0.05 }}
-                className="glass-card p-card-inner flex flex-col gap-3 group hover:border-[var(--bordo-hover)] transition-all min-w-0 w-full overflow-hidden"
+                onClick={modalitaSelezione ? () => alternaSelezione(scheda.id) : undefined}
+                className={`glass-card p-card-inner flex flex-col gap-3 group transition-all min-w-0 w-full overflow-hidden ${
+                  modalitaSelezione
+                    ? `cursor-pointer ${selezionate.includes(scheda.id) ? 'border-[var(--accent)]' : 'hover:border-[var(--bordo-hover)]'}`
+                    : 'hover:border-[var(--bordo-hover)]'
+                }`}
               >
                 {/* Header scheda */}
                 <div className="flex items-start justify-between">
+                  {modalitaSelezione && (
+                    <span
+                      className="w-6 h-6 rounded-full shrink-0 mr-2 mt-0.5 flex items-center justify-center text-xs font-bold border"
+                      style={selezionate.includes(scheda.id)
+                        ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
+                        : { borderColor: 'var(--bordo-light)', color: 'var(--testo-terziario)' }}
+                      aria-label={selezionate.includes(scheda.id) ? 'Selezionata' : 'Non selezionata'}
+                    >
+                      {selezionate.includes(scheda.id) ? selezionate.indexOf(scheda.id) + 1 : ''}
+                    </span>
+                  )}
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-lg truncate">{scheda.titolo}</h3>
                     {scheda.descrizione && (
@@ -235,16 +335,18 @@ export default function SchedeAllenamento() {
                     di {scheda.creatore?.nome} · {formattaData(scheda.creatoIl)}
                   </span>
                   <div className="flex gap-2">
-                    {scheda.creatoreId === utente.id && (
+                    {!modalitaSelezione && scheda.creatoreId === utente.id && (
                       <button onClick={() => eliminaScheda(scheda.id)}
                         className="text-xs text-[var(--pericolo)] opacity-0 group-hover:opacity-100 transition-opacity">
                         Elimina
                       </button>
                     )}
-                    <Link to={`/schede/${scheda.id}`}
-                      className="text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)]">
-                      Dettagli →
-                    </Link>
+                    {!modalitaSelezione && (
+                      <Link to={`/schede/${scheda.id}`}
+                        className="text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)]">
+                        Dettagli →
+                      </Link>
+                    )}
                   </div>
                 </div>
               </motion.div>

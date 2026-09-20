@@ -14,7 +14,8 @@ router.use(verificaToken);
 
 // --- Schede ---
 router.get('/', controller.listaSchede);
-// Prima di '/:id': altrimenti Express tratterebbe "docx" come parte dell'id
+// Prima di '/:id': altrimenti Express tratterebbe "docx" come un id
+router.get('/docx', controller.esportaSchedeDocxMultiplo);
 router.get('/:id/docx', controller.esportaSchedaDocx);
 router.get('/:id', controller.dettaglioScheda);
 router.post('/', controller.creaScheda);
