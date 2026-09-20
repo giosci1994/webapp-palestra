@@ -65,6 +65,15 @@ enum TipoChat {
   PERSONAL_TRAINER
 }
 
+enum TipoNotifica {
+  ALLENAMENTO_PIANIFICATO
+  PROMEMORIA_ALLENAMENTO
+  MESSAGGIO
+  SCHEDA_ASSEGNATA
+  RICHIESTA_PT
+  SISTEMA
+}
+
 enum StatoAllenamentoPianificato {
   PIANIFICATO
   COMPLETATO
@@ -166,6 +175,9 @@ model Utente {
   // Pianificazione allenamenti
   allenamentiPianificati       AllenamentoPianificato[] @relation("AllenamentiPianificatiUtente")
   allenamentiPianificatiCreati AllenamentoPianificato[] @relation("AllenamentiPianificatiCreatore")
+
+  // Notifiche in-app
+  notifiche AllenamentoNotifica[]
 
   @@map("utenti")
 }
@@ -635,4 +647,26 @@ model AllenamentoPianificato {
   @@unique([utenteId, data, schedaId])
   @@index([utenteId, data])
   @@map("allenamenti_pianificati")
+}
+
+// Notifica in-app. Finora le notifiche esistevano solo come evento socket
+// volatile: chi non era collegato in quel momento le perdeva. Salvarle permette
+// di mostrarle al rientro e di tenere il conto delle non lette.
+model AllenamentoNotifica {
+  id        Int          @id @default(autoincrement())
+  utenteId  Int          @map("utente_id")
+  tipo      TipoNotifica @default(SISTEMA)
+  titolo    String
+  messaggio String
+  // Percorso interno da aprire al tocco (es. "/pianificazione"): niente URL
+  // esterni, cosi' una notifica non puo' portare l'utente fuori dall'app.
+  percorso  String?
+  letta     Boolean      @default(false)
+  creatoIl  DateTime     @default(now()) @map("creato_il")
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@index([utenteId, letta])
+  @@index([utenteId, creatoIl])
+  @@map("notifiche")
 }

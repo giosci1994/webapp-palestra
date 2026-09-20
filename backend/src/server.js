@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import { configuraHelmet, configuraCORS } from './config/sicurezza.js';
 import { limitatoreGlobale } from './middleware/limitatore.js';
 import { inizializzaSocket } from './socket/indice.js';
+import { inviaPromemoriaAllenamenti } from './services/notifiche.service.js';
 import router from './routes/indice.js';
 import { pulisciMessaggiScaduti } from './services/chat.service.js';
 import logger from './utils/logger.js';
@@ -119,6 +120,22 @@ setInterval(async () => {
     logger.error({ errore: errore.message }, 'Errore nella pulizia messaggi');
   }
 }, INTERVALLO_PULIZIA);
+
+// --- Promemoria allenamenti in programma (controllo ogni ora) ---
+// Si controlla ogni ora invece di programmare un singolo invio giornaliero:
+// dopo un riavvio del processo un timer giornaliero ripartirebbe da zero e il
+// promemoria salterebbe. inviaPromemoriaAllenamenti e' idempotente (non invia
+// due volte nello stesso giorno), quindi ripetere il controllo e' innocuo.
+const INTERVALLO_PROMEMORIA = 60 * 60 * 1000; // 1 ora
+const ORA_MINIMA_PROMEMORIA = 8;              // non prima delle 8 del mattino
+setInterval(async () => {
+  try {
+    if (new Date().getHours() < ORA_MINIMA_PROMEMORIA) return;
+    await inviaPromemoriaAllenamenti(io);
+  } catch (errore) {
+    logger.error({ errore: errore.message }, 'Errore nell\'invio dei promemoria allenamento');
+  }
+}, INTERVALLO_PROMEMORIA);
 
 // --- Avvio Server ---
 serverHttp.listen(PORTA, '0.0.0.0', () => {

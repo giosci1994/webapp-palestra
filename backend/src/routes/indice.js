@@ -23,6 +23,7 @@ import botRoutes from './bot.routes.js';
 import novitaRoutes from './novita.routes.js';
 import misurazioniRoutes from './misurazioni.routes.js';
 import pianificazioneRoutes from './pianificazione.routes.js';
+import notificheRoutes from './notifiche.routes.js';
 
 const router = Router();
 
@@ -79,6 +80,7 @@ router.use('/bot', botRoutes);            // Rotte interne per il bot Telegram (
 router.use('/novita', novitaRoutes);      // Novità in-app (storie)
 router.use('/misurazioni', misurazioniRoutes); // Composizione corporea (serie temporale)
 router.use('/pianificazione', pianificazioneRoutes); // Calendario allenamenti programmati
+router.use('/notifiche', notificheRoutes);           // Notifiche in-app
 
 // --- 404 per rotte API non trovate ---
 router.use('*', (req, res) => {

@@ -8,6 +8,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contesti/AuthContesto.jsx';
 import { useSocket } from '../../contesti/SocketContesto.jsx';
 import { api } from '../../config/api.js';
+import CampanellaNotifiche from '../comuni/CampanellaNotifiche.jsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Home, ClipboardList, Dumbbell, History, BarChart2, MessageCircle,
@@ -88,12 +89,15 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           </motion.span>
         )}
 
-        <button 
-          onClick={() => setIsCollapsed(!isCollapsed)} 
-          className={`relative z-10 p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-white ${isCollapsed ? '' : 'ml-2'}`}
-        >
-          <Menu size={28} />
-        </button>
+        <div className={`relative z-10 flex items-center ${isCollapsed ? 'flex-col gap-1' : 'gap-1 ml-2'}`}>
+          <CampanellaNotifiche compatta={isCollapsed} />
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-white"
+          >
+            <Menu size={28} />
+          </button>
+        </div>
       </div>
 
       {/* Menu principale */}

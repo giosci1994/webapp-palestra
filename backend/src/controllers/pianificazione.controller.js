@@ -5,6 +5,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
+import { creaNotifica } from '../services/notifiche.service.js';
 
 // Giorni della settimana come usati in tutta l'app: 0 = lunedì … 6 = domenica
 const GIORNI_VALIDI = [0, 1, 2, 3, 4, 5, 6];
@@ -132,6 +133,18 @@ export async function creaPianificato(req, res, next) {
       include: INCLUDI_SCHEDA
     });
 
+    // Se a programmare e' stato qualcun altro (tipicamente il PT), l'utente
+    // va avvisato: altrimenti si troverebbe l'allenamento in agenda senza
+    // saperlo. Nessun avviso quando ci si pianifica da soli.
+    if (utenteId !== req.utente.id) {
+      await creaNotifica(req.app.get('io'), utenteId, {
+        tipo: 'ALLENAMENTO_PIANIFICATO',
+        titolo: 'Nuovo allenamento in calendario',
+        messaggio: `${creato.scheda.titolo} — ${daData(creato.data)}`,
+        percorso: '/pianificazione'
+      });
+    }
+
     res.status(201).json({ successo: true, dati: { ...creato, data: daData(creato.data) } });
   } catch (errore) {
     next(errore);
@@ -186,6 +199,15 @@ export async function creaPianificazioneSettimanale(req, res, next) {
 
     // skipDuplicates lascia intatto ciò che è già in agenda invece di fallire
     const esito = await prisma.allenamentoPianificato.createMany({ data: daCreare, skipDuplicates: true });
+
+    if (utenteId !== req.utente.id && esito.count > 0) {
+      await creaNotifica(req.app.get('io'), utenteId, {
+        tipo: 'ALLENAMENTO_PIANIFICATO',
+        titolo: 'Il tuo programma è stato aggiornato',
+        messaggio: `${esito.count} allenamenti aggiunti al calendario da ${req.utente.nome || 'il tuo trainer'}`,
+        percorso: '/pianificazione'
+      });
+    }
 
     res.status(201).json({
       successo: true,

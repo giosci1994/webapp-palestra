@@ -4,6 +4,7 @@
 // ============================================
 
 import logger from '../../utils/logger.js';
+import { segnaLetta, creaNotifica as creaNotificaPersistita } from '../../services/notifiche.service.js';
 
 /**
  * Registra i gestori delle notifiche per un socket.
@@ -20,11 +21,15 @@ export function gestoreNotifiche(io, socket, utentiConnessi) {
   // Le notifiche vengono emesse dal server, non dal client
   // Questo gestore gestisce solo le conferme di lettura
 
-  socket.on('notifica:letta', (dati) => {
-    const { notificaId } = dati;
-    if (notificaId) {
+  socket.on('notifica:letta', async (dati) => {
+    const notificaId = parseInt(dati?.notificaId, 10);
+    if (Number.isNaN(notificaId)) return;
+    try {
+      // segnaLetta filtra per utenteId: nessuno puo' marcare le notifiche altrui
+      await segnaLetta(socket.utente.utenteId, notificaId);
       logger.debug({ utenteId: socket.utente.utenteId, notificaId }, 'Notifica segnata come letta');
-      // TODO: Implementare quando il modello Notifica sarà aggiunto
+    } catch (err) {
+      logger.warn({ err, notificaId }, 'Impossibile segnare la notifica come letta');
     }
   });
 }
@@ -42,8 +47,8 @@ export function gestoreNotifiche(io, socket, utentiConnessi) {
  * @param {Object} [notifica.dati] - Dati aggiuntivi
  */
 export function inviaNotifica(io, utenteId, notifica) {
-  io.to(`utente:${utenteId}`).emit('notifica:nuova', {
-    ...notifica,
-    timestamp: new Date().toISOString()
-  });
+  // Deprecata: emetteva soltanto, senza salvare nulla, quindi chi non era
+  // collegato perdeva la notifica. Usare creaNotifica dal servizio, che
+  // persiste e poi emette. Mantenuta come semplice rimando per compatibilita'.
+  return creaNotificaPersistita(io, utenteId, notifica);
 }
