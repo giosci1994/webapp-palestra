@@ -58,7 +58,6 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
     const adesso = new Date();
     const opzioniTZ = { timeZone: 'Europe/Copenhagen' };
     const oraLocale = parseInt(adesso.toLocaleString('en-US', { ...opzioniTZ, hour: 'numeric', hour12: false }));
-    const giornoLocale = parseInt(adesso.toLocaleString('en-US', { ...opzioniTZ, weekday: 'narrow' }).length); // fallback
     // Calcolo giorno: 0=Lun, 6=Dom
     const giornoJS = new Date(adesso.toLocaleString('en-US', opzioniTZ)).getDay(); // 0=Sun
     const giornoSettimana = (giornoJS + 6) % 7; // 0=Lun, 6=Dom
@@ -73,11 +72,22 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
     // Dato ora corrente
     const datoOraCorrente = datiGiornata.find(d => d.ora === oraCorrente);
 
+    // Il dato "in tempo reale" vale solo se appena raccolto: lo scraper gira
+    // ogni 30 minuti, quindi oltre i 90 minuti e' da considerarsi scaduto e si
+    // ricade sulla media storica invece di mostrare un live fuorviante.
+    const LIMITE_FRESCHEZZA_MS = 90 * 60 * 1000;
+    const liveValido = (dato) =>
+      dato?.liveLivello != null &&
+      dato.aggiornatoIl != null &&
+      (Date.now() - new Date(dato.aggiornatoIl).getTime()) <= LIMITE_FRESCHEZZA_MS;
+
+    const liveCorrente = liveValido(datoOraCorrente) ? datoOraCorrente : null;
+
     // Livello testuale
     let livelloTesto = 'Nessun dato';
     let livelloColore = 'grigio';
     if (datoOraCorrente) {
-      const pct = datoOraCorrente.liveLivello ?? datoOraCorrente.livelloPercentuale;
+      const pct = liveCorrente?.liveLivello ?? datoOraCorrente.livelloPercentuale;
       if (pct <= 30) { livelloTesto = 'Poco affollata'; livelloColore = 'verde'; }
       else if (pct <= 60) { livelloTesto = 'Mediamente affollata'; livelloColore = 'giallo'; }
       else { livelloTesto = 'Molto affollata'; livelloColore = 'rosso'; }
@@ -91,14 +101,14 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
         oraCorrente,
         livelloTesto,
         livelloColore,
-        liveLivello: datoOraCorrente?.liveLivello ?? null,
-        liveDescrizione: datoOraCorrente?.liveDescrizione ?? null,
+        liveLivello: liveCorrente?.liveLivello ?? null,
+        liveDescrizione: liveCorrente?.liveDescrizione ?? null,
         livelloPercentuale: datoOraCorrente?.livelloPercentuale ?? null,
         aggiornatoIl: datoOraCorrente?.aggiornatoIl ?? null,
         graficoGiornata: datiGiornata.map(d => ({
           ora: d.ora,
           livello: d.livelloPercentuale,
-          live: d.liveLivello
+          live: liveValido(d) ? d.liveLivello : null
         }))
       }
     });
