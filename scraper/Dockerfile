@@ -10,11 +10,13 @@ WORKDIR /app
 # Copia prisma schema dal backend (path relativo al context root del progetto)
 COPY backend/prisma/schema.prisma ./prisma/schema.prisma
 
-# Copia package files scraper
-COPY scraper/package.json ./
+# Copia package files scraper (lockfile incluso: senza, npm risolverebbe le
+# versioni da capo a ogni build ed e' esattamente cosi' che Playwright era
+# finito alla 1.62 su un'immagine base 1.60)
+COPY scraper/package.json scraper/package-lock.json ./
 
-# Installa dipendenze
-RUN npm install
+# Installa dipendenze esattamente come da lockfile
+RUN npm ci
 
 # Genera Prisma client (dummy URL per validazione build-time)
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate

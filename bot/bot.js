@@ -5,6 +5,7 @@
 // ============================================
 
 import { Bot, InlineKeyboard } from 'grammy';
+import { createServer } from 'node:http';
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:3000';
@@ -208,8 +209,25 @@ bot.catch((err) => {
   console.error('Errore bot:', err.error?.message || err.message || err);
 });
 
+// Segnale di stato per il healthcheck del container.
+// Il bot lavora in long-polling e non espone nulla: senza questo, l'unico
+// controllo possibile sarebbe "il processo esiste", che resterebbe verde anche
+// con il bot scollegato da Telegram. Qui la risposta diventa positiva solo
+// dopo che Telegram ha confermato l'avvio.
+let avviato = false;
+const PORTA_STATO = Number(process.env.PORTA_STATO) || 3001;
+createServer((req, res) => {
+  if (req.url === '/stato') {
+    res.writeHead(avviato ? 200 : 503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ avviato }));
+    return;
+  }
+  res.writeHead(404); res.end();
+}).listen(PORTA_STATO, '127.0.0.1');
+
 bot.start({
   onStart: async (info) => {
+    avviato = true;
     console.log(`🤖 GymBot avviato come @${info.username}`);
     try {
       await bot.api.setMyCommands([
