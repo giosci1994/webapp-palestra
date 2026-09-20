@@ -115,6 +115,73 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
   } catch (errore) { next(errore); }
 });
 
+// --- Migliori orari per allenarsi ---
+// Lo scraper raccoglie 168 rilevazioni per palestra (7 giorni x 24 ore): qui
+// vengono lette per rispondere alla domanda pratica "quando trovo meno gente?".
+router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, async (req, res, next) => {
+  try {
+    const palestraId = parseInt(req.params.id);
+    if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: 'ID palestra non valido' });
+
+    // Fascia oraria considerata: di notte la palestra e' quasi sempre vuota, ma
+    // suggerire le 4 del mattino non aiuterebbe nessuno.
+    const da = Math.min(Math.max(parseInt(req.query.da) || 6, 0), 23);
+    const a = Math.min(Math.max(parseInt(req.query.a) || 22, 0), 23);
+    if (da > a) return res.status(400).json({ successo: false, errore: 'Fascia oraria rovesciata' });
+
+    const righe = await prisma.afluenzaPalestra.findMany({
+      where: { palestraId, ora: { gte: da, lte: a } },
+      select: { giornoSettimana: true, ora: true, livelloPercentuale: true },
+      orderBy: [{ giornoSettimana: 'asc' }, { ora: 'asc' }]
+    });
+
+    if (righe.length === 0) {
+      return res.json({ successo: true, dati: { disponibile: false, fascia: { da, a }, perGiorno: [], migliori: [] } });
+    }
+
+    const media = righe.reduce((t, r) => t + r.livelloPercentuale, 0) / righe.length;
+
+    // Per ogni giorno: le tre ore meno affollate e la media della giornata
+    const perGiornoMappa = new Map();
+    for (const r of righe) {
+      if (!perGiornoMappa.has(r.giornoSettimana)) perGiornoMappa.set(r.giornoSettimana, []);
+      perGiornoMappa.get(r.giornoSettimana).push(r);
+    }
+
+    const perGiorno = [...perGiornoMappa.entries()]
+      .map(([giorno, ore]) => ({
+        giornoSettimana: giorno,
+        media: Math.round(ore.reduce((t, o) => t + o.livelloPercentuale, 0) / ore.length),
+        migliori: [...ore]
+          .sort((x, y) => x.livelloPercentuale - y.livelloPercentuale || x.ora - y.ora)
+          .slice(0, 3)
+          .map(o => ({ ora: o.ora, livello: o.livelloPercentuale }))
+      }))
+      .sort((x, y) => x.giornoSettimana - y.giornoSettimana);
+
+    // Le fasce migliori in assoluto della settimana
+    const migliori = [...righe]
+      .sort((x, y) => x.livelloPercentuale - y.livelloPercentuale || x.giornoSettimana - y.giornoSettimana || x.ora - y.ora)
+      .slice(0, 5)
+      .map(r => ({ giornoSettimana: r.giornoSettimana, ora: r.ora, livello: r.livelloPercentuale }));
+
+    const giornoPiuTranquillo = [...perGiorno].sort((x, y) => x.media - y.media)[0];
+
+    res.json({
+      successo: true,
+      dati: {
+        disponibile: true,
+        fascia: { da, a },
+        mediaGenerale: Math.round(media),
+        rilevazioni: righe.length,
+        giornoPiuTranquillo: giornoPiuTranquillo?.giornoSettimana ?? null,
+        perGiorno,
+        migliori
+      }
+    });
+  } catch (errore) { next(errore); }
+});
+
 // --- Lista Attrezzature ---
 router.get('/attrezzature', verificaToken, async (req, res, next) => {
   try {

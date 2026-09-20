@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import Statistiche from './Statistiche.jsx';
 import CaroselloAzioni from '../componenti/specifici/CaroselloAzioni.jsx';
+import MiglioriOrari from '../componenti/specifici/MiglioriOrari.jsx';
 
 export default function Dashboard() {
   const { utente, isAdmin } = useAuth();
@@ -493,6 +494,9 @@ export default function Dashboard() {
             {/* Colonna Laterale (Consigli AI / In calendario) */}
             <div className="flex flex-col gap-8">
               
+              {/* Migliori orari per allenarsi (dalle rilevazioni di affluenza) */}
+              <MiglioriOrari palestraId={utente?.palestraId || utente?.palestra?.id} />
+
               {/* In Calendario (Storico) */}
               <div className="glass-card flex flex-col">
                 <div className="p-card-inner pb-4 flex items-center gap-3">
