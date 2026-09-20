@@ -430,6 +430,10 @@ export default function Dashboard() {
                 <div className="flex flex-col">
                   {[
                     { etichetta: 'Gestione Schede', icona: ClipboardList, link: '/schede' },
+                    // Unico accesso alla pianificazione da telefono: la barra di
+                    // navigazione mobile ha cinque voci fisse e la sidebar con la
+                    // voce "Pianificazione" compare solo da md in su.
+                    { etichetta: 'Pianifica Allenamenti', icona: CalendarClock, link: '/pianificazione' },
                     { etichetta: 'Catalogo Esercizi', icona: Library, link: '/catalogo' },
                     { etichetta: 'Storico Allenamenti', icona: History, link: '/storico' },
                     { etichetta: 'Classifiche', icona: Trophy, link: '/gamification' }
