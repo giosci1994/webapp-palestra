@@ -159,6 +159,61 @@ async function tentaRefresh() {
 
 // --- Helper shortcuts ---
 
+/**
+ * Scarica un file binario protetto da autenticazione.
+ *
+ * Un semplice <a href> non basterebbe: il token di accesso vive in memoria e
+ * non in un cookie, quindi la richiesta deve passare da qui per portarsi
+ * dietro l'header Authorization.
+ */
+export async function scaricaFile(percorso, nomePredefinito = 'documento') {
+  if (!accessToken) {
+    const iniziale = await tentaRefresh();
+    if (iniziale) accessToken = iniziale;
+  }
+
+  const esegui = () => fetch(`${BASE_URL}${percorso}`, {
+    method: 'GET',
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    credentials: 'include'
+  });
+
+  let risposta = await esegui();
+
+  if (risposta.status === 401) {
+    const nuovoToken = await tentaRefresh();
+    if (!nuovoToken) {
+      if (onSessioneScaduta) onSessioneScaduta();
+      throw new Error('Sessione scaduta. Accedi di nuovo per continuare.');
+    }
+    accessToken = nuovoToken;
+    risposta = await esegui();
+  }
+
+  if (!risposta.ok) {
+    throw new Error(`Download non riuscito (errore ${risposta.status})`);
+  }
+
+  // Il nome proposto dal server ha la precedenza su quello di riserva
+  const disposizione = risposta.headers.get('content-disposition') || '';
+  const nome = /filename="?([^"';]+)"?/i.exec(disposizione)?.[1] || nomePredefinito;
+
+  const blob = await risposta.blob();
+  const url = URL.createObjectURL(blob);
+  try {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  } finally {
+    // Senza revoke il blob resterebbe in memoria per tutta la sessione
+    URL.revokeObjectURL(url);
+  }
+  return nome;
+}
+
 export const api = {
   get: (percorso) => apiChiamata(percorso),
   post: (percorso, body) => apiChiamata(percorso, { metodo: 'POST', body }),

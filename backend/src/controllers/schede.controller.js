@@ -4,6 +4,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
+import { generaDocxScheda, nomeFileScheda } from '../services/schedaDocx.service.js';
 
 // Mappa una voce esercizio (dal client) in dati EsercizioScheda, preservando
 // i campi cardio (durata/velocità/inclinazione/resistenza/distanza + riscaldamento).
@@ -308,5 +309,44 @@ export async function rimuoviEsercizio(req, res, next) {
 
     await prisma.esercizioScheda.delete({ where: { id: esId } });
     res.json({ successo: true, messaggio: 'Esercizio rimosso dalla scheda' });
+  } catch (errore) { next(errore); }
+}
+
+/**
+ * GET /api/v1/schede/:id/docx — Scarica la scheda come documento Word
+ *
+ * Serve ad avere la scheda sottomano in palestra anche senza connessione,
+ * aprendola con Word, Google Docs o LibreOffice.
+ */
+export async function esportaSchedaDocx(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
+
+    const scheda = await prisma.schedaAllenamento.findUnique({
+      where: { id },
+      include: {
+        creatore: { select: { id: true, nome: true } },
+        esercizi: {
+          include: { esercizio: { include: { attrezzatura: { select: { nome: true } } } } },
+          orderBy: { ordineEsecuzione: 'asc' }
+        }
+      }
+    });
+
+    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+
+    // Stesso criterio di accesso del dettaglio: proprietario o scheda globale
+    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
+      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
+    }
+
+    const buffer = await generaDocxScheda(scheda);
+    const nomeFile = nomeFileScheda(scheda);
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeFile}"`);
+    res.setHeader('Content-Length', buffer.length);
+    res.send(buffer);
   } catch (errore) { next(errore); }
 }

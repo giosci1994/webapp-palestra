@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { api } from '../config/api.js';
+import { api, scaricaFile } from '../config/api.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
@@ -18,6 +18,21 @@ export default function DettaglioScheda() {
   const [scheda, setScheda] = useState(null);
   const [caricamento, setCaricamento] = useState(true);
   const [mostraModifica, setMostraModifica] = useState(false);
+  const [scaricando, setScaricando] = useState(false);
+  const [erroreDownload, setErroreDownload] = useState('');
+
+  // Scarica la scheda come .docx per consultarla in palestra anche offline
+  const scaricaDocx = async () => {
+    try {
+      setErroreDownload('');
+      setScaricando(true);
+      await scaricaFile(`/schede/${scheda.id}/docx`, `${scheda.titolo || 'scheda'}.docx`);
+    } catch (err) {
+      setErroreDownload(err?.message || 'Download non riuscito');
+    } finally {
+      setScaricando(false);
+    }
+  };
   const [descrizioneEspansa, setDescrizioneEspansa] = useState(false);
   const [clonando, setClonando] = useState(false);
 
@@ -93,8 +108,21 @@ export default function DettaglioScheda() {
                   {clonando ? 'Clono…' : '⧉ Clona'}
                 </button>
               )}
+
+              <button
+                onClick={scaricaDocx}
+                disabled={scaricando}
+                title="Scarica in formato Word, per consultarla offline"
+                className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50"
+              >
+                {scaricando ? 'Preparo…' : '⬇ Word'}
+              </button>
             </div>
           </div>
+
+          {erroreDownload && (
+            <p className="text-xs text-[var(--pericolo)] mb-2">{erroreDownload}</p>
+          )}
 
           {scheda.descrizione && (
             <div className="mt-2 mb-4">
