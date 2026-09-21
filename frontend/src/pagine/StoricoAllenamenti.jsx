@@ -9,6 +9,7 @@ import { formattaData, formattaDurata } from '../utils/formattatori.js';
 import { formattaPeso, formattaNumero } from '../utils/formattatori.js';
 import { GRUPPI_MUSCOLARI, RPE_LABELS } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 
 export default function StoricoAllenamenti() {
   const [sessioni, setSessioni] = useState([]);
@@ -19,6 +20,8 @@ export default function StoricoAllenamenti() {
   const [schedeDisponibili, setSchedeDisponibili] = useState([]);
   const [sessioneAperta, setSessioneAperta] = useState(null);
   const [eliminando, setEliminando] = useState(null);
+  const [mostraPassato, setMostraPassato] = useState(false);
+  const [confermaPassato, setConfermaPassato] = useState('');
 
   // Carica le schede disponibili per il filtro
   useEffect(() => {
@@ -78,7 +81,20 @@ export default function StoricoAllenamenti() {
             {paginazione && ` · ${paginazione.totale} sessioni totali`}
           </p>
         </div>
+        <button
+          onClick={() => setMostraPassato(true)}
+          title="Registra una seduta gia' svolta, anche senza connessione sul momento"
+          className="shrink-0 py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
+        >
+          ＋ Già fatto
+        </button>
       </div>
+
+      {confermaPassato && (
+        <div className="glass-card p-card-inner mb-4 border border-[var(--successo,#22c55e)]">
+          <p className="text-sm" style={{ color: 'var(--successo, #22c55e)' }}>{confermaPassato}</p>
+        </div>
+      )}
 
       {/* Filtro per scheda — dropdown compatto */}
       <div className="mb-4">
@@ -387,6 +403,27 @@ export default function StoricoAllenamenti() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {mostraPassato && (
+          <AggiungiAllenamentoPassato
+            schede={schedeDisponibili}
+            onChiudi={() => setMostraPassato(false)}
+            onSalvato={(risposta) => {
+              setMostraPassato(false);
+              const record = risposta?.recordPersonali?.length || 0;
+              setConfermaPassato(
+                record === 0 ? 'Allenamento registrato nello storico.'
+                  : record === 1 ? 'Allenamento registrato — e hai un nuovo record personale!'
+                  : `Allenamento registrato — e hai ${record} nuovi record personali!`
+              );
+              setTimeout(() => setConfermaPassato(''), 6000);
+              setPagina(1);
+              caricaStorico();
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

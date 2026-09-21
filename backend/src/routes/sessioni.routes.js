@@ -14,6 +14,10 @@ router.use(verificaToken);
 router.get('/', controller.listaSessioni);
 router.post('/', controller.avviaSessione);
 
+// POST /api/v1/sessioni/passata — Registra un allenamento gia' svolto
+// Dichiarata prima delle rotte con parametro, cosi' "passata" non viene letta come id
+router.post('/passata', controller.registraSessionePassata);
+
 // Rotte specifiche PRIMA di /:id (altrimenti Express le interpreta come parametro)
 router.get('/storico', controller.storicoSessioniCompleto);
 router.get('/precedente/:schedaId', controller.ultimaSessioneScheda);

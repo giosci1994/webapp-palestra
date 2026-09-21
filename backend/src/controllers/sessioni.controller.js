@@ -363,7 +363,7 @@ export async function logSerie(req, res, next) {
 }
 
 /** Controlla e aggiorna record personali */
-async function controllaRecord(utenteId, serie) {
+async function controllaRecord(utenteId, serie, dataRecord = null) {
   const recordAggiornati = [];
 
   // Raggruppa serie per esercizio e trova il peso max
@@ -387,7 +387,8 @@ async function controllaRecord(utenteId, serie) {
         data: {
           utenteId,
           esercizioId: parseInt(esercizioId),
-          pesoMaxRaggiunto: pesoMax
+          pesoMaxRaggiunto: pesoMax,
+          ...(dataRecord ? { dataRecord } : {})
         },
         include: { esercizio: { select: { nome: true } } }
       });
@@ -417,5 +418,136 @@ export async function eliminaSessione(req, res, next) {
     ]);
 
     res.json({ successo: true, messaggio: 'Sessione eliminata correttamente' });
+  } catch (errore) { next(errore); }
+}
+
+// Limiti di buon senso per un allenamento inserito a posteriori
+const DURATA_MIN = 1;
+const DURATA_MAX = 600;          // 10 ore
+const ANNI_INDIETRO_MAX = 2;
+const TOLLERANZA_FUTURO_MS = 5 * 60 * 1000;  // scarto d'orologio fra client e server
+
+/**
+ * POST /api/v1/sessioni/passata — Registra un allenamento gia' svolto
+ *
+ * Il flusso normale non serve allo scopo: avviaSessione fissa la data a
+ * "adesso" e completaSessione ricava la durata dal tempo trascorso, quindi una
+ * sessione retrodatata risulterebbe lunga giorni. Qui sessione e serie vengono
+ * scritte insieme, con la data e la durata dichiarate.
+ *
+ * Nasce dal caso concreto di chi si allena senza connessione seguendo una
+ * scheda scaricata e registra la seduta sull'orologio: i dati esistono gia',
+ * vanno solo riportati.
+ */
+export async function registraSessionePassata(req, res, next) {
+  try {
+    const { schedaId, dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
+
+    if (!schedaId) throw new ErroreValidazione('schedaId è obbligatorio');
+    const idScheda = parseInt(schedaId);
+    if (Number.isNaN(idScheda)) throw new ErroreValidazione('schedaId non valido');
+
+    // Il client invia un istante completo di fuso: cosi' l'ora salvata e'
+    // quella in cui l'utente si e' davvero allenato, non quella del server.
+    const inizio = new Date(dataInizio);
+    if (Number.isNaN(inizio.getTime())) throw new ErroreValidazione('Data non valida');
+
+    if (inizio.getTime() > Date.now() + TOLLERANZA_FUTURO_MS) {
+      throw new ErroreValidazione('Non puoi registrare un allenamento nel futuro');
+    }
+    const limite = new Date();
+    limite.setFullYear(limite.getFullYear() - ANNI_INDIETRO_MAX);
+    if (inizio < limite) {
+      throw new ErroreValidazione(`Non puoi registrare allenamenti di più di ${ANNI_INDIETRO_MAX} anni fa`);
+    }
+
+    const durata = parseInt(durataMinuti);
+    if (Number.isNaN(durata) || durata < DURATA_MIN || durata > DURATA_MAX) {
+      throw new ErroreValidazione(`La durata deve essere fra ${DURATA_MIN} e ${DURATA_MAX} minuti`);
+    }
+
+    const scheda = await prisma.schedaAllenamento.findUnique({
+      where: { id: idScheda },
+      select: { id: true, creatoreId: true, visibilita: true }
+    });
+    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
+      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
+    }
+
+    // Le serie sono facoltative: chi ha solo il riepilogo dell'orologio
+    // registra data e durata, chi ha annotato i carichi li aggiunge.
+    const righe = Array.isArray(serie) ? serie : [];
+    const preparate = righe.map((r, i) => {
+      const esercizioId = parseInt(r.esercizioId);
+      const serieNumero = parseInt(r.serieNumero);
+      if (Number.isNaN(esercizioId) || Number.isNaN(serieNumero)) {
+        throw new ErroreValidazione(`Serie ${i + 1}: esercizioId e serieNumero sono obbligatori`);
+      }
+      const peso = r.pesoEffettivo != null ? parseFloat(r.pesoEffettivo) : 0;
+      const rep = r.repEffettive != null ? parseInt(r.repEffettive) : 0;
+      if (peso < 0 || rep < 0) throw new ErroreValidazione(`Serie ${i + 1}: valori negativi non ammessi`);
+      return {
+        esercizioId,
+        serieNumero,
+        pesoEffettivo: peso,
+        repEffettive: rep,
+        rpe: r.rpe != null ? parseInt(r.rpe) : null,
+        completato: r.completato !== false,
+        noteSerie: r.noteSerie || null,
+        distanzaKm: r.distanzaKm != null ? parseFloat(r.distanzaKm) : null,
+        durataMinuti: r.durataMinuti != null ? parseInt(r.durataMinuti) : null,
+        livelloResistenza: r.livelloResistenza != null ? parseInt(r.livelloResistenza) : null,
+        velocitaKmh: r.velocitaKmh != null ? parseFloat(r.velocitaKmh) : null,
+        inclinazione: r.inclinazione != null ? parseFloat(r.inclinazione) : null
+      };
+    });
+
+    const volume = preparate
+      .filter(r => r.completato)
+      .reduce((somma, r) => somma + r.pesoEffettivo * r.repEffettive, 0);
+
+    const fine = new Date(inizio.getTime() + durata * 60000);
+
+    // Sessione e serie insieme: una sessione a meta' sarebbe peggio di nessuna
+    const sessione = await prisma.$transaction(async (tx) => {
+      const creata = await tx.sessioneAllenamento.create({
+        data: {
+          utenteId: req.utente.id,
+          schedaId: idScheda,
+          dataInizio: inizio,
+          dataFine: fine,
+          durataMinuti: durata,
+          minutiRiscaldamento: minutiRiscaldamento != null ? parseInt(minutiRiscaldamento) : null,
+          volumeTotaleKg: Math.round(volume * 10) / 10,
+          noteFinali: noteFinali || null
+        }
+      });
+
+      if (preparate.length > 0) {
+        await tx.logSerie.createMany({
+          data: preparate.map(r => ({ ...r, sessioneId: creata.id }))
+        });
+      }
+
+      // Se quel giorno era in calendario, l'allenamento risulta fatto: cosi'
+      // non resta segnato come "da fare" dopo essere stato registrato.
+      const giorno = new Date(Date.UTC(inizio.getUTCFullYear(), inizio.getUTCMonth(), inizio.getUTCDate()));
+      await tx.allenamentoPianificato.updateMany({
+        where: { utenteId: req.utente.id, schedaId: idScheda, data: giorno, stato: 'PIANIFICATO' },
+        data: { stato: 'COMPLETATO', sessioneId: creata.id }
+      });
+
+      return creata;
+    });
+
+    // I record vengono datati al giorno dell'allenamento, non a oggi
+    const recordAggiornati = await controllaRecord(
+      req.utente.id,
+      preparate.filter(r => r.completato),
+      inizio
+    );
+
+    res.status(201).json({ successo: true, dati: sessione, recordPersonali: recordAggiornati });
   } catch (errore) { next(errore); }
 }
