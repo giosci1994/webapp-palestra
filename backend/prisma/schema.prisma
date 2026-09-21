@@ -331,6 +331,11 @@ model EsercizioScheda {
   recuperoSecondi  Int?    @map("recupero_secondi")
   ordineEsecuzione Int     @map("ordine_esecuzione")
 
+  // Indicazione tecnica per QUESTO esercizio in QUESTA scheda: correzioni
+  // posturali, tempi, note sull'esecuzione unilaterale. Sta qui e non
+  // sull'esercizio perche' cambia da scheda a scheda.
+  note             String? @map("note")
+
   // Target cardio (opzionali; usati per voci cardio e riscaldamento)
   riscaldamento     Boolean @default(false)
   durataMinuti      Int?    @map("durata_minuti")

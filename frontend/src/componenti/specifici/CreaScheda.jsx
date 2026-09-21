@@ -24,6 +24,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
           serieTarget: es.serieTarget,
           repTarget: es.repTarget,
           recuperoSecondi: es.recuperoSecondi,
+          note: es.note || '',
           // Campi cardio (preservati per le voci create dal bot)
           riscaldamento: es.riscaldamento,
           durataMinuti: es.durataMinuti,
@@ -62,7 +63,8 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
         gruppo: esercizio.gruppoMuscoloPrimario,
         serieTarget: 3,
         repTarget: '8-12',
-        recuperoSecondi: 90
+        recuperoSecondi: 90,
+        note: ''
       }];
     });
   };
@@ -110,7 +112,8 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
             esercizioId: e.esercizioId,
             serieTarget: parseInt(e.serieTarget),
             repTarget: e.repTarget,
-            recuperoSecondi: parseInt(e.recuperoSecondi)
+            recuperoSecondi: parseInt(e.recuperoSecondi),
+            note: e.note?.trim() || null
           };
         })
       };
@@ -250,6 +253,16 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                               <span className="esercizio-param-unita">s</span>
                             </div>
                           </div>
+
+                          {/* Indicazione tecnica: correzioni posturali, tempi,
+                              esecuzione unilaterale. Facoltativa. */}
+                          <input
+                            type="text"
+                            value={es.note || ''}
+                            onChange={e => aggiornaPianoEsercizio(idx, 'note', e.target.value)}
+                            placeholder="Nota tecnica (facoltativa) — es. gomiti a 45°, pausa di 2 secondi in cima"
+                            className="w-full mt-2 px-3 py-2 rounded-[var(--raggio-sm)] text-xs bg-[var(--bg-terziario)] text-[var(--testo-primario)] border border-[var(--bordo-light)] focus:border-[var(--accent)] focus:outline-none"
+                          />
                         </motion.div>
                       ))}
                     </AnimatePresence>

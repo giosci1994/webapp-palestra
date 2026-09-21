@@ -84,10 +84,12 @@ export default function DettaglioScheda() {
 
         {/* Header */}
         <div className="glass-card p-card-inner mb-4">
-          <div className="flex items-start justify-between mb-3 gap-4">
-            <h1 className="text-2xl font-bold">{scheda.titolo}</h1>
-            
-            <div className="flex gap-2 shrink-0 items-center">
+          {/* Su telefono titolo e comandi vanno incolonnati: affiancati, il
+              titolo si spezzava in cinque righe e i pulsanti uscivano dal bordo. */}
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 gap-3 sm:gap-4">
+            <h1 className="text-2xl font-bold min-w-0">{scheda.titolo}</h1>
+
+            <div className="flex gap-2 items-center flex-wrap sm:shrink-0">
               <span className={`badge ${LIVELLI[scheda.livello]?.colore || 'accent'}`}>
                 {LIVELLI[scheda.livello]?.label}
               </span>
@@ -174,8 +176,9 @@ export default function DettaglioScheda() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="glass-card px-card-inner py-4 flex items-center gap-4"
+              className="glass-card px-card-inner py-4"
             >
+              <div className="flex items-center gap-4">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                    style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
                 {i + 1}
@@ -200,6 +203,14 @@ export default function DettaglioScheda() {
                   </>
                 )}
               </div>
+              </div>
+
+              {/* Indicazione tecnica scritta per questo esercizio in questa scheda */}
+              {es.note && (
+                <p className="text-xs text-[var(--testo-secondario)] mt-2.5 sm:pl-12 leading-relaxed border-l-2 border-[var(--accent-dim)] pl-3 sm:border-l-0">
+                  {es.note}
+                </p>
+              )}
             </motion.div>
             );
           })}

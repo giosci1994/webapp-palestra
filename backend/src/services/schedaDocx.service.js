@@ -65,10 +65,9 @@ function recupero(voce) {
 /**
  * Colonna "Note Tecniche".
  *
- * Le note tecniche per singolo esercizio dentro una scheda non esistono come
- * campo: si ripiega su cio' che c'e', nell'ordine piu' utile a chi legge in
- * palestra — la descrizione dell'esercizio quando presente, altrimenti gruppo
- * muscolare e attrezzatura, piu' i parametri cardio se e' una voce cardio.
+ * In ordine di precedenza: la nota scritta per questo esercizio in questa
+ * scheda, poi la descrizione generica dell'esercizio, infine gruppo muscolare
+ * e attrezzatura. Piu' i parametri cardio dove servono.
  */
 function note(voce) {
   const parti = [];
@@ -81,8 +80,13 @@ function note(voce) {
   if (voce.livelloResistenza) cardio.push(`resistenza ${voce.livelloResistenza}`);
   if (cardio.length > 0) parti.push(cardio.join(', '));
 
+  // La nota scritta per questa scheda ha la precedenza: e' l'indicazione
+  // specifica, mentre la descrizione dell'esercizio e' generica.
+  const nota = voce.note?.trim();
   const descrizione = voce.esercizio?.descrizione?.trim();
-  if (descrizione) {
+  if (nota) {
+    parti.push(nota);
+  } else if (descrizione) {
     parti.push(descrizione);
   } else {
     const contesto = [voce.esercizio?.gruppoMuscoloPrimario, voce.esercizio?.attrezzatura?.nome]
@@ -208,8 +212,10 @@ export async function generaDocxSchede(schede, opzioni = {}) {
 
   const corpo = [paragrafoTitolo(titolo), paragrafoSottotitolo(sottotitolo)];
 
-  // Le descrizioni delle schede diventano le linee guida in testa al documento
-  const descrizioni = schede.map(s => s.descrizione).filter(d => d?.trim());
+  // Le descrizioni delle schede diventano le linee guida in testa al documento.
+  // Le sedute di uno stesso programma condividono spesso le stesse indicazioni:
+  // ripeterle una volta per scheda renderebbe il documento illeggibile.
+  const descrizioni = [...new Set(schede.map(s => s.descrizione?.trim()).filter(Boolean))];
   if (descrizioni.length > 0) {
     corpo.push(paragrafoSezione('Linee Guida'));
     for (const d of descrizioni) corpo.push(...lineeGuida(d));

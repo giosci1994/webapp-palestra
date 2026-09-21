@@ -15,6 +15,7 @@ function mappaEsercizioScheda(e, ordine) {
     repTarget: e.repTarget !== undefined ? e.repTarget : '8-12',
     recuperoSecondi: e.recuperoSecondi != null ? e.recuperoSecondi : 90,
     ordineEsecuzione: ordine,
+    note: e.note?.trim() || null,
     riscaldamento: !!e.riscaldamento,
     durataMinuti: e.durataMinuti != null ? e.durataMinuti : null,
     velocitaKmh: e.velocitaKmh != null ? e.velocitaKmh : null,
