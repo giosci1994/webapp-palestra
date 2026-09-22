@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { Clock, TrendingDown } from 'lucide-react';
 import { api } from '../../config/api.js';
+import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 
 const GIORNI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
@@ -43,12 +44,7 @@ export default function MiglioriOrari({ palestraId }) {
   const piuTranquillo = dati.giornoPiuTranquillo;
 
   return (
-    <div className="glass-card flex flex-col">
-      <div className="p-card-inner pb-3 flex items-center gap-3 border-b border-[var(--bordo-light)]">
-        <Clock size={22} className="text-[var(--accent)]" />
-        <h3 className="font-bold text-lg">Quando andare</h3>
-      </div>
-
+    <SezioneCollassabile chiave="quando-andare" titolo="Quando andare" Icona={Clock}>
       <div className="p-card-inner pt-4">
         {diOggi ? (
           <>
@@ -88,6 +84,6 @@ export default function MiglioriOrari({ palestraId }) {
           Su {dati.rilevazioni} rilevazioni, fascia {dati.fascia.da}:00–{dati.fascia.a}:00.
         </p>
       </div>
-    </div>
+    </SezioneCollassabile>
   );
 }

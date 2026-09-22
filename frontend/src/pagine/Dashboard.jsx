@@ -18,6 +18,9 @@ import {
 import Statistiche from './Statistiche.jsx';
 import CaroselloAzioni from '../componenti/specifici/CaroselloAzioni.jsx';
 import MiglioriOrari from '../componenti/specifici/MiglioriOrari.jsx';
+import Calendario, { aStringaData, lunediDi } from '../componenti/comuni/Calendario.jsx';
+import SezioneCollassabile from '../componenti/comuni/SezioneCollassabile.jsx';
+import { useTelefono } from '../hooks/useMediaQuery.js';
 
 export default function Dashboard() {
   const { utente, isAdmin } = useAuth();
@@ -42,8 +45,13 @@ export default function Dashboard() {
   const [ptDashboard, setPtDashboard] = useState(null);
   const [ptCaricamento, setPtCaricamento] = useState(false);
 
-  // Calendario state
+  // Calendario: oltre alle sessioni svolte mostra gli allenamenti in programma,
+  // che prima non comparivano affatto.
   const [dataCalendario, setDataCalendario] = useState(new Date());
+  const [pianificati, setPianificati] = useState([]);
+  const telefonoDash = useTelefono();
+  const [modoCalendarioScelto, setModoCalendarioScelto] = useState(null);
+  const modoCalendario = modoCalendarioScelto ?? (telefonoDash ? 'settimana' : 'mese');
 
   // Messaggi non letti: la slide dei messaggi compare solo se ce ne sono
   const [messaggiNonLetti, setMessaggiNonLetti] = useState(0);
@@ -55,6 +63,24 @@ export default function Dashboard() {
   useEffect(() => {
     caricaDati();
   }, []);
+
+  // Ricarica quando cambia il periodo mostrato: il calendario deve restare
+  // aggiornato anche scorrendo avanti e indietro fra i mesi.
+  useEffect(() => {
+    let da, a;
+    if (modoCalendario === 'mese') {
+      da = new Date(dataCalendario.getFullYear(), dataCalendario.getMonth(), 1);
+      a = new Date(dataCalendario.getFullYear(), dataCalendario.getMonth() + 1, 0);
+    } else {
+      da = lunediDi(dataCalendario);
+      a = new Date(da); a.setDate(a.getDate() + 6);
+    }
+    let annullato = false;
+    api.get(`/pianificazione?da=${aStringaData(da)}&a=${aStringaData(a)}`)
+      .then(r => { if (!annullato) setPianificati(r.dati || []); })
+      .catch(() => { if (!annullato) setPianificati([]); });
+    return () => { annullato = true; };
+  }, [dataCalendario, modoCalendario]);
 
   const caricaDati = async () => {
     try {
@@ -192,49 +218,25 @@ export default function Dashboard() {
   };
 
   // Helper per il calendario (mese corrente)
-  const cambiaMese = (delta) => {
-    const nuovaData = new Date(dataCalendario);
-    nuovaData.setMonth(nuovaData.getMonth() + delta);
-    setDataCalendario(nuovaData);
-  };
 
-  const renderCalendario = () => {
-    const mese = dataCalendario.getMonth();
-    const anno = dataCalendario.getFullYear();
-    const primoGiorno = new Date(anno, mese, 1).getDay(); // 0 (Dom) - 6 (Sab)
-    const giorniMese = new Date(anno, mese + 1, 0).getDate();
-    
-    // Converti sessioni in array di "YYYY-MM-DD"
-    const giorniAllenamento = sessioniRecenti.map(s => s.dataInizio.split('T')[0]);
 
-    const celle = [];
-    const offset = primoGiorno === 0 ? 6 : primoGiorno - 1; // Faccio iniziare da Lunedì
-    
-    // Celle vuote
-    for (let i = 0; i < offset; i++) {
-      celle.push(<div key={`empty-${i}`} className="text-center p-1 opacity-0">0</div>);
+  // Pallini del calendario: rosso per gli allenamenti gia' svolti, colore di
+  // stato per quelli in programma.
+  const marcatoriCalendario = (() => {
+    const per = {};
+    const aggiungi = (giorno, colore) => {
+      if (!per[giorno]) per[giorno] = [];
+      if (!per[giorno].some(x => x.colore === colore)) per[giorno].push({ colore });
+    };
+    for (const s of sessioniRecenti) aggiungi(s.dataInizio.split('T')[0], 'var(--pericolo)');
+    for (const p of pianificati) {
+      aggiungi(p.data, p.stato === 'COMPLETATO' ? 'var(--successo, #22c55e)'
+                     : p.stato === 'SALTATO' ? 'var(--testo-terziario)'
+                     : 'var(--accent)');
     }
-    
-    const veroOggi = new Date();
-    
-    // Giorni del mese
-    for (let i = 1; i <= giorniMese; i++) {
-      const dataStr = `${anno}-${String(mese + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-      const haAllenamento = giorniAllenamento.includes(dataStr);
-      const isOggi = i === veroOggi.getDate() && mese === veroOggi.getMonth() && anno === veroOggi.getFullYear();
-      
-      celle.push(
-        <div key={i} className={`text-center p-1 relative text-sm flex flex-col items-center justify-center h-10 w-10 mx-auto rounded-full ${isOggi ? 'bg-[var(--bg-terziario)] font-bold text-[var(--testo-primario)] border border-[var(--bordo-light)]' : 'text-[var(--testo-secondario)]'}`}>
-          <span>{i}</span>
-          {haAllenamento && (
-            <div className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-[var(--pericolo)]" />
-          )}
-        </div>
-      );
-    }
-    
-    return celle;
-  };
+    return per;
+  })();
+
 
   const ora = new Date().getHours();
   const saluto = ora < 12 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera';
@@ -421,12 +423,7 @@ export default function Dashboard() {
             <div className="flex flex-col gap-8">
               
               {/* Allenati e gestisci schede */}
-              <div className="glass-card overflow-hidden">
-                <div className="p-card-inner flex justify-between items-center border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold flex items-center gap-2 text-lg">
-                    <Activity size={20} className="text-[var(--testo-secondario)]" /> Allenati e gestisci schede
-                  </h3>
-                </div>
+              <SezioneCollassabile chiave="allenati" titolo="Allenati e gestisci schede" Icona={Activity}>
                 <div className="flex flex-col">
                   {[
                     { etichetta: 'Gestione Schede', icona: ClipboardList, link: '/schede' },
@@ -447,15 +444,10 @@ export default function Dashboard() {
                     </Link>
                   ))}
                 </div>
-              </div>
+              </SezioneCollassabile>
 
               {/* Ultime attività (Allenamenti Recenti) */}
-              <div className="glass-card overflow-hidden">
-                <div className="p-card-inner flex justify-between items-center border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold flex items-center gap-2 text-lg">
-                    <History size={20} className="text-[var(--testo-secondario)]" /> Ultime attività
-                  </h3>
-                </div>
+              <SezioneCollassabile chiave="ultime-attivita" titolo="Ultime attività" Icona={History}>
                 
                 <div className="text-center text-[var(--testo-terziario)] flex items-center justify-center">
                   {sessioniRecenti.slice(0,3).length > 0 ? (
@@ -491,51 +483,39 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
-              </div>
+              </SezioneCollassabile>
 
             </div>
 
-            {/* Colonna Laterale (Consigli AI / In calendario) */}
+            {/* Colonna laterale */}
             <div className="flex flex-col gap-8">
               
               {/* Migliori orari per allenarsi (dalle rilevazioni di affluenza) */}
               <MiglioriOrari palestraId={utente?.palestraId || utente?.palestra?.id} />
 
-              {/* In Calendario (Storico) */}
-              <div className="glass-card flex flex-col">
-                <div className="p-card-inner pb-4 flex items-center gap-3">
-                  <CalendarDays size={22} className="text-[var(--testo-secondario)]" />
-                  <h3 className="font-bold text-lg">Calendario Storico</h3>
-                </div>
-                <div className="px-6 pb-6">
-                  
-                  {/* Selettore Mese */}
-                  <div className="flex items-center justify-between mb-6 bg-[rgba(0,0,0,0.2)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
-                    <button onClick={() => cambiaMese(-1)} className="p-2 rounded hover:bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-white transition-colors">
-                      <ChevronLeft size={20} />
-                    </button>
-                    <span className="font-bold text-[var(--testo-primario)] capitalize tracking-wide">
-                      {dataCalendario.toLocaleString('it-IT', { month: 'long', year: 'numeric' })}
-                    </span>
-                    <button onClick={() => cambiaMese(1)} className="p-2 rounded hover:bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-white transition-colors">
-                      <ChevronRight size={20} />
-                    </button>
+              {/* Calendario: allenamenti svolti e in programma */}
+              <SezioneCollassabile chiave="calendario" titolo="Calendario" Icona={CalendarDays}>
+                <div className="p-card-inner">
+                  <Calendario
+                    modo={modoCalendario}
+                    ancora={dataCalendario}
+                    onCambiaAncora={setDataCalendario}
+                    onCambiaModo={setModoCalendarioScelto}
+                    marcatori={marcatoriCalendario}
+                  />
+
+                  <div className="flex items-center gap-3 mt-5 pt-4 border-t border-[var(--bordo-light)] text-xs text-[var(--testo-terziario)] flex-wrap">
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--pericolo)' }} /> Svolto</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} /> In programma</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--successo, #22c55e)' }} /> Completato</span>
                   </div>
 
-                  <div className="grid grid-cols-7 gap-2 mb-4">
-                    {['L','M','M','G','V','S','D'].map((g,i) => (
-                      <div key={i} className="text-center text-xs font-bold text-[var(--testo-terziario)] pb-2">{g}</div>
-                    ))}
-                    {renderCalendario()}
-                  </div>
-                  
-                  <div className="mt-6 pt-4 border-t border-[var(--bordo-light)] text-center">
-                    <Link to="/storico" className="text-sm font-semibold underline underline-offset-4 text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors block p-2">
-                      Visualizza Storico Allenamento
-                    </Link>
+                  <div className="mt-4 pt-3 border-t border-[var(--bordo-light)] flex items-center justify-between gap-3 text-sm">
+                    <Link to="/pianificazione" className="font-semibold text-[var(--accent)] hover:underline">Pianifica</Link>
+                    <Link to="/storico" className="font-semibold text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors">Storico →</Link>
                   </div>
                 </div>
-              </div>
+              </SezioneCollassabile>
 
               {/* Widget Affluenza Palestra */}
               {(utente?.palestraId || utente?.palestra?.id) && (

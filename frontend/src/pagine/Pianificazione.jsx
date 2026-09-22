@@ -8,18 +8,14 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../config/api.js';
 import {
-  CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, Check,
+  CalendarDays, Plus, Trash2, Check,
   SkipForward, PlayCircle, X, CalendarClock, ClipboardList
 } from 'lucide-react';
 import Spinner from '../componenti/comuni/Spinner.jsx';
+import Calendario, { aStringaData as aStringa, lunediDi } from '../componenti/comuni/Calendario.jsx';
+import { useTelefono } from '../hooks/useMediaQuery.js';
 
-const GIORNI_BREVI = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
 const GIORNI_NOMI = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
-
-/** "YYYY-MM-DD" da una data locale, senza passare per UTC (che sposterebbe il giorno). */
-function aStringa(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 const STATI = {
   PIANIFICATO: { etichetta: 'Da fare', colore: 'var(--accent)' },
@@ -28,7 +24,14 @@ const STATI = {
 };
 
 export default function Pianificazione() {
-  const [mese, setMese] = useState(() => { const d = new Date(); d.setDate(1); return d; });
+  // Sul telefono la griglia mensile stringe troppo i giorni: lì si parte dalla
+  // settimana. Finché non si sceglie esplicitamente, la vista segue la
+  // larghezza dello schermo; dopo la scelta resta quella voluta.
+  const telefono = useTelefono();
+  const [modoScelto, setModoScelto] = useState(null);
+  const modo = modoScelto ?? (telefono ? 'settimana' : 'mese');
+  const setModo = setModoScelto;
+  const [ancora, setAncora] = useState(() => new Date());
   const [allenamenti, setAllenamenti] = useState([]);
   const [schede, setSchede] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
@@ -39,12 +42,19 @@ export default function Pianificazione() {
   // Il mese mostrato piu' un margine, cosi' spostando un allenamento di qualche
   // giorno oltre il bordo del mese resta comunque visibile al ricaricamento.
   const intervallo = useCallback(() => {
-    const da = new Date(mese.getFullYear(), mese.getMonth(), 1);
-    const a = new Date(mese.getFullYear(), mese.getMonth() + 1, 0);
+    let da, a;
+    if (modo === 'mese') {
+      da = new Date(ancora.getFullYear(), ancora.getMonth(), 1);
+      a = new Date(ancora.getFullYear(), ancora.getMonth() + 1, 0);
+    } else {
+      da = lunediDi(ancora);
+      a = new Date(da);
+      a.setDate(a.getDate() + 6);
+    }
     da.setDate(da.getDate() - 7);
     a.setDate(a.getDate() + 7);
     return { da: aStringa(da), a: aStringa(a) };
-  }, [mese]);
+  }, [ancora, modo]);
 
   const carica = useCallback(async () => {
     try {
@@ -86,48 +96,10 @@ export default function Pianificazione() {
   const elimina = (a) => azione(() => api.delete(`/pianificazione/${a.id}`));
   const spostaA = (a, data) => azione(() => api.patch(`/pianificazione/${a.id}`, { data }));
 
-  // --- Griglia del mese, con il lunedì come primo giorno ---
-  const celle = () => {
-    const anno = mese.getFullYear(), m = mese.getMonth();
-    const primo = new Date(anno, m, 1).getDay();       // 0 = domenica
-    const offset = primo === 0 ? 6 : primo - 1;         // sposta a lunedì
-    const giorni = new Date(anno, m + 1, 0).getDate();
-    const oggi = aStringa(new Date());
-    const out = [];
-
-    for (let i = 0; i < offset; i++) out.push(<div key={`v-${i}`} />);
-
-    for (let g = 1; g <= giorni; g++) {
-      const data = `${anno}-${String(m + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
-      const delGiorno = perGiorno[data] || [];
-      const scelto = data === giornoScelto;
-
-      out.push(
-        <button
-          key={data}
-          type="button"
-          onClick={() => setGiornoScelto(data)}
-          className={`relative h-12 rounded-[var(--raggio-md)] text-sm flex flex-col items-center justify-center transition-colors border ${
-            scelto
-              ? 'border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--testo-primario)] font-bold'
-              : data === oggi
-                ? 'border-[var(--bordo-light)] bg-[var(--bg-terziario)] text-[var(--testo-primario)] font-bold'
-                : 'border-transparent text-[var(--testo-secondario)] hover:bg-[var(--bg-terziario)]'
-          }`}
-        >
-          <span>{g}</span>
-          {delGiorno.length > 0 && (
-            <span className="absolute bottom-1 flex gap-0.5">
-              {delGiorno.slice(0, 3).map(a => (
-                <span key={a.id} className="w-1.5 h-1.5 rounded-full" style={{ background: STATI[a.stato].colore }} />
-              ))}
-            </span>
-          )}
-        </button>
-      );
-    }
-    return out;
-  };
+  // Pallini colorati per stato, uno per allenamento del giorno
+  const marcatori = Object.fromEntries(
+    Object.entries(perGiorno).map(([giorno, lista]) => [giorno, lista.map(a => ({ colore: STATI[a.stato].colore }))])
+  );
 
   const delGiornoScelto = perGiorno[giornoScelto] || [];
 
@@ -170,24 +142,15 @@ export default function Pianificazione() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
           {/* Calendario */}
           <div className="glass-card p-card-inner">
-            <div className="flex items-center justify-between mb-6 bg-[rgba(0,0,0,0.2)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
-              <button onClick={() => setMese(new Date(mese.getFullYear(), mese.getMonth() - 1, 1))} className="p-2 rounded hover:bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-white transition-colors">
-                <ChevronLeft size={20} />
-              </button>
-              <span className="font-bold capitalize tracking-wide">
-                {mese.toLocaleString('it-IT', { month: 'long', year: 'numeric' })}
-              </span>
-              <button onClick={() => setMese(new Date(mese.getFullYear(), mese.getMonth() + 1, 1))} className="p-2 rounded hover:bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-white transition-colors">
-                <ChevronRight size={20} />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-7 gap-1.5">
-              {GIORNI_BREVI.map((g, i) => (
-                <div key={i} className="text-center text-xs font-bold text-[var(--testo-terziario)] pb-2">{g}</div>
-              ))}
-              {celle()}
-            </div>
+            <Calendario
+              modo={modo}
+              ancora={ancora}
+              onCambiaAncora={setAncora}
+              onCambiaModo={setModo}
+              marcatori={marcatori}
+              giornoSelezionato={giornoScelto}
+              onSelezionaGiorno={setGiornoScelto}
+            />
 
             <div className="flex items-center gap-4 mt-6 pt-4 border-t border-[var(--bordo-light)] text-xs text-[var(--testo-terziario)] flex-wrap">
               {Object.entries(STATI).map(([k, v]) => (
