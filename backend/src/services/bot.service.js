@@ -105,7 +105,7 @@ function tokenizza(testo) {
     .filter((t) => t.length >= 3 && !STOPWORDS.has(t));
 }
 
-/** Cerca i migliori candidati nel catalogo (nomi in inglese) per una descrizione. */
+/** Cerca i migliori candidati nel catalogo (italiano e inglese) per una descrizione. */
 export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   let tokens = tokenizza(descrizione);
   if (tokens.length === 0) {
@@ -114,21 +114,30 @@ export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
     tokens = [fallback];
   }
 
+  // Dal bot si scrive in italiano: la ricerca deve coprire entrambi i nomi
   const candidati = await prisma.esercizio.findMany({
-    where: { OR: tokens.map((t) => ({ nome: { contains: t, mode: 'insensitive' } })) },
+    where: {
+      OR: tokens.flatMap((t) => ([
+        { nome: { contains: t, mode: 'insensitive' } },
+        { nomeIt: { contains: t, mode: 'insensitive' } }
+      ]))
+    },
     select: {
-      id: true, nome: true, gruppoMuscoloPrimario: true,
+      id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true,
       attrezzatura: { select: { nome: true } }
     },
     take: 60
   });
 
   const scored = candidati.map((e) => {
-    const nl = e.nome.toLowerCase();
-    const score = tokens.reduce((s, t) => s + (nl.includes(t) ? 1 : 0), 0);
+    // Il punteggio considera entrambi i nomi: chi scrive in italiano al bot
+    // deve ottenere lo stesso risultato di chi scrive in inglese.
+    const testo = `${e.nome} ${e.nomeIt || ''}`.toLowerCase();
+    const score = tokens.reduce((s, t) => s + (testo.includes(t) ? 1 : 0), 0);
+    const mostrato = e.nomeIt || e.nome;
     return {
       id: e.id,
-      nome: e.nome,
+      nome: mostrato,
       gruppo: e.gruppoMuscoloPrimario,
       attrezzatura: e.attrezzatura?.nome || null,
       score
@@ -325,13 +334,13 @@ async function eseguiFunzione(nome, args, utente, stato) {
     case 'aggiungi_esercizio': {
       const es = await prisma.esercizio.findUnique({
         where: { id: parseInt(args.esercizioId) },
-        select: { id: true, nome: true }
+        select: { id: true, nome: true, nomeIt: true }
       });
       if (!es) return { errore: 'Esercizio non trovato. Usa prima cerca_esercizio.' };
       const voce = {
         tipo: 'FORZA',
         esercizioId: es.id,
-        nome: es.nome,
+        nome: es.nomeIt || es.nome,
         serie: parseInt(args.serie) || 3,
         ripetizioni: String(args.ripetizioni || '8-12'),
         recuperoSecondi: args.recuperoSecondi ? parseInt(args.recuperoSecondi) : 90

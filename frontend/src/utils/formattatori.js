@@ -63,3 +63,24 @@ export function formattaDurata(minuti) {
   const m = minuti % 60;
   return m > 0 ? `${h}h ${m}min` : `${h}h`;
 }
+
+/**
+ * Nome dell'esercizio da mostrare.
+ *
+ * Il catalogo importato ha i nomi in inglese e `nomeIt` con la traduzione;
+ * quello curato a mano ha già il nome italiano in `nome` e `nomeIt` vuoto.
+ * Qui si sceglie sempre l'italiano quando c'è.
+ */
+export function nomeEsercizio(esercizio) {
+  if (!esercizio) return '';
+  return esercizio.nomeIt || esercizio.nome || '';
+}
+
+/**
+ * Nome originale in inglese, da mostrare come riga secondaria.
+ * Restituisce null quando coincide col nome principale, per non ripeterlo.
+ */
+export function nomeEsercizioOriginale(esercizio) {
+  if (!esercizio?.nomeIt) return null;
+  return esercizio.nome || null;
+}

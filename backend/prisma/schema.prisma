@@ -278,6 +278,13 @@ model PalestraAttrezzatura {
 model Esercizio {
   id                      Int     @id @default(autoincrement())
   nome                    String
+
+  // Nome italiano, presente solo per le voci importate con nome inglese.
+  // Il catalogo curato a mano (id <= 60) ha gia' il nome in italiano in `nome`,
+  // spesso con l'inglese fra parentesi, e qui resta null.
+  // In interfaccia si mostra `nomeIt ?? nome`, con `nome` in seconda riga.
+  nomeIt                  String? @map("nome_it")
+
   gruppoMuscoloPrimario   String  @map("gruppo_muscolare_primario")
   gruppoMuscoloSecondario String? @map("gruppo_muscolare_secondario")
   attrezzaturaRichiestaId Int?    @map("attrezzatura_richiesta_id")

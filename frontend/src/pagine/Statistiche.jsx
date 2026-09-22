@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
-import { formattaPeso, formattaNumero, formattaDurata, formattaData } from '../utils/formattatori.js';
+import { formattaPeso, formattaNumero, formattaDurata, formattaData, nomeEsercizio} from '../utils/formattatori.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion } from 'framer-motion';
 import TestoScorrevole from '../componenti/comuni/TestoScorrevole.jsx';
@@ -234,7 +234,7 @@ export default function Statistiche() {
                     {GRUPPI_MUSCOLARI[r.esercizio?.gruppoMuscoloPrimario]?.emoji || '💪'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <TestoScorrevole testo={r.esercizio?.nome} className="text-sm font-medium text-[var(--testo-primario)]" coloreSfondo="var(--bg-terziario)" />
+                    <TestoScorrevole testo={nomeEsercizio(r.esercizio)} className="text-sm font-medium text-[var(--testo-primario)]" coloreSfondo="var(--bg-terziario)" />
                     <p className="text-[10px] text-[var(--testo-terziario)]">{formattaData(r.dataRecord)}</p>
                   </div>
                   <p className="text-sm font-bold text-[var(--successo)] shrink-0 ml-1">{formattaPeso(r.pesoMaxRaggiunto)} kg</p>

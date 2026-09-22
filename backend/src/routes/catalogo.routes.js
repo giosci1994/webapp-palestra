@@ -20,13 +20,27 @@ router.get('/esercizi', verificaToken, async (req, res, next) => {
     if (bodyRegion) filtri.bodyRegion = bodyRegion;
     if (difficulty) filtri.difficulty = difficulty;
     if (mechanics) filtri.mechanics = mechanics;
-    if (ricerca) filtri.nome = { contains: ricerca, mode: 'insensitive' };
+    // La ricerca interroga entrambi i nomi: chi scrive "affondo" e chi scrive
+    // "lunge" deve trovare le stesse voci.
+    if (ricerca) {
+      filtri.OR = [
+        { nome: { contains: ricerca, mode: 'insensitive' } },
+        { nomeIt: { contains: ricerca, mode: 'insensitive' } }
+      ];
+    }
 
     const esercizi = await prisma.esercizio.findMany({
       where: filtri,
       include: { attrezzatura: { select: { id: true, nome: true, categoria: true } } },
-      orderBy: [{ gruppoMuscoloPrimario: 'asc' }, { nome: 'asc' }]
+      orderBy: [{ gruppoMuscoloPrimario: 'asc' }]
     });
+
+    // L'ordinamento alfabetico deve seguire il nome effettivamente mostrato,
+    // che è quello italiano quando c'è: non si può esprimere in orderBy.
+    const mostrato = (e) => e.nomeIt || e.nome;
+    esercizi.sort((a, b) =>
+      a.gruppoMuscoloPrimario.localeCompare(b.gruppoMuscoloPrimario, 'it') ||
+      mostrato(a).localeCompare(mostrato(b), 'it'));
 
     res.json({ successo: true, dati: esercizi });
   } catch (errore) { next(errore); }

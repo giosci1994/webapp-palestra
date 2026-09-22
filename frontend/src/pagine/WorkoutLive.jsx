@@ -9,7 +9,7 @@ import { api } from '../config/api.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS } from '../utils/costanti.js';
-import { formattaPeso, formattaData } from '../utils/formattatori.js';
+import { formattaPeso, formattaData, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function WorkoutLive() {
@@ -332,7 +332,7 @@ export default function WorkoutLive() {
               <h3 className="text-lg font-bold text-[var(--successo)] mb-2">🏆 Nuovi Record!</h3>
               {nuoviRecord.map(r => (
                 <div key={r.id} className="flex items-center justify-between p-2 rounded bg-[var(--successo-dim)]">
-                  <span className="text-sm">{r.esercizio?.nome}</span>
+                  <span className="text-sm">{nomeEsercizio(r.esercizio)}</span>
                   <span className="font-bold text-[var(--successo)]">{formattaPeso(r.pesoMaxRaggiunto)} kg</span>
                 </div>
               ))}
@@ -405,7 +405,7 @@ export default function WorkoutLive() {
         {/* Nome esercizio */}
         <motion.div key={esercizioIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                     className="text-center py-2">
-          <h2 className="text-xl md:text-2xl font-bold">{esercizioAttuale.esercizio.nome}</h2>
+          <h2 className="text-xl md:text-2xl font-bold">{nomeEsercizio(esercizioAttuale.esercizio)}</h2>
           <p className="text-sm text-[var(--testo-terziario)] mt-1">
             {esercizioAttuale.esercizio.gruppoMuscoloPrimario}
             {isCardio
@@ -459,7 +459,7 @@ export default function WorkoutLive() {
                         className="workout-video-player"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
-                        title={esercizioAttuale.esercizio.nome}
+                        title={nomeEsercizio(esercizioAttuale.esercizio)}
                         frameBorder="0"
                       />
                     </div>
@@ -517,7 +517,7 @@ export default function WorkoutLive() {
                   {serieCorrente <= esercizioAttuale.serieTarget 
                     ? `Prossima: Serie ${serieCorrente} di ${esercizioAttuale.serieTarget}`
                     : (prossimoIdx !== -1
-                        ? `Prossimo Esercizio: ${esercizi[prossimoIdx].esercizio.nome}`
+                        ? `Prossimo Esercizio: ${esercizi[prossimoIdx].nomeEsercizio(esercizio)}`
                         : `Prossima Azione: Fine Allenamento`)}
                 </p>
               </div>
@@ -656,7 +656,7 @@ export default function WorkoutLive() {
             {prossimoIdx !== -1 ? (
               <>
                 <button onClick={prossimoEsercizio} className="btn-enorme">
-                  {esercizi[prossimoIdx].esercizio.nome} →
+                  {esercizi[prossimoIdx].nomeEsercizio(esercizio)} →
                 </button>
 
                 {/* Promemoria esercizi saltati */}
@@ -680,7 +680,7 @@ export default function WorkoutLive() {
                           onClick={() => cambiaEsercizio(es.idx)}
                           className="flex items-center justify-between text-xs py-1 hover:text-[var(--accent)] transition-colors"
                         >
-                          <span className="text-[var(--testo-secondario)]">{es.esercizio.nome}</span>
+                          <span className="text-[var(--testo-secondario)]">{nomeEsercizio(es.esercizio)}</span>
                           <span style={{ color: 'var(--attenzione, #F59E0B)' }}>Vai →</span>
                         </button>
                       ))}
@@ -748,7 +748,7 @@ export default function WorkoutLive() {
                           inCorso ? 'text-[var(--accent)]' 
                           : tutteSeriFatte ? 'text-[var(--successo)]' : ''
                         }`}>
-                          {es.esercizio.nome}
+                          {nomeEsercizio(es.esercizio)}
                         </p>
                         <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
                           {tutteSeriFatte

@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
+import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, scaricaFile } from '../config/api.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
@@ -185,9 +186,12 @@ export default function DettaglioScheda() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium">
-                  {es.riscaldamento ? '🔥 ' : cardio ? '🏃 ' : ''}{es.esercizio.nome}
+                  {es.riscaldamento ? '🔥 ' : cardio ? '🏃 ' : ''}{nomeEsercizio(es.esercizio)}
                   {es.riscaldamento && <span className="text-xs text-[var(--accent)]"> · riscaldamento</span>}
                 </p>
+                {nomeEsercizioOriginale(es.esercizio) && (
+                  <p className="text-xs text-[var(--testo-terziario)] italic truncate">{nomeEsercizioOriginale(es.esercizio)}</p>
+                )}
                 <p className="text-xs text-[var(--testo-terziario)]">
                   {es.esercizio.gruppoMuscoloPrimario}
                   {es.esercizio.attrezzatura ? ` · ${es.esercizio.attrezzatura.nome}` : ''}

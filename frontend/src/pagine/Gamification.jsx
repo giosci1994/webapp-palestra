@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { RUOLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaData, formattaPeso, formattaDurata, formattaNumero } from '../utils/formattatori.js';
+import { formattaData, formattaPeso, formattaDurata, formattaNumero, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Building, Trophy, Dumbbell } from 'lucide-react';
 
@@ -216,7 +216,7 @@ export default function Gamification() {
                     {gruppo?.emoji || '💪'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold truncate">{item.esercizio?.nome}</p>
+                    <p className="text-sm font-bold truncate">{nomeEsercizio(item.esercizio)}</p>
                     <p className="text-[10px] text-[var(--testo-terziario)]">{item.esercizio?.gruppoMuscoloPrimario}</p>
                   </div>
                 </div>
@@ -383,7 +383,7 @@ export default function Gamification() {
                           {profiloPubblico.record.map(r => (
                             <div key={r.id} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--bg-terziario)]">
                               <span>{GRUPPI_MUSCOLARI[r.esercizio?.gruppoMuscoloPrimario]?.emoji || '💪'}</span>
-                              <span className="text-sm flex-1 truncate">{r.esercizio?.nome}</span>
+                              <span className="text-sm flex-1 truncate">{nomeEsercizio(r.esercizio)}</span>
                               <span className="text-sm font-bold text-[var(--successo)]">{formattaPeso(r.pesoMaxRaggiunto)} kg</span>
                             </div>
                           ))}

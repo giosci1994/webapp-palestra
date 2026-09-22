@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
-import { formattaData, formattaDurata } from '../utils/formattatori.js';
+import { formattaData, formattaDurata, nomeEsercizio} from '../utils/formattatori.js';
 import { formattaPeso, formattaNumero } from '../utils/formattatori.js';
 import { GRUPPI_MUSCOLARI, RPE_LABELS } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -191,7 +191,7 @@ export default function StoricoAllenamenti() {
                 <div className="flex flex-wrap gap-1 mt-3">
                   {sessione.esercizi.slice(0, 4).map((es, idx) => (
                     <span key={idx} className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">
-                      {es.esercizio.nome}
+                      {nomeEsercizio(es.esercizio)}
                     </span>
                   ))}
                   {sessione.esercizi.length > 4 && (
@@ -325,7 +325,7 @@ export default function StoricoAllenamenti() {
                             {gruppo?.emoji || '💪'}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{es.esercizio.nome}</p>
+                            <p className="font-semibold text-sm truncate">{nomeEsercizio(es.esercizio)}</p>
                             <p className="text-[10px] text-[var(--testo-terziario)]">
                               {es.esercizio.gruppoMuscoloPrimario} · {es.serie.length} serie
                             </p>

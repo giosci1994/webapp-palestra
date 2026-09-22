@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
+import { nomeEsercizio } from '../../utils/formattatori.js';
 import { api } from '../../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +20,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
     schedaEsistente && schedaEsistente.esercizi 
       ? schedaEsistente.esercizi.map(es => ({
           esercizioId: es.esercizioId,
-          nome: es.esercizio.nome,
+          nome: nomeEsercizio(es.esercizio),
           gruppo: es.esercizio.gruppoMuscoloPrimario,
           serieTarget: es.serieTarget,
           repTarget: es.repTarget,
@@ -59,7 +60,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
       if (esiste) return prev.filter(e => e.esercizioId !== esercizio.id);
       return [...prev, {
         esercizioId: esercizio.id,
-        nome: esercizio.nome,
+        nome: nomeEsercizio(esercizio),
         gruppo: esercizio.gruppoMuscoloPrimario,
         serieTarget: 3,
         repTarget: '8-12',

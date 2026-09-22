@@ -590,17 +590,27 @@ export function traduciNomeEsercizio(nome) {
     });
   }
 
+  // Tutti i complementi introdotti da "con" confluiscono in uno solo:
+  // "con Piede Rialzato con Due Manubri" diventa "con Piede Rialzato e Due
+  // Manubri".
   const pezzi = [];
+  const complementi = [];
   for (const ruolo of ORDINE) {
     if (perRuolo[ruolo].length === 0) continue;
-    if (ruolo === RUOLI.ATTREZZO) {
-      const attrezzo = perRuolo[ruolo].join(' e ');
-      // "a Corpo Libero" e "a Terra" sono già locuzioni: niente "con" davanti
-      pezzi.push(/^(a |al |su |in )/i.test(attrezzo) ? attrezzo : `con ${attrezzo}`);
-    } else {
-      pezzi.push(perRuolo[ruolo].join(' '));
+
+    for (const voce of perRuolo[ruolo]) {
+      if (/^con /i.test(voce)) {
+        complementi.push(voce.replace(/^con /i, ''));
+      } else if (ruolo === RUOLI.ATTREZZO) {
+        // "a Corpo Libero", "a Terra", "al Muro" sono già locuzioni complete
+        if (/^(a |al |su |in |alle )/i.test(voce)) pezzi.push(voce);
+        else complementi.push(voce);
+      } else {
+        pezzi.push(voce);
+      }
     }
   }
+  if (complementi.length > 0) pezzi.push(`con ${complementi.join(' e ')}`);
 
   let risultato = pezzi.join(' ').replace(/\s+/g, ' ').trim();
   if (glossa) risultato += ` (${glossa})`;

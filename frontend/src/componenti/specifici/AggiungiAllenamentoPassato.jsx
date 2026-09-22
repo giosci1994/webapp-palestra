@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
+import { nomeEsercizio } from '../../utils/formattatori.js';
 import { motion } from 'framer-motion';
 import { X, Save, Dumbbell } from 'lucide-react';
 import { api } from '../../config/api.js';
@@ -180,7 +181,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
               {caricandoScheda && <p className="text-xs text-[var(--testo-terziario)]">Carico gli esercizi…</p>}
               {esercizi.map(voce => (
                 <div key={voce.id} className="rounded-[var(--raggio-md)] border border-[var(--bordo-light)] p-3">
-                  <p className="font-semibold text-sm mb-2 truncate">{voce.esercizio?.nome}</p>
+                  <p className="font-semibold text-sm mb-2 truncate">{nomeEsercizio(voce.esercizio)}</p>
                   <div className="flex flex-col gap-2">
                     {Array.from({ length: voce.serieTarget || 3 }, (_, i) => i + 1).map(n => {
                       const chiave = `${voce.esercizio.id}-${n}`;

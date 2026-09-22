@@ -5,6 +5,7 @@
 // ============================================
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { api } from '../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,7 +117,11 @@ function EsercizioCard({ esercizio, isExpanded, onToggle }) {
 
         {/* Nome e info */}
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-[var(--testo-primario)] truncate text-[0.95rem]">{esercizio.nome}</p>
+          <p className="font-semibold text-[var(--testo-primario)] truncate text-[0.95rem]">{nomeEsercizio(esercizio)}</p>
+          {/* Nome originale inglese: è quello che si cerca nei video tutorial */}
+          {nomeEsercizioOriginale(esercizio) && (
+            <p className="text-[11px] text-[var(--testo-terziario)] truncate italic">{nomeEsercizioOriginale(esercizio)}</p>
+          )}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
             <span className="text-[11px] text-[var(--testo-terziario)]">{esercizio.gruppoMuscoloPrimario}</span>
             {esercizio.attrezzatura && (
@@ -159,7 +164,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle }) {
               {/* Video */}
               {esercizio.linkVideo && (
                 <div className="mt-4 mb-4">
-                  <VideoPlayer url={esercizio.linkVideo} nome={esercizio.nome} />
+                  <VideoPlayer url={esercizio.linkVideo} nome={nomeEsercizio(esercizio)} />
                 </div>
               )}
 

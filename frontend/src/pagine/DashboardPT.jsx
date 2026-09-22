@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaData, formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa } from '../utils/formattatori.js';
+import { formattaData, formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
@@ -659,7 +659,7 @@ export default function DashboardPT() {
                       <details className="text-xs mt-2">
                         <summary className="cursor-pointer text-[var(--accent)] font-medium">Vedi esercizi</summary>
                         <ol className="mt-1 pl-4 list-decimal text-[var(--testo-secondario)]">
-                          {s.esercizi?.map(e => <li key={e.id}>{e.esercizio?.nome} ({e.serieTarget}x{e.repTarget})</li>)}
+                          {s.esercizi?.map(e => <li key={e.id}>{nomeEsercizio(e.esercizio)} ({e.serieTarget}x{e.repTarget})</li>)}
                         </ol>
                       </details>
                       {clienti.length > 0 && (
@@ -788,7 +788,7 @@ export default function DashboardPT() {
                   <div className="flex flex-col gap-1">
                     {clienteDettaglio.record.slice(0, 5).map(r => (
                       <div key={r.id} className="flex items-center justify-between text-xs py-1.5 px-2 rounded bg-[var(--bg-terziario)]">
-                        <span className="truncate flex-1">{r.esercizio?.nome}</span>
+                        <span className="truncate flex-1">{nomeEsercizio(r.esercizio)}</span>
                         <span className="font-bold text-[var(--accent)] ml-2">{formattaPeso(r.pesoMaxRaggiunto)} kg</span>
                       </div>
                     ))}

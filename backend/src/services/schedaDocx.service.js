@@ -112,7 +112,7 @@ function tabellaEsercizi(esercizi) {
     }),
     ...esercizi.map(voce => new TableRow({
       children: [
-        cella(voce.esercizio?.nome, { grassetto: true, colore: C.cellaForte }),
+        cella(voce.esercizio?.nomeIt || voce.esercizio?.nome, { grassetto: true, colore: C.cellaForte }),
         cella(serieEReps(voce)),
         cella(recupero(voce)),
         cella(note(voce))
