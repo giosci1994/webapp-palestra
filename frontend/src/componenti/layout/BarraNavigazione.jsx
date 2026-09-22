@@ -3,7 +3,7 @@
 // Bottom navigation con 5 tab
 // ============================================
 
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, ClipboardList, Dumbbell, MessageCircle, User } from 'lucide-react';
 
 const TABS = [
@@ -14,7 +14,22 @@ const TABS = [
   { percorso: '/profilo', Icona: User, etichetta: 'Profilo' }
 ];
 
+const HOME = '/dashboard';
+
 export default function BarraNavigazione() {
+  const { pathname } = useLocation();
+
+  // Le tab non devono impilarsi nella cronologia: altrimenti lo swipe
+  // "indietro" ripercorre a ritroso ogni scheda gia' aperta invece di
+  // riportare alla home, come fa qualsiasi app.
+  //
+  // Regola: si accoda una sola voce, quella della home. Dalla home la tab
+  // scelta si accoda (indietro -> home); da qualsiasi altra pagina la tab
+  // sostituisce la voce corrente; la home sostituisce sempre.
+  // La cronologia resta cosi' [home] oppure [home, tab].
+  const sullaHome = pathname === HOME;
+  const sostituisci = (percorso) => percorso === HOME || !sullaHome;
+
   return (
     <nav className="md:hidden fixed z-50 w-[calc(100%-2rem)] left-4 border border-[var(--vetro-bordo)] rounded-[32px] shadow-[var(--ombra-modale)]"
          style={{
@@ -30,6 +45,7 @@ export default function BarraNavigazione() {
             <NavLink
               key={tab.percorso}
               to={tab.percorso}
+              replace={sostituisci(tab.percorso)}
               aria-label={tab.etichetta}
               className={({ isActive }) =>
                 `flex items-center justify-center rounded-full transition-all duration-200 ${
