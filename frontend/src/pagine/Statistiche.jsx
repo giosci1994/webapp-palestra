@@ -9,6 +9,7 @@ import { formattaPeso, formattaNumero, formattaDurata, formattaData, nomeEserciz
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion } from 'framer-motion';
 import TestoScorrevole from '../componenti/comuni/TestoScorrevole.jsx';
+import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   LineChart, Line,
@@ -129,6 +130,11 @@ export default function Statistiche() {
           ))}
         </div>
       )}
+
+      {/* Corpo: gruppi muscolari, esercizi, carichi e massimali */}
+      <div className="mb-7">
+        <SezioneCorpo />
+      </div>
 
       {/* Grafici */}
       <div className="grid gap-7 md:grid-cols-2">
