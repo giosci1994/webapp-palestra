@@ -667,55 +667,6 @@ export default function WorkoutLive() {
                 🔄 Cambia Esercizio
               </button>
             </div>
-
-            {/* Banner Riferimento Precedente */}
-            {seriePrecedenti.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-[var(--raggio-md)] border border-[var(--bordo)] overflow-hidden"
-                style={{ background: 'var(--bg-terziario)' }}
-              >
-                <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--bordo)]">
-                  <span className="text-sm">📊</span>
-                  <span className="text-xs font-semibold text-[var(--testo-secondario)]">
-                    Ultimo: {formattaData(caricoPrecedente.data)}
-                  </span>
-                </div>
-                <div className="px-3 py-2 flex flex-col gap-1">
-                  {seriePrecedenti.map((sp, idx) => {
-                    // Confronto con la serie corrispondente fatta ora
-                    const serieCorresp = serieEsercizio[idx];
-                    const pesoOra = serieCorresp?.pesoEffettivo;
-                    const isCardioSerie = sp.durataMinuti != null && sp.durataMinuti > 0;
-
-                    let indicatore = null;
-                    if (pesoOra != null && !isCardioSerie) {
-                      if (pesoOra > sp.pesoEffettivo) {
-                        indicatore = <span className="text-[var(--successo)] text-xs font-bold ml-1">↑</span>;
-                      } else if (pesoOra < sp.pesoEffettivo) {
-                        indicatore = <span className="text-[var(--pericolo)] text-xs font-bold ml-1">↓</span>;
-                      } else {
-                        indicatore = <span className="text-[var(--testo-terziario)] text-xs ml-1">=</span>;
-                      }
-                    }
-
-                    return (
-                      <div key={idx} className="flex items-center justify-between text-xs">
-                        <span className="text-[var(--testo-terziario)]">Serie {sp.serieNumero}</span>
-                        <span className="font-medium flex items-center">
-                          {isCardioSerie ? (
-                            <>{sp.durataMinuti} min {sp.livelloResistenza ? `(Liv. ${sp.livelloResistenza})` : ''}</>
-                          ) : (
-                            <>{formattaPeso(sp.pesoEffettivo)} kg × {sp.repEffettive}{indicatore}</>
-                          )}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
           </div>
         )}
 
