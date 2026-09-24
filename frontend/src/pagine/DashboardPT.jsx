@@ -168,7 +168,7 @@ export default function DashboardPT() {
   };
 
   const aggiungiEsercizioAScheda = (es) => {
-    setFormScheda(prev => ({ ...prev, esercizi: [...prev.esercizi, { esercizioId: es.id, nome: es.nome, serieTarget: 3, repTarget: '8-12', recuperoSecondi: 90 }] }));
+    setFormScheda(prev => ({ ...prev, esercizi: [...prev.esercizi, { esercizioId: es.id, nome: nomeEsercizio(es), serieTarget: 3, repTarget: '8-12', recuperoSecondi: 90 }] }));
     setRicercaEsercizio('');
   };
 
@@ -595,14 +595,14 @@ export default function DashboardPT() {
                     <input type="text" value={ricercaEsercizio} onChange={e => setRicercaEsercizio(e.target.value)} className="campo-input" placeholder="Cerca esercizio..." />
                     {ricercaEsercizio.length >= 2 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-secondario)] border border-[var(--bordo)] rounded-[var(--raggio-md)] max-h-48 overflow-y-auto z-10 shadow-xl">
-                        {catalogoEsercizi.filter(e => e.nome.toLowerCase().includes(ricercaEsercizio.toLowerCase())).slice(0, 15).map(e => (
+                        {catalogoEsercizi.filter(e => `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(ricercaEsercizio.toLowerCase())).slice(0, 15).map(e => (
                           <button key={e.id} onClick={() => aggiungiEsercizioAScheda(e)}
                             className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--bg-terziario)] border-b border-[var(--bordo)] last:border-0 flex items-center justify-between">
-                            <span className="truncate">{e.nome}</span>
+                            <span className="truncate">{nomeEsercizio(e)}</span>
                             <span className="text-[10px] text-[var(--testo-terziario)] shrink-0 ml-2">{e.gruppoMuscoloPrimario}</span>
                           </button>
                         ))}
-                        {catalogoEsercizi.filter(e => e.nome.toLowerCase().includes(ricercaEsercizio.toLowerCase())).length === 0 && (
+                        {catalogoEsercizi.filter(e => `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(ricercaEsercizio.toLowerCase())).length === 0 && (
                           <p className="px-4 py-3 text-xs text-[var(--testo-terziario)]">Nessun risultato</p>
                         )}
                       </div>

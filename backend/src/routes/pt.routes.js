@@ -125,12 +125,12 @@ router.get('/clienti/:id', async (req, res, next) => {
       }),
       prisma.recordPersonale.findMany({
         where: { utenteId: clienteId }, orderBy: { pesoMaxRaggiunto: 'desc' }, take: 10,
-        include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } }
+        include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } }
       }),
       prisma.schedaAllenamento.findMany({
         where: { creatoreId: clienteId, assegnataDaPTId: trainerId },
         include: {
-          esercizi: { include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } }, orderBy: { ordineEsecuzione: 'asc' } },
+          esercizi: { include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } }, orderBy: { ordineEsecuzione: 'asc' } },
           _count: { select: { sessioni: true } }
         },
         orderBy: { creatoIl: 'desc' }
@@ -499,7 +499,7 @@ router.get('/schede', async (req, res, next) => {
       include: {
         creatore: { select: { id: true, nome: true } },
         esercizi: {
-          include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } },
+          include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
           orderBy: { ordineEsecuzione: 'asc' }
         },
         _count: { select: { sessioni: true } }
@@ -537,7 +537,7 @@ router.post('/schede', async (req, res, next) => {
         }
       },
       include: {
-        esercizi: { include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } } },
+        esercizi: { include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } } },
         _count: { select: { sessioni: true } }
       }
     });
@@ -593,7 +593,7 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
         }
       },
       include: {
-        esercizi: { include: { esercizio: { select: { nome: true } } } }
+        esercizi: { include: { esercizio: { select: { nome: true, nomeIt: true } } } }
       }
     });
 

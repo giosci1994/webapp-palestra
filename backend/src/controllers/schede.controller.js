@@ -39,7 +39,7 @@ export async function listaSchede(req, res, next) {
         creatore: { select: { id: true, nome: true, ruolo: true } },
         esercizi: {
           include: {
-            esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } }
+            esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } }
           },
           orderBy: { ordineEsecuzione: 'asc' }
         },
@@ -109,7 +109,7 @@ export async function creaScheda(req, res, next) {
       },
       include: {
         esercizi: {
-          include: { esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } } },
+          include: { esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
           orderBy: { ordineEsecuzione: 'asc' }
         }
       }
@@ -147,7 +147,7 @@ export async function clonaScheda(req, res, next) {
       },
       include: {
         esercizi: {
-          include: { esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } } },
+          include: { esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
           orderBy: { ordineEsecuzione: 'asc' }
         }
       }
@@ -192,7 +192,7 @@ export async function aggiornaScheda(req, res, next) {
         where: { id },
         include: {
           esercizi: {
-            include: { esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } } },
+            include: { esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
             orderBy: { ordineEsecuzione: 'asc' }
           }
         }
@@ -260,7 +260,7 @@ export async function aggiungiEsercizio(req, res, next) {
         ordineEsecuzione: (ultimo?.ordineEsecuzione || 0) + 1
       },
       include: {
-        esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } }
+        esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } }
       }
     });
 

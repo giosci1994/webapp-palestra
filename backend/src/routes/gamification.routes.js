@@ -189,7 +189,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
     if (vis.record) {
       const records = await prisma.recordPersonale.findMany({
         where: { utenteId: targetId },
-        include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } },
+        include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
         orderBy: { pesoMaxRaggiunto: 'desc' },
         take: 15
       });
@@ -209,7 +209,7 @@ router.get('/classifica-record', async (req, res, next) => {
         utente: { stato: 'ATTIVO', gamificationAttiva: true }
       },
       include: {
-        esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } },
+        esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } },
         utente: { select: { id: true, nome: true, immagineProfilo: true } }
       },
       orderBy: { pesoMaxRaggiunto: 'desc' }

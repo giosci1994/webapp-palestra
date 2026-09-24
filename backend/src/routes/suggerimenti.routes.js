@@ -71,7 +71,7 @@ router.get('/', async (req, res, next) => {
       where: { utenteId: req.utente.id },
       orderBy: { creatoIl: 'desc' },
       include: {
-        esercizio: { select: { id: true, nome: true } }
+        esercizio: { select: { id: true, nome: true, nomeIt: true } }
       }
     });
 

@@ -169,7 +169,7 @@ router.get('/suggerimenti', async (req, res, next) => {
       orderBy: [{ stato: 'asc' }, { creatoIl: 'desc' }],
       include: {
         utente: { select: { id: true, nome: true, email: true } },
-        esercizio: { select: { id: true, nome: true } }
+        esercizio: { select: { id: true, nome: true, nomeIt: true } }
       }
     });
 

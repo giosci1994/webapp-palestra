@@ -470,7 +470,7 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
         },
         include: {
           esercizi: {
-            include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } },
+            include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
             orderBy: { ordineEsecuzione: 'asc' }
           },
           _count: { select: { sessioni: true } }

@@ -48,7 +48,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
 
   const eserciziFiltrati = eserciziCatalogo.filter(e => {
     if (filtroGruppo && e.gruppoMuscoloPrimario !== filtroGruppo) return false;
-    if (ricerca && !e.nome.toLowerCase().includes(ricerca.toLowerCase())) return false;
+    if (ricerca && !`${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(ricerca.toLowerCase())) return false;
     return true;
   });
 
@@ -312,7 +312,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                             }`}>
                       <span className="text-lg">{selezionato ? '✅' : '➕'}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{es.nome}</p>
+                        <p className="font-medium truncate">{nomeEsercizio(es)}</p>
                         <p className="text-xs text-[var(--testo-terziario)]">
                           {es.gruppoMuscoloPrimario} {es.attrezzatura ? `· ${es.attrezzatura.nome}` : ''}
                         </p>

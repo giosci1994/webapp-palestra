@@ -262,7 +262,7 @@ export default function CatalogoEsercizi() {
       if (filtroMechanics && e.mechanics !== filtroMechanics) return false;
       if (ricerca) {
         const q = ricerca.toLowerCase();
-        if (!e.nome.toLowerCase().includes(q) && 
+        if (!`${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(q) && 
             !e.gruppoMuscoloPrimario?.toLowerCase().includes(q) &&
             !(e.gruppoMuscoloSecondario || '').toLowerCase().includes(q) &&
             !(e.attrezzatura?.nome || '').toLowerCase().includes(q)) return false;

@@ -523,7 +523,7 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
     where: { id: parseInt(schedaId) },
     include: {
       esercizi: {
-        include: { esercizio: { select: { nome: true, gruppoMuscoloPrimario: true } } },
+        include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
         orderBy: { ordineEsecuzione: 'asc' }
       }
     }
@@ -544,9 +544,9 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
       if (e.livelloResistenza != null) parti.push(`liv ${e.livelloResistenza}`);
       if (e.distanzaKm != null) parti.push(`${e.distanzaKm} km`);
       const tag = e.riscaldamento ? '🔥' : '🏃';
-      return `${i + 1}. ${tag} ${e.esercizio.nome}${parti.length ? ' — ' + parti.join(', ') : ''}`;
+      return `${i + 1}. ${tag} ${e.esercizio.nomeIt || e.esercizio.nome}${parti.length ? ' — ' + parti.join(', ') : ''}`;
     }
-    return `${i + 1}. ${e.esercizio.nome} — ${e.serieTarget}x${e.repTarget} (rec ${e.recuperoSecondi}s)`;
+    return `${i + 1}. ${e.esercizio.nomeIt || e.esercizio.nome} — ${e.serieTarget}x${e.repTarget} (rec ${e.recuperoSecondi}s)`;
   });
   const testo = `📋 *${scheda.titolo}*\nLivello: ${scheda.livello}\n\n${righe.join('\n') || '(nessun esercizio)'}`;
   return { id: scheda.id, titolo: scheda.titolo, testo, numEsercizi: scheda.esercizi.length };
