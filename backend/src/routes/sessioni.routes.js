@@ -21,6 +21,7 @@ router.post('/passata', controller.registraSessionePassata);
 // Rotte specifiche PRIMA di /:id (altrimenti Express le interpreta come parametro)
 router.get('/storico', controller.storicoSessioniCompleto);
 router.get('/precedente/:schedaId', controller.ultimaSessioneScheda);
+router.get('/ultimi-carichi', controller.ultimiCarichi);
 
 router.get('/:id', controller.dettaglioSessione);
 router.patch('/:id/completa', controller.completaSessione);

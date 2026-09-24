@@ -10,6 +10,7 @@ import { SpinnerPagina } from '../comuni/Spinner.jsx';
 import Sidebar from './Sidebar.jsx';
 import BarraNavigazione from './BarraNavigazione.jsx';
 import NovitaStorie from '../specifici/NovitaStorie.jsx';
+import RecuperoErrori from '../comuni/RecuperoErrori.jsx';
 
 export default function LayoutAutenticato() {
   const { autenticato, caricamento, utente } = useAuth();
@@ -48,7 +49,10 @@ export default function LayoutAutenticato() {
             boxSizing: 'border-box'
           }}
         >
-          <Outlet />
+          {/* La chiave azzera l'errore quando si cambia pagina */}
+          <RecuperoErrori key={location.pathname}>
+            <Outlet />
+          </RecuperoErrori>
         </div>
       </main>
 

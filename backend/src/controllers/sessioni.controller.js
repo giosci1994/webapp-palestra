@@ -64,7 +64,7 @@ export async function storicoSessioniCompleto(req, res, next) {
           where: { completato: true },
           include: {
             esercizio: {
-              select: { id: true, nome: true, gruppoMuscoloPrimario: true }
+              select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true }
             }
           },
           orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
@@ -145,7 +145,7 @@ export async function ultimaSessioneScheda(req, res, next) {
           where: { completato: true },
           include: {
             esercizio: {
-              select: { id: true, nome: true, gruppoMuscoloPrimario: true }
+              select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true }
             }
           },
           orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
@@ -188,6 +188,63 @@ export async function ultimaSessioneScheda(req, res, next) {
         logPerEsercizio
       }
     });
+  } catch (errore) { next(errore); }
+}
+
+/**
+ * Carichi dell'ultima volta per ciascun esercizio, in qualsiasi scheda.
+ * Serve all'allenamento in corso per suggerire da che peso partire: con una
+ * scheda nuova l'ultima sessione della stessa scheda non esiste, ma
+ * l'esercizio magari e' gia' stato fatto altrove.
+ *
+ * Query: esercizi=1,2,3 · escludi=<id della sessione in corso>
+ * Risposta: { [esercizioId]: { sessioneId, data, serie: [...] } }
+ */
+export async function ultimiCarichi(req, res, next) {
+  try {
+    const ids = String(req.query.esercizi || '')
+      .split(',')
+      .map(n => parseInt(n))
+      .filter(Number.isInteger)
+      .slice(0, 50);
+    if (ids.length === 0) return res.json({ successo: true, dati: {} });
+    const escludi = parseInt(req.query.escludi);
+
+    const serie = await prisma.logSerie.findMany({
+      where: {
+        esercizioId: { in: ids },
+        completato: true,
+        sessione: {
+          utenteId: req.utente.id,
+          ...(Number.isInteger(escludi) ? { id: { not: escludi } } : {})
+        }
+      },
+      select: {
+        esercizioId: true, sessioneId: true, serieNumero: true,
+        pesoEffettivo: true, repEffettive: true, rpe: true,
+        durataMinuti: true, livelloResistenza: true,
+        sessione: { select: { dataInizio: true } }
+      },
+      orderBy: [{ sessione: { dataInizio: 'desc' } }, { serieNumero: 'asc' }, { id: 'asc' }]
+    });
+
+    // Le righe arrivano dalla sessione piu' recente: per ogni esercizio si
+    // tiene solo la prima sessione incontrata.
+    const risultato = {};
+    for (const s of serie) {
+      const voce = risultato[s.esercizioId] ??= { sessioneId: s.sessioneId, data: s.sessione.dataInizio, serie: [] };
+      if (voce.sessioneId !== s.sessioneId) continue;
+      voce.serie.push({
+        serieNumero: s.serieNumero,
+        pesoEffettivo: s.pesoEffettivo,
+        repEffettive: s.repEffettive,
+        rpe: s.rpe,
+        durataMinuti: s.durataMinuti,
+        livelloResistenza: s.livelloResistenza
+      });
+    }
+
+    res.json({ successo: true, dati: risultato });
   } catch (errore) { next(errore); }
 }
 
@@ -260,7 +317,7 @@ export async function dettaglioSessione(req, res, next) {
           }
         },
         logSerie: {
-          include: { esercizio: { select: { id: true, nome: true, gruppoMuscoloPrimario: true } } },
+          include: { esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
           orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
         }
       }
@@ -390,7 +447,7 @@ async function controllaRecord(utenteId, serie, dataRecord = null) {
           pesoMaxRaggiunto: pesoMax,
           ...(dataRecord ? { dataRecord } : {})
         },
-        include: { esercizio: { select: { nome: true } } }
+        include: { esercizio: { select: { nome: true, nomeIt: true } } }
       });
       recordAggiornati.push(record);
     }

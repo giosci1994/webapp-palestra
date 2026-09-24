@@ -53,28 +53,31 @@ export default function WorkoutLive() {
   const [mostraVideo, setMostraVideo] = useState(false);
   const [tempoInizio] = useState(ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
-  const [datiPrecedenti, setDatiPrecedenti] = useState(null);
+  // Ultima volta che hai fatto ciascun esercizio, in qualsiasi scheda
+  const [ultimiCarichi, setUltimiCarichi] = useState({});
+  // Una serie alla volta: un doppio tocco registrava la stessa serie due volte
+  const inviandoRef = useRef(false);
+  const [inviando, setInviando] = useState(false);
+
+  const salvaProgressi = (stato) => {
+    try {
+      localStorage.setItem(CHIAVE_PROGRESSO, JSON.stringify(stato));
+    } catch {
+      // localStorage pieno o non disponibile — ignora silenziosamente
+    }
+  };
+  const statoAttuale = () => ({ esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio });
 
   // --- Salva progressi in localStorage (debounce 500ms) ---
+  // Il ritardo serve solo a non scrivere a ogni tasto nei campi. Le serie
+  // registrate si salvano subito, in completaSerie/saltaSerie: se l'app viene
+  // chiusa in quel mezzo secondo, riaprendola la serie risulterebbe da fare e
+  // verrebbe registrata una seconda volta.
   useEffect(() => {
     if (!id || mostraRiepilogo) return; // Non salvare dopo completamento
 
     if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
-    salvaTimeoutRef.current = setTimeout(() => {
-      try {
-        const daSalvare = {
-          esercizioIdx,
-          serieCorrente,
-          form,
-          serieCompletate,
-          eserciziLive,
-          tempoInizio
-        };
-        localStorage.setItem(CHIAVE_PROGRESSO, JSON.stringify(daSalvare));
-      } catch {
-        // localStorage pieno o non disponibile — ignora silenziosamente
-      }
-    }, 500);
+    salvaTimeoutRef.current = setTimeout(() => salvaProgressi(statoAttuale()), 500);
 
     return () => {
       if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
@@ -108,14 +111,18 @@ export default function WorkoutLive() {
     return () => wakeLock.disattiva();
   }, []);
 
-  // Carica dati della sessione precedente per la stessa scheda
+  // Carichi dell'ultima volta per ogni esercizio in programma. Prima si
+  // guardava solo l'ultima sessione della stessa scheda: con una scheda nuova
+  // non compariva nulla, anche se l'esercizio era gia' stato fatto altrove.
+  const idEsercizi = [...new Set(eserciziLive.map(e => e.esercizioId))].sort((a, b) => a - b).join(',');
   useEffect(() => {
-    if (sessione?.schedaId) {
-      api.get(`/sessioni/precedente/${sessione.schedaId}`)
-        .then(r => setDatiPrecedenti(r.dati))
-        .catch(() => setDatiPrecedenti(null));
-    }
-  }, [sessione?.schedaId]);
+    if (!sessione?.id || !idEsercizi) return;
+    let annullato = false;
+    api.get(`/sessioni/ultimi-carichi?esercizi=${idEsercizi}&escludi=${sessione.id}`)
+      .then(r => { if (!annullato) setUltimiCarichi(r.dati || {}); })
+      .catch(() => { /* il riferimento e' un aiuto: senza, si procede */ });
+    return () => { annullato = true; };
+  }, [sessione?.id, idEsercizi]);
 
   useEffect(() => {
     // Inizializza eserciziLive solo se non già ripristinati da localStorage
@@ -153,6 +160,12 @@ export default function WorkoutLive() {
 
   const esercizi = eserciziLive;
   const esercizioAttuale = esercizi[esercizioIdx];
+
+  // Ricerca sul nome italiano e sull'originale inglese
+  const testoRicerca = ricercaTesto.trim().toLowerCase();
+  const eserciziFiltrati = catalogoEsercizi.filter(e =>
+    `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(testoRicerca)
+  );
 
   // --- Tracking esercizi completati ---
   // Un esercizio è "completato" quando ha >= serieTarget serie registrate
@@ -207,10 +220,29 @@ export default function WorkoutLive() {
   const isCardio = esercizioAttuale?.esercizio?.attrezzatura?.categoria === 'CARDIO' || 
                    esercizioAttuale?.esercizio?.gruppoMuscoloPrimario?.toLowerCase() === 'cardio';
 
-  // Serie precedenti per l'esercizio attuale (dall'ultimo allenamento)
-  const seriePrecedenti = datiPrecedenti?.logPerEsercizio?.[esercizioAttuale?.esercizioId]?.serie || [];
+  // Serie dell'ultima volta per l'esercizio attuale
+  const caricoPrecedente = ultimiCarichi[esercizioAttuale?.esercizioId] || null;
+  const seriePrecedenti = caricoPrecedente?.serie || [];
+  // Riferimento per la serie da fare: la stessa serie dell'ultima volta, o
+  // l'ultima fatta se allora ne erano state fatte meno
+  const riferimento = seriePrecedenti.length
+    ? ([...seriePrecedenti].reverse().find(sp => sp.serieNumero === serieCorrente) || seriePrecedenti[seriePrecedenti.length - 1])
+    : null;
+  const riferimentoCardio = riferimento?.durataMinuti > 0;
+
+  const usaRiferimento = () => {
+    if (!riferimento) return;
+    // Solo i parametri da impostare prima della serie: le ripetizioni si
+    // scrivono dopo averla fatta, e precompilate verrebbero registrate per sbaglio
+    if (riferimentoCardio) {
+      setForm(p => ({ ...p, minuti: String(riferimento.durataMinuti), resistenza: riferimento.livelloResistenza ? String(riferimento.livelloResistenza) : p.resistenza }));
+    } else {
+      setForm(p => ({ ...p, peso: String(riferimento.pesoEffettivo) }));
+    }
+  };
 
   const completaSerie = async () => {
+    if (inviandoRef.current) return;
     if (isCardio) {
       if (!form.minuti) return;
     } else {
@@ -230,10 +262,14 @@ export default function WorkoutLive() {
       })
     };
 
+    inviandoRef.current = true;
+    setInviando(true);
     try {
       const risposta = await api.post(`/sessioni/${sessione.id}/serie`, datiSerie);
-      setSerieCompletate(prev => [...prev, risposta.dati]);
-      setSerieCorrente(prev => prev + 1);
+      const nuoveCompletate = [...serieCompletate, risposta.dati];
+      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1 });
+      setSerieCompletate(nuoveCompletate);
+      setSerieCorrente(serieCorrente + 1);
 
       // Avvia timer recupero
       if (esercizioAttuale?.recuperoSecondi) {
@@ -242,10 +278,16 @@ export default function WorkoutLive() {
       }
     } catch (err) {
       alert(err.message);
+    } finally {
+      inviandoRef.current = false;
+      setInviando(false);
     }
   };
 
   const saltaSerie = async () => {
+    if (inviandoRef.current) return;
+    inviandoRef.current = true;
+    setInviando(true);
     try {
       await api.post(`/sessioni/${sessione.id}/serie`, {
         esercizioId: esercizioAttuale.esercizioId,
@@ -255,8 +297,14 @@ export default function WorkoutLive() {
         completato: false,
         motivoSaltoEsercizio: 'Saltata'
       });
-      setSerieCorrente(prev => prev + 1);
-    } catch (err) { console.error(err); }
+      salvaProgressi({ ...statoAttuale(), serieCorrente: serieCorrente + 1 });
+      setSerieCorrente(serieCorrente + 1);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      inviandoRef.current = false;
+      setInviando(false);
+    }
   };
 
   const prossimoEsercizio = () => {
@@ -517,7 +565,7 @@ export default function WorkoutLive() {
                   {serieCorrente <= esercizioAttuale.serieTarget 
                     ? `Prossima: Serie ${serieCorrente} di ${esercizioAttuale.serieTarget}`
                     : (prossimoIdx !== -1
-                        ? `Prossimo Esercizio: ${esercizi[prossimoIdx].nomeEsercizio(esercizio)}`
+                        ? `Prossimo Esercizio: ${nomeEsercizio(esercizi[prossimoIdx].esercizio)}`
                         : `Prossima Azione: Fine Allenamento`)}
                 </p>
               </div>
@@ -531,6 +579,27 @@ export default function WorkoutLive() {
             <p className="text-sm font-semibold text-center text-[var(--testo-secondario)]">
               Serie {serieCorrente} / {esercizioAttuale.serieTarget}
             </p>
+
+            {/* Ultima volta: per decidere il carico prima di iniziare la serie */}
+            {riferimento && (
+              <button
+                type="button"
+                onClick={usaRiferimento}
+                className="flex items-center justify-between gap-3 w-full px-3 py-2.5 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)] text-left hover:border-[var(--accent)] transition-colors"
+              >
+                <span className="min-w-0">
+                  <span className="block text-[11px] text-[var(--testo-terziario)]">
+                    Ultima volta · {formattaData(caricoPrecedente.data)}
+                  </span>
+                  <span className="block text-base font-bold tabular-nums">
+                    {riferimentoCardio
+                      ? `${riferimento.durataMinuti} min${riferimento.livelloResistenza ? ` · liv. ${riferimento.livelloResistenza}` : ''}`
+                      : `${riferimento.pesoEffettivo > 0 ? `${formattaPeso(riferimento.pesoEffettivo)} kg` : 'Corpo libero'} × ${riferimento.repEffettive}`}
+                  </span>
+                </span>
+                <span className="text-xs font-bold text-[var(--accent)] shrink-0">Usa</span>
+              </button>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               {isCardio ? (
@@ -553,13 +622,13 @@ export default function WorkoutLive() {
                   <div>
                     <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Peso (kg)</label>
                     <input type="number" value={form.peso} onChange={e => setForm(p => ({...p, peso: e.target.value}))}
-                           className="campo-input text-center text-3xl font-bold py-5" placeholder="0"
+                           className="campo-input text-center text-3xl font-bold py-5" placeholder={riferimento && !riferimentoCardio ? String(riferimento.pesoEffettivo) : '0'}
                            inputMode="decimal" step="0.5" min="0" />
                   </div>
                   <div>
                     <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Ripetizioni</label>
                     <input type="number" value={form.rep} onChange={e => setForm(p => ({...p, rep: e.target.value}))}
-                           className="campo-input text-center text-3xl font-bold py-5" placeholder="0"
+                           className="campo-input text-center text-3xl font-bold py-5" placeholder={riferimento && !riferimentoCardio ? String(riferimento.repEffettive) : '0'}
                            inputMode="numeric" min="0" />
                   </div>
                 </>
@@ -579,7 +648,7 @@ export default function WorkoutLive() {
 
             {/* Bottoni azione — ENORMI */}
             <div className="flex flex-col gap-2 mt-2">
-              <button onClick={completaSerie} disabled={isCardio ? !form.minuti : (!form.peso || !form.rep)}
+              <button onClick={completaSerie} disabled={inviando || (isCardio ? !form.minuti : (!form.peso || !form.rep))}
                       className={`btn-enorme ${
                         (isCardio ? !form.minuti : (!form.peso || !form.rep)) 
                           ? 'opacity-80 bg-[var(--pericolo-dim)] text-[var(--pericolo)] border border-[var(--pericolo)]/50 cursor-not-allowed' 
@@ -588,8 +657,8 @@ export default function WorkoutLive() {
                 ✓ Serie Completata
               </button>
 
-              <button onClick={saltaSerie}
-                      className="btn-enorme" style={{ background: 'var(--bg-terziario)', color: 'var(--testo-secondario)' }}>
+              <button onClick={saltaSerie} disabled={inviando}
+                      className="btn-enorme disabled:opacity-60" style={{ background: 'var(--bg-terziario)', color: 'var(--testo-secondario)' }}>
                 ⏭ Salta Serie
               </button>
 
@@ -610,7 +679,7 @@ export default function WorkoutLive() {
                 <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--bordo)]">
                   <span className="text-sm">📊</span>
                   <span className="text-xs font-semibold text-[var(--testo-secondario)]">
-                    Ultimo: {formattaData(datiPrecedenti.dataInizio)}
+                    Ultimo: {formattaData(caricoPrecedente.data)}
                   </span>
                 </div>
                 <div className="px-3 py-2 flex flex-col gap-1">
@@ -656,7 +725,7 @@ export default function WorkoutLive() {
             {prossimoIdx !== -1 ? (
               <>
                 <button onClick={prossimoEsercizio} className="btn-enorme">
-                  {esercizi[prossimoIdx].nomeEsercizio(esercizio)} →
+                  {nomeEsercizio(esercizi[prossimoIdx].esercizio)} →
                 </button>
 
                 {/* Promemoria esercizi saltati */}
@@ -811,20 +880,20 @@ export default function WorkoutLive() {
               </div>
 
               <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
-                {catalogoEsercizi.filter(e => e.nome.toLowerCase().includes(ricercaTesto.toLowerCase())).map((es) => (
+                {eserciziFiltrati.map((es) => (
                   <button
                     key={es.id}
                     onClick={() => aggiungiEsercizioExtra(es)}
                     className="flex items-center justify-between p-3 rounded-xl border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors text-left"
                   >
                     <div>
-                      <p className="font-semibold text-sm">{es.nome}</p>
+                      <p className="font-semibold text-sm">{nomeEsercizio(es)}</p>
                       <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{es.gruppoMuscoloPrimario} · {es.attrezzatura?.nome || 'Varie'}</p>
                     </div>
                     <span className="text-[var(--accent)] font-bold">➕</span>
                   </button>
                 ))}
-                {catalogoEsercizi.length > 0 && catalogoEsercizi.filter(e => e.nome.toLowerCase().includes(ricercaTesto.toLowerCase())).length === 0 && (
+                {catalogoEsercizi.length > 0 && eserciziFiltrati.length === 0 && (
                   <p className="text-center text-[var(--testo-terziario)] text-sm py-4">Nessun esercizio trovato</p>
                 )}
                 {catalogoEsercizi.length === 0 && (
