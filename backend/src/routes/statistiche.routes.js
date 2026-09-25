@@ -6,9 +6,20 @@
 import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
+import { gruppiDiEsercizio, GRUPPI_PRINCIPALI, GRUPPI_NON_MUSCOLARI } from '../utils/gruppiMuscolari.js';
 
 const router = Router();
 router.use(verificaToken);
+
+const SETTIMANA = 7 * 86400000;
+
+/** Inizio (lunedi' 00:00 UTC) della settimana di una data, in millisecondi. */
+function lunediUTC(d) {
+  const x = new Date(d);
+  x.setUTCHours(0, 0, 0, 0);
+  x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7));
+  return x.getTime();
+}
 
 // GET /api/v1/statistiche/riepilogo — Riepilogo generale utente
 router.get('/riepilogo', async (req, res, next) => {
@@ -55,15 +66,8 @@ router.get('/riepilogo', async (req, res, next) => {
     // settimana ha quasi sempre la serie di giorni a 0 o 1: quella di
     // settimane dice davvero se sei costante. La settimana in corso non
     // interrompe la serie finche' non e' finita.
-    const SETTIMANA = 7 * 86400000;
-    const lunedi = (d) => {
-      const x = new Date(d);
-      x.setUTCHours(0, 0, 0, 0);
-      x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7));
-      return x.getTime();
-    };
-    const settimaneAttive = new Set(sessioni.map(s => lunedi(s.dataInizio)));
-    const questaSettimana = lunedi(new Date());
+    const settimaneAttive = new Set(sessioni.map(s => lunediUTC(s.dataInizio)));
+    const questaSettimana = lunediUTC(new Date());
     let settimaneDiFila = 0;
     for (let w = settimaneAttive.has(questaSettimana) ? questaSettimana : questaSettimana - SETTIMANA;
          settimaneAttive.has(w); w -= SETTIMANA) {
@@ -270,6 +274,123 @@ router.get('/corpo', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
+// Oltre le 12 ripetizioni la stima del massimale non e' affidabile
+const RIPETIZIONI_MAX_STIMA = 12;
+
+/** Massimale stimato con la formula di Epley, al mezzo chilo; null dove non ha senso. */
+function stimaMassimale(peso, rip) {
+  if (!(peso > 0) || rip < 2 || rip > RIPETIZIONI_MAX_STIMA) return null;
+  return Math.round(peso * (1 + rip / 30) * 2) / 2;
+}
+
+const unDecimale = (n) => Math.round(n * 10) / 10;
+
+// GET /api/v1/statistiche/muscoli?giorni=30 — Gruppi muscolari nel periodo, esercizi e carichi
+//
+// Per gruppo: serie nel periodo (primario 1, secondario 0,5: vedi
+// utils/gruppiMuscolari.js), serie a settimana e ultima volta allenato, anche
+// indirettamente. Per esercizio, su tutto lo storico: carico dell'ultima volta,
+// massimale (serie da 1 ripetizione) e massimale stimato dalle serie di lavoro.
+// Il periodo cambia colori e conteggi, non i dettagli degli esercizi: un
+// massimale di maggio resta visibile anche guardando gli ultimi 30 giorni.
+router.get('/muscoli', async (req, res, next) => {
+  try {
+    const giorni = Math.min(Math.max(parseInt(req.query.giorni) || 30, 1), 3650);
+    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
+    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
+    const inizioPeriodo = new Date(Date.now() - giorni * 86400000);
+
+    const serie = await prisma.logSerie.findMany({
+      where: { completato: true, sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } } },
+      select: {
+        sessioneId: true, pesoEffettivo: true, repEffettive: true, durataMinuti: true,
+        esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true, gruppoMuscoloSecondario: true } },
+        sessione: { select: { dataInizio: true } }
+      }
+    });
+
+    const esercizi = new Map();
+    const gruppi = new Map();
+    const gruppo = (nome) => {
+      if (!gruppi.has(nome)) {
+        gruppi.set(nome, { nome, seriePeriodo: 0, serieDirettePeriodo: 0, ultimaData: null, esercizi: new Set(), eserciziSecondari: new Set() });
+      }
+      return gruppi.get(nome);
+    };
+
+    for (const s of serie) {
+      const e = s.esercizio;
+      const data = s.sessione.dataInizio;
+      const nelPeriodo = data >= inizioPeriodo;
+
+      let v = esercizi.get(e.id);
+      if (!v) {
+        v = { id: e.id, nome: e.nome, nomeIt: e.nomeIt, serie: 0, seriePeriodo: 0, sessioni: new Set(),
+              ultimaSessione: null, serieUltima: null, massimale: null, stimato: null };
+        esercizi.set(e.id, v);
+      }
+      v.serie++;
+      if (nelPeriodo) v.seriePeriodo++;
+      v.sessioni.add(s.sessioneId);
+      if (!v.ultimaSessione || data > v.ultimaSessione.data) {
+        v.ultimaSessione = { id: s.sessioneId, data };
+        v.serieUltima = s;
+      } else if (s.sessioneId === v.ultimaSessione.id && serieMigliore(s, v.serieUltima)) {
+        v.serieUltima = s;
+      }
+      // A parita' di valore vince il piu' recente: racconta la forza di adesso
+      const piuRecente = (prec) => data > prec.data;
+      if (s.repEffettive === 1 && s.pesoEffettivo > 0 &&
+          (!v.massimale || s.pesoEffettivo > v.massimale.peso || (s.pesoEffettivo === v.massimale.peso && piuRecente(v.massimale)))) {
+        v.massimale = { peso: s.pesoEffettivo, data };
+      }
+      const stima = stimaMassimale(s.pesoEffettivo, s.repEffettive);
+      if (stima != null && (!v.stimato || stima > v.stimato.peso || (stima === v.stimato.peso && piuRecente(v.stimato)))) {
+        v.stimato = { peso: stima, data, daPeso: s.pesoEffettivo, daRip: s.repEffettive };
+      }
+
+      for (const { gruppo: nome, peso, secondario } of gruppiDiEsercizio(e.gruppoMuscoloPrimario, e.gruppoMuscoloSecondario)) {
+        const g = gruppo(nome);
+        if (!g.ultimaData || data > g.ultimaData) g.ultimaData = data;
+        (secondario ? g.eserciziSecondari : g.esercizi).add(e.id);
+        if (nelPeriodo) {
+          g.seriePeriodo += peso;
+          if (!secondario) g.serieDirettePeriodo += peso;
+        }
+      }
+    }
+    // I gruppi principali ci sono sempre, anche mai allenati: un buco si vede
+    for (const nome of GRUPPI_PRINCIPALI) gruppo(nome);
+
+    const settimane = giorni / 7;
+    res.json({
+      successo: true,
+      dati: {
+        periodo: { giorni, da: inizioPeriodo, settimane: unDecimale(settimane) },
+        gruppi: [...gruppi.values()]
+          .map(g => ({
+            nome: g.nome,
+            muscolare: !GRUPPI_NON_MUSCOLARI.has(g.nome),
+            seriePeriodo: unDecimale(g.seriePeriodo),
+            serieDirettePeriodo: unDecimale(g.serieDirettePeriodo),
+            serieSettimanali: unDecimale(g.seriePeriodo / settimane),
+            ultimaData: g.ultimaData,
+            esercizi: [...g.esercizi],
+            eserciziSecondari: [...g.eserciziSecondari].filter(id => !g.esercizi.has(id))
+          }))
+          .sort((a, b) => b.seriePeriodo - a.seriePeriodo || (b.ultimaData || 0) - (a.ultimaData || 0)),
+        esercizi: Object.fromEntries([...esercizi.values()].map(v => [v.id, {
+          id: v.id, nome: v.nome, nomeIt: v.nomeIt,
+          serie: v.serie, seriePeriodo: v.seriePeriodo, sessioni: v.sessioni.size,
+          ultimo: inSintesi(v.serieUltima),
+          massimale: v.massimale,
+          stimato: v.stimato
+        }]))
+      }
+    });
+  } catch (errore) { next(errore); }
+});
+
 // GET /api/v1/statistiche/record — Record personali con storico
 router.get('/record', async (req, res, next) => {
   try {
@@ -300,11 +421,15 @@ router.delete('/record/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/progressione/:esercizioId — Progressione peso nel tempo
+// GET /api/v1/statistiche/progressione/:esercizioId — Andamento dell'esercizio nel tempo
+//
+// Un punto per giorno: la serie migliore (peso, a parita' le ripetizioni), il
+// massimale stimato migliore della giornata e l'eventuale massimale vero
+// (serie da 1 ripetizione). Per il corpo libero conta chi ha fatto piu'
+// ripetizioni, per il cardio i minuti.
 router.get('/progressione/:esercizioId', async (req, res, next) => {
   try {
     const esercizioId = parseInt(req.params.esercizioId);
-
     const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
     const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
 
@@ -314,26 +439,84 @@ router.get('/progressione/:esercizioId', async (req, res, next) => {
         completato: true,
         sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } }
       },
-      include: {
+      select: {
+        pesoEffettivo: true, repEffettive: true, durataMinuti: true,
         sessione: { select: { dataInizio: true } }
       },
       orderBy: { sessione: { dataInizio: 'asc' } }
     });
 
-    // Raggruppa per sessione e prendi il peso massimo
-    const perSessione = {};
-    serie.forEach(s => {
+    const perGiorno = new Map();
+    for (const s of serie) {
       const giorno = s.sessione.dataInizio.toISOString().split('T')[0];
-      if (!perSessione[giorno] || s.pesoEffettivo > perSessione[giorno].pesoMax) {
-        perSessione[giorno] = {
-          data: giorno,
-          pesoMax: s.pesoEffettivo,
-          repMax: s.repEffettive
-        };
+      let p = perGiorno.get(giorno);
+      if (!p) {
+        p = { data: giorno, migliore: null, stimato: null, massimale: null };
+        perGiorno.set(giorno, p);
       }
-    });
+      if (serieMigliore(s, p.migliore)) p.migliore = s;
+      const stima = stimaMassimale(s.pesoEffettivo, s.repEffettive);
+      if (stima != null && (p.stimato == null || stima > p.stimato)) p.stimato = stima;
+      if (s.repEffettive === 1 && s.pesoEffettivo > 0 && (p.massimale == null || s.pesoEffettivo > p.massimale)) {
+        p.massimale = s.pesoEffettivo;
+      }
+    }
 
-    res.json({ successo: true, dati: Object.values(perSessione) });
+    res.json({
+      successo: true,
+      dati: [...perGiorno.values()].map(p => ({
+        data: p.data,
+        peso: p.migliore.pesoEffettivo,
+        rip: p.migliore.repEffettive,
+        minuti: p.migliore.durataMinuti,
+        stimato: p.stimato,
+        massimale: p.massimale
+      }))
+    });
+  } catch (errore) { next(errore); }
+});
+
+// GET /api/v1/statistiche/frequenza — Allenamenti fatti e programmati, ultime 12 settimane
+router.get('/frequenza', async (req, res, next) => {
+  try {
+    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
+    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
+    const questaSettimana = lunediUTC(new Date());
+    const inizio = new Date(questaSettimana - 11 * SETTIMANA);
+    const fine = new Date(questaSettimana + SETTIMANA);
+
+    const [sessioni, piani] = await Promise.all([
+      prisma.sessioneAllenamento.findMany({
+        where: {
+          utenteId: req.utente.id,
+          dataFine: { not: null },
+          dataInizio: { gte: inizio > resetDate ? inizio : resetDate, lt: fine }
+        },
+        select: { dataInizio: true }
+      }),
+      // Tutti quelli messi in calendario, anche saltati: erano comunque programmati
+      prisma.allenamentoPianificato.findMany({
+        where: { utenteId: req.utente.id, data: { gte: inizio, lt: fine } },
+        select: { data: true }
+      })
+    ]);
+
+    const settimane = Array.from({ length: 12 }, (_, i) => ({
+      settimana: new Date(questaSettimana - (11 - i) * SETTIMANA).toISOString().split('T')[0],
+      fatti: 0,
+      programmati: 0
+    }));
+    const indice = (d) => 11 - Math.round((questaSettimana - lunediUTC(d)) / SETTIMANA);
+    for (const s of sessioni) {
+      const i = indice(s.dataInizio);
+      if (i >= 0 && i < 12) settimane[i].fatti++;
+    }
+    for (const p of piani) {
+      const i = indice(p.data);
+      if (i >= 0 && i < 12) settimane[i].programmati++;
+    }
+
+    res.json({ successo: true, dati: settimane });
   } catch (errore) { next(errore); }
 });
 
