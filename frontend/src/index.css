@@ -929,3 +929,7 @@ input, textarea, select {
   border-bottom-right-radius: var(--raggio-md) !important;
 }
 
+
+/* --- Mappa muscolare: il muscolo raggiunto da tastiera si vede come quello selezionato --- */
+.mappa-muscoli g[role="button"]:focus { outline: none; }
+.mappa-muscoli g[role="button"]:focus-visible polygon { stroke: var(--testo-primario); stroke-width: 1px; }

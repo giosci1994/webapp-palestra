@@ -3,9 +3,8 @@
 // Sagoma fronte/retro con i muscoli colorati in base alle serie fatte
 // ============================================
 //
-// La mappa e' un indice visivo per chi usa il tocco: le stesse informazioni
-// sono nell'elenco dei gruppi sotto, che resta il percorso accessibile da
-// tastiera e lettore di schermo. Per questo qui i poligoni non sono focusabili.
+// La sagoma e' l'unico modo per scegliere un gruppo: ogni muscolo e' quindi
+// un pulsante anche da tastiera (Tab, Invio o Spazio) e per i lettori di schermo.
 
 import { FRONTE, RETRO } from './sagomaCorpo.js';
 import { SCALA_ALLENAMENTO, COLORE_NON_ALLENATO } from '../../utils/costanti.js';
@@ -16,27 +15,32 @@ const DECORATIVI = new Set(['head', 'neck', 'knees']);
 /**
  * @param {object} p
  * @param {Record<string, number>} p.livelli - muscolo → gradino 1-5 della scala (assente: mai allenato)
- * @param {Record<string, string>} p.etichette - muscolo → testo del suggerimento al passaggio del mouse
+ * @param {Record<string, string>} p.etichette - muscolo → descrizione (suggerimento e lettori di schermo)
  * @param {Set<string>} p.evidenziati - muscoli del gruppo selezionato
  * @param {(muscolo: string) => void} p.onTocca
  */
 export default function MappaCorpo({ livelli, etichette, evidenziati, onTocca }) {
   const figura = (dati, vista) => {
-    // I muscoli evidenziati si disegnano per ultimi, cosi' il bordo di
-    // selezione non viene coperto da quello dei muscoli vicini
-    const ordinati = [...dati].sort((a, b) => evidenziati.has(a.muscolo) - evidenziati.has(b.muscolo));
-
     return (
       <figure className="flex-1 flex flex-col items-center gap-1.5 min-w-0 max-w-[160px]">
-        <svg viewBox="0 0 100 200" className="w-full h-auto" aria-hidden="true">
-          {ordinati.map(({ muscolo, punti }) => {
+        <svg viewBox="0 0 100 200" className="mappa-muscoli w-full h-auto" role="group" aria-label={`Muscoli, vista ${vista.toLowerCase()}`}>
+          {dati.map(({ muscolo, punti }) => {
             const decorativo = DECORATIVI.has(muscolo);
             const livello = livelli[muscolo] || 0;
             const selezionato = evidenziati.has(muscolo);
             return (
               <g
                 key={muscolo}
-                onClick={decorativo ? undefined : () => onTocca(muscolo)}
+                {...(decorativo ? { 'aria-hidden': true } : {
+                  role: 'button',
+                  tabIndex: 0,
+                  'aria-label': etichette[muscolo],
+                  'aria-pressed': selezionato,
+                  onClick: () => onTocca(muscolo),
+                  onKeyDown: (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTocca(muscolo); }
+                  },
+                })}
                 style={{ cursor: decorativo ? 'default' : 'pointer' }}
               >
                 {!decorativo && etichette[muscolo] && <title>{etichette[muscolo]}</title>}
@@ -46,14 +50,23 @@ export default function MappaCorpo({ livelli, etichette, evidenziati, onTocca })
                     points={p}
                     fill={livello > 0 ? SCALA_ALLENAMENTO[livello - 1] : COLORE_NON_ALLENATO}
                     // Bordo col colore dello sfondo: separa i muscoli vicini
-                    stroke={selezionato ? 'var(--testo-primario)' : 'var(--bg-primario)'}
-                    strokeWidth={selezionato ? 1 : 0.4}
+                    stroke="var(--bg-primario)"
+                    strokeWidth={0.4}
                     strokeLinejoin="round"
                   />
                 ))}
               </g>
             );
           })}
+          {/* Contorno della selezione in un livello a parte, sopra tutto: spostare
+              il muscolo in fondo al disegno gli farebbe perdere il focus da tastiera */}
+          <g aria-hidden="true" pointerEvents="none">
+            {dati.filter(({ muscolo }) => evidenziati.has(muscolo)).flatMap(({ muscolo, punti }) =>
+              punti.map((p, i) => (
+                <polygon key={`${muscolo}-${i}`} points={p} fill="none" stroke="var(--testo-primario)" strokeWidth={1} strokeLinejoin="round" />
+              ))
+            )}
+          </g>
         </svg>
         <figcaption className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{vista}</figcaption>
       </figure>
