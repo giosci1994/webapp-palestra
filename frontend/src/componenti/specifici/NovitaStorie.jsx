@@ -163,19 +163,17 @@ export default function NovitaStorie() {
                       {storia.ctaTesto}
                     </button>
                   )}
-                  <button onClick={prossima} className="w-full mt-3 text-sm text-[var(--testo-terziario)] py-1.5">
-                    {indice < novita.length - 1 ? 'Avanti' : 'Più tardi'}
-                  </button>
                 </div>
               </motion.div>
 
-              {/* Frecce (desktop) */}
-              <div className="hidden md:flex justify-between mt-3 px-1">
+              {/* Indietro / avanti, su ogni schermo: e' l'unico comando per scorrere
+                  oltre allo swipe, che sul telefono non si scopre da soli */}
+              <div className="flex justify-between mt-2 px-1">
                 <button onClick={precedente} disabled={indice === 0}
-                  className="text-white/70 disabled:opacity-25 flex items-center gap-1 text-sm">
+                  className="text-white/70 disabled:opacity-25 flex items-center gap-1 text-sm py-2.5 pr-3">
                   <ChevronLeft size={18} /> Indietro
                 </button>
-                <button onClick={prossima} className="text-white/70 flex items-center gap-1 text-sm">
+                <button onClick={prossima} className="text-white/70 flex items-center gap-1 text-sm py-2.5 pl-3">
                   {indice < novita.length - 1 ? 'Avanti' : 'Chiudi'} <ChevronRight size={18} />
                 </button>
               </div>
