@@ -51,6 +51,27 @@ router.get('/riepilogo', async (req, res, next) => {
     // Schede create
     const schedeCreate = await prisma.schedaAllenamento.count({ where: { creatoreId: utenteId } });
 
+    // Settimane (lun-dom) con almeno un allenamento. Chi si allena tre volte a
+    // settimana ha quasi sempre la serie di giorni a 0 o 1: quella di
+    // settimane dice davvero se sei costante. La settimana in corso non
+    // interrompe la serie finche' non e' finita.
+    const SETTIMANA = 7 * 86400000;
+    const lunedi = (d) => {
+      const x = new Date(d);
+      x.setUTCHours(0, 0, 0, 0);
+      x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7));
+      return x.getTime();
+    };
+    const settimaneAttive = new Set(sessioni.map(s => lunedi(s.dataInizio)));
+    const questaSettimana = lunedi(new Date());
+    let settimaneDiFila = 0;
+    for (let w = settimaneAttive.has(questaSettimana) ? questaSettimana : questaSettimana - SETTIMANA;
+         settimaneAttive.has(w); w -= SETTIMANA) {
+      settimaneDiFila++;
+    }
+    // Ultime 12 settimane, dalla piu' vecchia a quella in corso
+    const ultimeSettimane = Array.from({ length: 12 }, (_, i) => settimaneAttive.has(questaSettimana - (11 - i) * SETTIMANA));
+
     res.json({
       successo: true,
       dati: {
@@ -59,7 +80,9 @@ router.get('/riepilogo', async (req, res, next) => {
         totaleVolume: Math.round(totaleVolume),
         totaleRecord,
         streak,
-        schedeCreate
+        schedeCreate,
+        settimaneDiFila,
+        ultimeSettimane
       }
     });
   } catch (errore) { next(errore); }

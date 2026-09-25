@@ -5,11 +5,10 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
-import { formattaPeso, formattaNumero, formattaDurata, formattaData, nomeEsercizio} from '../utils/formattatori.js';
-import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
+import { formattaNumero } from '../utils/formattatori.js';
 import { motion } from 'framer-motion';
-import TestoScorrevole from '../componenti/comuni/TestoScorrevole.jsx';
 import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
+import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   LineChart, Line,
@@ -29,9 +28,11 @@ const PERIODI = [
 
 export default function Statistiche() {
   const [riepilogo, setRiepilogo] = useState(null);
-  const [sessioni, setSessioni] = useState([]);
+  // Due periodi di dati giornalieri: l'attuale e il precedente, per il confronto
+  const [giorniDoppi, setGiorniDoppi] = useState([]);
   const [gruppi, setGruppi] = useState([]);
-  const [record, setRecord] = useState([]);
+  // Istante del caricamento: riferimento unico per dividere i due periodi
+  const [caricatoIl, setCaricatoIl] = useState(0);
   const [periodo, setPeriodo] = useState(30);
   const [caricamento, setCaricamento] = useState(true);
 
@@ -40,16 +41,15 @@ export default function Statistiche() {
   const caricaDati = async () => {
     try {
       setCaricamento(true);
-      const [rie, ses, grp, rec] = await Promise.all([
+      const [rie, ses, grp] = await Promise.all([
         api.get('/statistiche/riepilogo'),
-        api.get(`/statistiche/sessioni?giorni=${periodo}`),
-        api.get('/statistiche/gruppi-muscolari'),
-        api.get('/statistiche/record')
+        api.get(`/statistiche/sessioni?giorni=${periodo * 2}`),
+        api.get('/statistiche/gruppi-muscolari')
       ]);
       setRiepilogo(rie.dati);
-      setSessioni(ses.dati || []);
+      setGiorniDoppi(ses.dati || []);
+      setCaricatoIl(Date.now());
       setGruppi(grp.dati || []);
-      setRecord(rec.dati || []);
     } catch (err) {
       console.error('Errore caricamento statistiche:', err);
     } finally {
@@ -57,16 +57,9 @@ export default function Statistiche() {
     }
   };
 
-  const eliminaRecord = async (id) => {
-    if (!confirm('Sei sicuro di voler eliminare questo record personale?')) return;
-    try {
-      await api.delete(`/statistiche/record/${id}`);
-      setRecord(prev => prev.filter(r => r.id !== id));
-      caricaDati(); // Ricarica riepilogo per aggiornare il contatore
-    } catch (err) {
-      alert(err.message);
-    }
-  };
+  // I grafici mostrano solo il periodo scelto; il precedente serve agli indicatori
+  const inizioPeriodo = new Date(caricatoIl - periodo * 86400000).toISOString().slice(0, 10);
+  const sessioni = giorniDoppi.filter(g => g.data >= inizioPeriodo);
 
   // Tooltip personalizzato
   const CustomTooltip = ({ active, payload, label }) => {
@@ -109,27 +102,10 @@ export default function Statistiche() {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      {riepilogo && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-7">
-          {[
-            { label: 'Sessioni', valore: riepilogo.totaleSessioni, icona: '🏋️', colore: '#6366F1' },
-            { label: 'Ore Totali', valore: formattaDurata(riepilogo.totaleDurata), icona: '⏱️', colore: '#8B5CF6' },
-            { label: 'Volume (kg)', valore: formattaNumero(riepilogo.totaleVolume), icona: '📦', colore: '#EC4899' },
-            { label: 'Record', valore: riepilogo.totaleRecord, icona: '🏆', colore: '#F59E0B' },
-            { label: 'Streak', valore: `${riepilogo.streak}g`, icona: '🔥', colore: '#EF4444' },
-            { label: 'Schede', valore: riepilogo.schedeCreate, icona: '📋', colore: '#10B981' }
-          ].map((kpi, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="glass-card p-card-inner text-center">
-              <div className="text-2xl mb-1">{kpi.icona}</div>
-              <p className="text-xl font-bold" style={{ color: kpi.colore }}>{kpi.valore}</p>
-              <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide mt-0.5">{kpi.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      )}
+      {/* Indicatori del periodo scelto, confrontati col precedente */}
+      <div className="mb-7">
+        <IndicatoriPeriodo giorni={giorniDoppi} periodo={periodo} adesso={caricatoIl} riepilogo={riepilogo} />
+      </div>
 
       {/* Corpo: gruppi muscolari, esercizi, carichi e massimali */}
       <div className="mb-7">
@@ -220,43 +196,6 @@ export default function Statistiche() {
           ) : (
             <div className="h-[200px] flex items-center justify-center text-sm text-[var(--testo-terziario)]">
               Nessun dato disponibile
-            </div>
-          )}
-        </motion.div>
-
-        {/* Record personali recenti */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-                    className="glass-card p-card-inner min-w-0 w-full overflow-hidden">
-          <h3 className="text-sm font-semibold mb-4 text-[var(--testo-secondario)]">🏆 Record personali</h3>
-          {record.length > 0 ? (
-            <div className="flex flex-col gap-2 max-h-[200px] overflow-y-auto no-scrollbar">
-              {record.slice(0, 8).map((r, i) => (
-                <motion.div key={r.id} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.3 + i * 0.04 }}
-                            className="flex items-center gap-2 px-3.5 py-2.5 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] group relative overflow-hidden shrink-0">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
-                       style={{ background: GRUPPI_MUSCOLARI[r.esercizio?.gruppoMuscoloPrimario]?.colore + '22',
-                                color: GRUPPI_MUSCOLARI[r.esercizio?.gruppoMuscoloPrimario]?.colore || 'var(--accent)' }}>
-                    {GRUPPI_MUSCOLARI[r.esercizio?.gruppoMuscoloPrimario]?.emoji || '💪'}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <TestoScorrevole testo={nomeEsercizio(r.esercizio)} className="text-sm font-medium text-[var(--testo-primario)]" coloreSfondo="var(--bg-terziario)" />
-                    <p className="text-[10px] text-[var(--testo-terziario)]">{formattaData(r.dataRecord)}</p>
-                  </div>
-                  <p className="text-sm font-bold text-[var(--successo)] shrink-0 ml-1">{formattaPeso(r.pesoMaxRaggiunto)} kg</p>
-                  <button 
-                    onClick={() => eliminaRecord(r.id)}
-                    className="w-0 overflow-hidden opacity-0 group-hover:w-6 group-hover:opacity-100 group-hover:ml-2 rounded-full flex items-center justify-center bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo)] hover:text-white transition-all duration-200 shrink-0"
-                    title="Elimina record"
-                  >
-                    🗑️
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-sm text-[var(--testo-terziario)]">
-              Completa degli allenamenti per vedere i tuoi record
             </div>
           )}
         </motion.div>
