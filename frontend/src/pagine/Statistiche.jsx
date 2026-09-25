@@ -5,16 +5,10 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
-import { formattaNumero } from '../utils/formattatori.js';
-import { motion } from 'framer-motion';
 import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
 import SeriePerMuscolo from '../componenti/specifici/SeriePerMuscolo.jsx';
+import FrequenzaSettimanale from '../componenti/specifici/FrequenzaSettimanale.jsx';
 import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
-import {
-  BarChart, Bar,
-  LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
-} from 'recharts';
 
 // Periodi selezionabili
 const PERIODI = [
@@ -30,6 +24,7 @@ export default function Statistiche() {
   const [giorniDoppi, setGiorniDoppi] = useState([]);
   // Gruppi muscolari nel periodo: un'unica fonte per la sagoma e per le barre
   const [muscoli, setMuscoli] = useState(null);
+  const [frequenza, setFrequenza] = useState([]);
   // Istante del caricamento: riferimento unico per dividere i due periodi
   const [caricatoIl, setCaricatoIl] = useState(0);
   const [periodo, setPeriodo] = useState(30);
@@ -40,39 +35,22 @@ export default function Statistiche() {
   const caricaDati = async () => {
     try {
       setCaricamento(true);
-      const [rie, ses, grp] = await Promise.all([
+      const [rie, ses, grp, freq] = await Promise.all([
         api.get('/statistiche/riepilogo'),
         api.get(`/statistiche/sessioni?giorni=${periodo * 2}`),
-        api.get(`/statistiche/muscoli?giorni=${periodo}`)
+        api.get(`/statistiche/muscoli?giorni=${periodo}`),
+        api.get('/statistiche/frequenza')
       ]);
       setRiepilogo(rie.dati);
       setGiorniDoppi(ses.dati || []);
       setCaricatoIl(Date.now());
       setMuscoli(grp.dati || null);
+      setFrequenza(freq.dati || []);
     } catch (err) {
       console.error('Errore caricamento statistiche:', err);
     } finally {
       setCaricamento(false);
     }
-  };
-
-  // I grafici mostrano solo il periodo scelto; il precedente serve agli indicatori
-  const inizioPeriodo = new Date(caricatoIl - periodo * 86400000).toISOString().slice(0, 10);
-  const sessioni = giorniDoppi.filter(g => g.data >= inizioPeriodo);
-
-  // Tooltip personalizzato
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    return (
-      <div className="glass-card p-3 text-xs" style={{ border: '1px solid var(--bordo)' }}>
-        <p className="font-semibold mb-1">{label}</p>
-        {payload.map((p, i) => (
-          <p key={i} style={{ color: p.color }}>
-            {p.name}: <strong>{typeof p.value === 'number' ? formattaNumero(Math.round(p.value)) : p.value}</strong>
-          </p>
-        ))}
-      </div>
-    );
   };
 
   if (caricamento) {
@@ -113,27 +91,8 @@ export default function Statistiche() {
 
       {/* Grafici */}
       <div className="grid gap-7 md:grid-cols-2">
-        {/* Durata sessioni */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    className="glass-card p-card-inner min-w-0 w-full overflow-hidden">
-          <h3 className="text-sm font-semibold mb-4 text-[var(--testo-secondario)]">⏱️ Durata sessioni (min)</h3>
-          {sessioni.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={sessioni}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="data" tick={{ fontSize: 10, fill: '#666' }}
-                       tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 10, fill: '#666' }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="durata" fill="#8B5CF6" radius={[4, 4, 0, 0]} name="Durata (min)" />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[220px] flex items-center justify-center text-sm text-[var(--testo-terziario)]">
-              Nessuna sessione nel periodo selezionato
-            </div>
-          )}
-        </motion.div>
+        {/* Allenamenti fatti e programmati, settimana per settimana */}
+        <FrequenzaSettimanale settimane={frequenza} />
 
         {/* Serie a settimana per muscolo, con la fascia consigliata */}
         <SeriePerMuscolo dati={muscoli} />
