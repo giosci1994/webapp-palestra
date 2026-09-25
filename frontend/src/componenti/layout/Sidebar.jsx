@@ -77,7 +77,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
       style={{ background: 'var(--vetro)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
     >
       {/* Header / Logo */}
-      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} h-[88px] border-b border-[var(--vetro-bordo)] relative overflow-hidden shrink-0`}>
+      {/* Niente overflow-hidden: tagliava il pannello della campanella, che si
+          apre sotto l'intestazione. Lo sfondo sfumato ne occupa gia' l'area esatta. */}
+      <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} h-[88px] border-b border-[var(--vetro-bordo)] relative shrink-0`}>
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" style={{ background: 'linear-gradient(135deg, var(--accent), transparent)' }}></div>
         
         {!isCollapsed && (
