@@ -8,15 +8,13 @@ import { api } from '../config/api.js';
 import { formattaNumero } from '../utils/formattatori.js';
 import { motion } from 'framer-motion';
 import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
+import SeriePerMuscolo from '../componenti/specifici/SeriePerMuscolo.jsx';
 import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, BarChart, Bar,
   LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
-
-// Colori per i grafici
-const COLORI_GRAFICI = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4', '#F97316', '#14B8A6', '#D946EF'];
 
 // Periodi selezionabili
 const PERIODI = [
@@ -30,7 +28,8 @@ export default function Statistiche() {
   const [riepilogo, setRiepilogo] = useState(null);
   // Due periodi di dati giornalieri: l'attuale e il precedente, per il confronto
   const [giorniDoppi, setGiorniDoppi] = useState([]);
-  const [gruppi, setGruppi] = useState([]);
+  // Gruppi muscolari nel periodo: un'unica fonte per la sagoma e per le barre
+  const [muscoli, setMuscoli] = useState(null);
   // Istante del caricamento: riferimento unico per dividere i due periodi
   const [caricatoIl, setCaricatoIl] = useState(0);
   const [periodo, setPeriodo] = useState(30);
@@ -44,12 +43,12 @@ export default function Statistiche() {
       const [rie, ses, grp] = await Promise.all([
         api.get('/statistiche/riepilogo'),
         api.get(`/statistiche/sessioni?giorni=${periodo * 2}`),
-        api.get('/statistiche/gruppi-muscolari')
+        api.get(`/statistiche/muscoli?giorni=${periodo}`)
       ]);
       setRiepilogo(rie.dati);
       setGiorniDoppi(ses.dati || []);
       setCaricatoIl(Date.now());
-      setGruppi(grp.dati || []);
+      setMuscoli(grp.dati || null);
     } catch (err) {
       console.error('Errore caricamento statistiche:', err);
     } finally {
@@ -109,7 +108,7 @@ export default function Statistiche() {
 
       {/* Corpo: gruppi muscolari, esercizi, carichi e massimali */}
       <div className="mb-7">
-        <SezioneCorpo />
+        <SezioneCorpo dati={muscoli} periodo={periodo} />
       </div>
 
       {/* Grafici */}
@@ -165,40 +164,8 @@ export default function Statistiche() {
           )}
         </motion.div>
 
-        {/* Distribuzione gruppi muscolari */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                    className="glass-card p-card-inner min-w-0 w-full overflow-hidden">
-          <h3 className="text-sm font-semibold mb-4 text-[var(--testo-secondario)]">🎯 Gruppi muscolari</h3>
-          {gruppi.length > 0 ? (
-            <div className="flex items-center gap-4">
-              <ResponsiveContainer width="50%" height={200}>
-                <PieChart>
-                  <Pie data={gruppi} dataKey="serie" nameKey="nome" cx="50%" cy="50%"
-                       innerRadius={40} outerRadius={70} paddingAngle={2}>
-                    {gruppi.map((_, i) => (
-                      <Cell key={i} fill={COLORI_GRAFICI[i % COLORI_GRAFICI.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="flex-1 flex flex-col gap-1.5">
-                {gruppi.slice(0, 6).map((g, i) => (
-                  <div key={g.nome} className="flex items-center gap-2 text-xs">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0"
-                         style={{ background: COLORI_GRAFICI[i % COLORI_GRAFICI.length] }} />
-                    <span className="flex-1 truncate text-[var(--testo-secondario)]">{g.nome}</span>
-                    <span className="font-semibold">{g.serie}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="h-[200px] flex items-center justify-center text-sm text-[var(--testo-terziario)]">
-              Nessun dato disponibile
-            </div>
-          )}
-        </motion.div>
+        {/* Serie a settimana per muscolo, con la fascia consigliata */}
+        <SeriePerMuscolo dati={muscoli} />
       </div>
     </div>
   );
