@@ -11,7 +11,7 @@ import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
 import SeriePerMuscolo from '../componenti/specifici/SeriePerMuscolo.jsx';
 import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
 import {
-  AreaChart, Area, BarChart, Bar,
+  BarChart, Bar,
   LineChart, Line,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
@@ -113,35 +113,6 @@ export default function Statistiche() {
 
       {/* Grafici */}
       <div className="grid gap-7 md:grid-cols-2">
-        {/* Volume nel tempo */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                    className="glass-card p-card-inner min-w-0 w-full overflow-hidden">
-          <h3 className="text-sm font-semibold mb-4 text-[var(--testo-secondario)]">📈 Volume nel tempo (kg)</h3>
-          {sessioni.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={sessioni}>
-                <defs>
-                  <linearGradient id="gradVolume" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="data" tick={{ fontSize: 10, fill: '#666' }}
-                       tickFormatter={(v) => v.slice(5)} />
-                <YAxis tick={{ fontSize: 10, fill: '#666' }} />
-                <Tooltip content={<CustomTooltip />} />
-                <Area type="monotone" dataKey="volume" stroke="#6366F1" strokeWidth={2}
-                      fill="url(#gradVolume)" name="Volume (kg)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[220px] flex items-center justify-center text-sm text-[var(--testo-terziario)]">
-              Nessuna sessione nel periodo selezionato
-            </div>
-          )}
-        </motion.div>
-
         {/* Durata sessioni */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
                     className="glass-card p-card-inner min-w-0 w-full overflow-hidden">

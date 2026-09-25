@@ -10,11 +10,12 @@
 // che raggruppa primari e secondari (vedi backend/src/utils/gruppiMuscolari.js).
 
 import { useState, useMemo, useRef } from 'react';
-import { PersonStanding, Trophy, X } from 'lucide-react';
+import { PersonStanding, Trophy, X, TrendingUp } from 'lucide-react';
 import { formattaPeso, nomeEsercizio } from '../../utils/formattatori.js';
 import { SCALA_ALLENAMENTO, gradinoAllenamento } from '../../utils/costanti.js';
 import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 import MappaCorpo from './MappaCorpo.jsx';
+import ProgressioneEsercizio from './ProgressioneEsercizio.jsx';
 
 // Gruppo → zone della sagoma. Ogni zona appartiene a un solo gruppo.
 const ZONE_PER_GRUPPO = {
@@ -60,6 +61,7 @@ function descriviSerie(s) {
 }
 
 function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
+  const [andamento, setAndamento] = useState(false);
   return (
     <li className={`rounded-[var(--raggio-sm)] bg-[var(--bg-primario)] border border-[var(--bordo)] p-3 ${nelPeriodo ? '' : 'opacity-70'}`}>
       <p className="font-semibold text-sm leading-snug">{nomeEsercizio(e)}</p>
@@ -74,7 +76,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
           <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Carico</p>
           <p className="text-base font-bold leading-tight mt-0.5">{descriviSerie(e.ultimo)}</p>
         </div>
-        {e.massimale && (
+        {e.massimale ? (
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Massimale</p>
             <p className="text-base font-bold leading-tight mt-0.5 flex items-center gap-1">
@@ -83,8 +85,30 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
               <span className="text-[11px] font-normal text-[var(--testo-terziario)] ml-1">{dataBreve(e.massimale.data)}</span>
             </p>
           </div>
+        ) : e.stimato && (
+          // Senza un test vero, la stima dalle serie di lavoro: sempre dichiarata come tale
+          <div className="min-w-0" title={`Formula di Epley sulla serie da ${formattaPeso(e.stimato.daPeso)} kg × ${e.stimato.daRip} del ${dataBreve(e.stimato.data)}`}>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Massimale</p>
+            <p className="text-base font-bold leading-tight mt-0.5">≈ {formattaPeso(e.stimato.peso)} kg</p>
+            <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">stimato da {formattaPeso(e.stimato.daPeso)} × {e.stimato.daRip}</p>
+          </div>
         )}
       </div>
+
+      {/* Andamento: solo quando c'e' qualcosa da confrontare */}
+      {e.sessioni > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={() => setAndamento(v => !v)}
+            aria-expanded={andamento}
+            className="mt-3 text-xs font-semibold text-[var(--accent)] inline-flex items-center gap-1 hover:underline"
+          >
+            <TrendingUp size={14} /> {andamento ? 'Nascondi andamento' : 'Andamento'}
+          </button>
+          {andamento && <ProgressioneEsercizio esercizioId={e.id} />}
+        </>
+      )}
     </li>
   );
 }
@@ -274,6 +298,7 @@ export default function SezioneCorpo({ dati, periodo }) {
               <span>
                 Il massimale è la serie più pesante fatta con una sola ripetizione.
                 {!ciSonoMassimali && ' Quando fai un test di massimale, registra la serie con 1 ripetizione e comparirà qui.'}
+                {' '}Senza un test, ≈ indica una stima dalle serie fino a 12 ripetizioni.
               </span>
             </p>
           </>
