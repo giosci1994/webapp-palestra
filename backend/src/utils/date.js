@@ -20,3 +20,22 @@ export function giornoLocale(istante) {
   const [anno, mese, giorno] = formatoGiorno.format(new Date(istante)).split('-').map(Number);
   return new Date(Date.UTC(anno, mese - 1, giorno));
 }
+
+const formatoOra = new Intl.DateTimeFormat('en-US', {
+  timeZone: FUSO_ORARIO, hour: 'numeric', hourCycle: 'h23', weekday: 'short'
+});
+const GIORNI = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
+
+/**
+ * Ora e giorno della settimana locali di un istante, con la stessa numerazione
+ * dei dati di affluenza: 0 = lunedi' … 6 = domenica.
+ */
+export function orarioLocale(istante = new Date()) {
+  const parti = Object.fromEntries(formatoOra.formatToParts(new Date(istante)).map(p => [p.type, p.value]));
+  return { ora: Number(parti.hour), giornoSettimana: GIORNI[parti.weekday] };
+}
+
+/** Giorni di calendario locale fra due istanti: ieri sera e stamattina distano 1. */
+export function giorniDiCalendario(da, a) {
+  return Math.round((giornoLocale(a) - giornoLocale(da)) / 86400000);
+}

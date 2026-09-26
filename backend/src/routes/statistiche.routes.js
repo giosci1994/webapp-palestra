@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_PRINCIPALI, GRUPPI_NON_MUSCOLARI } from '../utils/gruppiMuscolari.js';
+import { consiglioAllenamento } from '../services/consiglio.service.js';
 
 const router = Router();
 router.use(verificaToken);
@@ -135,34 +136,12 @@ router.get('/sessioni', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/gruppi-muscolari — Distribuzione per gruppo muscolare
-router.get('/gruppi-muscolari', async (req, res, next) => {
+// GET /api/v1/statistiche/consiglio — La scheda da fare adesso, con il perché
+// (sostituisce /gruppi-muscolari, da cui la dashboard ricavava il consiglio
+// con un vocabolario di gruppi diverso da quello del catalogo)
+router.get('/consiglio', async (req, res, next) => {
   try {
-    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
-    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
-
-    const logSerie = await prisma.logSerie.findMany({
-      where: {
-        sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } },
-        completato: true
-      },
-      include: {
-        esercizio: { select: { gruppoMuscoloPrimario: true } }
-      }
-    });
-
-    const conteggio = {};
-    logSerie.forEach(l => {
-      const gruppo = l.esercizio.gruppoMuscoloPrimario;
-      if (!conteggio[gruppo]) conteggio[gruppo] = { nome: gruppo, serie: 0, volume: 0 };
-      conteggio[gruppo].serie++;
-      conteggio[gruppo].volume += l.pesoEffettivo * l.repEffettive;
-    });
-
-    res.json({
-      successo: true,
-      dati: Object.values(conteggio).sort((a, b) => b.serie - a.serie)
-    });
+    res.json({ successo: true, dati: await consiglioAllenamento(req.utente.id) });
   } catch (errore) { next(errore); }
 });
 

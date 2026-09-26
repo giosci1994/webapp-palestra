@@ -35,8 +35,8 @@ export default function Dashboard() {
   const [editBanner, setEditBanner] = useState(false);
   const [tempBannerTesto, setTempBannerTesto] = useState('');
   
-  // Suggerimento AI state
-  const [raccomandazione, setRaccomandazione] = useState({ testo: '', scheda: null });
+  // Consiglio sulla scheda da fare, calcolato dal server sui muscoli riposati
+  const [consiglio, setConsiglio] = useState(null);
   const [avviando, setAvviando] = useState(false);
 
   // PT info per utente iscritto
@@ -85,11 +85,10 @@ export default function Dashboard() {
   const caricaDati = async () => {
     try {
       setCaricamento(true);
-      const [resSess, resBanner, resSchede, resGruppi] = await Promise.all([
+      const [resSess, resBanner, resConsiglio] = await Promise.all([
         api.get('/sessioni?limite=30'),
         api.get('/banner').catch(() => ({ dati: { visibile: false, testo: '' } })),
-        api.get('/schede').catch(() => ({ dati: [] })),
-        api.get('/statistiche/gruppi-muscolari').catch(() => ({ dati: [] }))
+        api.get('/statistiche/consiglio').catch(() => ({ dati: null }))
       ]);
 
       // Conteggio messaggi non letti (non bloccante)
@@ -114,31 +113,7 @@ export default function Dashboard() {
         setTempBannerTesto(resBanner.dati.testo);
       }
 
-      // Logica Suggerimento AI
-      const schede = resSchede.dati || [];
-      const gruppi = resGruppi.dati || [];
-      let schedaConsigliata = null;
-      let testoConsiglio = "Pronto a spingere? Inizia un allenamento.";
-
-      if (schede.length > 0) {
-        const tuttiIGruppi = ['Petto', 'Dorso', 'Gambe', 'Spalle', 'Bicipiti', 'Tricipiti', 'Addome'];
-        const gruppiAllenati = gruppi.map(g => g.nome);
-        const gruppiMaiAllenati = tuttiIGruppi.filter(g => !gruppiAllenati.includes(g));
-        
-        const menoAllenato = gruppiMaiAllenati.length > 0 ? gruppiMaiAllenati[0] : gruppi[gruppi.length - 1]?.nome;
-        
-        schedaConsigliata = schede.find(s => 
-          s.visibilita === 'GLOBALE' && 
-          s.esercizi?.some(e => e.esercizio?.gruppoMuscoloPrimario === menoAllenato)
-        ) || schede.find(s => 
-          s.esercizi?.some(e => e.esercizio?.gruppoMuscoloPrimario === menoAllenato)
-        ) || schede[0];
-
-        if (schedaConsigliata && menoAllenato) {
-          testoConsiglio = `Abbiamo notato che trascuri: ${menoAllenato}. Che ne dici di questa scheda?`;
-        }
-      }
-      setRaccomandazione({ testo: testoConsiglio, scheda: schedaConsigliata });
+      setConsiglio(resConsiglio.dati || null);
 
     } catch (err) {
       console.error('Errore caricamento dashboard:', err);
@@ -291,14 +266,16 @@ export default function Dashboard() {
       etichetta: 'Apri la chat',
       a: '/chat'
     }] : []),
-    ...(raccomandazione.scheda ? [{
+    // "Inizia scheda" passa da Allenati ora, con la scheda gia' aperta: da li'
+    // si parte con un tocco, e un tocco accidentale sul banner non crea una
+    // sessione vuota
+    ...(consiglio ? [{
       id: 'consiglio-ai',
-      Icona: Bot,
-      titolo: raccomandazione.scheda.titolo,
-      sottotitolo: raccomandazione.testo,
-      etichetta: avviando ? 'Avvio...' : 'Inizia scheda',
-      onClick: () => avviaAllenamento(raccomandazione.scheda.id),
-      disabilitato: avviando
+      Icona: consiglio.motivo === 'oggi' ? CalendarClock : Bot,
+      titolo: consiglio.scheda?.titolo || 'Oggi recupero',
+      sottotitolo: consiglio.testo,
+      etichetta: consiglio.scheda ? 'Inizia scheda' : 'Vedi il recupero',
+      a: consiglio.scheda ? `/allenamento?scheda=${consiglio.scheda.id}` : '/statistiche'
     }] : [])
   ];
 
