@@ -5,6 +5,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
+import { giornoLocale } from '../utils/date.js';
 
 /** Lista sessioni dell'utente */
 export async function listaSessioni(req, res, next) {
@@ -362,6 +363,20 @@ export async function completaSessione(req, res, next) {
       }
     });
 
+    // Se quel giorno questa scheda era in calendario, risulta fatta. Prima
+    // succedeva solo registrando un allenamento passato: una sessione normale
+    // lasciava la pianificazione "da fare" anche a scheda completata.
+    await prisma.allenamentoPianificato.updateMany({
+      where: {
+        utenteId: sessione.utenteId,
+        schedaId: sessione.schedaId,
+        data: giornoLocale(sessione.dataInizio),
+        stato: 'PIANIFICATO',
+        sessioneId: null
+      },
+      data: { stato: 'COMPLETATO', sessioneId: id }
+    });
+
     // Controlla record personali
     const recordAggiornati = await controllaRecord(req.utente.id, serie);
 
@@ -589,9 +604,8 @@ export async function registraSessionePassata(req, res, next) {
 
       // Se quel giorno era in calendario, l'allenamento risulta fatto: cosi'
       // non resta segnato come "da fare" dopo essere stato registrato.
-      const giorno = new Date(Date.UTC(inizio.getUTCFullYear(), inizio.getUTCMonth(), inizio.getUTCDate()));
       await tx.allenamentoPianificato.updateMany({
-        where: { utenteId: req.utente.id, schedaId: idScheda, data: giorno, stato: 'PIANIFICATO' },
+        where: { utenteId: req.utente.id, schedaId: idScheda, data: giornoLocale(inizio), stato: 'PIANIFICATO' },
         data: { stato: 'COMPLETATO', sessioneId: creata.id }
       });
 
