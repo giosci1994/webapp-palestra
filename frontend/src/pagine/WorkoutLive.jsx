@@ -49,6 +49,13 @@ export default function WorkoutLive() {
   const [eserciziLive, setEserciziLive] = useState(ss ? ss.eserciziLive : []);
   const [caricamento, setCaricamento] = useState(!location.state?.sessione);
   const [timerAttivo, setTimerAttivo] = useState(false);
+  // Durata del recupero in corso: la barra di avanzamento non puo' usare quella
+  // dell'esercizio attuale, che dopo il passaggio automatico e' gia' il successivo
+  const [durataRecupero, setDurataRecupero] = useState(0);
+  // Recupero in cima alla schermata invece che al posto dei campi: dopo
+  // l'ultima serie si mostra gia' l'esercizio successivo, cosi' durante il
+  // recupero vedi cosa ti aspetta e puoi spostarti al macchinario.
+  const [recuperoInCima, setRecuperoInCima] = useState(false);
   const [nuoviRecord, setNuoviRecord] = useState([]);
   const [mostraVideo, setMostraVideo] = useState(false);
   const [tempoInizio] = useState(ss ? ss.tempoInizio : Date.now());
@@ -267,15 +274,25 @@ export default function WorkoutLive() {
     try {
       const risposta = await api.post(`/sessioni/${sessione.id}/serie`, datiSerie);
       const nuoveCompletate = [...serieCompletate, risposta.dati];
-      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1 });
-      setSerieCompletate(nuoveCompletate);
-      setSerieCorrente(serieCorrente + 1);
-
-      // Avvia timer recupero
-      if (esercizioAttuale?.recuperoSecondi) {
-        timer.avvia(esercizioAttuale.recuperoSecondi);
-        setTimerAttivo(true);
+      // Finito l'esercizio si passa subito al prossimo non completato.
+      // prossimoIdx esclude gia' l'esercizio attuale, e questa serie non cambia
+      // lo stato degli altri: il valore calcolato nel render e' quello giusto.
+      const passaAvanti = serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1;
+      if (passaAvanti) {
+        const nuovoForm = formPerNuovoEsercizio(form);
+        salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: prossimoIdx, serieCorrente: 1, form: nuovoForm });
+        setSerieCompletate(nuoveCompletate);
+        apriEsercizio(prossimoIdx);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1 });
+        setSerieCompletate(nuoveCompletate);
+        setSerieCorrente(serieCorrente + 1);
       }
+
+      // Recupero: quello dell'esercizio appena finito, anche se si e' gia' passati avanti
+      if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti);
+      else fermaRecupero();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -297,8 +314,14 @@ export default function WorkoutLive() {
         completato: false,
         motivoSaltoEsercizio: 'Saltata'
       });
-      salvaProgressi({ ...statoAttuale(), serieCorrente: serieCorrente + 1 });
-      setSerieCorrente(serieCorrente + 1);
+      if (serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1) {
+        salvaProgressi({ ...statoAttuale(), esercizioIdx: prossimoIdx, serieCorrente: 1, form: formPerNuovoEsercizio(form) });
+        cambiaEsercizio(prossimoIdx);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        salvaProgressi({ ...statoAttuale(), serieCorrente: serieCorrente + 1 });
+        setSerieCorrente(serieCorrente + 1);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -314,14 +337,36 @@ export default function WorkoutLive() {
     }
   };
 
-  const cambiaEsercizio = (nuovoIndice) => {
+  /** Campi per un nuovo esercizio: peso e resistenza restano, ripetizioni e minuti no. */
+  const formPerNuovoEsercizio = (f) => ({ ...f, rep: '', minuti: '' });
+
+  /** Mostra un altro esercizio senza toccare il recupero. */
+  const apriEsercizio = (nuovoIndice) => {
     setEsercizioIdx(nuovoIndice);
     setSerieCorrente(1);
-    setForm(prev => ({ ...prev, rep: '', minuti: '' })); // Mantieni peso e resistenza
-    timer.resetta();
-    setTimerAttivo(false);
+    setForm(formPerNuovoEsercizio);
     setMostraSelettoreEsercizi(false);
     setMostraVideo(false);
+  };
+
+  const avviaRecupero = (secondi, inCima) => {
+    timer.avvia(secondi);
+    setDurataRecupero(secondi);
+    setTimerAttivo(true);
+    setRecuperoInCima(inCima);
+  };
+
+  const fermaRecupero = () => {
+    timer.resetta();
+    setTimerAttivo(false);
+    setRecuperoInCima(false);
+  };
+
+  const cambiaEsercizio = (nuovoIndice) => {
+    apriEsercizio(nuovoIndice);
+    // Il recupero riguarda il corpo, non l'esercizio: se sta scorrendo
+    // continua, in cima, sopra l'esercizio appena scelto
+    if (timerAttivo) setRecuperoInCima(true);
   };
 
   const completaAllenamento = async () => {
@@ -342,6 +387,7 @@ export default function WorkoutLive() {
   useEffect(() => {
     if (timerAttivo && timer.secondiRimasti === 0 && !timer.inCorso) {
       setTimerAttivo(false);
+      setRecuperoInCima(false);
     }
   }, [timer.secondiRimasti, timer.inCorso, timerAttivo]);
 
@@ -432,6 +478,31 @@ export default function WorkoutLive() {
           </button>
         </div>
       </div>
+
+      {/* Recupero dopo l'ultima serie: resta in vista mentre prepari il prossimo esercizio */}
+      {timerAttivo && recuperoInCima && timer.secondiRimasti > 0 && (
+        <div className="sticky z-30 px-4 pt-3" style={{ top: 'var(--safe-top)' }}>
+          <div className="max-w-lg mx-auto rounded-[var(--raggio-md)] border border-[var(--accent)]/40 bg-[var(--bg-secondario)] shadow-lg overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-2.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Recupero</p>
+                <p className="text-xs text-[var(--testo-secondario)] truncate">Prossimo: {nomeEsercizio(esercizioAttuale.esercizio)}</p>
+              </div>
+              <p className="text-3xl font-extrabold tabular-nums leading-none testo-gradient" role="timer" aria-label={`Recupero: ${formattaTempo(timer.secondiRimasti)}`}>
+                {formattaTempo(timer.secondiRimasti)}
+              </p>
+              <button onClick={fermaRecupero}
+                      className="text-xs font-medium text-[var(--accent)] px-3 py-1.5 rounded-full border border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors shrink-0">
+                Salta
+              </button>
+            </div>
+            <div className="h-1 bg-[var(--bg-terziario)]">
+              <div className="h-full bg-[var(--accent)] transition-[width] duration-1000 ease-linear"
+                   style={{ width: `${(timer.secondiRimasti / (durataRecupero || 1)) * 100}%` }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Esercizio attuale */}
       <div className="flex-1 flex flex-col p-4 gap-4 max-w-lg mx-auto w-full">
@@ -538,7 +609,7 @@ export default function WorkoutLive() {
 
         {/* Timer recupero overlay */}
         <AnimatePresence>
-          {timerAttivo && timer.secondiRimasti > 0 && (
+          {timerAttivo && timer.secondiRimasti > 0 && !recuperoInCima && (
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -552,11 +623,11 @@ export default function WorkoutLive() {
               <div className="w-full h-2 rounded-full bg-[var(--bg-terziario)] overflow-hidden">
                 <motion.div
                   className="h-full rounded-full"
-                  style={{ background: 'var(--accent)', width: `${(timer.secondiRimasti / esercizioAttuale.recuperoSecondi) * 100}%` }}
+                  style={{ background: 'var(--accent)', width: `${(timer.secondiRimasti / (durataRecupero || 1)) * 100}%` }}
                   transition={{ duration: 0.5 }}
                 />
               </div>
-              <button onClick={() => { timer.resetta(); setTimerAttivo(false); }}
+              <button onClick={fermaRecupero}
                       className="mt-4 text-sm text-[var(--accent)] font-medium px-4 py-1.5 rounded-full border border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors">
                 Salta recupero →
               </button>
@@ -574,7 +645,7 @@ export default function WorkoutLive() {
         </AnimatePresence>
 
         {/* Input serie — solo se timer non attivo */}
-        {(!timerAttivo || timer.secondiRimasti === 0) && serieCorrente <= esercizioAttuale.serieTarget && (
+        {(!timerAttivo || timer.secondiRimasti === 0 || recuperoInCima) && serieCorrente <= esercizioAttuale.serieTarget && (
           <div className="flex flex-col gap-3">
             <p className="text-sm font-semibold text-center text-[var(--testo-secondario)]">
               Serie {serieCorrente} / {esercizioAttuale.serieTarget}
