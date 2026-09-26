@@ -190,7 +190,10 @@ export default function Pianificazione() {
                     </div>
 
                     <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-                      <Link to={`/allenamento/${a.scheda.id}`} style={{ color: '#fff' }} className="py-1.5 px-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                      {/* /allenamento/:id vuole una sessione, non una scheda: col numero
+                          della scheda la sessione non esisteva e si finiva in Gestione
+                          schede. Allenati ora apre invece la scheda pronta da far partire. */}
+                      <Link to={`/allenamento?scheda=${a.scheda.id}`} style={{ color: '#fff' }} className="py-1.5 px-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
                         <PlayCircle size={14} /> Inizia
                       </Link>
                       <button onClick={() => rimanda(a, 1)} className="py-1.5 px-3 text-xs font-semibold rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--bg-terziario)] transition-colors">

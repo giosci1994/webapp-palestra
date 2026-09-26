@@ -4,7 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { LIVELLI } from '../utils/costanti.js';
@@ -19,9 +19,37 @@ export default function Allenamento() {
   const [schedaSelezionata, setSchedaSelezionata] = useState(null);
   const [avviando, setAvviando] = useState(false);
 
+  // /allenamento?scheda=ID arriva dal promemoria, dalla pianificazione e dal
+  // consiglio in dashboard: la scheda si apre gia' pronta da far partire.
+  // Il parametro resta la fonte finche' il riquadro e' aperto, cosi' funziona
+  // anche quando questa pagina e' gia' quella visualizzata.
+  const [parametri, setParametri] = useSearchParams();
+  const richiesta = Number(parametri.get('scheda')) || null;
+  const richiestaInLista = richiesta ? schede.find(s => s.id === richiesta) : null;
+  // Le schede assegnate dal PT non compaiono negli elenchi di questa pagina
+  const [richiestaFuoriLista, setRichiestaFuoriLista] = useState(null);
+
   useEffect(() => {
     caricaSchede();
   }, []);
+
+  useEffect(() => {
+    if (caricamento || !richiesta || richiestaInLista || richiestaFuoriLista?.id === richiesta) return;
+    let annullato = false;
+    api.get(`/schede/${richiesta}`)
+      .then(r => { if (!annullato) setRichiestaFuoriLista(r.dati); })
+      .catch(() => { if (!annullato) setParametri({}, { replace: true }); });
+    return () => { annullato = true; };
+  }, [caricamento, richiesta, richiestaInLista, richiestaFuoriLista, setParametri]);
+
+  const schedaAperta = schedaSelezionata
+    ?? richiestaInLista
+    ?? (richiestaFuoriLista?.id === richiesta ? richiestaFuoriLista : null);
+
+  const chiudiRiquadro = () => {
+    setSchedaSelezionata(null);
+    if (richiesta) setParametri({}, { replace: true });
+  };
 
   const caricaSchede = async () => {
     try {
@@ -216,13 +244,13 @@ export default function Allenamento() {
 
       {/* Popup Conferma Avvio */}
       <AnimatePresence>
-        {schedaSelezionata && (
+        {schedaAperta && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => !avviando && setSchedaSelezionata(null)}
+              onClick={() => !avviando && chiudiRiquadro()}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             >
               <motion.div
@@ -239,21 +267,21 @@ export default function Allenamento() {
                   <div className="w-16 h-16 bg-[var(--accent-dim)] rounded-full flex items-center justify-center text-3xl mx-auto mb-4 text-[var(--accent)] shadow-[var(--ombra-accent)]">
                     🏋️‍♂️
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">{schedaSelezionata.titolo}</h3>
+                  <h3 className="text-2xl font-bold mb-2">{schedaAperta.titolo}</h3>
                   <p className="text-[var(--testo-secondario)] text-sm mb-6">
-                    Questa scheda contiene {schedaSelezionata.esercizi?.length || 0} esercizi. Sei pronto per iniziare?
+                    Questa scheda contiene {schedaAperta.esercizi?.length || 0} esercizi. Sei pronto per iniziare?
                   </p>
                   
                   <div className="flex flex-col gap-3">
                     <button 
-                      onClick={() => avviaAllenamento(schedaSelezionata.id)}
+                      onClick={() => avviaAllenamento(schedaAperta.id)}
                       disabled={avviando}
                       className="btn-enorme w-full"
                     >
                       {avviando ? 'Avvio in corso...' : 'Inizia Allenamento'}
                     </button>
                     <button 
-                      onClick={() => setSchedaSelezionata(null)}
+                      onClick={chiudiRiquadro}
                       disabled={avviando}
                       className="w-full py-3 rounded-[var(--raggio-md)] font-semibold text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--bg-terziario)] transition-all"
                     >
