@@ -10,12 +10,16 @@ import { SpinnerPagina } from '../comuni/Spinner.jsx';
 import Sidebar from './Sidebar.jsx';
 import BarraNavigazione from './BarraNavigazione.jsx';
 import NovitaStorie from '../specifici/NovitaStorie.jsx';
+import PromemoriaAllenamento from '../specifici/PromemoriaAllenamento.jsx';
 import RecuperoErrori from '../comuni/RecuperoErrori.jsx';
 
 export default function LayoutAutenticato() {
   const { autenticato, caricamento, utente } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  // Finche' le novita' non hanno deciso se aprirsi (o sono aperte), il
+  // promemoria dell'allenamento aspetta: due finestre insieme non si leggono
+  const [storieOccupate, setStorieOccupate] = useState(true);
 
   // Scroll to top on route change
   useEffect(() => {
@@ -60,7 +64,10 @@ export default function LayoutAutenticato() {
       {!isImmersivo && <BarraNavigazione />}
 
       {/* Novità in-app (bolla + storie) */}
-      {!isImmersivo && <NovitaStorie />}
+      {!isImmersivo && <NovitaStorie onOccupato={setStorieOccupate} />}
+
+      {/* All'apertura dell'app: l'allenamento in programma oggi */}
+      <PromemoriaAllenamento inAttesa={isImmersivo || storieOccupate} />
     </div>
   );
 }

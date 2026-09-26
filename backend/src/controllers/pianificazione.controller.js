@@ -6,6 +6,8 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { creaNotifica } from '../services/notifiche.service.js';
+import { gruppiDellaScheda } from '../services/consiglio.service.js';
+import { giornoLocale, orarioLocale } from '../utils/date.js';
 
 // Giorni della settimana come usati in tutta l'app: 0 = lunedì … 6 = domenica
 const GIORNI_VALIDI = [0, 1, 2, 3, 4, 5, 6];
@@ -116,6 +118,133 @@ export async function listaPianificazione(req, res, next) {
   } catch (errore) {
     next(errore);
   }
+}
+
+// Consiglio sull'ora: come nella scheda affluenza, il dato in tempo reale vale
+// solo se fresco (lo scraper passa ogni mezz'ora)
+const LIMITE_FRESCHEZZA_LIVE_MS = 90 * 60 * 1000;
+const FASCIA_PREDEFINITA = { da: 7, a: 21 };
+const ORA_ULTIMA = 22;
+const SCARTO_TOLLERATO = 5; // punti percentuali di affollamento
+
+/**
+ * Quando andare oggi in palestra: l'ora meno affollata fra quelle ancora da
+ * venire, dentro la fascia in cui di solito ti alleni (l'ora mediana di inizio
+ * degli ultimi allenamenti, due ore prima e dopo). Se la fascia e' gia'
+ * passata, la migliore delle prossime quattro ore.
+ */
+async function orarioConsigliato(utenteId, palestraId, adesso) {
+  if (!palestraId) return null;
+  const { ora, giornoSettimana } = orarioLocale(adesso);
+  const [righe, sessioni] = await Promise.all([
+    prisma.afluenzaPalestra.findMany({
+      where: { palestraId, giornoSettimana },
+      select: { ora: true, livelloPercentuale: true, liveLivello: true, aggiornatoIl: true },
+      orderBy: { ora: 'asc' }
+    }),
+    prisma.sessioneAllenamento.findMany({
+      where: { utenteId, dataFine: { not: null } },
+      select: { dataInizio: true },
+      orderBy: { dataInizio: 'desc' },
+      take: 10
+    })
+  ]);
+  if (righe.length === 0) return null;
+
+  const oreAbituali = sessioni.map(s => orarioLocale(s.dataInizio).ora).sort((a, b) => a - b);
+  const mediana = oreAbituali.length >= 3 ? oreAbituali[Math.floor(oreAbituali.length / 2)] : null;
+  const fascia = mediana == null
+    ? FASCIA_PREDEFINITA
+    : { da: Math.max(6, mediana - 2), a: Math.min(ORA_ULTIMA, mediana + 2) };
+
+  const fra = (da, a) => righe.filter(r => r.ora >= da && r.ora <= a);
+  let scelte = fra(Math.max(ora, fascia.da), fascia.a);
+  let riferimento = mediana ?? ora;
+  if (scelte.length === 0) {
+    scelte = fra(ora, Math.min(ORA_ULTIMA, ora + 4));
+    riferimento = ora;
+  }
+  // Pochi punti di affollamento non valgono un'ora di attesa: fra le ore
+  // quasi tranquille quanto la migliore vince la piu' vicina a quella solita
+  // (o ad adesso, se la fascia abituale e' gia' passata)
+  const minimo = Math.min(...scelte.map(r => r.livelloPercentuale));
+  const migliore = scelte
+    .filter(r => r.livelloPercentuale <= minimo + SCARTO_TOLLERATO)
+    .sort((x, y) => Math.abs(x.ora - riferimento) - Math.abs(y.ora - riferimento) || x.ora - y.ora)[0];
+
+  const attuale = righe.find(r => r.ora === ora);
+  const live = attuale?.liveLivello != null && attuale.aggiornatoIl &&
+    adesso - attuale.aggiornatoIl <= LIMITE_FRESCHEZZA_LIVE_MS;
+
+  return {
+    consigliato: migliore ? { ora: migliore.ora, livello: migliore.livelloPercentuale } : null,
+    adesso: attuale ? { ora, livello: live ? attuale.liveLivello : attuale.livelloPercentuale, live: Boolean(live) } : null,
+    fascia,
+    abitudine: mediana != null,
+    ore: righe.map(r => ({ ora: r.ora, livello: r.livelloPercentuale }))
+  };
+}
+
+/**
+ * GET /api/v1/pianificazione/oggi — Gli allenamenti ancora da fare oggi
+ *
+ * Alimenta il promemoria che compare aprendo l'app: cosa ti aspetta, a che
+ * ora conviene andare e, se l'avevi gia' iniziato, la sessione da riprendere
+ * invece di ricominciarla da capo.
+ */
+export async function allenamentiDiOggi(req, res, next) {
+  try {
+    res.json({ successo: true, dati: await riepilogoDiOggi(req.utente.id) });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/** Il contenuto di /oggi, con l'istante come parametro per poterlo provare. */
+export async function riepilogoDiOggi(utenteId, adesso = new Date()) {
+  const oggi = giornoLocale(adesso);
+
+  const piani = await prisma.allenamentoPianificato.findMany({
+    where: { utenteId, data: oggi, stato: 'PIANIFICATO' },
+    select: {
+      id: true,
+      scheda: {
+        select: {
+          id: true, titolo: true,
+          esercizi: { select: { serieTarget: true, esercizio: { select: { gruppoMuscoloPrimario: true, gruppoMuscoloSecondario: true } } } }
+        }
+      }
+    },
+    orderBy: { id: 'asc' }
+  });
+  if (piani.length === 0) return { data: daData(oggi), allenamenti: [], orario: null };
+
+  const [utente, sessioni] = await Promise.all([
+    prisma.utente.findUnique({ where: { id: utenteId }, select: { palestraId: true } }),
+    prisma.sessioneAllenamento.findMany({
+      where: { utenteId, schedaId: { in: piani.map(p => p.scheda.id) } },
+      select: { id: true, schedaId: true, dataInizio: true, dataFine: true, durataMinuti: true },
+      orderBy: { dataInizio: 'desc' },
+      take: 30
+    })
+  ]);
+
+  const allenamenti = piani.map(p => {
+    const diQuesta = sessioni.filter(s => s.schedaId === p.scheda.id);
+    const inCorso = diQuesta.find(s => !s.dataFine && giornoLocale(s.dataInizio).getTime() === oggi.getTime());
+    // Una sessione di pochi minuti e' una prova, non la durata della scheda
+    const ultima = diQuesta.find(s => s.dataFine && s.durataMinuti >= 10);
+    return {
+      id: p.id,
+      scheda: { id: p.scheda.id, titolo: p.scheda.titolo },
+      gruppi: gruppiDellaScheda(p.scheda.esercizi),
+      esercizi: p.scheda.esercizi.length,
+      sessioneInCorso: inCorso?.id ?? null,
+      ultimaVolta: ultima ? { data: ultima.dataInizio, durataMinuti: ultima.durataMinuti } : null
+    };
+  });
+
+  return { data: daData(oggi), allenamenti, orario: await orarioConsigliato(utenteId, utente?.palestraId, adesso) };
 }
 
 /** POST /api/v1/pianificazione — Programma un singolo allenamento */

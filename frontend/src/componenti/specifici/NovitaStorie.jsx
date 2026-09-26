@@ -25,13 +25,23 @@ function parsePunti(punti) {
   try { const p = JSON.parse(punti); return Array.isArray(p) ? p : []; } catch { return []; }
 }
 
-export default function NovitaStorie() {
+/**
+ * @param {object} p
+ * @param {(occupato: boolean) => void} [p.onOccupato] - avvisa quando le storie
+ *   occupano lo schermo e quando lo liberano (anche se non c'era niente da
+ *   mostrare), cosi' il promemoria dell'allenamento non ci si sovrappone
+ */
+export default function NovitaStorie({ onOccupato }) {
   const naviga = useNavigate();
   const [novita, setNovita] = useState([]);
   const [viste, setViste] = useState(leggiViste);
   const [aperto, setAperto] = useState(false);
   const [indice, setIndice] = useState(0);
   const touchX = useRef(null);
+
+  // Letto da un ref: il genitore puo' passare ogni volta una funzione nuova
+  const onOccupatoRef = useRef(onOccupato);
+  useEffect(() => { onOccupatoRef.current = onOccupato; });
 
   useEffect(() => {
     api.get('/novita').then((r) => {
@@ -43,7 +53,8 @@ export default function NovitaStorie() {
         setIndice(primaNonVista);
         setAperto(true);
       }
-    }).catch(() => {});
+      onOccupatoRef.current?.(primaNonVista >= 0);
+    }).catch(() => onOccupatoRef.current?.(false));
   }, []);
 
   const nonViste = novita.filter((n) => !viste.includes(n.id)).length;
@@ -56,6 +67,7 @@ export default function NovitaStorie() {
     const ids = novita.map((n) => n.id);
     setViste(ids);
     salvaViste(ids);
+    onOccupato?.(false);
   };
   const prossima = () => { if (indice < novita.length - 1) setIndice(indice + 1); else chiudi(); };
   const precedente = () => { if (indice > 0) setIndice(indice - 1); };

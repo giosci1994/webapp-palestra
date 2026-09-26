@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import {
   listaPianificazione,
+  allenamentiDiOggi,
   creaPianificato,
   creaPianificazioneSettimanale,
   aggiornaPianificato,
@@ -20,6 +21,9 @@ router.use(verificaToken);
 
 // GET /api/v1/pianificazione?da=&a=&utenteId= — Allenamenti programmati nell'intervallo
 router.get('/', listaPianificazione);
+
+// GET /api/v1/pianificazione/oggi — Allenamenti ancora da fare oggi, con l'ora consigliata
+router.get('/oggi', allenamentiDiOggi);
 
 // POST /api/v1/pianificazione — Programma un singolo allenamento
 router.post('/', creaPianificato);
