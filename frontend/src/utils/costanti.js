@@ -47,6 +47,36 @@ export function gradinoAllenamento(serie, massimo) {
   return Math.min(SCALA_ALLENAMENTO.length, Math.max(1, Math.ceil(SCALA_ALLENAMENTO.length * serie / massimo)));
 }
 
+/**
+ * Vista "recupero" della mappa muscolare: da quanto non alleni un muscolo.
+ * Colori validati come palette categorica sulla superficie delle card
+ * (#0a0a14): luminosita' nella fascia per il fondo scuro, croma minimo,
+ * separazione anche per chi distingue male i colori (peggior coppia
+ * ambra/verde, deltaE 8,9) e contrasto >= 3:1. "Trascurato" e' un blu freddo:
+ * un secondo colore caldo accanto all'ambra si confonderebbe.
+ */
+export const STATI_RECUPERO = {
+  recupero: { etichetta: 'In recupero', dettaglio: '< 48 ore', colore: '#ca8402' },
+  pronto: { etichetta: 'Pronto', dettaglio: '2-14 giorni', colore: '#02a573' },
+  trascurato: { etichetta: 'Trascurato', dettaglio: '> 14 giorni', colore: '#5066a3' },
+};
+
+/**
+ * Stato di recupero di un gruppo; null se mai allenato.
+ * Affatica solo il lavoro diretto: un muscolo coinvolto da secondario (i
+ * quadricipiti nel sollevamento ginocchia) non e' "in recupero", ma quel
+ * lavoro basta a non considerarlo trascurato.
+ * @param {string|null} ultimaData - ultima volta che ha lavorato, anche da secondario
+ * @param {string|null} ultimaDataDiretta - ultima volta da muscolo principale
+ */
+export function statoRecupero(ultimaData, ultimaDataDiretta, adesso) {
+  if (!ultimaData) return null;
+  const ore = (data) => (adesso - new Date(data).getTime()) / 3600000;
+  if (ultimaDataDiretta && ore(ultimaDataDiretta) < 48) return 'recupero';
+  if (ore(ultimaData) <= 14 * 24) return 'pronto';
+  return 'trascurato';
+}
+
 /** Mapping livelli */
 export const LIVELLI = {
   BASE: { label: 'Base', colore: 'successo' },

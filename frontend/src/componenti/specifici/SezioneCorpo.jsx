@@ -12,7 +12,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { PersonStanding, Trophy, X, TrendingUp } from 'lucide-react';
 import { formattaPeso, nomeEsercizio } from '../../utils/formattatori.js';
-import { SCALA_ALLENAMENTO, gradinoAllenamento } from '../../utils/costanti.js';
+import { SCALA_ALLENAMENTO, gradinoAllenamento, STATI_RECUPERO, statoRecupero } from '../../utils/costanti.js';
 import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 import MappaCorpo from './MappaCorpo.jsx';
 import ProgressioneEsercizio from './ProgressioneEsercizio.jsx';
@@ -42,6 +42,13 @@ const NOMI_PERIODO = { 7: 'negli ultimi 7 giorni', 30: 'negli ultimi 30 giorni',
 const PERIODO_BREVE = { 7: '7 giorni', 30: '30 giorni', 90: '3 mesi', 365: '12 mesi' };
 
 const numero = (n) => n.toLocaleString('it-IT', { maximumFractionDigits: 1 });
+
+// Cosa colora la sagoma: le serie del periodo o lo stato di recupero.
+// La scelta resta fra una visita e l'altra.
+const CHIAVE_VISTA = 'gymmaster:corpo:vista';
+function leggiVista() {
+  try { return localStorage.getItem(CHIAVE_VISTA) === 'recupero' ? 'recupero' : 'serie'; } catch { return 'serie'; }
+}
 
 /** "23 set", con l'anno solo se non e' quello in corso. */
 function dataBreve(data) {
@@ -113,7 +120,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
   );
 }
 
-function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto }) {
+function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
   // Prima quelli fatti nel periodo, poi gli altri dal piu' recente
   const ordina = (lista) => lista
     .map(id => esercizi[id]).filter(Boolean)
@@ -129,6 +136,7 @@ function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto }) {
         <div className="min-w-0">
           <h4 className="font-bold text-sm">{g.nome}</h4>
           <p className="text-[11px] text-[var(--testo-terziario)]">
+            {stato && <><span className="font-semibold text-[var(--testo-secondario)]">{STATI_RECUPERO[stato].etichetta}</span> · </>}
             {g.seriePeriodo > 0
               ? <>{numero(g.seriePeriodo)} serie {periodoTesto}{indirette > 0 && <>, di cui {numero(indirette)} da muscolo secondario</>}</>
               : <>Nessuna serie {periodoTesto}</>}
@@ -168,9 +176,15 @@ function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto }) {
  * @param {object} p
  * @param {object} p.dati - risposta di /statistiche/muscoli
  * @param {number} p.periodo - giorni del periodo scelto
+ * @param {number} p.adesso - istante del caricamento dei dati (ms), per il recupero
  */
-export default function SezioneCorpo({ dati, periodo }) {
+export default function SezioneCorpo({ dati, periodo, adesso }) {
   const [selezione, setSelezione] = useState(null);     // nome del gruppo
+  const [vista, setVista] = useState(leggiVista);
+  const cambiaVista = (v) => {
+    setVista(v);
+    try { localStorage.setItem(CHIAVE_VISTA, v); } catch { /* storage non disponibile */ }
+  };
   const dettaglio = useRef(null);
 
   const gruppi = useMemo(() => dati?.gruppi || [], [dati]);
@@ -181,21 +195,31 @@ export default function SezioneCorpo({ dati, periodo }) {
   // Scala: il gruppo sulla sagoma con piu' serie nel periodo e' il gradino piu' alto
   const massimo = Math.max(0, ...Object.keys(ZONE_PER_GRUPPO).map(n => perNome[n]?.seriePeriodo || 0));
   const coloreGruppo = (g) => {
+    if (vista === 'recupero') return STATI_RECUPERO[statoRecupero(g?.ultimaData, g?.ultimaDataDiretta, adesso)]?.colore || null;
     const gradino = gradinoAllenamento(g?.seriePeriodo || 0, massimo);
     return gradino ? SCALA_ALLENAMENTO[gradino - 1] : null;
   };
 
-  const { livelli, etichette } = useMemo(() => {
-    const livelli = {}, etichette = {};
+  const { colori, etichette } = useMemo(() => {
+    const colori = {}, etichette = {};
     for (const [zona, nome] of Object.entries(GRUPPO_DI_ZONA)) {
       const g = perNome[nome];
-      livelli[zona] = gradinoAllenamento(g?.seriePeriodo || 0, massimo);
-      etichette[zona] = g?.seriePeriodo > 0
-        ? `${nome}: ${numero(g.seriePeriodo)} serie ${periodoTesto}`
-        : g?.ultimaData ? `${nome}: nessuna serie ${periodoTesto}` : `${nome}: mai allenato`;
+      if (vista === 'recupero') {
+        const stato = statoRecupero(g?.ultimaData, g?.ultimaDataDiretta, adesso);
+        if (stato) colori[zona] = STATI_RECUPERO[stato].colore;
+        etichette[zona] = stato
+          ? `${nome}: ${STATI_RECUPERO[stato].etichetta.toLowerCase()}, ultima volta ${dataBreve(g.ultimaData)}`
+          : `${nome}: mai allenato`;
+      } else {
+        const gradino = gradinoAllenamento(g?.seriePeriodo || 0, massimo);
+        if (gradino) colori[zona] = SCALA_ALLENAMENTO[gradino - 1];
+        etichette[zona] = g?.seriePeriodo > 0
+          ? `${nome}: ${numero(g.seriePeriodo)} serie ${periodoTesto}`
+          : g?.ultimaData ? `${nome}: nessuna serie ${periodoTesto}` : `${nome}: mai allenato`;
+      }
     }
-    return { livelli, etichette };
-  }, [perNome, massimo, periodoTesto]);
+    return { colori, etichette };
+  }, [perNome, massimo, periodoTesto, vista, adesso]);
 
   // Gruppi allenati almeno una volta che non hanno una zona sulla sagoma
   const fuoriSagoma = gruppi.filter(g => !ZONE_PER_GRUPPO[g.nome] && g.ultimaData);
@@ -215,8 +239,8 @@ export default function SezioneCorpo({ dati, periodo }) {
       chiave="statistiche-corpo"
       titolo="Corpo"
       Icona={PersonStanding}
-      // Il periodo sta nell'intestazione: i colori dipendono da lui
-      azione={<span className="text-xs text-[var(--testo-terziario)]">{PERIODO_BREVE[periodo] || `${periodo} giorni`}</span>}
+      // Nell'intestazione cio' da cui dipendono i colori: il periodo, o oggi per il recupero
+      azione={<span className="text-xs text-[var(--testo-terziario)]">{vista === 'recupero' ? 'a oggi' : (PERIODO_BREVE[periodo] || `${periodo} giorni`)}</span>}
     >
       <div className="p-card-inner pt-4 flex flex-col gap-4">
         {!dati ? (
@@ -227,10 +251,36 @@ export default function SezioneCorpo({ dati, periodo }) {
           </p>
         ) : (
           <>
-            <MappaCorpo livelli={livelli} etichette={etichette} evidenziati={evidenziati} onTocca={zona => scegli(GRUPPO_DI_ZONA[zona])} />
+            {/* Serie del periodo o recupero: due significati, mai insieme */}
+            <div className="flex justify-center">
+              <div className="inline-flex bg-[var(--bg-terziario)] p-1 rounded-xl border border-[var(--bordo-light)]" role="group" aria-label="Cosa mostrano i colori">
+                {[['serie', 'Serie'], ['recupero', 'Recupero']].map(([id, testo]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => cambiaVista(id)}
+                    aria-pressed={vista === id}
+                    className={`px-4 py-1 rounded-lg text-xs font-bold transition-colors ${vista === id ? 'bg-[var(--accent)] text-white' : 'text-[var(--testo-secondario)] hover:text-white'}`}
+                  >
+                    {testo}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            {/* Legenda: gli estremi in serie reali, non "poco/tanto" */}
-            {massimo > 0 ? (
+            <MappaCorpo colori={colori} etichette={etichette} evidenziati={evidenziati} onTocca={zona => scegli(GRUPPO_DI_ZONA[zona])} />
+
+            {/* Legenda: gli estremi in serie reali, non "poco/tanto"; per il recupero gli stati */}
+            {vista === 'recupero' ? (
+              <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--testo-secondario)]">
+                {Object.values(STATI_RECUPERO).map(s => (
+                  <li key={s.etichetta} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="w-2.5 h-2.5 rounded-sm" style={{ background: s.colore }} />
+                    {s.etichetta} <span className="text-[var(--testo-terziario)]">({s.dettaglio})</span>
+                  </li>
+                ))}
+              </ul>
+            ) : massimo > 0 ? (
               <div className="flex items-center justify-center gap-2 text-[11px] text-[var(--testo-secondario)] whitespace-nowrap">
                 <span>1 serie</span>
                 <span className="flex gap-0.5" aria-hidden="true">
@@ -282,7 +332,8 @@ export default function SezioneCorpo({ dati, periodo }) {
                     </button>
                   </div>
                   {scelto?.ultimaData
-                    ? <SchedaGruppo gruppo={scelto} esercizi={esercizi} colore={coloreGruppo(scelto) || 'var(--testo-terziario)'} periodoTesto={periodoTesto} />
+                    ? <SchedaGruppo gruppo={scelto} esercizi={esercizi} colore={coloreGruppo(scelto) || 'var(--testo-terziario)'} periodoTesto={periodoTesto}
+                                    stato={vista === 'recupero' ? statoRecupero(scelto.ultimaData, scelto.ultimaDataDiretta, adesso) : null} />
                     : (
                       <p className="text-sm text-center text-[var(--testo-secondario)] py-2">
                         Nessun esercizio registrato per questo muscolo.

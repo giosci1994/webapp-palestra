@@ -86,7 +86,7 @@ export default function Statistiche() {
 
       {/* Corpo: gruppi muscolari, esercizi, carichi e massimali */}
       <div className="mb-7">
-        <SezioneCorpo dati={muscoli} periodo={periodo} />
+        <SezioneCorpo dati={muscoli} periodo={periodo} adesso={caricatoIl} />
       </div>
 
       {/* Grafici */}

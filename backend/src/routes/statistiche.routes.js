@@ -166,9 +166,6 @@ router.get('/gruppi-muscolari', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// Nel catalogo lo stesso gruppo compare con due nomi
-const ALIAS_GRUPPI = { 'Addome': 'Addominali' };
-
 /** true se la serie `a` e' migliore di `b`: prima il peso, poi le ripetizioni, poi i minuti. */
 function serieMigliore(a, b) {
   if (!b) return true;
@@ -183,95 +180,6 @@ const inSintesi = (s) => ({
   peso: s.pesoEffettivo,
   rep: s.repEffettive,
   minuti: s.durataMinuti
-});
-
-// GET /api/v1/statistiche/corpo — Per gruppo muscolare: esercizi fatti, carichi e massimali
-//
-// Per ogni esercizio:
-//  - ultimo: la serie migliore dell'ultima sessione in cui compare
-//  - migliore: la serie migliore di sempre (peso, a parita' le ripetizioni)
-//  - massimale: la serie piu' pesante fatta con una sola ripetizione, se esiste
-router.get('/corpo', async (req, res, next) => {
-  try {
-    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
-    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
-
-    const serie = await prisma.logSerie.findMany({
-      where: {
-        completato: true,
-        sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } }
-      },
-      select: {
-        sessioneId: true, pesoEffettivo: true, repEffettive: true, durataMinuti: true,
-        esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } },
-        sessione: { select: { dataInizio: true } }
-      }
-    });
-
-    const perEsercizio = new Map();
-    for (const s of serie) {
-      const e = s.esercizio;
-      let v = perEsercizio.get(e.id);
-      if (!v) {
-        v = {
-          id: e.id, nome: e.nome, nomeIt: e.nomeIt,
-          gruppo: ALIAS_GRUPPI[e.gruppoMuscoloPrimario] || e.gruppoMuscoloPrimario,
-          serie: 0, volume: 0, sessioni: new Set(),
-          ultimaSessione: null, serieUltima: null, serieMigliore: null, serieMassimale: null
-        };
-        perEsercizio.set(e.id, v);
-      }
-      v.serie++;
-      v.volume += (s.pesoEffettivo || 0) * (s.repEffettive || 0);
-      v.sessioni.add(s.sessioneId);
-
-      const data = s.sessione.dataInizio;
-      if (!v.ultimaSessione || data > v.ultimaSessione.data) {
-        v.ultimaSessione = { id: s.sessioneId, data };
-        v.serieUltima = s;
-      } else if (s.sessioneId === v.ultimaSessione.id && serieMigliore(s, v.serieUltima)) {
-        v.serieUltima = s;
-      }
-      if (serieMigliore(s, v.serieMigliore)) v.serieMigliore = s;
-      if (s.repEffettive === 1 && s.pesoEffettivo > 0 &&
-          (!v.serieMassimale || s.pesoEffettivo > v.serieMassimale.pesoEffettivo)) {
-        v.serieMassimale = s;
-      }
-    }
-
-    const perGruppo = new Map();
-    for (const v of perEsercizio.values()) {
-      let g = perGruppo.get(v.gruppo);
-      if (!g) {
-        g = { nome: v.gruppo, serie: 0, volume: 0, ultimaData: null, esercizi: [] };
-        perGruppo.set(v.gruppo, g);
-      }
-      g.serie += v.serie;
-      g.volume += v.volume;
-      if (!g.ultimaData || v.ultimaSessione.data > g.ultimaData) g.ultimaData = v.ultimaSessione.data;
-      g.esercizi.push({
-        id: v.id, nome: v.nome, nomeIt: v.nomeIt,
-        serie: v.serie,
-        sessioni: v.sessioni.size,
-        ultimo: inSintesi(v.serieUltima),
-        migliore: inSintesi(v.serieMigliore),
-        massimale: v.serieMassimale
-          ? { data: v.serieMassimale.sessione.dataInizio, peso: v.serieMassimale.pesoEffettivo }
-          : null
-      });
-    }
-
-    const gruppi = [...perGruppo.values()]
-      .map(g => ({
-        ...g,
-        volume: Math.round(g.volume),
-        // Prima gli esercizi fatti di recente: sono quelli del programma attuale
-        esercizi: g.esercizi.sort((a, b) => b.ultimo.data - a.ultimo.data)
-      }))
-      .sort((a, b) => b.serie - a.serie);
-
-    res.json({ successo: true, dati: { gruppi, totaleSerie: serie.length } });
-  } catch (errore) { next(errore); }
 });
 
 // Oltre le 12 ripetizioni la stima del massimale non e' affidabile
@@ -289,7 +197,7 @@ const unDecimale = (n) => Math.round(n * 10) / 10;
 //
 // Per gruppo: serie nel periodo (primario 1, secondario 0,5: vedi
 // utils/gruppiMuscolari.js), serie a settimana e ultima volta allenato, anche
-// indirettamente. Per esercizio, su tutto lo storico: carico dell'ultima volta,
+// indirettamente (ultimaData) e direttamente (ultimaDataDiretta). Per esercizio, su tutto lo storico: carico dell'ultima volta,
 // massimale (serie da 1 ripetizione) e massimale stimato dalle serie di lavoro.
 // Il periodo cambia colori e conteggi, non i dettagli degli esercizi: un
 // massimale di maggio resta visibile anche guardando gli ultimi 30 giorni.
@@ -313,7 +221,7 @@ router.get('/muscoli', async (req, res, next) => {
     const gruppi = new Map();
     const gruppo = (nome) => {
       if (!gruppi.has(nome)) {
-        gruppi.set(nome, { nome, seriePeriodo: 0, serieDirettePeriodo: 0, ultimaData: null, esercizi: new Set(), eserciziSecondari: new Set() });
+        gruppi.set(nome, { nome, seriePeriodo: 0, serieDirettePeriodo: 0, ultimaData: null, ultimaDataDiretta: null, esercizi: new Set(), eserciziSecondari: new Set() });
       }
       return gruppi.get(nome);
     };
@@ -352,6 +260,7 @@ router.get('/muscoli', async (req, res, next) => {
       for (const { gruppo: nome, peso, secondario } of gruppiDiEsercizio(e.gruppoMuscoloPrimario, e.gruppoMuscoloSecondario)) {
         const g = gruppo(nome);
         if (!g.ultimaData || data > g.ultimaData) g.ultimaData = data;
+        if (!secondario && (!g.ultimaDataDiretta || data > g.ultimaDataDiretta)) g.ultimaDataDiretta = data;
         (secondario ? g.eserciziSecondari : g.esercizi).add(e.id);
         if (nelPeriodo) {
           g.seriePeriodo += peso;
@@ -375,6 +284,7 @@ router.get('/muscoli', async (req, res, next) => {
             serieDirettePeriodo: unDecimale(g.serieDirettePeriodo),
             serieSettimanali: unDecimale(g.seriePeriodo / settimane),
             ultimaData: g.ultimaData,
+            ultimaDataDiretta: g.ultimaDataDiretta,
             esercizi: [...g.esercizi],
             eserciziSecondari: [...g.eserciziSecondari].filter(id => !g.esercizi.has(id))
           }))

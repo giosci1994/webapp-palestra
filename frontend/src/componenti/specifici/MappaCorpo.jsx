@@ -7,26 +7,25 @@
 // un pulsante anche da tastiera (Tab, Invio o Spazio) e per i lettori di schermo.
 
 import { FRONTE, RETRO } from './sagomaCorpo.js';
-import { SCALA_ALLENAMENTO, COLORE_NON_ALLENATO } from '../../utils/costanti.js';
+import { COLORE_NON_ALLENATO } from '../../utils/costanti.js';
 
 // Parti della sagoma che non corrispondono a un muscolo allenabile
 const DECORATIVI = new Set(['head', 'neck', 'knees']);
 
 /**
  * @param {object} p
- * @param {Record<string, number>} p.livelli - muscolo → gradino 1-5 della scala (assente: mai allenato)
+ * @param {Record<string, string>} p.colori - zona → colore di riempimento (assente: grigio del non allenato)
  * @param {Record<string, string>} p.etichette - muscolo → descrizione (suggerimento e lettori di schermo)
  * @param {Set<string>} p.evidenziati - muscoli del gruppo selezionato
  * @param {(muscolo: string) => void} p.onTocca
  */
-export default function MappaCorpo({ livelli, etichette, evidenziati, onTocca }) {
+export default function MappaCorpo({ colori, etichette, evidenziati, onTocca }) {
   const figura = (dati, vista) => {
     return (
       <figure className="flex-1 flex flex-col items-center gap-1.5 min-w-0 max-w-[160px]">
         <svg viewBox="0 0 100 200" className="mappa-muscoli w-full h-auto" role="group" aria-label={`Muscoli, vista ${vista.toLowerCase()}`}>
           {dati.map(({ muscolo, punti }) => {
             const decorativo = DECORATIVI.has(muscolo);
-            const livello = livelli[muscolo] || 0;
             const selezionato = evidenziati.has(muscolo);
             return (
               <g
@@ -48,7 +47,7 @@ export default function MappaCorpo({ livelli, etichette, evidenziati, onTocca })
                   <polygon
                     key={i}
                     points={p}
-                    fill={livello > 0 ? SCALA_ALLENAMENTO[livello - 1] : COLORE_NON_ALLENATO}
+                    fill={colori[muscolo] || COLORE_NON_ALLENATO}
                     // Bordo col colore dello sfondo: separa i muscoli vicini
                     stroke="var(--bg-primario)"
                     strokeWidth={0.4}
