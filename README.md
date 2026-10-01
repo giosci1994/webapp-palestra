@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Prisma-ORM-black.svg?logo=prisma" alt="Prisma">
   <img src="https://img.shields.io/badge/Docker-Microservices-2496ED.svg?logo=docker" alt="Docker">
   <img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License">
+  <a href="https://buymeacoffee.com/giosci1994u"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
 
 *Read this in other languages: [Italiano](#italiano)*
@@ -115,6 +116,12 @@ This repository is fully compatible with **Graphify**. Through `.claude/skills/g
 
 ---
 
+## ☕ Support
+
+If GymMaster is useful to you, you can buy me a coffee.
+
+<a href="https://buymeacoffee.com/giosci1994u"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="45" alt="Buy Me a Coffee" /></a>
+
 ## 📄 License
 This project is licensed under the **GNU General Public License v3.0 (GPLv3)**. See the [LICENSE](LICENSE) file for details.
 
@@ -221,6 +228,12 @@ npm run dev
 Questo progetto include l'integrazione con **Graphify**. Grazie a `.claude/skills/graphify/SKILL.md`, la repository può essere letta in modo nativo da agenti IA, mappando il codice in un grafo di conoscenza esplorabile.
 
 ---
+
+## ☕ Supporta il progetto
+
+Se GymMaster ti è utile, puoi offrirmi un caffè.
+
+<a href="https://buymeacoffee.com/giosci1994u"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="45" alt="Buy Me a Coffee" /></a>
 
 ## 📄 Licenza
 Questo progetto è distribuito sotto licenza **GNU General Public License v3.0 (GPLv3)**. Vedi il file [LICENSE](LICENSE) per ulteriori dettagli.
