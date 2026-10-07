@@ -24,6 +24,8 @@ router.get('/precedente/:schedaId', controller.ultimaSessioneScheda);
 router.get('/ultimi-carichi', controller.ultimiCarichi);
 
 router.get('/:id', controller.dettaglioSessione);
+// PATCH /api/v1/sessioni/:id — Corregge un allenamento concluso (orari, note, serie)
+router.patch('/:id', controller.modificaSessione);
 router.patch('/:id/completa', controller.completaSessione);
 router.delete('/:id', controller.eliminaSessione);
 
