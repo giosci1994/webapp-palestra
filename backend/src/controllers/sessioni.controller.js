@@ -27,6 +27,72 @@ export async function listaSessioni(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+// Cosa serve allo storico di una sessione: lo usano l'elenco e la modifica,
+// che restituisce la sessione corretta gia' pronta da mostrare
+const INCLUDI_STORICO = {
+  scheda: {
+    select: {
+      id: true,
+      titolo: true,
+      esercizi: {
+        select: { id: true },
+        // Solo per conteggio esercizi
+      }
+    }
+  },
+  logSerie: {
+    where: { completato: true },
+    include: {
+      esercizio: {
+        select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true }
+      }
+    },
+    orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
+  },
+  _count: { select: { logSerie: true } }
+};
+
+/** Una sessione letta con INCLUDI_STORICO, con i log raggruppati per esercizio */
+function formattaPerStorico(s) {
+  const eserciziRaggruppati = {};
+  s.logSerie.forEach(log => {
+    if (!eserciziRaggruppati[log.esercizioId]) {
+      eserciziRaggruppati[log.esercizioId] = {
+        esercizio: log.esercizio,
+        serie: []
+      };
+    }
+    eserciziRaggruppati[log.esercizioId].serie.push({
+      id: log.id,
+      serieNumero: log.serieNumero,
+      pesoEffettivo: log.pesoEffettivo,
+      repEffettive: log.repEffettive,
+      rpe: log.rpe,
+      durataMinuti: log.durataMinuti,
+      livelloResistenza: log.livelloResistenza,
+      distanzaKm: log.distanzaKm,
+      velocitaKmh: log.velocitaKmh
+    });
+  });
+
+  return {
+    id: s.id,
+    dataInizio: s.dataInizio,
+    dataFine: s.dataFine,
+    durataMinuti: s.durataMinuti,
+    minutiRiscaldamento: s.minutiRiscaldamento,
+    volumeTotaleKg: s.volumeTotaleKg,
+    noteFinali: s.noteFinali,
+    scheda: {
+      id: s.scheda.id,
+      titolo: s.scheda.titolo,
+      numEsercizi: s.scheda.esercizi?.length || 0
+    },
+    serieCompletate: s._count.logSerie,
+    esercizi: Object.values(eserciziRaggruppati)
+  };
+}
+
 /** Storico sessioni completo con dettagli log per ogni esercizio */
 export async function storicoSessioniCompleto(req, res, next) {
   try {
@@ -50,71 +116,13 @@ export async function storicoSessioniCompleto(req, res, next) {
 
     const sessioni = await prisma.sessioneAllenamento.findMany({
       where,
-      include: {
-        scheda: {
-          select: {
-            id: true,
-            titolo: true,
-            esercizi: {
-              select: { id: true },
-              // Solo per conteggio esercizi
-            }
-          }
-        },
-        logSerie: {
-          where: { completato: true },
-          include: {
-            esercizio: {
-              select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true }
-            }
-          },
-          orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
-        },
-        _count: { select: { logSerie: true } }
-      },
+      include: INCLUDI_STORICO,
       orderBy: { dataInizio: 'desc' },
       take,
       skip
     });
 
-    // Raggruppa i log per esercizio in ogni sessione
-    const sessioniFormattate = sessioni.map(s => {
-      const eserciziRaggruppati = {};
-      s.logSerie.forEach(log => {
-        if (!eserciziRaggruppati[log.esercizioId]) {
-          eserciziRaggruppati[log.esercizioId] = {
-            esercizio: log.esercizio,
-            serie: []
-          };
-        }
-        eserciziRaggruppati[log.esercizioId].serie.push({
-          serieNumero: log.serieNumero,
-          pesoEffettivo: log.pesoEffettivo,
-          repEffettive: log.repEffettive,
-          rpe: log.rpe,
-          durataMinuti: log.durataMinuti,
-          livelloResistenza: log.livelloResistenza,
-          distanzaKm: log.distanzaKm,
-          velocitaKmh: log.velocitaKmh
-        });
-      });
-
-      return {
-        id: s.id,
-        dataInizio: s.dataInizio,
-        dataFine: s.dataFine,
-        durataMinuti: s.durataMinuti,
-        volumeTotaleKg: s.volumeTotaleKg,
-        noteFinali: s.noteFinali,
-        scheda: {
-          id: s.scheda.id,
-          titolo: s.scheda.titolo,
-          numEsercizi: s.scheda.esercizi?.length || 0
-        },
-        serieCompletate: s._count.logSerie,
-        esercizi: Object.values(eserciziRaggruppati)
-      };
-    });
+    const sessioniFormattate = sessioni.map(formattaPerStorico);
 
     res.json({
       successo: true,
@@ -493,11 +501,40 @@ export async function eliminaSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-// Limiti di buon senso per un allenamento inserito a posteriori
+// Limiti di buon senso per un allenamento inserito o corretto a posteriori
 const DURATA_MIN = 1;
 const DURATA_MAX = 600;          // 10 ore
 const ANNI_INDIETRO_MAX = 2;
 const TOLLERANZA_FUTURO_MS = 5 * 60 * 1000;  // scarto d'orologio fra client e server
+
+/**
+ * Inizio di un allenamento dichiarato dal client. Arriva come istante completo
+ * di fuso: cosi' l'ora salvata e' quella in cui l'utente si e' davvero
+ * allenato, non quella del server.
+ */
+function leggiInizio(valore) {
+  const inizio = new Date(valore);
+  if (Number.isNaN(inizio.getTime())) throw new ErroreValidazione('Data non valida');
+
+  if (inizio.getTime() > Date.now() + TOLLERANZA_FUTURO_MS) {
+    throw new ErroreValidazione('Un allenamento non può iniziare nel futuro');
+  }
+  const limite = new Date();
+  limite.setFullYear(limite.getFullYear() - ANNI_INDIETRO_MAX);
+  if (inizio < limite) {
+    throw new ErroreValidazione(`Non puoi inserire allenamenti di più di ${ANNI_INDIETRO_MAX} anni fa`);
+  }
+  return inizio;
+}
+
+/** Durata in minuti di un allenamento dichiarato dal client */
+function leggiDurata(valore) {
+  const durata = parseInt(valore);
+  if (Number.isNaN(durata) || durata < DURATA_MIN || durata > DURATA_MAX) {
+    throw new ErroreValidazione(`La durata deve essere fra ${DURATA_MIN} e ${DURATA_MAX} minuti`);
+  }
+  return durata;
+}
 
 /**
  * POST /api/v1/sessioni/passata — Registra un allenamento gia' svolto
@@ -519,24 +556,8 @@ export async function registraSessionePassata(req, res, next) {
     const idScheda = parseInt(schedaId);
     if (Number.isNaN(idScheda)) throw new ErroreValidazione('schedaId non valido');
 
-    // Il client invia un istante completo di fuso: cosi' l'ora salvata e'
-    // quella in cui l'utente si e' davvero allenato, non quella del server.
-    const inizio = new Date(dataInizio);
-    if (Number.isNaN(inizio.getTime())) throw new ErroreValidazione('Data non valida');
-
-    if (inizio.getTime() > Date.now() + TOLLERANZA_FUTURO_MS) {
-      throw new ErroreValidazione('Non puoi registrare un allenamento nel futuro');
-    }
-    const limite = new Date();
-    limite.setFullYear(limite.getFullYear() - ANNI_INDIETRO_MAX);
-    if (inizio < limite) {
-      throw new ErroreValidazione(`Non puoi registrare allenamenti di più di ${ANNI_INDIETRO_MAX} anni fa`);
-    }
-
-    const durata = parseInt(durataMinuti);
-    if (Number.isNaN(durata) || durata < DURATA_MIN || durata > DURATA_MAX) {
-      throw new ErroreValidazione(`La durata deve essere fra ${DURATA_MIN} e ${DURATA_MAX} minuti`);
-    }
+    const inizio = leggiInizio(dataInizio);
+    const durata = leggiDurata(durataMinuti);
 
     const scheda = await prisma.schedaAllenamento.findUnique({
       where: { id: idScheda },
@@ -620,5 +641,237 @@ export async function registraSessionePassata(req, res, next) {
     );
 
     res.status(201).json({ successo: true, dati: sessione, recordPersonali: recordAggiornati });
+  } catch (errore) { next(errore); }
+}
+
+// Valori di una serie che si correggono dallo storico. Peso e ripetizioni non
+// possono mancare nel database: vuoti valgono 0, come nel corpo libero.
+const CAMPI_SERIE = {
+  pesoEffettivo:     { errore: 'peso non valido', max: 1000, zeroSeVuoto: true },
+  repEffettive:      { errore: 'ripetizioni non valide', max: 1000, intero: true, zeroSeVuoto: true },
+  rpe:               { errore: 'RPE non valido (da 1 a 10)', min: 1, max: 10, intero: true },
+  durataMinuti:      { errore: 'durata non valida', max: DURATA_MAX, intero: true },
+  livelloResistenza: { errore: 'livello non valido', max: 1000, intero: true }
+};
+const SERIE_MAX = 300;
+
+/** Valori di una serie ricevuta: un campo assente resta com'era, uno vuoto si svuota. */
+function leggiValoriSerie(riga, n) {
+  const valori = {};
+  for (const [campo, regola] of Object.entries(CAMPI_SERIE)) {
+    const grezzo = riga[campo];
+    if (grezzo === undefined) continue;
+    if (grezzo === null || grezzo === '') {
+      valori[campo] = regola.zeroSeVuoto ? 0 : null;
+      continue;
+    }
+    const v = Number(grezzo);
+    if (!Number.isFinite(v) || v < (regola.min ?? 0) || v > regola.max || (regola.intero && !Number.isInteger(v))) {
+      throw new ErroreValidazione(`Serie ${n}: ${regola.errore}`);
+    }
+    valori[campo] = v;
+  }
+  return valori;
+}
+
+/**
+ * Riallinea i record personali dopo la correzione delle serie di una sessione.
+ *
+ * Un record nato da un peso sbagliato (800 kg invece di 80) sparisce quando la
+ * serie viene corretta e nessun'altra lo raggiunge; se il massimo vero resta
+ * senza record, ne nasce uno datato all'allenamento in cui e' stato
+ * sollevato. Si eliminano solo record con un peso che la sessione conteneva
+ * prima della modifica: quelli nati da altri allenamenti restano.
+ *
+ * @param pesiPrima esercizioId → pesi delle serie della sessione prima della modifica
+ */
+async function riallineaRecord(tx, utenteId, pesiPrima) {
+  const creati = [];
+  for (const [esercizioId, pesi] of pesiPrima) {
+    const migliore = await tx.logSerie.findFirst({
+      where: { esercizioId, completato: true, sessione: { utenteId } },
+      orderBy: [{ pesoEffettivo: 'desc' }, { sessione: { dataInizio: 'asc' } }],
+      select: { pesoEffettivo: true, sessione: { select: { dataInizio: true } } }
+    });
+    const massimo = migliore?.pesoEffettivo || 0;
+
+    if (pesi.size > 0) {
+      await tx.recordPersonale.deleteMany({
+        where: { utenteId, esercizioId, pesoMaxRaggiunto: { gt: massimo, in: [...pesi] } }
+      });
+    }
+    if (massimo <= 0) continue;
+
+    const record = await tx.recordPersonale.findFirst({
+      where: { utenteId, esercizioId },
+      orderBy: { pesoMaxRaggiunto: 'desc' }
+    });
+    if (!record || massimo > record.pesoMaxRaggiunto) {
+      creati.push(await tx.recordPersonale.create({
+        data: { utenteId, esercizioId, pesoMaxRaggiunto: massimo, dataRecord: migliore.sessione.dataInizio },
+        include: { esercizio: { select: { nome: true, nomeIt: true } } }
+      }));
+    }
+  }
+  return creati;
+}
+
+/**
+ * PATCH /api/v1/sessioni/:id — Corregge un allenamento concluso dallo storico
+ *
+ * Nasce da un allenamento rimasto aperto tutta la notte: "Termina" la mattina
+ * dopo ricava la durata dal tempo trascorso, piu' di dieci ore, e ore totali,
+ * durata per giorno e badge ne risultano falsati. Prima l'unico rimedio era
+ * eliminare la sessione, perdendo anche le serie.
+ *
+ * Cambia solo cio' che arriva:
+ * - dataInizio, durataMinuti: la fine si ricalcola da inizio + durata;
+ * - minutiRiscaldamento, noteFinali: null li svuota;
+ * - serie: l'elenco completo delle serie svolte dopo la modifica, nell'ordine
+ *   in cui mostrarle. Quelle con id si aggiornano, quelle senza si aggiungono
+ *   a un esercizio gia' presente, quelle che mancano si eliminano. Le serie
+ *   saltate non compaiono nello storico e restano come sono.
+ * Volume e record personali seguono le serie corrette.
+ */
+export async function modificaSessione(req, res, next) {
+  try {
+    const id = parseInt(req.params.id);
+    const sessione = await prisma.sessioneAllenamento.findUnique({
+      where: { id },
+      include: { logSerie: true }
+    });
+    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
+      throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
+    }
+    // Uno in corso si chiude con "Termina": qui si scontrerebbe con le serie
+    // che l'allenamento sta ancora registrando
+    if (!sessione.dataFine) throw new ErroreValidazione('Puoi modificare solo un allenamento concluso');
+
+    const { dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
+    const dati = {};
+
+    if (dataInizio !== undefined || durataMinuti !== undefined) {
+      const inizio = dataInizio !== undefined ? leggiInizio(dataInizio) : sessione.dataInizio;
+      const durata = durataMinuti !== undefined
+        ? leggiDurata(durataMinuti)
+        : sessione.durataMinuti ?? Math.round((sessione.dataFine - sessione.dataInizio) / 60000);
+      const fine = new Date(inizio.getTime() + durata * 60000);
+      if (fine.getTime() > Date.now() + TOLLERANZA_FUTURO_MS) {
+        throw new ErroreValidazione("Con quest'ora d'inizio e questa durata l'allenamento finirebbe nel futuro");
+      }
+      Object.assign(dati, { dataInizio: inizio, durataMinuti: durata, dataFine: fine });
+    }
+
+    if (minutiRiscaldamento !== undefined) {
+      if (minutiRiscaldamento === null || minutiRiscaldamento === '') {
+        dati.minutiRiscaldamento = null;
+      } else {
+        const minuti = Number(minutiRiscaldamento);
+        if (!Number.isInteger(minuti) || minuti < 0 || minuti > DURATA_MAX) {
+          throw new ErroreValidazione('Minuti di riscaldamento non validi');
+        }
+        dati.minutiRiscaldamento = minuti;
+      }
+    }
+
+    if (noteFinali !== undefined) {
+      dati.noteFinali = typeof noteFinali === 'string' && noteFinali.trim() ? noteFinali.trim() : null;
+    }
+
+    // Le serie ricevute si confrontano con quelle svolte gia' registrate
+    const svolte = sessione.logSerie.filter(l => l.completato);
+    let righe = null;
+    if (serie !== undefined) {
+      if (!Array.isArray(serie)) throw new ErroreValidazione('serie deve essere un elenco');
+      if (serie.length > SERIE_MAX) throw new ErroreValidazione(`Al massimo ${SERIE_MAX} serie`);
+      const perId = new Map(svolte.map(l => [l.id, l]));
+      const eserciziSessione = new Set(sessione.logSerie.map(l => l.esercizioId));
+      const viste = new Set();
+      righe = serie.map((riga, i) => {
+        const n = i + 1;
+        if (!riga || typeof riga !== 'object') throw new ErroreValidazione(`Serie ${n}: non valida`);
+        let esistente = null;
+        if (riga.id != null) {
+          esistente = perId.get(Number(riga.id));
+          if (!esistente || viste.has(esistente.id)) {
+            throw new ErroreValidazione(`Serie ${n}: non appartiene a questo allenamento`);
+          }
+          viste.add(esistente.id);
+        }
+        const esercizioId = esistente ? esistente.esercizioId : Number(riga.esercizioId);
+        if (!esistente && !eserciziSessione.has(esercizioId)) {
+          throw new ErroreValidazione(`Serie ${n}: si aggiungono serie solo agli esercizi di questo allenamento`);
+        }
+        return { esistente, esercizioId, valori: leggiValoriSerie(riga, n) };
+      });
+    }
+
+    const { aggiornata, recordPersonali } = await prisma.$transaction(async (tx) => {
+      // Esercizi in cui il peso massimo puo' essere cambiato, con i pesi che
+      // avevano prima della modifica: servono a riallineare i record
+      const toccati = new Map();
+      const tocca = (esercizioId) => {
+        if (!toccati.has(esercizioId)) {
+          toccati.set(esercizioId, new Set(svolte.filter(l => l.esercizioId === esercizioId).map(l => l.pesoEffettivo)));
+        }
+      };
+
+      if (righe) {
+        const tenute = new Set(righe.filter(r => r.esistente).map(r => r.esistente.id));
+        const eliminate = svolte.filter(l => !tenute.has(l.id));
+        if (eliminate.length > 0) {
+          await tx.logSerie.deleteMany({ where: { id: { in: eliminate.map(l => l.id) }, sessioneId: id } });
+          eliminate.forEach(l => tocca(l.esercizioId));
+        }
+
+        // Numerazione 1..n per esercizio nell'ordine ricevuto: tolta una serie
+        // registrata due volte non resta il buco ("1, 3, 4")
+        const contatori = new Map();
+        let volume = 0;
+        for (const r of righe) {
+          const serieNumero = (contatori.get(r.esercizioId) || 0) + 1;
+          contatori.set(r.esercizioId, serieNumero);
+          const valori = { ...r.valori, serieNumero };
+          if (r.esistente) {
+            if (Object.entries(valori).some(([campo, v]) => r.esistente[campo] !== v)) {
+              await tx.logSerie.update({ where: { id: r.esistente.id }, data: valori });
+            }
+            if (valori.pesoEffettivo !== undefined && valori.pesoEffettivo !== r.esistente.pesoEffettivo) {
+              tocca(r.esercizioId);
+            }
+          } else {
+            await tx.logSerie.create({
+              data: { pesoEffettivo: 0, repEffettive: 0, ...valori, sessioneId: id, esercizioId: r.esercizioId, completato: true }
+            });
+            tocca(r.esercizioId);
+          }
+          volume += (valori.pesoEffettivo ?? r.esistente?.pesoEffettivo ?? 0) *
+                    (valori.repEffettive ?? r.esistente?.repEffettive ?? 0);
+        }
+        dati.volumeTotaleKg = Math.round(volume * 10) / 10;
+      }
+
+      const aggiornata = await tx.sessioneAllenamento.update({ where: { id }, data: dati, include: INCLUDI_STORICO });
+
+      // Spostato in un altro giorno, l'allenamento non chiude piu' quello
+      // programmato nel giorno vecchio, ma quello del giorno nuovo
+      if (dati.dataInizio && giornoLocale(dati.dataInizio).getTime() !== giornoLocale(sessione.dataInizio).getTime()) {
+        await tx.allenamentoPianificato.updateMany({
+          where: { sessioneId: id },
+          data: { stato: 'PIANIFICATO', sessioneId: null }
+        });
+        await tx.allenamentoPianificato.updateMany({
+          where: { utenteId: sessione.utenteId, schedaId: sessione.schedaId, data: giornoLocale(dati.dataInizio), stato: 'PIANIFICATO', sessioneId: null },
+          data: { stato: 'COMPLETATO', sessioneId: id }
+        });
+      }
+
+      // Dopo l'aggiornamento della sessione: un record nuovo prende la data corretta
+      const recordPersonali = await riallineaRecord(tx, sessione.utenteId, toccati);
+      return { aggiornata, recordPersonali };
+    });
+
+    res.json({ successo: true, dati: formattaPerStorico(aggiornata), recordPersonali });
   } catch (errore) { next(errore); }
 }

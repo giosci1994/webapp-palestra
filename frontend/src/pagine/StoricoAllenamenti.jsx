@@ -5,11 +5,15 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
-import { formattaData, formattaDurata, nomeEsercizio} from '../utils/formattatori.js';
-import { formattaPeso, formattaNumero } from '../utils/formattatori.js';
-import { GRUPPI_MUSCOLARI, RPE_LABELS } from '../utils/costanti.js';
+import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
+import { formattaPeso } from '../utils/formattatori.js';
+import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
+import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
+
+/** Durata da allenamento rimasto aperto per sbaglio: falsa le statistiche, va corretta. */
+const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MINUTI;
 
 export default function StoricoAllenamenti() {
   const [sessioni, setSessioni] = useState([]);
@@ -19,9 +23,15 @@ export default function StoricoAllenamenti() {
   const [schedaFiltro, setSchedaFiltro] = useState('');
   const [schedeDisponibili, setSchedeDisponibili] = useState([]);
   const [sessioneAperta, setSessioneAperta] = useState(null);
+  const [inModifica, setInModifica] = useState(false);
   const [eliminando, setEliminando] = useState(null);
   const [mostraPassato, setMostraPassato] = useState(false);
-  const [confermaPassato, setConfermaPassato] = useState('');
+  const [conferma, setConferma] = useState('');
+
+  const mostraConferma = (testo) => {
+    setConferma(testo);
+    setTimeout(() => setConferma(''), 6000);
+  };
 
   // Carica le schede disponibili per il filtro
   useEffect(() => {
@@ -90,9 +100,9 @@ export default function StoricoAllenamenti() {
         </button>
       </div>
 
-      {confermaPassato && (
+      {conferma && (
         <div className="glass-card p-card-inner mb-4 border border-[var(--successo,#22c55e)]">
-          <p className="text-sm" style={{ color: 'var(--successo, #22c55e)' }}>{confermaPassato}</p>
+          <p className="text-sm" style={{ color: 'var(--successo, #22c55e)' }}>{conferma}</p>
         </div>
       )}
 
@@ -164,10 +174,15 @@ export default function StoricoAllenamenti() {
 
                 {/* KPI riga */}
                 <div className="grid grid-cols-3 gap-2">
-                  <div className="flex items-center gap-2 p-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)]">
-                    <span className="text-sm">⏱</span>
+                  <div
+                    className="flex items-center gap-2 p-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)]"
+                    title={durataSospetta(sessione) ? 'Durata insolita: forse è rimasto aperto. Apri il dettaglio per correggerla' : undefined}
+                  >
+                    <span className="text-sm">{durataSospetta(sessione) ? '⚠️' : '⏱'}</span>
                     <div>
-                      <p className="text-sm font-bold">{formattaDurata(sessione.durataMinuti)}</p>
+                      <p className="text-sm font-bold" style={durataSospetta(sessione) ? { color: 'var(--avviso)' } : undefined}>
+                        {formattaDurata(sessione.durataMinuti)}
+                      </p>
                       <p className="text-[10px] text-[var(--testo-terziario)]">Durata</p>
                     </div>
                   </div>
@@ -236,9 +251,9 @@ export default function StoricoAllenamenti() {
         </div>
       )}
 
-      {/* Drawer Dettaglio Sessione */}
+      {/* Drawer Dettaglio Sessione (lascia il posto all'editor durante la modifica) */}
       <AnimatePresence>
-        {sessioneAperta && (
+        {sessioneAperta && !inModifica && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -255,18 +270,27 @@ export default function StoricoAllenamenti() {
             >
               {/* Header drawer */}
               <div className="px-card-inner py-5 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
-                <div>
-                  <h3 className="font-bold text-lg">{sessioneAperta.scheda.titolo}</h3>
+                <div className="min-w-0">
+                  <h3 className="font-bold text-lg truncate">{sessioneAperta.scheda.titolo}</h3>
                   <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
                     {formattaData(sessioneAperta.dataInizio, true)}
                   </p>
                 </div>
-                <button
-                  onClick={() => setSessioneAperta(null)}
-                  className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => setInModifica(true)}
+                    className="h-8 px-3 flex items-center gap-1.5 rounded-full text-xs font-semibold bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+                  >
+                    ✏️ Modifica
+                  </button>
+                  <button
+                    onClick={() => setSessioneAperta(null)}
+                    aria-label="Chiudi"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               {/* Contenuto drawer con scroll */}
@@ -274,7 +298,11 @@ export default function StoricoAllenamenti() {
                 {/* KPI sessione */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-center">
-                    <p className="text-lg font-bold testo-gradient">{formattaDurata(sessioneAperta.durataMinuti)}</p>
+                    {durataSospetta(sessioneAperta) ? (
+                      <p className="text-lg font-bold" style={{ color: 'var(--avviso)' }}>{formattaDurata(sessioneAperta.durataMinuti)}</p>
+                    ) : (
+                      <p className="text-lg font-bold testo-gradient">{formattaDurata(sessioneAperta.durataMinuti)}</p>
+                    )}
                     <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">Durata</p>
                   </div>
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-center">
@@ -286,6 +314,26 @@ export default function StoricoAllenamenti() {
                     <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">Serie</p>
                   </div>
                 </div>
+
+                {/* Allenamento rimasto aperto: la correzione e' a un tocco */}
+                {durataSospetta(sessioneAperta) && (
+                  <div className="flex items-center gap-3 p-3 rounded-[var(--raggio-md)] border border-[var(--avviso)]/40 bg-[var(--avviso-dim)]">
+                    <span className="text-lg">⚠️</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold" style={{ color: 'var(--avviso)' }}>Durata insolita</p>
+                      <p className="text-xs text-[var(--testo-secondario)] mt-0.5">
+                        Forse è rimasto aperto dopo la fine: così falsa le tue statistiche.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setInModifica(true)}
+                      className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-black transition-opacity hover:opacity-90"
+                      style={{ background: 'var(--avviso)' }}
+                    >
+                      Correggi
+                    </button>
+                  </div>
+                )}
 
                 {/* Note finali */}
                 {sessioneAperta.noteFinali && (
@@ -303,7 +351,7 @@ export default function StoricoAllenamenti() {
 
                   {sessioneAperta.esercizi.map((es, idx) => {
                     const gruppo = GRUPPI_MUSCOLARI[es.esercizio.gruppoMuscoloPrimario];
-                    const isCardio = es.esercizio.gruppoMuscoloPrimario?.toLowerCase() === 'cardio';
+                    const isCardio = eCardioNelloStorico(es);
 
                     return (
                       <motion.div
@@ -407,6 +455,23 @@ export default function StoricoAllenamenti() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {sessioneAperta && inModifica && (
+          <ModificaAllenamento
+            sessione={sessioneAperta}
+            onChiudi={() => setInModifica(false)}
+            onSalvato={(aggiornata) => {
+              // Si torna al dettaglio, gia' con i valori corretti
+              setSessioneAperta(aggiornata);
+              setInModifica(false);
+              mostraConferma('Allenamento aggiornato: statistiche e record ora tengono conto delle correzioni.');
+              // Ricarica: se la data e' cambiata, cambia anche il posto nell'elenco
+              caricaStorico();
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {mostraPassato && (
           <AggiungiAllenamentoPassato
             schede={schedeDisponibili}
@@ -414,12 +479,11 @@ export default function StoricoAllenamenti() {
             onSalvato={(risposta) => {
               setMostraPassato(false);
               const record = risposta?.recordPersonali?.length || 0;
-              setConfermaPassato(
+              mostraConferma(
                 record === 0 ? 'Allenamento registrato nello storico.'
                   : record === 1 ? 'Allenamento registrato — e hai un nuovo record personale!'
                   : `Allenamento registrato — e hai ${record} nuovi record personali!`
               );
-              setTimeout(() => setConfermaPassato(''), 6000);
               setPagina(1);
               caricaStorico();
             }}

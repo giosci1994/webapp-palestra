@@ -19,6 +19,16 @@ export function formattaData(data, conOra = false) {
   return new Date(data).toLocaleDateString('it-IT', opzioni);
 }
 
+/** "YYYY-MM-DD" da una data locale, senza passare per UTC (che sposterebbe il giorno). */
+export function aStringaData(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/** "HH:MM" da una data locale, il formato dei campi <input type="time">. */
+export function aStringaOra(d) {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 /**
  * Formatta una data in formato relativo (es. "2 ore fa").
  */
@@ -74,6 +84,16 @@ export function formattaDurata(minuti) {
 export function nomeEsercizio(esercizio) {
   if (!esercizio) return '';
   return esercizio.nomeIt || esercizio.nome || '';
+}
+
+/**
+ * Un esercizio dello storico ({ esercizio, serie }) si mostra come cardio,
+ * con minuti e livello al posto di peso e ripetizioni? Conta il gruppo, ma
+ * anche come sono state registrate le serie: l'allenamento registra in minuti
+ * anche gli esercizi fatti su un attrezzo cardio.
+ */
+export function eCardioNelloStorico({ esercizio, serie }) {
+  return esercizio?.gruppoMuscoloPrimario?.toLowerCase() === 'cardio' || serie.some(s => s.durataMinuti > 0);
 }
 
 /**

@@ -104,3 +104,10 @@ export const RPE_LABELS = {
   9: 'Quasi al massimo',
   10: 'Massimale'
 };
+
+/**
+ * Oltre questa durata un allenamento e' quasi certamente rimasto aperto per
+ * sbaglio (app chiusa senza "Termina", chiuso la mattina dopo): lo storico lo
+ * segnala e propone di correggerlo.
+ */
+export const DURATA_SOSPETTA_MINUTI = 240;

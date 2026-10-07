@@ -4,15 +4,10 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
-import { nomeEsercizio } from '../../utils/formattatori.js';
+import { nomeEsercizio, aStringaData } from '../../utils/formattatori.js';
 import { motion } from 'framer-motion';
 import { X, Save, Dumbbell } from 'lucide-react';
 import { api } from '../../config/api.js';
-
-/** "YYYY-MM-DD" da una data locale, senza passare per UTC (che sposterebbe il giorno). */
-function aStringaData(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 /** Primo numero di un target tipo "8-12", usato come segnaposto. */
 function repIniziali(repTarget) {
