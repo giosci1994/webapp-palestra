@@ -437,6 +437,10 @@ model LogSerie {
   completato           Boolean @default(true)
   motivoSaltoEsercizio String? @map("motivo_salto_esercizio")
   noteSerie            String? @map("note_serie")
+  // Quando e' stata registrata: dice quando finisce un allenamento lasciato
+  // aperto (services/conclusioneSessione.service.js). Vuota per le serie
+  // registrate prima che ci fosse.
+  registrataIl         DateTime? @default(now()) @map("registrata_il")
 
   // Campi opzionali per CARDIO
   distanzaKm           Float?  @map("distanza_km")

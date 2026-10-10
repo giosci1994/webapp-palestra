@@ -44,6 +44,8 @@ export default function WorkoutLive() {
   const [serieCompletate, setSerieCompletate] = useState(ss ? ss.serieCompletate : []);
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
   const [riprendendo, setRiprendendo] = useState(false);
+  // Chiuso ore dopo l'ultima serie: il server lo fa finire li' (e non si riprende)
+  const [finitoAllUltimaSerie, setFinitoAllUltimaSerie] = useState(null);
   const [mostraSelettoreEsercizi, setMostraSelettoreEsercizi] = useState(false);
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
@@ -382,6 +384,7 @@ export default function WorkoutLive() {
         noteFinali: ''
       });
       setNuoviRecord(risposta.recordPersonali || []);
+      setFinitoAllUltimaSerie(risposta.dimenticata ? new Date(risposta.dati.dataFine) : null);
       setMostraRiepilogo(true);
       pulisciProgressi(); // Pulisci localStorage al completamento
       wakeLock.disattiva();
@@ -460,10 +463,18 @@ export default function WorkoutLive() {
           <button onClick={() => naviga('/dashboard')} className="btn-primario w-full">
             Torna alla Dashboard
           </button>
-          <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
-            {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
-          </button>
-          <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro 30 minuti.</p>
+          {finitoAllUltimaSerie ? (
+            <p className="text-xs text-[var(--testo-terziario)] mt-3">
+              Era rimasto aperto: l'ho fatto finire all'ultima serie, alle {finitoAllUltimaSerie.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.
+            </p>
+          ) : (
+            <>
+              <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
+                {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+              </button>
+              <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro 30 minuti.</p>
+            </>
+          )}
         </motion.div>
       </div>
     );

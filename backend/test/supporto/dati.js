@@ -68,7 +68,8 @@ export function creaScheda(creatore, esercizi = [], dati = {}) {
 
 /**
  * Una sessione, conclusa salvo { conclusa: false }, con le serie
- * [{ esercizio, peso, rep }] numerate per esercizio nell'ordine dato.
+ * [{ esercizio, peso, rep, ...altri campi di log_serie }] numerate per
+ * esercizio nell'ordine dato.
  * Le serie create tornano in logSerie, nello stesso ordine.
  */
 export function creaSessione(utente, scheda, { inizio = giorniFa(1), durataMinuti = 60, conclusa = true, serie = [] } = {}) {
@@ -80,10 +81,10 @@ export function creaSessione(utente, scheda, { inizio = giorniFa(1), durataMinut
       dataInizio: inizio,
       ...(conclusa && { dataFine: new Date(inizio.getTime() + durataMinuti * MINUTO), durataMinuti }),
       logSerie: {
-        create: serie.map(({ esercizio, peso, rep }) => {
+        create: serie.map(({ esercizio, peso, rep, ...altro }) => {
           const serieNumero = (numeri.get(esercizio.id) || 0) + 1;
           numeri.set(esercizio.id, serieNumero);
-          return { esercizioId: esercizio.id, serieNumero, pesoEffettivo: peso, repEffettive: rep };
+          return { esercizioId: esercizio.id, serieNumero, pesoEffettivo: peso, repEffettive: rep, ...altro };
         })
       }
     },

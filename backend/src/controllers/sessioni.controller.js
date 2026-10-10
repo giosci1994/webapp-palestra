@@ -6,6 +6,7 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
+import { concludiSessione, controllaRecord } from '../services/conclusioneSessione.service.js';
 
 /** Lista sessioni dell'utente */
 export async function listaSessioni(req, res, next) {
@@ -345,18 +346,15 @@ export async function dettaglioSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Completa sessione e calcola volume totale */
+/**
+ * PATCH /sessioni/:id/completa — "Termina": volume, calendario e record in
+ * services/conclusioneSessione.service.js. Se l'allenamento era rimasto aperto
+ * per ore, finisce all'ultima serie e la risposta lo dice (dimenticata).
+ */
 export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     const { noteFinali } = req.body;
-
-    // Calcola volume totale (somma di peso * rep per ogni serie completata)
-    const serie = await prisma.logSerie.findMany({
-      where: { sessioneId: id, completato: true }
-    });
-
-    const volumeTotale = serie.reduce((sum, s) => sum + (s.pesoEffettivo * s.repEffettive), 0);
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
     if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
@@ -364,40 +362,13 @@ export async function completaSessione(req, res, next) {
       throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
     }
 
-    const durataMinuti = Math.round((Date.now() - sessione.dataInizio.getTime()) / 60000);
-
-    const aggiornata = await prisma.sessioneAllenamento.update({
-      where: { id },
-      data: {
-        dataFine: new Date(),
-        durataMinuti,
-        volumeTotaleKg: Math.round(volumeTotale * 10) / 10,
-        noteFinali: noteFinali || null
-      }
-    });
-
-    // Se quel giorno questa scheda era in calendario, risulta fatta. Prima
-    // succedeva solo registrando un allenamento passato: una sessione normale
-    // lasciava la pianificazione "da fare" anche a scheda completata.
-    await prisma.allenamentoPianificato.updateMany({
-      where: {
-        utenteId: sessione.utenteId,
-        schedaId: sessione.schedaId,
-        data: giornoLocale(sessione.dataInizio),
-        stato: 'PIANIFICATO',
-        sessioneId: null
-      },
-      data: { stato: 'COMPLETATO', sessioneId: id }
-    });
-
-    // Controlla record personali: di chi si e' allenato, anche se a chiudere
-    // la sessione e' il superadmin
-    const recordAggiornati = await controllaRecord(sessione.utenteId, serie);
+    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali });
 
     res.json({
       successo: true,
       dati: aggiornata,
-      recordPersonali: recordAggiornati
+      recordPersonali,
+      dimenticata
     });
   } catch (errore) { next(errore); }
 }
@@ -581,43 +552,6 @@ export async function logSerie(req, res, next) {
 
     res.status(201).json({ successo: true, dati: log });
   } catch (errore) { next(errore); }
-}
-
-/** Controlla e aggiorna record personali */
-async function controllaRecord(utenteId, serie, dataRecord = null) {
-  const recordAggiornati = [];
-
-  // Raggruppa serie per esercizio e trova il peso max
-  const pesoPerEsercizio = {};
-  for (const s of serie) {
-    if (!pesoPerEsercizio[s.esercizioId] || s.pesoEffettivo > pesoPerEsercizio[s.esercizioId]) {
-      pesoPerEsercizio[s.esercizioId] = s.pesoEffettivo;
-    }
-  }
-
-  for (const [esercizioId, pesoMax] of Object.entries(pesoPerEsercizio)) {
-    if (pesoMax <= 0) continue;
-
-    const recordEsistente = await prisma.recordPersonale.findFirst({
-      where: { utenteId, esercizioId: parseInt(esercizioId) },
-      orderBy: { pesoMaxRaggiunto: 'desc' }
-    });
-
-    if (!recordEsistente || pesoMax > recordEsistente.pesoMaxRaggiunto) {
-      const record = await prisma.recordPersonale.create({
-        data: {
-          utenteId,
-          esercizioId: parseInt(esercizioId),
-          pesoMaxRaggiunto: pesoMax,
-          ...(dataRecord ? { dataRecord } : {})
-        },
-        include: { esercizio: { select: { nome: true, nomeIt: true } } }
-      });
-      recordAggiornati.push(record);
-    }
-  }
-
-  return recordAggiornati;
 }
 
 /** Elimina una sessione */
