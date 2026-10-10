@@ -4,7 +4,12 @@
 // ============================================
 
 import { Router } from 'express';
-import { registrazione, login, refresh, logout, verificaEmail, reinviaVerifica, richiediReset, reimpostaPassword, sessioni, chiudiSessione, chiudiAltreSessioni } from '../controllers/autenticazione.controller.js';
+import {
+  registrazione, login, refresh, logout, verificaEmail, reinviaVerifica, richiediReset, reimpostaPassword,
+  sessioni, chiudiSessione, chiudiAltreSessioni,
+  passkeyAccessoOpzioni, passkeyAccessoVerifica, passkeyElenco,
+  passkeyRegistrazioneOpzioni, passkeyRegistrazioneVerifica, passkeyElimina
+} from '../controllers/autenticazione.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { valida } from '../middleware/validazione.js';
 import { schemaRegistrazione, schemaLogin } from '../validators/autenticazione.schema.js';
@@ -40,5 +45,15 @@ router.post('/logout', logout);
 router.get('/sessioni', verificaToken, sessioni);
 router.post('/sessioni/chiudi-altre', verificaToken, chiudiAltreSessioni);
 router.delete('/sessioni/:famiglia', verificaToken, chiudiSessione);
+
+// Passkey: entrare senza password (prima la sfida, poi la firma)
+router.post('/passkey/accesso/opzioni', limitatoreAuth, passkeyAccessoOpzioni);
+router.post('/passkey/accesso/verifica', limitatoreAuth, passkeyAccessoVerifica);
+
+// Passkey dell'utente: elenco, aggiunta (con la password), eliminazione
+router.get('/passkey', verificaToken, passkeyElenco);
+router.post('/passkey/registrazione/opzioni', verificaToken, limitatoreAuth, passkeyRegistrazioneOpzioni);
+router.post('/passkey/registrazione/verifica', verificaToken, passkeyRegistrazioneVerifica);
+router.delete('/passkey/:id', verificaToken, passkeyElimina);
 
 export default router;

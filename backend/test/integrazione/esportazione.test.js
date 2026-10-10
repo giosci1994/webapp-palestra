@@ -10,7 +10,7 @@ import {
 import { giornoLocale } from '../../src/utils/date.js';
 
 // Valori che non devono mai comparire nel file
-const SEGRETI = ['hash-segreto', 'reset-segreto', 'verifica-segreta', 'refresh-segreto', 'codice-segreto'];
+const SEGRETI = ['hash-segreto', 'reset-segreto', 'verifica-segreta', 'refresh-segreto', 'codice-segreto', 'credenziale-passkey', 'chiave-pubblica-passkey'];
 
 let server;
 let utente;
@@ -48,6 +48,9 @@ beforeEach(async () => {
   await prisma.allenamentoNotifica.create({ data: { utenteId: utente.id, titolo: 'Oggi si spinge', messaggio: 'Scheda Spinta' } });
   await prisma.refreshToken.create({
     data: { token: 'refresh-segreto', utenteId: utente.id, scadenza: giorniFa(-7), famiglia: 'f1', dispositivo: 'Chrome · Android' }
+  });
+  await prisma.passkey.create({
+    data: { utenteId: utente.id, credenziale: 'credenziale-passkey', chiavePubblica: 'chiave-pubblica-passkey', nome: 'Safari · iPhone' }
   });
   await prisma.collegamentoTelegram.create({
     data: { utenteId: utente.id, telegramChatId: 123456789012n, codice: 'codice-segreto', collegatoIl: giorniFa(30) }
@@ -126,6 +129,7 @@ describe('esportazione dei dati', () => {
     assert.deepEqual(dati.assistente[0].messaggi.map(m => m.contenuto), ['Quante serie?', 'Tre.']);
     assert.deepEqual(dati.suggerimentiEsercizi.map(s => s.nome), ['Hip thrust con elastico']);
     assert.deepEqual(dati.dispositivi.map(d => d.dispositivo), ['Chrome · Android']);
+    assert.deepEqual(dati.passkey.map(p => p.nome), ['Safari · iPhone']);
   });
 
   it('nelle chat ci sono anche i messaggi ricevuti, ma degli altri solo il nome', async () => {

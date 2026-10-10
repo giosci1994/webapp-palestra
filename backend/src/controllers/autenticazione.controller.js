@@ -4,8 +4,24 @@
 // ============================================
 
 import * as authService from '../services/autenticazione.service.js';
+import * as passkeyService from '../services/passkey.service.js';
 import logger from '../utils/logger.js';
 import { descriviDispositivo } from '../utils/dispositivo.js';
+
+/**
+ * Il refresh token viaggia in un cookie HttpOnly limitato alle rotte /auth:
+ * JavaScript non lo legge, e le altre rotte non lo ricevono.
+ */
+function impostaCookieRefresh(req, res, token, durataGiorni) {
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  res.cookie('refreshToken', token, {
+    httpOnly: true,
+    secure: isHttps,
+    sameSite: 'strict',
+    maxAge: durataGiorni * 24 * 60 * 60 * 1000,
+    path: '/api/v1/auth'
+  });
+}
 
 /**
  * POST /api/v1/auth/registrazione
@@ -99,17 +115,8 @@ export async function login(req, res, next) {
       dispositivo: descriviDispositivo(req.headers['user-agent'])
     });
 
-    // Imposta il refresh token come cookie HttpOnly
-    // Durata cookie coerente con durata refresh token (7gg o 30gg se "ricorda dispositivo")
-    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    const maxAgeCookie = risultato.durataGiorni * 24 * 60 * 60 * 1000;
-    res.cookie('refreshToken', risultato.refreshToken, {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: 'strict',
-      maxAge: maxAgeCookie,
-      path: '/api/v1/auth'
-    });
+    // Durata del cookie come quella del refresh token (7 giorni, 30 con "ricorda dispositivo")
+    impostaCookieRefresh(req, res, risultato.refreshToken, risultato.durataGiorni);
 
     res.json({
       successo: true,
@@ -141,17 +148,8 @@ export async function refresh(req, res, next) {
 
     const risultato = await authService.rinnovaToken(tokenRefresh);
 
-    // Aggiorna il cookie con il nuovo refresh token
-    // Propaga durata originale (7gg o 30gg) dal ciclo di token
-    const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
-    const maxAgeCookie = (risultato.durataGiorni || 7) * 24 * 60 * 60 * 1000;
-    res.cookie('refreshToken', risultato.refreshToken, {
-      httpOnly: true,
-      secure: isHttps,
-      sameSite: 'strict',
-      maxAge: maxAgeCookie,
-      path: '/api/v1/auth'
-    });
+    // Aggiorna il cookie con il nuovo refresh token, con la durata originale
+    impostaCookieRefresh(req, res, risultato.refreshToken, risultato.durataGiorni || 7);
 
     res.json({
       successo: true,
@@ -226,6 +224,84 @@ export async function chiudiAltreSessioni(req, res, next) {
   try {
     await authService.chiudiAltreSessioni(req.utente.id, req.utente.famiglia);
     res.json({ successo: true, messaggio: 'Gli altri dispositivi sono stati scollegati' });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * POST /api/v1/auth/passkey/accesso/opzioni
+ * La sfida da far firmare a una passkey, per entrare senza password.
+ */
+export async function passkeyAccessoOpzioni(req, res, next) {
+  try {
+    res.json({ successo: true, dati: await passkeyService.opzioniAccesso() });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * POST /api/v1/auth/passkey/accesso/verifica { id, risposta, ricordaDispositivo }
+ * La firma della passkey: se e' buona, come un login con password.
+ */
+export async function passkeyAccessoVerifica(req, res, next) {
+  try {
+    const { id, risposta, ricordaDispositivo } = req.body || {};
+    const risultato = await passkeyService.verificaAccesso(id, risposta, {
+      ricordaDispositivo: ricordaDispositivo === true,
+      dispositivo: descriviDispositivo(req.headers['user-agent'])
+    });
+    impostaCookieRefresh(req, res, risultato.refreshToken, risultato.durataGiorni);
+    res.json({
+      successo: true,
+      messaggio: 'Login effettuato con successo',
+      dati: { accessToken: risultato.accessToken, utente: risultato.utente }
+    });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/** GET /api/v1/auth/passkey — Le passkey dell'utente */
+export async function passkeyElenco(req, res, next) {
+  try {
+    res.json({ successo: true, dati: await passkeyService.elencaPasskey(req.utente.id) });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * POST /api/v1/auth/passkey/registrazione/opzioni { password }
+ * Per aggiungere una passkey serve la password, non basta la sessione.
+ */
+export async function passkeyRegistrazioneOpzioni(req, res, next) {
+  try {
+    res.json({ successo: true, dati: await passkeyService.opzioniRegistrazione(req.utente.id, req.body?.password) });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/** POST /api/v1/auth/passkey/registrazione/verifica { id, risposta } */
+export async function passkeyRegistrazioneVerifica(req, res, next) {
+  try {
+    const { id, risposta } = req.body || {};
+    const passkey = await passkeyService.verificaRegistrazione(
+      req.utente.id, id, risposta, descriviDispositivo(req.headers['user-agent'])
+    );
+    res.status(201).json({ successo: true, messaggio: 'Passkey aggiunta', dati: passkey });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/** DELETE /api/v1/auth/passkey/:id */
+export async function passkeyElimina(req, res, next) {
+  try {
+    await passkeyService.eliminaPasskey(req.utente.id, req.params.id);
+    res.json({ successo: true, messaggio: 'Passkey eliminata' });
   } catch (errore) {
     next(errore);
   }

@@ -28,6 +28,8 @@ const ambiente = {
   ...process.env,
   AMBIENTE: 'test',
   LIVELLO_LOG: process.env.LIVELLO_LOG || 'silent',
+  // Le passkey dei test nascono per un dominio di prova
+  APP_URL: 'https://palestra.test',
   // Segreti nuovi a ogni esecuzione
   JWT_SEGRETO_ACCESS: crypto.randomBytes(32).toString('hex'),
   JWT_SEGRETO_REFRESH: crypto.randomBytes(32).toString('hex')

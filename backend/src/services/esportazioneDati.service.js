@@ -68,7 +68,7 @@ export async function esportaDatiUtente(utenteId) {
     utente, schede, sessioni, recordPersonali, misurazioni, pianificazione, notifiche,
     partecipazioni, conversazioniAI, suggerimenti, richiesteInviate, richiesteRicevute,
     iscrizioni, appuntamentiCliente, annunciRicevuti,
-    clienti, appuntamentiTrainer, annunciPubblicati, schedeAssegnate, dispositivi
+    clienti, appuntamentiTrainer, annunciPubblicati, schedeAssegnate, dispositivi, passkey
   ] = await Promise.all([
     prisma.utente.findUnique({
       where: { id: utenteId },
@@ -138,6 +138,12 @@ export async function esportaDatiUtente(utenteId) {
       where: { utenteId, revocato: false },
       orderBy: { iniziataIl: 'asc' },
       select: { dispositivo: true, iniziataIl: true, creato: true, scadenza: true }
+    }),
+    // Le passkey, senza chiavi: solo nome e date
+    prisma.passkey.findMany({
+      where: { utenteId },
+      orderBy: { creataIl: 'asc' },
+      select: { nome: true, sincronizzata: true, creataIl: true, ultimoUso: true }
     })
   ]);
 
@@ -185,6 +191,7 @@ export async function esportaDatiUtente(utenteId) {
     assistente: conversazioniAI,
     suggerimentiEsercizi: suggerimenti,
     dispositivi: dispositivi.map(({ creato, ...d }) => ({ ...d, ultimoUso: creato })),
+    passkey,
     richiesteContatto: {
       inviate: richiesteInviate.map(({ destinatario, ...r }) => ({ ...r, a: destinatario.nome })),
       ricevute: richiesteRicevute.map(({ mittente, ...r }) => ({ ...r, da: mittente.nome }))

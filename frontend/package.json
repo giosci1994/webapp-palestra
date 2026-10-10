@@ -12,6 +12,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@simplewebauthn/browser": "^14.0.0",
     "@tailwindcss/vite": "^4.2.4",
     "framer-motion": "^12.38.0",
     "idb-keyval": "^6.2.2",
