@@ -528,9 +528,9 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
       }
     }
   });
-  if (!scheda) throw new ErroreNonTrovato('Scheda');
+  if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
   if (scheda.creatoreId !== utenteId && scheda.visibilita !== 'GLOBALE') {
-    throw new ErroreNonTrovato('Scheda');
+    throw new ErroreNonTrovato('Scheda non trovata');
   }
 
   const righe = scheda.esercizi.map((e, i) => {
@@ -633,7 +633,7 @@ export async function eserciziPiuUsati(utenteId, limite = 12) {
 /** Aggiunge un esercizio (per id) alla bozza, dalla creazione guidata. */
 export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie = 3, ripetizioni = '8-12') {
   const es = await prisma.esercizio.findUnique({ where: { id: parseInt(esercizioId) }, select: { id: true, nome: true } });
-  if (!es) throw new ErroreNonTrovato('Esercizio');
+  if (!es) throw new ErroreNonTrovato('Esercizio non trovato');
   const stato = await caricaStato(utenteId);
   stato.bozza.esercizi.push({
     tipo: 'FORZA', esercizioId: es.id, nome: es.nome,

@@ -111,6 +111,24 @@ npm run dev
 
 ---
 
+## 🧪 Tests
+
+```bash
+# Backend: unit and integration tests. Needs Docker: they start a throwaway
+# Postgres and Redis and never touch the real database.
+cd backend && npm test
+
+# Backend, unit tests only (no Docker)
+cd backend && npm run test:unitari
+
+# Frontend
+cd frontend && npm test
+```
+
+Every pull request runs the same tests on GitHub Actions (`.github/workflows/test.yml`).
+
+---
+
 ## 🧠 AI Graphify Integration
 This repository is fully compatible with **Graphify**. Through `.claude/skills/graphify/SKILL.md`, AI agents can map and explore the source code as a knowledge graph, ensuring better context for automated assistance and deep architectural understanding.
 
@@ -221,6 +239,24 @@ npm run dev
 cd ../frontend
 npm run dev
 ```
+
+---
+
+## 🧪 Test
+
+```bash
+# Backend: test unitari e d'integrazione. Serve Docker: avviano un Postgres e
+# un Redis usa-e-getta e non toccano mai il database vero.
+cd backend && npm test
+
+# Backend, solo test unitari (senza Docker)
+cd backend && npm run test:unitari
+
+# Frontend
+cd frontend && npm test
+```
+
+Ogni pull request esegue gli stessi test su GitHub Actions (`.github/workflows/test.yml`).
 
 ---
 

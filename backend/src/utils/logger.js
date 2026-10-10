@@ -5,11 +5,14 @@
 
 import pino from 'pino';
 
-const livello = process.env.AMBIENTE === 'produzione' ? 'info' : 'debug';
+// LIVELLO_LOG lo sceglie a mano (i test usano 'silent'); senza, info in
+// produzione e debug altrove
+const livello = process.env.LIVELLO_LOG || (process.env.AMBIENTE === 'produzione' ? 'info' : 'debug');
 
 const logger = pino({
   level: livello,
-  transport: process.env.AMBIENTE !== 'produzione'
+  // In silenzio non serve il worker di pino-pretty
+  transport: process.env.AMBIENTE !== 'produzione' && livello !== 'silent'
     ? {
         target: 'pino-pretty',
         options: {

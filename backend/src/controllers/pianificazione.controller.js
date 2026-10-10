@@ -71,7 +71,7 @@ async function verificaScheda(schedaId, utenteBersaglioId) {
     where: { id },
     select: { id: true, creatoreId: true, visibilita: true }
   });
-  if (!scheda) throw new ErroreNonTrovato('Scheda');
+  if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
 
   const utilizzabile = scheda.visibilita === 'GLOBALE' || scheda.creatoreId === utenteBersaglioId;
   if (!utilizzabile) {
@@ -357,7 +357,7 @@ export async function aggiornaPianificato(req, res, next) {
       where: { id },
       select: { id: true, utenteId: true, data: true, schedaId: true }
     });
-    if (!esistente) throw new ErroreNonTrovato('Allenamento pianificato');
+    if (!esistente) throw new ErroreNonTrovato('Allenamento pianificato non trovato');
     await risolviAgenda(req.utente, esistente.utenteId);
 
     const dati = {};
@@ -420,7 +420,7 @@ export async function eliminaPianificato(req, res, next) {
       where: { id },
       select: { id: true, utenteId: true }
     });
-    if (!esistente) throw new ErroreNonTrovato('Allenamento pianificato');
+    if (!esistente) throw new ErroreNonTrovato('Allenamento pianificato non trovato');
     await risolviAgenda(req.utente, esistente.utenteId);
 
     await prisma.allenamentoPianificato.delete({ where: { id } });
