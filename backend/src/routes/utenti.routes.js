@@ -93,8 +93,9 @@ router.delete('/account', async (req, res, next) => {
     const riepilogo = await eliminaAccount(utente.id);
 
     // Senza rimuovere il cookie il browser continuerebbe a tentare di rinnovare
-    // la sessione di un utente che non esiste piu'.
-    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', path: '/' });
+    // la sessione di un utente che non esiste piu'. Stesso path con cui e' stato
+    // impostato (autenticazione.controller.js), altrimenti il browser lo tiene.
+    res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', path: '/api/v1/auth' });
     res.json({ successo: true, messaggio: 'Account eliminato definitivamente', dati: riepilogo });
   } catch (errore) { next(errore); }
 });
