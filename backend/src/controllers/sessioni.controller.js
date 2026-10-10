@@ -279,6 +279,11 @@ export async function avviaSessione(req, res, next) {
     });
 
     if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    // Come per il dettaglio della scheda: le proprie (anche quelle assegnate
+    // dal PT, che le intesta al cliente) e quelle globali
+    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
+      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
+    }
 
     const sessione = await prisma.sessioneAllenamento.create({
       data: {
