@@ -307,6 +307,9 @@ model Esercizio {
   logSerie        LogSerie[]
   suggerimenti    SuggerimentoEsercizio[]
 
+  // Creato dalla migrazione 20260922_nome_italiano_esercizi: la ricerca usa
+  // anche il nome italiano
+  @@index([nomeIt])
   @@map("esercizi")
 }
 
