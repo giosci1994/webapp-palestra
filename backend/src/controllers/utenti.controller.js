@@ -4,6 +4,8 @@
 // ============================================
 
 import * as utentiService from '../services/utenti.service.js';
+import { esportaDatiUtente, nomeFileEsportazione } from '../services/esportazioneDati.service.js';
+import logger from '../utils/logger.js';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -30,6 +32,26 @@ export async function profilo(req, res, next) {
   try {
     const utente = await utentiService.ottieniProfilo(req.utente.id);
     res.json({ successo: true, dati: utente });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * GET /api/v1/utenti/esportazione — Scarica tutti i propri dati in un file JSON
+ * (accesso e portabilita', GDPR art. 15 e 20)
+ */
+export async function esportaDati(req, res, next) {
+  try {
+    const dati = await esportaDatiUtente(req.utente.id);
+    logger.info({ utenteId: req.utente.id }, 'Dati dell\'account esportati');
+    res.set({
+      'Content-Type': 'application/json; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${nomeFileEsportazione()}"`,
+      // Dati personali: ne' il browser ne' un proxy devono tenerne una copia
+      'Cache-Control': 'no-store'
+    });
+    res.send(JSON.stringify(dati, null, 2));
   } catch (errore) {
     next(errore);
   }

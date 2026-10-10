@@ -31,7 +31,7 @@ export async function avviaServer() {
    * @param {string} metodo
    * @param {string} percorso - dopo /api/v1, per esempio '/sessioni/3'
    * @param {{ token?: string, corpo?: any, cookie?: string, ip?: string }} [opzioni]
-   * @returns {Promise<{ stato: number, corpo: any, cookieRicevuti: string[] }>}
+   * @returns {Promise<{ stato: number, corpo: any, testo: string, intestazioni: Headers, cookieRicevuti: string[] }>}
    */
   async function richiesta(metodo, percorso, { token, corpo, cookie, ip = nuovoIp() } = {}) {
     const intestazioni = { 'cf-connecting-ip': ip };
@@ -48,6 +48,8 @@ export async function avviaServer() {
     return {
       stato: risposta.status,
       corpo: testo ? JSON.parse(testo) : null,
+      testo,
+      intestazioni: risposta.headers,
       cookieRicevuti: risposta.headers.getSetCookie()
     };
   }

@@ -66,7 +66,7 @@ export default function PrivacyPolicy() {
                 <li><strong>Opposizione:</strong> opporti al trattamento basato su interesse legittimo</li>
                 <li><strong>Revoca del consenso:</strong> revocare il consenso in qualsiasi momento</li>
               </ul>
-              <p className="mt-2">Per esercitare i tuoi diritti, contattaci tramite il profilo GitHub sopra indicato.</p>
+              <p className="mt-2">Una copia completa dei tuoi dati, in formato JSON, puoi scaricarla tu stesso in qualsiasi momento da <strong>Profilo → Privacy → I tuoi dati</strong>; dal Profilo puoi anche eliminare l'account. Per esercitare gli altri diritti, contattaci tramite il profilo GitHub sopra indicato.</p>
             </section>
 
             <section>

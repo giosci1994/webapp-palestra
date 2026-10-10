@@ -4,7 +4,7 @@
 // ============================================
 
 import { Router } from 'express';
-import { listaUtenti, profilo, approva, banna, cambiaRuolo, elimina, aggiornaProfilo, cambiaPassword, infoApp } from '../controllers/utenti.controller.js';
+import { listaUtenti, profilo, approva, banna, cambiaRuolo, elimina, aggiornaProfilo, cambiaPassword, infoApp, esportaDati } from '../controllers/utenti.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 
@@ -15,6 +15,9 @@ router.use(verificaToken);
 
 // GET /api/v1/utenti/profilo — Profilo dell'utente corrente
 router.get('/profilo', profilo);
+
+// GET /api/v1/utenti/esportazione — Tutti i propri dati in un file JSON
+router.get('/esportazione', esportaDati);
 
 // PATCH /api/v1/utenti/profilo — Aggiorna profilo
 router.patch('/profilo', aggiornaProfilo);
