@@ -4,7 +4,7 @@
 // ============================================
 
 import { useAuth } from '../contesti/AuthContesto.jsx';
-import { api } from '../config/api.js';
+import { api, scaricaFile } from '../config/api.js';
 import { RUOLI } from '../utils/costanti.js';
 import { formattaData } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,7 +14,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   ChevronRight, Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil
+  Pencil, Download
 } from 'lucide-react';
 
 const OBIETTIVI = ['Massa Muscolare', 'Definizione', 'Resistenza', 'Salute Generale', 'Perdita Peso'];
@@ -75,6 +75,10 @@ export default function Profilo() {
   const [messaggioPT, setMessaggioPT] = useState('');
   const [inviandoPT, setInviandoPT] = useState(false);
 
+  // Esportazione dei dati (Privacy, e prima di eliminare l'account)
+  const [scaricandoDati, setScaricandoDati] = useState(false);
+  const [erroreDati, setErroreDati] = useState('');
+
   // Eliminazione account
   const [confermaElimina, setConfermaElimina] = useState('');
   const [eliminando, setEliminando] = useState(false);
@@ -83,6 +87,19 @@ export default function Profilo() {
 
   // Palestre
   const [listaPalestre, setListaPalestre] = useState([]);
+
+  /** Scarica il file JSON con tutti i dati dell'account */
+  const scaricaDati = async () => {
+    setErroreDati('');
+    setScaricandoDati(true);
+    try {
+      await scaricaFile('/utenti/esportazione', 'gymmaster-dati.json');
+    } catch (err) {
+      setErroreDati(err?.message || 'Download non riuscito');
+    } finally {
+      setScaricandoDati(false);
+    }
+  };
 
   useEffect(() => {
     if (utente) {
@@ -456,6 +473,19 @@ export default function Profilo() {
                   </p>
                 </div>
               </div>
+              {/* I tuoi dati */}
+              <div className="glass-card overflow-hidden mt-6">
+                <div className="p-card-inner border-b border-[var(--bordo-light)]">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Download size={20} className="text-[var(--accent)]" /> I tuoi dati</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Una copia di tutto ciò che GymMaster conserva su di te: profilo, schede, allenamenti, record, misurazioni e messaggi. È un file JSON, che puoi aprire con qualunque programma o portare in un'altra app.</p>
+                </div>
+                <div className="p-card-inner">
+                  <button onClick={scaricaDati} disabled={scaricandoDati} className="btn-primario w-full disabled:opacity-50">
+                    {scaricandoDati ? 'Preparo il file…' : 'Scarica i miei dati'}
+                  </button>
+                  {erroreDati && <p className="text-xs text-[var(--pericolo)] mt-2">{erroreDati}</p>}
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -717,7 +747,12 @@ export default function Profilo() {
                       <p className="text-xs text-[var(--testo-secondario)] mt-1">Eliminando il tuo account perderai definitivamente tutti i tuoi dati: schede, allenamenti, statistiche, messaggi e progressi. Questa azione non può essere annullata.</p>
                     </div>
                   </div>
-                  <p className="text-xs text-[var(--testo-terziario)] mb-3">Per procedere, scrivi <strong>ELIMINA IL MIO ACCOUNT</strong> nel campo sottostante.</p>
+                  <button onClick={scaricaDati} disabled={scaricandoDati}
+                          className="btn-secondario text-sm w-full flex items-center justify-center gap-2 mb-1 disabled:opacity-50">
+                    <Download size={16} /> {scaricandoDati ? 'Preparo il file…' : 'Prima scarica una copia dei tuoi dati'}
+                  </button>
+                  {erroreDati && <p className="text-xs text-[var(--pericolo)] mb-1">{erroreDati}</p>}
+                  <p className="text-xs text-[var(--testo-terziario)] mt-3 mb-3">Per procedere, scrivi <strong>ELIMINA IL MIO ACCOUNT</strong> nel campo sottostante.</p>
                   <input type="text" value={confermaElimina} onChange={e => setConfermaElimina(e.target.value)} placeholder="ELIMINA IL MIO ACCOUNT"
                          className="campo-input text-center text-[var(--pericolo)] font-bold mb-3" />
 
