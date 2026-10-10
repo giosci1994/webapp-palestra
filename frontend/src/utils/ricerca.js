@@ -187,6 +187,12 @@ export function cerca({ voci, vocabolario }, testo) {
   return trovati.map(t => t.voce.elemento);
 }
 
+/** I preferiti in cima, senza cambiare l'ordine dentro ciascun gruppo */
+export function preferitiPrima(elenco, preferiti) {
+  if (!preferiti?.size) return elenco;
+  return [...elenco.filter(e => preferiti.has(e.id)), ...elenco.filter(e => !preferiti.has(e.id))];
+}
+
 /** Indice di esercizi: nome italiano e inglese; con i dettagli anche muscoli e attrezzatura */
 export function indicizzaEsercizi(esercizi, { conDettagli = false } = {}) {
   return indicizza(esercizi, {

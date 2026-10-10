@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizza, radice, distanza, cerca, indicizzaEsercizi } from './ricerca.js';
+import { normalizza, radice, distanza, cerca, indicizzaEsercizi, preferitiPrima } from './ricerca.js';
 
 const esercizio = (nomeIt, nome, gruppoMuscoloPrimario = 'Petto', attrezzatura = null) =>
   ({ nomeIt, nome, gruppoMuscoloPrimario, attrezzatura: attrezzatura && { nome: attrezzatura } });
@@ -84,5 +84,17 @@ describe('cerca', () => {
   it('prima le corrispondenze esatte e i nomi che cominciano con la parola cercata', () => {
     expect(nomi('stacco')[0]).toBe('Stacco Rumeno con Bilanciere');
     expect(nomi('crunch')[0]).toBe('Crunch');
+  });
+});
+
+describe('preferitiPrima', () => {
+  const elenco = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+
+  it('porta i preferiti in cima e lascia il resto nell\'ordine di prima', () => {
+    expect(preferitiPrima(elenco, new Set([4, 2])).map(e => e.id)).toEqual([2, 4, 1, 3]);
+  });
+
+  it('senza preferiti restituisce l\'elenco cosi\' com\'e\'', () => {
+    expect(preferitiPrima(elenco, new Set())).toBe(elenco);
   });
 });

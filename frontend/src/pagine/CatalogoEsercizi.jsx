@@ -8,11 +8,12 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
+import { usePreferiti } from '../hooks/usePreferiti.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, X, Play, ChevronDown, ChevronUp, 
-  Dumbbell, Target, SlidersHorizontal
+  Dumbbell, Target, SlidersHorizontal, Star
 } from 'lucide-react';
 import SuggerisciEsercizio from '../componenti/specifici/SuggerisciEsercizio.jsx';
 
@@ -94,7 +95,7 @@ function VideoPlayer({ url, nome }) {
 }
 
 // --- Componente Card Esercizio Espanso ---
-function EsercizioCard({ esercizio, isExpanded, onToggle }) {
+function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito }) {
   const gruppo = GRUPPI_MUSCOLARI[esercizio.gruppoMuscoloPrimario];
   const diffColor = DIFFICULTY_COLORS[esercizio.difficulty] || { bg: 'rgba(100,100,100,0.15)', text: '#94A3B8' };
   
@@ -105,10 +106,11 @@ function EsercizioCard({ esercizio, isExpanded, onToggle }) {
       animate={{ opacity: 1, y: 0 }}
       className={`glass-card overflow-hidden transition-all duration-300 ${isExpanded ? 'ring-1 ring-[var(--accent-glow)]' : ''}`}
     >
+      <div className="flex items-stretch">
       {/* Header clickable */}
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-card-inner py-4 text-left hover:bg-[var(--bg-terziario)] transition-colors"
+        className="flex-1 min-w-0 flex items-center gap-3 pl-6 pr-2 py-4 text-left hover:bg-[var(--bg-terziario)] transition-colors"
       >
         {/* Emoji gruppo */}
         <div className="w-10 h-10 rounded-[var(--raggio-sm)] flex items-center justify-center text-lg shrink-0"
@@ -150,6 +152,18 @@ function EsercizioCard({ esercizio, isExpanded, onToggle }) {
         {/* Expand icon */}
         {isExpanded ? <ChevronUp size={18} className="text-[var(--testo-terziario)] shrink-0" /> : <ChevronDown size={18} className="text-[var(--testo-terziario)] shrink-0" />}
       </button>
+
+      {/* Stella dei preferiti */}
+      <button
+        onClick={onPreferito}
+        aria-pressed={preferito}
+        aria-label={preferito ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}
+        title={preferito ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}
+        className={`shrink-0 pl-2 pr-5 flex items-center transition-colors hover:bg-[var(--bg-terziario)] ${preferito ? 'text-[#EAB308]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)]'}`}
+      >
+        <Star size={18} fill={preferito ? 'currentColor' : 'none'} />
+      </button>
+      </div>
 
       {/* Contenuto espanso */}
       <AnimatePresence>
@@ -241,6 +255,8 @@ export default function CatalogoEsercizi() {
   const [filtroDifficulty, setFiltroDifficulty] = useState('');
   const [filtroRegion, setFiltroRegion] = useState('');
   const [filtroMechanics, setFiltroMechanics] = useState('');
+  const [soloPreferiti, setSoloPreferiti] = useState(false);
+  const { preferiti, alternaPreferito } = usePreferiti();
   const [mostraFiltri, setMostraFiltri] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [paginaVisibile, setPaginaVisibile] = useState(1);
@@ -264,9 +280,10 @@ export default function CatalogoEsercizi() {
       if (filtroDifficulty && e.difficulty !== filtroDifficulty) return false;
       if (filtroRegion && e.bodyRegion !== filtroRegion) return false;
       if (filtroMechanics && e.mechanics !== filtroMechanics) return false;
+      if (soloPreferiti && !preferiti.has(e.id)) return false;
       return true;
     });
-  }, [indiceRicerca, filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, ricerca]);
+  }, [indiceRicerca, filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, preferiti, ricerca]);
 
   // Paginazione virtuale (carica PAGE_SIZE alla volta)
   const eserciziVisibili = useMemo(() => {
@@ -289,19 +306,20 @@ export default function CatalogoEsercizi() {
   useEffect(() => {
     setPaginaVisibile(1);
     setExpandedId(null);
-  }, [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, ricerca]);
+  }, [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, ricerca]);
 
   const gruppiUnici = useMemo(() => {
     return [...new Set(esercizi.map(e => e.gruppoMuscoloPrimario))].sort();
   }, [esercizi]);
 
-  const filtriAttivi = [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics].filter(Boolean).length;
+  const filtriAttivi = [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti].filter(Boolean).length;
 
   const resetFiltri = () => {
     setFiltroGruppo('');
     setFiltroDifficulty('');
     setFiltroRegion('');
     setFiltroMechanics('');
+    setSoloPreferiti(false);
     setRicerca('');
   };
 
@@ -406,6 +424,17 @@ export default function CatalogoEsercizi() {
 
       {/* Quick Filters (chips regioni corpo) */}
       <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
+        <button
+          onClick={() => setSoloPreferiti(!soloPreferiti)}
+          aria-pressed={soloPreferiti}
+          className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+            soloPreferiti
+              ? 'bg-[var(--accent-dim)] border-[var(--accent-glow)] text-[var(--accent)]'
+              : 'bg-[var(--bg-terziario)] border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--bordo-hover)]'
+          }`}
+        >
+          ⭐ Preferiti{preferiti.size > 0 && ` (${preferiti.size})`}
+        </button>
         {BODY_REGION_OPTIONS.filter(r => r.value).map(region => (
           <button
             key={region.value}
@@ -430,7 +459,11 @@ export default function CatalogoEsercizi() {
         <div className="text-center py-16">
           <Dumbbell size={48} className="mx-auto mb-4 text-[var(--testo-terziario)]" />
           <p className="text-lg font-semibold text-[var(--testo-secondario)]">Nessun esercizio trovato</p>
-          <p className="text-sm text-[var(--testo-terziario)] mt-1">Prova a modificare i filtri di ricerca</p>
+          <p className="text-sm text-[var(--testo-terziario)] mt-1">
+            {soloPreferiti && preferiti.size === 0
+              ? 'Non hai ancora preferiti: tocca la stella accanto a un esercizio'
+              : 'Prova a modificare i filtri di ricerca'}
+          </p>
           <button onClick={resetFiltri} className="mt-4 text-sm text-[var(--accent)] hover:underline">
             Rimuovi filtri
           </button>
@@ -444,6 +477,8 @@ export default function CatalogoEsercizi() {
                 esercizio={es}
                 isExpanded={expandedId === es.id}
                 onToggle={() => setExpandedId(expandedId === es.id ? null : es.id)}
+                preferito={preferiti.has(es.id)}
+                onPreferito={() => alternaPreferito(es.id)}
               />
             ))}
           </div>

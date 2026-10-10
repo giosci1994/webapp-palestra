@@ -179,8 +179,23 @@ model Utente {
   // Notifiche in-app
   notifiche AllenamentoNotifica[]
   passkey   Passkey[]
+  eserciziPreferiti EsercizioPreferito[]
 
   @@map("utenti")
+}
+
+// Esercizi segnati con la stella: ognuno ha i suoi, e vengono per primi nelle
+// ricerche
+model EsercizioPreferito {
+  utenteId    Int      @map("utente_id")
+  esercizioId Int      @map("esercizio_id")
+  creatoIl    DateTime @default(now()) @map("creato_il")
+
+  utente    Utente    @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  esercizio Esercizio @relation(fields: [esercizioId], references: [id], onDelete: Cascade)
+
+  @@id([utenteId, esercizioId])
+  @@map("esercizi_preferiti")
 }
 
 // Passkey (WebAuthn): entrare con impronta, volto o PIN del dispositivo invece
@@ -333,6 +348,7 @@ model Esercizio {
   eserciziScheda  EsercizioScheda[]
   logSerie        LogSerie[]
   suggerimenti    SuggerimentoEsercizio[]
+  preferitoDa      EsercizioPreferito[]
 
   // Creato dalla migrazione 20260922_nome_italiano_esercizi: la ricerca usa
   // anche il nome italiano

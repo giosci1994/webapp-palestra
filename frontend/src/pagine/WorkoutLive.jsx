@@ -6,7 +6,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
-import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
+import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
+import { usePreferiti } from '../hooks/usePreferiti.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
@@ -167,9 +168,14 @@ export default function WorkoutLive() {
   const esercizi = eserciziLive;
   const esercizioAttuale = esercizi[esercizioIdx];
 
-  // Ricerca tollerante sul nome italiano e sull'originale inglese (utils/ricerca.js)
+  // Ricerca tollerante sul nome italiano e sull'originale inglese (utils/ricerca.js),
+  // con i preferiti dell'utente per primi
+  const { preferiti } = usePreferiti();
   const indiceRicerca = useMemo(() => indicizzaEsercizi(catalogoEsercizi), [catalogoEsercizi]);
-  const eserciziFiltrati = useMemo(() => cerca(indiceRicerca, ricercaTesto), [indiceRicerca, ricercaTesto]);
+  const eserciziFiltrati = useMemo(
+    () => preferitiPrima(cerca(indiceRicerca, ricercaTesto), preferiti),
+    [indiceRicerca, ricercaTesto, preferiti]
+  );
 
   // --- Tracking esercizi completati ---
   // Un esercizio è "completato" quando ha >= serieTarget serie registrate
@@ -916,7 +922,7 @@ export default function WorkoutLive() {
                     className="flex items-center justify-between p-3 rounded-xl border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors text-left"
                   >
                     <div>
-                      <p className="font-semibold text-sm">{nomeEsercizio(es)}</p>
+                      <p className="font-semibold text-sm">{preferiti.has(es.id) && <span title="Preferito">⭐ </span>}{nomeEsercizio(es)}</p>
                       <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{es.gruppoMuscoloPrimario} · {es.attrezzatura?.nome || 'Varie'}</p>
                     </div>
                     <span className="text-[var(--accent)] font-bold">➕</span>
