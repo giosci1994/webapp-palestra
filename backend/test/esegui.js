@@ -88,18 +88,34 @@ function avviaServizi() {
   return () => docker('down', '--remove-orphans');
 }
 
+// La CLI di Prisma passando da node: node_modules/.bin/prisma non sempre e'
+// eseguibile (per questo il Dockerfile fa chmod +x)
+const CLI_PRISMA = createRequire(import.meta.url).resolve('prisma/build/index.js');
+const prisma = argomenti => esegui(process.execPath, [CLI_PRISMA, ...argomenti], { mostra: false });
+
 /**
- * Crea le tabelle da prisma/schema.prisma (db push), non dalle migrazioni:
- * la storia delle migrazioni non parte da un database vuoto, perche' nessuna
- * crea annunci_pt, appuntamenti_pt, iscrizioni_pt e suggerimenti_esercizi.
- * Il database di produzione coincide con lo schema.
+ * Crea le tabelle con le migrazioni, come fa il backend all'avvio, e controlla
+ * che il risultato sia proprio prisma/schema.prisma: una tabella creata fuori
+ * dalle migrazioni (db push) o una migrazione dimenticata fanno fallire i test
+ * invece di accorgersene il giorno di un'installazione nuova.
  */
-function preparaSchema() {
-  // La CLI di Prisma passando da node: node_modules/.bin/prisma non sempre e'
-  // eseguibile (per questo il Dockerfile fa chmod +x)
-  const cliPrisma = createRequire(import.meta.url).resolve('prisma/build/index.js');
-  const esito = esegui(process.execPath, [cliPrisma, 'db', 'push', '--skip-generate'], { mostra: false });
-  if (esito.status !== 0) throw new Error(`Schema del database non creato:\n${esito.stdout}${esito.stderr}`);
+function applicaMigrazioni() {
+  const migrazione = prisma(['migrate', 'deploy']);
+  if (migrazione.status !== 0) {
+    throw new Error(`Le migrazioni non partono da un database vuoto:\n${migrazione.stdout}${migrazione.stderr}`);
+  }
+
+  // --exit-code: 0 se coincidono, 2 se ci sono differenze
+  const differenze = prisma([
+    'migrate', 'diff', '--from-url', ambiente.DATABASE_URL,
+    '--to-schema-datamodel', 'prisma/schema.prisma', '--script', '--exit-code'
+  ]);
+  if (differenze.status !== 0) {
+    throw new Error(
+      'Le migrazioni non producono prisma/schema.prisma. Manca una migrazione per:\n' +
+      `${differenze.stdout}${differenze.stderr}`
+    );
+  }
 }
 
 /** I test di una cartella; node:test esegue ogni file nel suo processo */
@@ -114,7 +130,7 @@ const esiti = [eseguiTest('unitari')];
 if (!process.argv.includes('--solo-unitari')) {
   const spegni = avviaServizi();
   try {
-    preparaSchema();
+    applicaMigrazioni();
     // Un file alla volta: condividono lo stesso database
     esiti.push(eseguiTest('integrazione', ['--test-concurrency=1']));
   } finally {
