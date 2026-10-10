@@ -28,6 +28,7 @@ router.get('/:id', controller.dettaglioSessione);
 router.patch('/:id', controller.modificaSessione);
 router.patch('/:id/completa', controller.completaSessione);
 router.patch('/:id/riapri', controller.riapriSessione);
+router.post('/:id/scheda', controller.salvaComeScheda);
 router.delete('/:id', controller.eliminaSessione);
 
 // --- Log Serie dentro una sessione ---

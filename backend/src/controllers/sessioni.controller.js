@@ -5,7 +5,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
-import { giornoLocale } from '../utils/date.js';
+import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
 
 /** Lista sessioni dell'utente */
 export async function listaSessioni(req, res, next) {
@@ -399,6 +399,100 @@ export async function completaSessione(req, res, next) {
       dati: aggiornata,
       recordPersonali: recordAggiornati
     });
+  } catch (errore) { next(errore); }
+}
+
+/**
+ * Gli esercizi di una nuova scheda ricavati da un allenamento fatto: quelli con
+ * almeno una serie completata, nell'ordine in cui li hai cominciati, con le
+ * serie fatte e le ripetizioni (un numero, o "min-max" se sono cambiate).
+ * Recupero, note e riscaldamento vengono dalla scheda seguita, se l'esercizio
+ * c'era; per gli esercizi senza ripetizioni (cardio) i valori dell'ultima serie.
+ */
+export function eserciziDaSessione(logSerie, eserciziScheda = []) {
+  const dallaScheda = new Map(eserciziScheda.map(e => [e.esercizioId, e]));
+  const perEsercizio = new Map();
+  for (const serie of [...logSerie].sort((a, b) => a.id - b.id)) {
+    if (!serie.completato) continue;
+    if (!perEsercizio.has(serie.esercizioId)) perEsercizio.set(serie.esercizioId, []);
+    perEsercizio.get(serie.esercizioId).push(serie);
+  }
+
+  return [...perEsercizio].map(([esercizioId, serie], i) => {
+    const origine = dallaScheda.get(esercizioId);
+    const rep = serie.map(s => s.repEffettive).filter(n => n > 0);
+    const senzaRep = rep.length === 0;
+    const minimo = Math.min(...rep);
+    const massimo = Math.max(...rep);
+    const ultima = serie.at(-1);
+    return {
+      esercizioId,
+      serieTarget: serie.length,
+      repTarget: senzaRep ? null : minimo === massimo ? String(minimo) : `${minimo}-${massimo}`,
+      recuperoSecondi: origine?.recuperoSecondi ?? 90,
+      ordineEsecuzione: i + 1,
+      note: origine?.note ?? null,
+      riscaldamento: origine?.riscaldamento ?? false,
+      durataMinuti: senzaRep ? ultima.durataMinuti : null,
+      velocitaKmh: senzaRep ? ultima.velocitaKmh : null,
+      inclinazione: senzaRep ? ultima.inclinazione : null,
+      livelloResistenza: senzaRep ? ultima.livelloResistenza : null,
+      distanzaKm: senzaRep ? ultima.distanzaKm : null
+    };
+  });
+}
+
+const TITOLO_SCHEDA_MAX = 100;
+
+/**
+ * POST /sessioni/:id/scheda — Salva un allenamento fatto come nuova scheda
+ * personale: gli esercizi davvero fatti, nell'ordine, con le serie e le
+ * ripetizioni di quel giorno. Per quando in palestra la scheda e' cambiata
+ * strada facendo (esercizi aggiunti o saltati, serie in piu') e la versione
+ * buona e' quella fatta.
+ */
+export async function salvaComeScheda(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Sessione non valida');
+    const { titolo } = req.body || {};
+    if (titolo != null && typeof titolo !== 'string') throw new ErroreValidazione('Il titolo deve essere un testo');
+    const titoloScelto = titolo?.trim();
+    if (titoloScelto && titoloScelto.length > TITOLO_SCHEDA_MAX) {
+      throw new ErroreValidazione(`Il titolo può avere al massimo ${TITOLO_SCHEDA_MAX} caratteri`);
+    }
+
+    const sessione = await prisma.sessioneAllenamento.findUnique({
+      where: { id },
+      include: {
+        logSerie: true,
+        scheda: { select: { titolo: true, livello: true, esercizi: true } }
+      }
+    });
+    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (sessione.utenteId !== req.utente.id) {
+      throw new ErroreNonAutorizzato('Puoi salvare come scheda solo i tuoi allenamenti');
+    }
+    if (!sessione.dataFine) throw new ErroreValidazione("Prima concludi l'allenamento");
+
+    const esercizi = eserciziDaSessione(sessione.logSerie, sessione.scheda.esercizi);
+    if (!esercizi.length) throw new ErroreValidazione('Nessuna serie completata da salvare');
+
+    const data = (opzioni) => sessione.dataInizio.toLocaleDateString('it-IT', { timeZone: FUSO_ORARIO, ...opzioni });
+    const suffisso = ` (${data({ day: 'numeric', month: 'short' })})`;
+    const scheda = await prisma.schedaAllenamento.create({
+      data: {
+        titolo: titoloScelto || sessione.scheda.titolo.slice(0, TITOLO_SCHEDA_MAX - suffisso.length) + suffisso,
+        descrizione: `Dall'allenamento del ${data({ day: 'numeric', month: 'long', year: 'numeric' })}`,
+        livello: sessione.scheda.livello,
+        visibilita: 'PERSONALE',
+        creatoreId: req.utente.id,
+        esercizi: { create: esercizi }
+      },
+      select: { id: true, titolo: true }
+    });
+
+    res.status(201).json({ successo: true, dati: scheda });
   } catch (errore) { next(errore); }
 }
 

@@ -304,3 +304,72 @@ describe('riprendere un allenamento chiuso per sbaglio', () => {
     assert.equal((await riapri({ id: 99999 })).stato, 404);
   });
 });
+
+describe('salvare un allenamento come scheda', () => {
+  const salva = (sessione, corpo = {}, chi = utente) =>
+    server.richiesta('POST', `/sessioni/${sessione.id}/scheda`, { token: tokenPer(chi), corpo });
+  const schedaCreata = id => prisma.schedaAllenamento.findUnique({
+    where: { id }, include: { esercizi: { orderBy: { ordineEsecuzione: 'asc' } } }
+  });
+
+  it('crea una scheda personale con gli esercizi davvero fatti', async () => {
+    const squat = await creaEsercizio({ nome: 'Squat' });
+    const rematore = await creaEsercizio({ nome: 'Rematore' });
+    const seguita = await creaScheda(utente, [panca, squat], { titolo: 'Push A', livello: 'INTERMEDIO' });
+    await prisma.esercizioScheda.updateMany({ where: { schedaId: seguita.id, esercizioId: panca.id }, data: { recuperoSecondi: 180, note: 'Fermo al petto' } });
+    // In palestra: lo squat saltato, il rematore aggiunto, una serie di panca in piu'
+    const sessione = await creaSessione(utente, seguita, {
+      inizio: new Date('2026-10-09T10:00:00Z'),
+      serie: [
+        { esercizio: panca, peso: 80, rep: 8 }, { esercizio: panca, peso: 80, rep: 8 },
+        { esercizio: panca, peso: 80, rep: 7 }, { esercizio: panca, peso: 70, rep: 10 },
+        { esercizio: rematore, peso: 60, rep: 12 }, { esercizio: rematore, peso: 60, rep: 12 }
+      ]
+    });
+
+    const risposta = await salva(sessione);
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.titolo, 'Push A (9 ott)');
+
+    const nuova = await schedaCreata(risposta.corpo.dati.id);
+    assert.deepEqual(
+      [nuova.creatoreId, nuova.visibilita, nuova.livello, nuova.descrizione],
+      [utente.id, 'PERSONALE', 'INTERMEDIO', "Dall'allenamento del 9 ottobre 2026"]
+    );
+    assert.deepEqual(
+      nuova.esercizi.map(e => [e.esercizioId, e.serieTarget, e.repTarget, e.recuperoSecondi, e.note]),
+      [[panca.id, 4, '7-10', 180, 'Fermo al petto'], [rematore.id, 2, '12', 90, null]]
+    );
+  });
+
+  it('con un titolo scelto, ripulito dagli spazi', async () => {
+    const sessione = await creaSessione(utente, scheda, { serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    const risposta = await salva(sessione, { titolo: '  Panca leggera  ' });
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.titolo, 'Panca leggera');
+  });
+
+  it('solo i propri allenamenti conclusi, con almeno una serie', async () => {
+    const fatta = await creaSessione(utente, scheda, { serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    assert.equal((await salva(fatta, {}, await creaUtente())).stato, 403);
+
+    const inCorso = await creaSessione(utente, scheda, { conclusa: false, serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    assert.equal((await salva(inCorso)).stato, 400);
+
+    const vuota = await creaSessione(utente, scheda);
+    const risposta = await salva(vuota);
+    assert.equal(risposta.stato, 400);
+    assert.equal(risposta.corpo.messaggio, 'Nessuna serie completata da salvare');
+
+    assert.equal(await prisma.schedaAllenamento.count({ where: { creatoreId: { not: utente.id } } }), 0);
+    assert.equal(await prisma.schedaAllenamento.count(), 1); // solo quella di partenza
+  });
+
+  it('titolo troppo lungo o non testo 400, id non valido 400, sessione inesistente 404', async () => {
+    const sessione = await creaSessione(utente, scheda, { serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    assert.equal((await salva(sessione, { titolo: 'x'.repeat(101) })).stato, 400);
+    assert.equal((await salva(sessione, { titolo: 42 })).stato, 400);
+    assert.equal((await salva({ id: 'abc' })).stato, 400);
+    assert.equal((await salva({ id: 99999 })).stato, 404);
+  });
+});
