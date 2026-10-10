@@ -36,6 +36,10 @@ async function accedi(userAgent, chi = utente) {
 }
 
 const rinnova = token => server.richiesta('POST', '/auth/refresh', { cookie: `refreshToken=${token}` });
+/** Come se il token fosse stato rinnovato 10 minuti fa: sotto i 5 non ruota */
+const invecchia = token => prisma.refreshToken.update({
+  where: { token: improntaToken(token) }, data: { creato: new Date(Date.now() - 10 * 60 * 1000) }
+});
 const elenco = da => server.richiesta('GET', '/auth/sessioni', { token: da.accesso });
 /** Il dispositivo funziona ancora? Una rotta qualsiasi con il suo access token */
 const funziona = async da => (await server.richiesta('GET', '/sessioni', { token: da.accesso })).stato === 200;
@@ -53,11 +57,13 @@ describe('dispositivi collegati', () => {
     );
   });
 
-  it('i rinnovi restano nella stessa sessione: stesso dispositivo, stessa ora di login', async () => {
+  it('le rotazioni restano nella stessa sessione: stesso dispositivo, stessa ora di login', async () => {
     const telefono = await accedi(TELEFONO);
     const [prima] = (await elenco(telefono)).corpo.dati;
+    await invecchia(telefono.refresh);
 
     const rinnovo = await rinnova(telefono.refresh);
+    assert.notEqual(refreshTokenDa(rinnovo), telefono.refresh, 'ha ruotato');
     const dopo = (await elenco({ accesso: rinnovo.corpo.dati.accessToken })).corpo.dati;
     assert.equal(dopo.length, 1);
     assert.equal(dopo[0].famiglia, prima.famiglia);
@@ -139,11 +145,12 @@ describe('dispositivi collegati', () => {
   it('se scatta l\'allarme furto, ogni access token dell\'utente smette subito di valere', async () => {
     const telefono = await accedi(TELEFONO);
     const vecchio = telefono.refresh;
-    await rinnova(vecchio);
-    await prisma.refreshToken.update({
-      where: { token: improntaToken(vecchio) }, data: { revocoEffettivoDopo: new Date(Date.now() - 1000) }
-    });
+    await invecchia(vecchio);
+    const secondo = refreshTokenDa(await rinnova(vecchio));
+    await invecchia(secondo);
+    await rinnova(secondo);
 
+    // Il primo token, indietro di due rotazioni
     assert.equal((await rinnova(vecchio)).stato, 401);
     assert.equal(await funziona(telefono), false);
   });
