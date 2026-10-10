@@ -373,3 +373,30 @@ describe('salvare un allenamento come scheda', () => {
     assert.equal((await salva({ id: 99999 })).stato, 404);
   });
 });
+
+describe('ultimi carichi, con lo storico per la progressione', () => {
+  const carichi = (query, chi = utente) => server.richiesta('GET', `/sessioni/ultimi-carichi?${query}`, { token: tokenPer(chi) });
+  const sedutaDi = (giorni, peso, ...ripetizioni) => creaSessione(utente, scheda, {
+    inizio: giorniFa(giorni), serie: ripetizioni.map(rep => ({ esercizio: panca, peso, rep }))
+  });
+
+  it('l\'ultima volta in cima, e in storico le ultime quattro sedute dalla piu\' recente', async () => {
+    for (const [giorni, peso] of [[10, 50], [8, 52.5], [6, 55], [4, 57.5], [2, 60]]) await sedutaDi(giorni, peso, 10, 9);
+
+    const risposta = await carichi(`esercizi=${panca.id}`);
+    assert.equal(risposta.stato, 200);
+    const voce = risposta.corpo.dati[panca.id];
+    assert.deepEqual(voce.serie.map(s => [s.pesoEffettivo, s.repEffettive]), [[60, 10], [60, 9]]);
+    assert.equal(voce.sessioneId, voce.storico[0].sessioneId);
+    assert.deepEqual(voce.storico.map(s => s.serie[0].pesoEffettivo), [60, 57.5, 55, 52.5]);
+  });
+
+  it('esclude la sessione in corso e quelle degli altri', async () => {
+    const vecchia = await sedutaDi(5, 50, 10);
+    const inCorso = await sedutaDi(0, 70, 3);
+    await creaSessione(await creaUtente(), scheda, { serie: [{ esercizio: panca, peso: 100, rep: 5 }] });
+
+    const voce = (await carichi(`esercizi=${panca.id}&escludi=${inCorso.id}`)).corpo.dati[panca.id];
+    assert.deepEqual(voce.storico.map(s => s.sessioneId), [vecchia.id]);
+  });
+});
