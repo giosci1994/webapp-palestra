@@ -94,6 +94,7 @@ export default function Profilo() {
   const [listaTrainers, setListaTrainers] = useState([]);
   const [mostraListaPT, setMostraListaPT] = useState(false);
   const [inviandoPT, setInviandoPT] = useState(false);
+  const [messaggioPT, setMessaggioPT] = useState('');
 
   // Dispositivi collegati (Sicurezza)
   const [sessioni, setSessioni] = useState(null);
@@ -597,6 +598,13 @@ export default function Profilo() {
                         }} className="btn-primario text-sm !py-2">🔍 Cerca un Personal Trainer</button>
                       ) : (
                         <div className="flex flex-col gap-3">
+                          {listaTrainers.length > 0 && (
+                            <div>
+                              <textarea value={messaggioPT} onChange={e => setMessaggioPT(e.target.value)} maxLength={500} rows={2}
+                                        className="campo-input text-sm resize-none" placeholder="Messaggio per il PT (facoltativo): obiettivi, disponibilità…" />
+                              <p className="text-[10px] text-[var(--testo-terziario)] mt-1 px-1">Arriva al PT che scegli, insieme alla richiesta.</p>
+                            </div>
+                          )}
                           {listaTrainers.length === 0 ? (
                             <p className="text-sm text-[var(--testo-terziario)]">Nessun PT disponibile al momento.</p>
                           ) : listaTrainers.map(pt => (
@@ -613,7 +621,7 @@ export default function Profilo() {
                                 </div>
                               </Link>
                               <button onClick={async () => {
-                                try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); }
+                                try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: messaggioPT.trim() || null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); setMessaggioPT(''); }
                                 catch (err) { alert(err.message); } finally { setInviandoPT(false); }
                               }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent)] text-white shrink-0">Iscriviti</button>
                             </div>

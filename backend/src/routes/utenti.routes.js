@@ -310,12 +310,30 @@ router.post('/richiedi-pt', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
+// Lunghezza massima del messaggio che accompagna la richiesta a un PT
+const MESSAGGIO_PT_MAX = 500;
+
 // POST /api/v1/utenti/iscrizione-pt — Invia richiesta iscrizione a un PT
 router.post('/iscrizione-pt', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
-    const { trainerId, messaggio } = req.body;
+    const { ErroreValidazione } = await import('../utils/errori.js');
+    const { trainerId, messaggio } = req.body || {};
     const utenteId = req.utente.id;
+
+    // Dati della richiesta prima di tutto: un id che non e' un numero arrivava
+    // fino a Prisma e diventava un errore 500
+    const idTrainer = Number(trainerId);
+    if (!Number.isInteger(idTrainer) || idTrainer <= 0) {
+      throw new ErroreValidazione('Personal Trainer non valido');
+    }
+    if (messaggio != null && typeof messaggio !== 'string') {
+      throw new ErroreValidazione('Il messaggio deve essere un testo');
+    }
+    const testoMessaggio = messaggio?.trim() || null;
+    if (testoMessaggio && testoMessaggio.length > MESSAGGIO_PT_MAX) {
+      throw new ErroreValidazione(`Il messaggio può avere al massimo ${MESSAGGIO_PT_MAX} caratteri`);
+    }
 
     // Verifica di non essere già iscritto a un PT
     const iscrizioneEsistente = await prisma.iscrizionePT.findFirst({
@@ -333,7 +351,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
 
     // Verifica che il trainer esista e sia PT
     const trainer = await prisma.utente.findFirst({
-      where: { id: parseInt(trainerId), ruolo: 'PERSONAL_TRAINER', stato: 'ATTIVO' }
+      where: { id: idTrainer, ruolo: 'PERSONAL_TRAINER', stato: 'ATTIVO' }
     });
 
     if (!trainer) {
@@ -343,8 +361,8 @@ router.post('/iscrizione-pt', async (req, res, next) => {
     const iscrizione = await prisma.iscrizionePT.create({
       data: {
         utenteId,
-        trainerId: parseInt(trainerId),
-        messaggioRichiesta: messaggio || null
+        trainerId: idTrainer,
+        messaggioRichiesta: testoMessaggio
       },
       include: {
         trainer: { select: { id: true, nome: true } }
@@ -354,7 +372,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
     // Notifica il PT
     const io = req.app.get('io');
     if (io) {
-      io.to(`utente:${trainerId}`).emit('notifica:nuova', {
+      io.to(`utente:${idTrainer}`).emit('notifica:nuova', {
         tipo: 'nuova_iscrizione',
         titolo: 'Nuova richiesta di iscrizione! 🆕',
         messaggio: `${req.utente.nome} vuole iscriversi come tuo cliente.`,

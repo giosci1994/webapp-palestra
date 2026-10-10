@@ -268,6 +268,9 @@ export default function DashboardPT() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm truncate">{r.utente?.nome}</p>
                       <p className="text-xs text-[var(--testo-terziario)]">{r.utente?.obiettivoFitness || 'Nessun obiettivo'}</p>
+                      {r.messaggioRichiesta && (
+                        <p className="text-xs text-[var(--testo-secondario)] italic mt-1 line-clamp-3">“{r.messaggioRichiesta}”</p>
+                      )}
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button onClick={() => gestisciRichiesta(r.id, 'accetta')} className="px-3 py-1.5 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--successo)] text-white">Accetta</button>
