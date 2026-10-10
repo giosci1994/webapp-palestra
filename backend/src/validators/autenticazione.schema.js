@@ -43,7 +43,10 @@ export const schemaLogin = z.object({
     .trim(),
   password: z
     .string({ required_error: 'Password obbligatoria' })
-    .min(1, 'Password obbligatoria')
+    .min(1, 'Password obbligatoria'),
+  // Va elencato: valida() sostituisce il corpo con quello validato, e zod
+  // scarta i campi che lo schema non conosce
+  ricordaDispositivo: z.boolean().optional()
 });
 
 /** Schema per il refresh del token */
