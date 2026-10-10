@@ -362,9 +362,14 @@ export default function Profilo() {
         {/* ═══ TABS ═══ */}
         <div style={{ paddingTop: '0px', paddingBottom: '25px', width: '100%' }}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ background: 'var(--vetro)', border: '1px solid var(--vetro-bordo)', padding: '10px', borderRadius: '32px', boxShadow: 'var(--ombra-card)' }}>
-            <div className="flex items-center gap-2 flex-1">
+            {/* Le schede sono solo icone: il nome per chi usa uno screen reader e come suggerimento */}
+            <div className="flex items-center gap-2 flex-1" role="tablist" aria-label="Sezioni del profilo">
               {tabVisibili.map((tab) => (
                 <button key={tab.id}
+                  role="tab"
+                  aria-selected={tabAttivo === tab.id}
+                  aria-label={tab.label}
+                  title={tab.label}
                   onClick={() => { setTabAttivo(tab.id); caricaTab(tab.id); }}
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
@@ -390,6 +395,7 @@ export default function Profilo() {
                 onClick={(e) => { e.preventDefault(); if (window.confirm('Sei sicuro di voler uscire?')) logout(); }}
                 className="flex items-center justify-center py-2.5 px-5 rounded-[14px] transition-all duration-300 text-[var(--testo-terziario)] hover:text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)]"
                 title="Esci dall'account"
+                aria-label="Esci dall'account"
               >
                 <LogOut size={20} />
               </button>
