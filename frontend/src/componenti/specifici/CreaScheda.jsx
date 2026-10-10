@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../../utils/ricerca.js';
 import { usePreferiti } from '../../hooks/usePreferiti.js';
+import { useAPezzi } from '../../hooks/useAPezzi.js';
 import { nomeEsercizio } from '../../utils/formattatori.js';
 import { api } from '../../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
@@ -56,6 +57,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
     () => preferitiPrima(cerca(indiceRicerca, ricerca).filter(e => !filtroGruppo || e.gruppoMuscoloPrimario === filtroGruppo), preferiti),
     [indiceRicerca, ricerca, filtroGruppo, preferiti]
   );
+  const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
   const gruppiUnici = [...new Set(eserciziCatalogo.map(e => e.gruppoMuscoloPrimario))].sort();
 
@@ -308,7 +310,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
               <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
                 {eserciziFiltrati.length === 0 ? (
                   <div className="text-center py-6 text-[var(--testo-terziario)]">Nessun esercizio trovato</div>
-                ) : eserciziFiltrati.map(es => {
+                ) : eserciziVisibili.map(es => {
                   const selezionato = eserciziSelezionati.some(e => e.esercizioId === es.id);
                   return (
                     <button key={es.id} onClick={() => toggleEsercizio(es)}
@@ -325,6 +327,11 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                     </button>
                   );
                 })}
+                {restanti > 0 && (
+                  <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-2 hover:underline">
+                    Mostra altri ({restanti.toLocaleString('it-IT')})
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -8,6 +8,7 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
+import { useAPezzi } from '../hooks/useAPezzi.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
@@ -179,6 +180,7 @@ export default function WorkoutLive() {
     () => preferitiPrima(cerca(indiceRicerca, ricercaTesto), preferiti),
     [indiceRicerca, ricercaTesto, preferiti]
   );
+  const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
   // --- Tracking esercizi completati ---
   // Un esercizio è "completato" quando ha >= serieTarget serie registrate
@@ -948,7 +950,7 @@ export default function WorkoutLive() {
               </div>
 
               <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
-                {eserciziFiltrati.map((es) => (
+                {eserciziVisibili.map((es) => (
                   <button
                     key={es.id}
                     onClick={() => aggiungiEsercizioExtra(es)}
@@ -961,6 +963,11 @@ export default function WorkoutLive() {
                     <span className="text-[var(--accent)] font-bold">➕</span>
                   </button>
                 ))}
+{restanti > 0 && (
+                  <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
+                    Mostra altri ({restanti.toLocaleString('it-IT')})
+                  </button>
+                )}
                 {catalogoEsercizi.length > 0 && eserciziFiltrati.length === 0 && (
                   <p className="text-center text-[var(--testo-terziario)] text-sm py-4">Nessun esercizio trovato</p>
                 )}
