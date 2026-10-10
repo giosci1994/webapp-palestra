@@ -112,8 +112,8 @@ export async function aggiornaProfilo(req, res, next) {
 export async function cambiaPassword(req, res, next) {
   try {
     const { vecchiaPassword, nuovaPassword } = req.body;
-    await utentiService.cambiaPassword(req.utente.id, vecchiaPassword, nuovaPassword);
-    res.json({ successo: true, messaggio: 'Password aggiornata con successo' });
+    await utentiService.cambiaPassword(req.utente.id, vecchiaPassword, nuovaPassword, req.utente.famiglia);
+    res.json({ successo: true, messaggio: 'Password aggiornata: gli altri dispositivi sono stati scollegati' });
   } catch (errore) {
     next(errore);
   }

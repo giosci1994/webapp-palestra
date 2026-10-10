@@ -30,11 +30,12 @@ export async function avviaServer() {
   /**
    * @param {string} metodo
    * @param {string} percorso - dopo /api/v1, per esempio '/sessioni/3'
-   * @param {{ token?: string, corpo?: any, cookie?: string, ip?: string }} [opzioni]
+   * @param {{ token?: string, corpo?: any, cookie?: string, ip?: string, userAgent?: string }} [opzioni]
    * @returns {Promise<{ stato: number, corpo: any, testo: string, intestazioni: Headers, cookieRicevuti: string[] }>}
    */
-  async function richiesta(metodo, percorso, { token, corpo, cookie, ip = nuovoIp() } = {}) {
+  async function richiesta(metodo, percorso, { token, corpo, cookie, ip = nuovoIp(), userAgent } = {}) {
     const intestazioni = { 'cf-connecting-ip': ip };
+    if (userAgent) intestazioni['user-agent'] = userAgent;
     if (token) intestazioni.authorization = `Bearer ${token}`;
     if (cookie) intestazioni.cookie = cookie;
     if (corpo !== undefined) intestazioni['content-type'] = 'application/json';

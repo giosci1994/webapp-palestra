@@ -5,6 +5,7 @@
 
 import * as authService from '../services/autenticazione.service.js';
 import logger from '../utils/logger.js';
+import { descriviDispositivo } from '../utils/dispositivo.js';
 
 /**
  * POST /api/v1/auth/registrazione
@@ -94,7 +95,9 @@ export async function reimpostaPassword(req, res, next) {
  */
 export async function login(req, res, next) {
   try {
-    const risultato = await authService.loginUtente(req.body);
+    const risultato = await authService.loginUtente(req.body, {
+      dispositivo: descriviDispositivo(req.headers['user-agent'])
+    });
 
     // Imposta il refresh token come cookie HttpOnly
     // Durata cookie coerente con durata refresh token (7gg o 30gg se "ricorda dispositivo")
@@ -184,6 +187,45 @@ export async function logout(req, res, next) {
       successo: true,
       messaggio: 'Logout effettuato con successo'
     });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * GET /api/v1/auth/sessioni
+ * I dispositivi collegati all'account, quello della richiesta per primo.
+ */
+export async function sessioni(req, res, next) {
+  try {
+    const elenco = await authService.elencaSessioni(req.utente.id, req.utente.famiglia);
+    res.json({ successo: true, dati: elenco });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * DELETE /api/v1/auth/sessioni/:famiglia
+ * Scollega un altro dispositivo: smette subito di funzionare.
+ */
+export async function chiudiSessione(req, res, next) {
+  try {
+    await authService.chiudiSessione(req.utente.id, req.params.famiglia);
+    res.json({ successo: true, messaggio: 'Dispositivo scollegato' });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/**
+ * POST /api/v1/auth/sessioni/chiudi-altre
+ * Scollega tutti i dispositivi tranne questo.
+ */
+export async function chiudiAltreSessioni(req, res, next) {
+  try {
+    await authService.chiudiAltreSessioni(req.utente.id, req.utente.famiglia);
+    res.json({ successo: true, messaggio: 'Gli altri dispositivi sono stati scollegati' });
   } catch (errore) {
     next(errore);
   }

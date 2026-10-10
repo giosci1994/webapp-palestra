@@ -26,7 +26,10 @@ export async function verificaToken(req, res, next) {
     // Verifica e decodifica il token
     const payload = jwt.verify(token, process.env.JWT_SEGRETO_ACCESS);
 
-    // Verifica che l'utente esista ancora e sia attivo
+    // Verifica che l'utente esista ancora e sia attivo, e che la sua sessione
+    // (la famiglia di refresh token del login) sia ancora aperta: chiusa da un
+    // altro dispositivo, con un logout o per un furto, l'access token smette
+    // subito di valere invece di restare buono fino alla scadenza
     const utente = await prisma.utente.findUnique({
       where: { id: payload.utenteId },
       select: {
@@ -36,12 +39,21 @@ export async function verificaToken(req, res, next) {
         ruolo: true,
         stato: true,
         palestraId: true,
-        chatRetentionGiorni: true
+        chatRetentionGiorni: true,
+        ...(payload.famiglia && {
+          refreshTokens: { where: { famiglia: payload.famiglia, revocato: false }, select: { id: true }, take: 1 }
+        })
       }
     });
 
     if (!utente) {
       throw new ErroreNonAutenticato('Utente non trovato');
+    }
+
+    // Gli access token di prima delle famiglie non ne hanno: scadono da soli
+    const { refreshTokens, ...datiUtente } = utente;
+    if (payload.famiglia && refreshTokens.length === 0) {
+      throw new ErroreNonAutenticato('Sessione chiusa: accedi di nuovo');
     }
 
     if (utente.stato !== 'ATTIVO') {
@@ -52,8 +64,8 @@ export async function verificaToken(req, res, next) {
       );
     }
 
-    // Attacca l'utente alla richiesta
-    req.utente = utente;
+    // Attacca l'utente alla richiesta, con la sessione da cui arriva
+    req.utente = { ...datiUtente, famiglia: payload.famiglia ?? null };
     next();
   } catch (errore) {
     if (errore instanceof ErroreNonAutenticato) {

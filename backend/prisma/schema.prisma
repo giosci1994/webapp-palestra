@@ -184,16 +184,22 @@ model Utente {
 
 model RefreshToken {
   id                  Int       @id @default(autoincrement())
-  token               String    @unique
+  token               String    @unique // Impronta SHA-256: il token vero lo ha solo il client
   utenteId            Int       @map("utente_id")
   scadenza            DateTime
-  creato              DateTime  @default(now())
+  creato              DateTime  @default(now()) // Per il token attivo di una famiglia: l'ultimo uso
   revocato            Boolean   @default(false)
   revocoEffettivoDopo DateTime? @map("revoco_effettivo_dopo") // Grace period: token ancora valido fino a questo timestamp
   durataGiorni        Int       @default(7) @map("durata_giorni") // Durata originale per propagare al refresh
+  // Una famiglia e' una sessione: i token nati dallo stesso login, rotazione
+  // dopo rotazione, su un dispositivo
+  famiglia            String
+  dispositivo         String?   // "Chrome · Android", dallo User-Agent del login
+  iniziataIl          DateTime  @default(now()) @map("iniziata_il") // Ora del login
 
   utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
 
+  @@index([famiglia])
   @@map("refresh_tokens")
 }
 
