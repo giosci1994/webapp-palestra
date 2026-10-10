@@ -8,8 +8,13 @@ import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
+router.param('clienteId', idNumerico);
+router.param('schedaId', idNumerico);
 router.use(verificaToken);
 router.use(autorizza('PERSONAL_TRAINER', 'SUPERADMIN'));
 

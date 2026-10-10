@@ -6,8 +6,12 @@
 import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import * as controller from '../controllers/schede.controller.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
+router.param('esercizioSchedaId', idNumerico);
 
 // Tutte le rotte richiedono autenticazione
 router.use(verificaToken);

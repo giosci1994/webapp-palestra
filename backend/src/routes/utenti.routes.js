@@ -7,8 +7,11 @@ import { Router } from 'express';
 import { listaUtenti, profilo, approva, banna, cambiaRuolo, elimina, aggiornaProfilo, cambiaPassword, infoApp, esportaDati } from '../controllers/utenti.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 
 // Tutte le rotte richiedono autenticazione
 router.use(verificaToken);

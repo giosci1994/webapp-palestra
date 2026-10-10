@@ -6,8 +6,11 @@
 import { Router } from 'express';
 import { lista, segnaLetta, segnaTutteLette } from '../controllers/notifiche.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 
 router.use(verificaToken);
 
