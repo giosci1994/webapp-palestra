@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
+    "test": "node test/esegui.js",
+    "test:unitari": "node test/esegui.js --solo-unitari",
     "seed": "node seed.js",
     "prisma:genera": "npx prisma generate",
     "prisma:migra": "npx prisma migrate deploy",

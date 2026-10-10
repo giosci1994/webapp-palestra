@@ -7,3 +7,9 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+
+## Test
+
+- Backend: `cd backend && npm test` esegue i test unitari e d'integrazione. Serve Docker: avvia un Postgres e un Redis usa-e-getta (`backend/test/docker-compose.yml`) e non tocca mai il database vero. Senza Docker: `npm run test:unitari`.
+- Frontend: `cd frontend && npm test` (Vitest).
+- Chi cambia una logica (record, volume, date, permessi, autenticazione) aggiunge o aggiorna il suo test: nel backend in `backend/test/` con `node:test`, nel frontend accanto al file (`*.test.js`). Le pull request li eseguono su GitHub Actions (`.github/workflows/test.yml`).

@@ -1,0 +1,42 @@
+# ============================================
+# GymMaster — Servizi usa-e-getta per i test d'integrazione
+# ============================================
+#
+# Li avvia e li spegne test/esegui.js. Il nome di progetto e' fissato apposta:
+# lo stack di produzione e' "web-apppalestra", questo non lo tocca mai.
+# Dati in memoria (tmpfs): a ogni avvio il database e' vuoto.
+
+name: gymmaster-test
+
+services:
+  db:
+    # La stessa immagine della produzione
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: gymmaster
+      POSTGRES_PASSWORD: gymmaster
+      POSTGRES_DB: gymmaster_test
+    tmpfs:
+      - /var/lib/postgresql/data
+    # Niente fsync: i dati si buttano alla fine
+    command: postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off
+    ports:
+      # Porta scelta da Docker, solo su localhost
+      - "127.0.0.1::5432"
+    healthcheck:
+      # Via TCP: durante l'inizializzazione Postgres ascolta solo sul socket
+      # locale, quindi il controllo passa solo col server definitivo
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U gymmaster -d gymmaster_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1::6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 30

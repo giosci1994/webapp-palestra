@@ -53,7 +53,7 @@ const INCLUDI_STORICO = {
 };
 
 /** Una sessione letta con INCLUDI_STORICO, con i log raggruppati per esercizio */
-function formattaPerStorico(s) {
+export function formattaPerStorico(s) {
   const eserciziRaggruppati = {};
   s.logSerie.forEach(log => {
     if (!eserciziRaggruppati[log.esercizioId]) {
@@ -518,7 +518,7 @@ const TOLLERANZA_FUTURO_MS = 5 * 60 * 1000;  // scarto d'orologio fra client e s
  * di fuso: cosi' l'ora salvata e' quella in cui l'utente si e' davvero
  * allenato, non quella del server.
  */
-function leggiInizio(valore) {
+export function leggiInizio(valore) {
   const inizio = new Date(valore);
   if (Number.isNaN(inizio.getTime())) throw new ErroreValidazione('Data non valida');
 
@@ -534,7 +534,7 @@ function leggiInizio(valore) {
 }
 
 /** Durata in minuti di un allenamento dichiarato dal client */
-function leggiDurata(valore) {
+export function leggiDurata(valore) {
   const durata = parseInt(valore);
   if (Number.isNaN(durata) || durata < DURATA_MIN || durata > DURATA_MAX) {
     throw new ErroreValidazione(`La durata deve essere fra ${DURATA_MIN} e ${DURATA_MAX} minuti`);
@@ -662,7 +662,7 @@ const CAMPI_SERIE = {
 const SERIE_MAX = 300;
 
 /** Valori di una serie ricevuta: un campo assente resta com'era, uno vuoto si svuota. */
-function leggiValoriSerie(riga, n) {
+export function leggiValoriSerie(riga, n) {
   const valori = {};
   for (const [campo, regola] of Object.entries(CAMPI_SERIE)) {
     const grezzo = riga[campo];
