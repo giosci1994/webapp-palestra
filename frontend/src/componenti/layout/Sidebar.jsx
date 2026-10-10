@@ -9,7 +9,7 @@ import { useAuth } from '../../contesti/AuthContesto.jsx';
 import { useSocket } from '../../contesti/SocketContesto.jsx';
 import { api } from '../../config/api.js';
 import CampanellaNotifiche from '../comuni/CampanellaNotifiche.jsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Home, ClipboardList, Dumbbell, History, BarChart2, MessageCircle,
   Bot, Trophy, Users, Building, BookOpen, LogOut, Menu, Library, UserCheck, Sparkles,

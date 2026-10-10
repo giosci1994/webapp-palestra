@@ -24,6 +24,14 @@ export function aStringaData(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/** Lunedì della settimana in cui cade la data, a mezzanotte locale. */
+export function lunediDi(d) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  return x;
+}
+
 /** "HH:MM" da una data locale, il formato dei campi <input type="time">. */
 export function aStringaOra(d) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;

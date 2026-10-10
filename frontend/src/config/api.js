@@ -99,7 +99,7 @@ export async function apiChiamata(percorso, opzioni = {}) {
     dati = await risposta.json();
   } else {
     // Se non è JSON (es. pagina di blocco HTML da Cloudflare o Nginx)
-    const testoSconosciuto = await risposta.text();
+    await risposta.text();
     if (!risposta.ok) {
       if (risposta.status === 429) {
         throw new Error('Troppe richieste o IP temporaneamente bloccato dai sistemi di sicurezza.');

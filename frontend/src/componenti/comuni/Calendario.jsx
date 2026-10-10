@@ -9,21 +9,9 @@
 // il tocco, quindi la settimana è il modo predefinito lì.
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { aStringaData, lunediDi } from '../../utils/formattatori.js';
 
 const GIORNI_BREVI = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
-
-/** "YYYY-MM-DD" da una data locale, senza passare per UTC (che sposterebbe il giorno). */
-export function aStringaData(d) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-/** Lunedì della settimana in cui cade la data. */
-export function lunediDi(d) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
-  return x;
-}
 
 /**
  * Etichetta del periodo mostrato.

@@ -62,7 +62,7 @@ function TrackerRotta() {
 
 // --- Banner aggiornamento disponibile ---
 function BannerAggiornamento() {
-  const { aggiornamentoDisponibile, nuovaVersione, versioneCorrente, forzaAggiornamento } = useAutoAggiornamento();
+  const { aggiornamentoDisponibile, nuovaVersione, forzaAggiornamento } = useAutoAggiornamento();
 
   if (!aggiornamentoDisponibile) return null;
 

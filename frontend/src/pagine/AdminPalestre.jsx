@@ -9,12 +9,12 @@ export default function AdminPalestre() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ nomeCatena: '', citta: '', indirizzo: '', nazione: 'Italia', googlePlaceId: '' });
 
-  useEffect(() => { caricaPalestre(); }, []);
-
   const caricaPalestre = async () => {
     try { setCaricamento(true); const r = await api.get('/palestre'); setPalestre(r.dati || []); }
     catch (err) { console.error(err); } finally { setCaricamento(false); }
   };
+
+  useEffect(() => { caricaPalestre(); }, []);
 
   const apriForm = (p = null) => {
     if (p) { setEditId(p.id); setForm({ nomeCatena: p.nomeCatena, citta: p.citta, indirizzo: p.indirizzo, nazione: p.nazione, googlePlaceId: p.googlePlaceId || '' }); }

@@ -46,12 +46,12 @@ export default function AdminNovita() {
   const [form, setForm] = useState(FORM_VUOTO);
   const [pickerAperto, setPickerAperto] = useState(null); // 'icona' | `punto-${i}` | null
 
-  useEffect(() => { carica(); }, []);
-
   const carica = async () => {
     try { setCaricamento(true); const r = await api.get('/admin/novita'); setLista(r.dati || []); }
     catch (err) { console.error(err); } finally { setCaricamento(false); }
   };
+
+  useEffect(() => { carica(); }, []);
 
   const apriForm = (n = null) => {
     if (n) {

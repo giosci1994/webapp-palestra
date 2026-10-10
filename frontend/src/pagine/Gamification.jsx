@@ -9,7 +9,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { RUOLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { formattaData, formattaPeso, formattaDurata, formattaNumero, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Building, Trophy, Dumbbell } from 'lucide-react';
+import { X, Building } from 'lucide-react';
 
 export default function Gamification() {
   const { utente } = useAuth();

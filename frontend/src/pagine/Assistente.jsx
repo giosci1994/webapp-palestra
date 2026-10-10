@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../config/api.js';
-import { formattaDataRelativa, formattaData } from '../utils/formattatori.js';
+import { formattaDataRelativa } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Suggerimenti rapidi per l'utente
@@ -23,7 +23,6 @@ export default function Assistente() {
   const [conversazioneAttiva, setConversazioneAttiva] = useState(null);
   const [messaggi, setMessaggi] = useState([]);
   const [testo, setTesto] = useState('');
-  const [caricamento, setCaricamento] = useState(false);
   const [inAttesa, setInAttesa] = useState(false);
   const [mostraStorico, setMostraStorico] = useState(false);
 

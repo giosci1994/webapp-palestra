@@ -14,11 +14,6 @@ export function AuthProvider({ children }) {
   const [caricamento, setCaricamento] = useState(true);
   const [errore, setErrore] = useState(null);
 
-  // Verifica sessione all'avvio (refresh token dal cookie)
-  useEffect(() => {
-    verificaSessione();
-  }, []);
-
   // La sessione muore in UN solo punto: quando una vera chiamata protetta
   // riceve 401 e il refresh fallisce (api.js). Così un blip transitorio o
   // una race sul refresh NON sloggano l'utente (es. durante un allenamento).
@@ -85,6 +80,11 @@ export function AuthProvider({ children }) {
       setCaricamento(false);
     }
   };
+
+  // Verifica sessione all'avvio (refresh token dal cookie)
+  useEffect(() => {
+    verificaSessione();
+  }, []);
 
   const login = useCallback(async (email, password, ricordaDispositivo = false) => {
     setErrore(null);

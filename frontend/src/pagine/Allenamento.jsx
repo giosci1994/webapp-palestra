@@ -11,74 +11,13 @@ import { LIVELLI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play } from 'lucide-react';
 
-export default function Allenamento() {
-  const { utente } = useAuth();
-  const naviga = useNavigate();
-  const [schede, setSchede] = useState([]);
-  const [caricamento, setCaricamento] = useState(true);
-  const [schedaSelezionata, setSchedaSelezionata] = useState(null);
-  const [avviando, setAvviando] = useState(false);
+// Le due viste delle schede stanno fuori da Allenamento: dichiarate dentro,
+// a ogni render della pagina sarebbero componenti nuovi, ricreati da capo
+// (con l'animazione d'ingresso che riparte).
 
-  // /allenamento?scheda=ID arriva dal promemoria, dalla pianificazione e dal
-  // consiglio in dashboard: la scheda si apre gia' pronta da far partire.
-  // Il parametro resta la fonte finche' il riquadro e' aperto, cosi' funziona
-  // anche quando questa pagina e' gia' quella visualizzata.
-  const [parametri, setParametri] = useSearchParams();
-  const richiesta = Number(parametri.get('scheda')) || null;
-  const richiestaInLista = richiesta ? schede.find(s => s.id === richiesta) : null;
-  // Le schede assegnate dal PT non compaiono negli elenchi di questa pagina
-  const [richiestaFuoriLista, setRichiestaFuoriLista] = useState(null);
-
-  useEffect(() => {
-    caricaSchede();
-  }, []);
-
-  useEffect(() => {
-    if (caricamento || !richiesta || richiestaInLista || richiestaFuoriLista?.id === richiesta) return;
-    let annullato = false;
-    api.get(`/schede/${richiesta}`)
-      .then(r => { if (!annullato) setRichiestaFuoriLista(r.dati); })
-      .catch(() => { if (!annullato) setParametri({}, { replace: true }); });
-    return () => { annullato = true; };
-  }, [caricamento, richiesta, richiestaInLista, richiestaFuoriLista, setParametri]);
-
-  const schedaAperta = schedaSelezionata
-    ?? richiestaInLista
-    ?? (richiestaFuoriLista?.id === richiesta ? richiestaFuoriLista : null);
-
-  const chiudiRiquadro = () => {
-    setSchedaSelezionata(null);
-    if (richiesta) setParametri({}, { replace: true });
-  };
-
-  const caricaSchede = async () => {
-    try {
-      setCaricamento(true);
-      const risposta = await api.get('/schede');
-      setSchede(risposta.dati || []);
-    } catch (err) {
-      console.error('Errore caricamento schede:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
-
-  const avviaAllenamento = async (schedaId) => {
-    try {
-      setAvviando(true);
-      const risposta = await api.post('/sessioni', { schedaId: parseInt(schedaId) });
-      naviga(`/allenamento/${risposta.dati.id}`, { state: { sessione: risposta.dati } });
-    } catch (err) {
-      alert(err.message);
-      setAvviando(false);
-    }
-  };
-
-  const mieSchede = schede.filter(s => s.creatoreId === utente.id);
-  const schedeGlobali = schede.filter(s => s.visibilita === 'GLOBALE' && s.creatoreId !== utente.id);
-
-  // ─── MOBILE: Griglia quadratoni con play centrale grande ───
-  const GrigliaSchede = ({ lista }) => (
+// ─── MOBILE: Griglia quadratoni con play centrale grande ───
+function GrigliaSchede({ lista, onApri }) {
+  return (
     <div className="grid grid-cols-2 gap-4 md:hidden">
       {lista.map((scheda, i) => (
         <motion.div
@@ -87,7 +26,7 @@ export default function Allenamento() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: i * 0.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => setSchedaSelezionata(scheda)}
+          onClick={() => onApri(scheda)}
           className="aspect-square glass-card p-4 flex flex-col justify-between cursor-pointer hover:border-[var(--accent-hover)] transition-all duration-300 relative overflow-hidden group"
           style={{ background: 'var(--vetro)' }}
         >
@@ -127,9 +66,11 @@ export default function Allenamento() {
       ))}
     </div>
   );
+}
 
-  // ─── DESKTOP: Vista lista orizzontale premium ───
-  const ListaSchede = ({ lista }) => (
+// ─── DESKTOP: Vista lista orizzontale premium ───
+function ListaSchede({ lista, onApri }) {
+  return (
     <div className="hidden md:flex flex-col gap-3">
       {lista.map((scheda, i) => {
         const gruppi = [...new Set(scheda.esercizi?.map(e => e.esercizio?.gruppoMuscoloPrimario))].filter(Boolean).slice(0, 5);
@@ -139,7 +80,7 @@ export default function Allenamento() {
             initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.04 }}
-            onClick={() => setSchedaSelezionata(scheda)}
+            onClick={() => onApri(scheda)}
             className="glass-card flex items-center gap-5 p-card-inner cursor-pointer group hover:border-[var(--bordo-hover)] transition-all relative overflow-hidden"
             style={{ borderLeft: '3px solid var(--accent)' }}
           >
@@ -195,6 +136,73 @@ export default function Allenamento() {
       })}
     </div>
   );
+}
+
+export default function Allenamento() {
+  const { utente } = useAuth();
+  const naviga = useNavigate();
+  const [schede, setSchede] = useState([]);
+  const [caricamento, setCaricamento] = useState(true);
+  const [schedaSelezionata, setSchedaSelezionata] = useState(null);
+  const [avviando, setAvviando] = useState(false);
+
+  // /allenamento?scheda=ID arriva dal promemoria, dalla pianificazione e dal
+  // consiglio in dashboard: la scheda si apre gia' pronta da far partire.
+  // Il parametro resta la fonte finche' il riquadro e' aperto, cosi' funziona
+  // anche quando questa pagina e' gia' quella visualizzata.
+  const [parametri, setParametri] = useSearchParams();
+  const richiesta = Number(parametri.get('scheda')) || null;
+  const richiestaInLista = richiesta ? schede.find(s => s.id === richiesta) : null;
+  // Le schede assegnate dal PT non compaiono negli elenchi di questa pagina
+  const [richiestaFuoriLista, setRichiestaFuoriLista] = useState(null);
+
+  useEffect(() => {
+    if (caricamento || !richiesta || richiestaInLista || richiestaFuoriLista?.id === richiesta) return;
+    let annullato = false;
+    api.get(`/schede/${richiesta}`)
+      .then(r => { if (!annullato) setRichiestaFuoriLista(r.dati); })
+      .catch(() => { if (!annullato) setParametri({}, { replace: true }); });
+    return () => { annullato = true; };
+  }, [caricamento, richiesta, richiestaInLista, richiestaFuoriLista, setParametri]);
+
+  const schedaAperta = schedaSelezionata
+    ?? richiestaInLista
+    ?? (richiestaFuoriLista?.id === richiesta ? richiestaFuoriLista : null);
+
+  const chiudiRiquadro = () => {
+    setSchedaSelezionata(null);
+    if (richiesta) setParametri({}, { replace: true });
+  };
+
+  const caricaSchede = async () => {
+    try {
+      setCaricamento(true);
+      const risposta = await api.get('/schede');
+      setSchede(risposta.dati || []);
+    } catch (err) {
+      console.error('Errore caricamento schede:', err);
+    } finally {
+      setCaricamento(false);
+    }
+  };
+
+  useEffect(() => {
+    caricaSchede();
+  }, []);
+
+  const avviaAllenamento = async (schedaId) => {
+    try {
+      setAvviando(true);
+      const risposta = await api.post('/sessioni', { schedaId: parseInt(schedaId) });
+      naviga(`/allenamento/${risposta.dati.id}`, { state: { sessione: risposta.dati } });
+    } catch (err) {
+      alert(err.message);
+      setAvviando(false);
+    }
+  };
+
+  const mieSchede = schede.filter(s => s.creatoreId === utente.id);
+  const schedeGlobali = schede.filter(s => s.visibilita === 'GLOBALE' && s.creatoreId !== utente.id);
 
   return (
     <div className="py-2 pb-8">
@@ -225,8 +233,8 @@ export default function Allenamento() {
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <span>👤</span> Le Tue Schede
               </h2>
-              <GrigliaSchede lista={mieSchede} />
-              <ListaSchede lista={mieSchede} />
+              <GrigliaSchede lista={mieSchede} onApri={setSchedaSelezionata} />
+              <ListaSchede lista={mieSchede} onApri={setSchedaSelezionata} />
             </section>
           )}
 
@@ -235,8 +243,8 @@ export default function Allenamento() {
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <span>🌍</span> Schede Globali
               </h2>
-              <GrigliaSchede lista={schedeGlobali} />
-              <ListaSchede lista={schedeGlobali} />
+              <GrigliaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} />
+              <ListaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} />
             </section>
           )}
         </div>

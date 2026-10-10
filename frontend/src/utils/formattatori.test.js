@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
-  formattaData, aStringaData, aStringaOra, formattaDataRelativa, formattaNumero,
+  formattaData, aStringaData, aStringaOra, lunediDi, formattaDataRelativa, formattaNumero,
   formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale
 } from './formattatori.js';
 
@@ -31,6 +31,18 @@ describe('aStringaData e aStringaOra', () => {
     const d = new Date(2026, 2, 7, 7, 3);
     expect(aStringaData(d)).toBe('2026-03-07');
     expect(aStringaOra(d)).toBe('07:03');
+  });
+});
+
+describe('lunediDi', () => {
+  it('porta al lunedì della stessa settimana, a mezzanotte', () => {
+    // Giovedì 8 e domenica 11 ottobre 2026 → lunedì 5
+    expect(lunediDi(new Date(2026, 9, 8, 18, 30))).toEqual(new Date(2026, 9, 5));
+    expect(lunediDi(new Date(2026, 9, 11, 23, 59))).toEqual(new Date(2026, 9, 5));
+  });
+
+  it('un lunedì resta se stesso', () => {
+    expect(lunediDi(new Date(2026, 9, 12, 7, 0))).toEqual(new Date(2026, 9, 12));
   });
 });
 

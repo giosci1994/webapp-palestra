@@ -24,17 +24,15 @@ export default function WorkoutLive() {
   const CHIAVE_PROGRESSO = `gymmaster_workout_${id}`;
   const salvaTimeoutRef = useRef(null);
 
-  // Recupera stato salvato (se esiste)
-  const statoSalvato = useRef(null);
-  if (statoSalvato.current === null) {
+  // Recupera stato salvato (se esiste): letto una volta sola, al primo render
+  const [ss] = useState(() => {
     try {
       const raw = localStorage.getItem(CHIAVE_PROGRESSO);
-      statoSalvato.current = raw ? JSON.parse(raw) : false;
+      return raw ? JSON.parse(raw) : false;
     } catch {
-      statoSalvato.current = false;
+      return false;
     }
-  }
-  const ss = statoSalvato.current;
+  });
 
   const [sessione, setSessione] = useState(location.state?.sessione || null);
   const [esercizioIdx, setEsercizioIdx] = useState(ss ? ss.esercizioIdx : 0);
@@ -46,7 +44,10 @@ export default function WorkoutLive() {
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
   const [ricercaTesto, setRicercaTesto] = useState('');
-  const [eserciziLive, setEserciziLive] = useState(ss ? ss.eserciziLive : []);
+  // Gli esercizi ripristinati da localStorage, altrimenti quelli della scheda
+  // (se la sessione arriva gia' dalla pagina precedente; se no, al caricamento)
+  const [eserciziLive, setEserciziLive] = useState(() =>
+    ss?.eserciziLive?.length ? ss.eserciziLive : [...(location.state?.sessione?.scheda?.esercizi ?? [])]);
   const [caricamento, setCaricamento] = useState(!location.state?.sessione);
   const [timerAttivo, setTimerAttivo] = useState(false);
   // Durata del recupero in corso: la barra di avanzamento non puo' usare quella
@@ -58,7 +59,7 @@ export default function WorkoutLive() {
   const [recuperoInCima, setRecuperoInCima] = useState(false);
   const [nuoviRecord, setNuoviRecord] = useState([]);
   const [mostraVideo, setMostraVideo] = useState(false);
-  const [tempoInizio] = useState(ss ? ss.tempoInizio : Date.now());
+  const [tempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
   // Ultima volta che hai fatto ciascun esercizio, in qualsiasi scheda
   const [ultimiCarichi, setUltimiCarichi] = useState({});
@@ -106,7 +107,10 @@ export default function WorkoutLive() {
   useEffect(() => {
     if (!sessione && id) {
       api.get(`/sessioni/${id}`)
-        .then(r => setSessione(r.dati))
+        .then(r => {
+          setSessione(r.dati);
+          setEserciziLive(prima => prima.length ? prima : [...(r.dati?.scheda?.esercizi ?? [])]);
+        })
         .catch(() => naviga('/schede'))
         .finally(() => setCaricamento(false));
     }
@@ -130,13 +134,6 @@ export default function WorkoutLive() {
       .catch(() => { /* il riferimento e' un aiuto: senza, si procede */ });
     return () => { annullato = true; };
   }, [sessione?.id, idEsercizi]);
-
-  useEffect(() => {
-    // Inizializza eserciziLive solo se non già ripristinati da localStorage
-    if (sessione?.scheda?.esercizi && eserciziLive.length === 0) {
-      setEserciziLive([...sessione.scheda.esercizi]);
-    }
-  }, [sessione]);
 
   const apriRicerca = async () => {
     setMostraRicercaEsercizi(true);
@@ -207,7 +204,6 @@ export default function WorkoutLive() {
 
   // Prossimo indice non completato (per navigazione)
   const prossimoIdx = prossimoEsercizioNonCompletato(esercizioIdx + 1);
-  const tuttiCompletati = prossimoIdx === -1 && esercizioCompletato(esercizioIdx);
 
   // Calcolo Orari
   const oreMinuti = oraAttuale.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
@@ -544,11 +540,10 @@ export default function WorkoutLive() {
         {esercizioAttuale.esercizio.linkVideo && (() => {
           const url = esercizioAttuale.esercizio.linkVideo;
           // Estrai videoId da youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
-          let videoId = null;
           const mShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
           const mLong = url.match(/[?&]v=([a-zA-Z0-9_-]+)/);
           const mEmbed = url.match(/embed\/([a-zA-Z0-9_-]+)/);
-          videoId = mShort?.[1] || mLong?.[1] || mEmbed?.[1];
+          const videoId = mShort?.[1] || mLong?.[1] || mEmbed?.[1];
 
           if (!videoId) return null;
           const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;

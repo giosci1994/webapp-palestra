@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, scaricaFile } from '../config/api.js';
-import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
+import { LIVELLI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
 import { useAuth } from '../contesti/AuthContesto.jsx';
