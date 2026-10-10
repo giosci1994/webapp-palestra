@@ -9,10 +9,11 @@ import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
+import { statoDaSessione, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
-import { RPE_LABELS } from '../utils/costanti.js';
+import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaData, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -66,7 +67,7 @@ export default function WorkoutLive() {
   const [recuperoInCima, setRecuperoInCima] = useState(false);
   const [nuoviRecord, setNuoviRecord] = useState([]);
   const [mostraVideo, setMostraVideo] = useState(false);
-  const [tempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
+  const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
   // Ultima volta che hai fatto ciascun esercizio, in qualsiasi scheda
   const [ultimiCarichi, setUltimiCarichi] = useState({});
@@ -116,7 +117,15 @@ export default function WorkoutLive() {
       api.get(`/sessioni/${id}`)
         .then(r => {
           setSessione(r.dati);
-          setEserciziLive(prima => prima.length ? prima : [...(r.dati?.scheda?.esercizi ?? [])]);
+          if (ss) return;
+          // Niente nel browser (ripreso dallo storico, un altro dispositivo):
+          // il punto in cui eri si ricostruisce dalle serie sul server
+          const stato = statoDaSessione(r.dati);
+          setEserciziLive(stato.eserciziLive);
+          setSerieCompletate(stato.serieCompletate);
+          setEsercizioIdx(stato.esercizioIdx);
+          setSerieCorrente(stato.serieCorrente);
+          setTempoInizio(stato.tempoInizio);
         })
         .catch(() => naviga('/schede'))
         .finally(() => setCaricamento(false));
@@ -156,9 +165,7 @@ export default function WorkoutLive() {
     const nuovoEsercizio = {
       esercizioId: es.id,
       esercizio: es,
-      serieTarget: 3, // Default
-      repTarget: 10,
-      recuperoSecondi: 90
+      ...ESERCIZIO_EXTRA
     };
     setEserciziLive(prev => {
       const aggiornati = [...prev, nuovoEsercizio];
@@ -474,7 +481,7 @@ export default function WorkoutLive() {
               <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
                 {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
               </button>
-              <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro 30 minuti.</p>
+              <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro {RIAPERTURA_MAX_MINUTI} minuti, anche dallo Storico.</p>
             </>
           )}
         </motion.div>

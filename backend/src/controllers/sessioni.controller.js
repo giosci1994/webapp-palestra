@@ -332,7 +332,14 @@ export async function dettaglioSessione(req, res, next) {
           }
         },
         logSerie: {
-          include: { esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
+          include: {
+            esercizio: {
+              select: {
+                id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true,
+                attrezzatura: { select: { id: true, nome: true, categoria: true } }
+              }
+            }
+          },
           orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
         }
       }

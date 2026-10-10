@@ -8,10 +8,13 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
-import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
+
+/** Finito da poco: si puo' ancora riprendere (PATCH /sessioni/:id/riapri). */
+const riprendibile = (sessione) => sessione.dataFine && Date.now() - new Date(sessione.dataFine).getTime() <= RIAPERTURA_MAX_MINUTI * 60000;
 
 /** Durata da allenamento rimasto aperto per sbaglio: falsa le statistiche, va corretta. */
 const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MINUTI;
@@ -29,6 +32,7 @@ export default function StoricoAllenamenti() {
   const [mostraPassato, setMostraPassato] = useState(false);
   const [conferma, setConferma] = useState('');
   const [salvandoScheda, setSalvandoScheda] = useState(false);
+  const [riprendendo, setRiprendendo] = useState(false);
   const naviga = useNavigate();
 
   const mostraConferma = (testo) => {
@@ -47,6 +51,20 @@ export default function StoricoAllenamenti() {
       alert(err.message);
     } finally {
       setSalvandoScheda(false);
+    }
+  };
+
+  // Chiuso per sbaglio da poco: torna in corso e si riapre la schermata
+  // dell'allenamento, che ricostruisce dal server il punto in cui eri
+  const riprendiAllenamento = async (sessione) => {
+    try {
+      setRiprendendo(true);
+      await api.patch(`/sessioni/${sessione.id}/riapri`);
+      naviga(`/allenamento/${sessione.id}`);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRiprendendo(false);
     }
   };
 
@@ -456,6 +474,17 @@ export default function StoricoAllenamenti() {
                     );
                   })}
                 </div>
+
+                {/* Riprendi: solo appena finito */}
+                {riprendibile(sessioneAperta) && (
+                  <button
+                    onClick={() => riprendiAllenamento(sessioneAperta)}
+                    disabled={riprendendo}
+                    className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition-all disabled:opacity-50"
+                  >
+                    {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+                  </button>
+                )}
 
                 {/* Salva come scheda */}
                 {sessioneAperta.serieCompletate > 0 && (

@@ -111,3 +111,6 @@ export const RPE_LABELS = {
  * segnala e propone di correggerlo.
  */
 export const DURATA_SOSPETTA_MINUTI = 240;
+
+/** Entro quanto dalla fine si riprende un allenamento chiuso per sbaglio (come nel backend) */
+export const RIAPERTURA_MAX_MINUTI = 30;
