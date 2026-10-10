@@ -188,8 +188,7 @@ model RefreshToken {
   utenteId            Int       @map("utente_id")
   scadenza            DateTime
   creato              DateTime  @default(now()) // Per il token attivo di una famiglia: l'ultimo uso
-  revocato            Boolean   @default(false)
-  revocoEffettivoDopo DateTime? @map("revoco_effettivo_dopo") // Grace period: token ancora valido fino a questo timestamp
+  revocato            Boolean   @default(false) // Sostituito dal successivo, o chiuso per sospetto furto
   durataGiorni        Int       @default(7) @map("durata_giorni") // Durata originale per propagare al refresh
   // Una famiglia e' una sessione: i token nati dallo stesso login, rotazione
   // dopo rotazione, su un dispositivo

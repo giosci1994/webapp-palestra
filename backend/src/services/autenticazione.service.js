@@ -29,9 +29,11 @@ const ARGON2_CONFIG = {
   parallelism: 4
 };
 
-// Dopo una rotazione il vecchio refresh token vale ancora per questo tempo
-// (rete instabile, due schede che rinnovano insieme)
-const GRAZIA_ROTAZIONE_MS = 40 * 1000;
+// Un refresh token rinnovato da meno di cosi' non ruota: si rilascia solo un
+// access token nuovo. Serve a rinnovaToken: i browser Chromium salvano i
+// cookie su disco ogni 30 secondi circa, e con rotazioni ad almeno 5 minuti
+// l'una dall'altra il cookie salvato puo' restare indietro al massimo di una.
+const ROTAZIONE_MINIMA_MS = 5 * 60 * 1000;
 
 /**
  * Registra un nuovo utente nel sistema.
@@ -277,6 +279,17 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
 
 /**
  * Rinnova l'access token usando un refresh token valido.
+ *
+ * Il refresh token ruota a ogni rinnovo (salvo ROTAZIONE_MINIMA_MS): il
+ * sostituto e' derivato dal token presentato (tokenSuccessivo). Un token gia'
+ * sostituito puo' tornare per due ragioni:
+ * - il dispositivo e' rimasto indietro di una rotazione: la risposta si e'
+ *   persa, due schede hanno rinnovato insieme, oppure il browser e' stato
+ *   chiuso prima di salvare su disco il cookie nuovo. Il sostituto non e' mai
+ *   stato usato: gli si ridà, ricalcolandolo, anche giorni dopo;
+ * - qualcun altro usa la stessa sessione: il sostituto e' gia' stato usato a
+ *   sua volta, e un dispositivo non resta indietro di due rotazioni. Si
+ *   chiudono tutte le sessioni dell'utente.
  */
 export async function rinnovaToken(tokenRefresh) {
   // Cerca il refresh token nel database
@@ -303,28 +316,21 @@ export async function rinnovaToken(tokenRefresh) {
   const successivo = tokenSuccessivo(tokenRefresh);
 
   if (tokenSalvato.revocato) {
-    // Grace period: se token revocato ma ancora nel grace period, accettare
-    const ora = new Date();
-    if (tokenSalvato.revocoEffettivoDopo && tokenSalvato.revocoEffettivoDopo > ora) {
-      // Lo stesso sostituto della prima rotazione: e' derivato da questo token,
-      // quindi si ricalcola (nel database c'e' solo la sua impronta)
-      const sostituto = await prisma.refreshToken.findUnique({ where: { token: improntaToken(successivo) } });
-      const ancoraValido = sostituto && sostituto.scadenza > ora &&
-        (!sostituto.revocato || (sostituto.revocoEffettivoDopo && sostituto.revocoEffettivoDopo > ora));
-
-      if (ancoraValido) {
-        return {
-          accessToken: generaAccessToken(tokenSalvato.utente, tokenSalvato.famiglia),
-          refreshToken: successivo,
-          durataGiorni: sostituto.durataGiorni
-        };
-      }
+    // Indietro di una rotazione: il sostituto, mai usato, e' ancora attivo
+    const sostituto = await prisma.refreshToken.findUnique({ where: { token: improntaToken(successivo) } });
+    if (sostituto && !sostituto.revocato && sostituto.scadenza > new Date()) {
+      if (tokenSalvato.utente.stato !== 'ATTIVO') throw new ErroreNonAutenticato('Account non attivo');
+      return {
+        accessToken: generaAccessToken(tokenSalvato.utente, tokenSalvato.famiglia),
+        refreshToken: successivo,
+        durataGiorni: sostituto.durataGiorni
+      };
     }
 
-    // Fuori grace period: possibile furto, revoca tutti
+    // Indietro di due: la sessione la usa anche qualcun altro, si revoca tutto
     await prisma.refreshToken.updateMany({
       where: { utenteId: tokenSalvato.utenteId },
-      data: { revocato: true, revocoEffettivoDopo: null }
+      data: { revocato: true }
     });
     logger.warn({ utenteId: tokenSalvato.utenteId }, 'Tentativo di riutilizzo refresh token revocato — tutti i token revocati');
     throw new ErroreNonAutenticato('Token di sicurezza compromesso, effettua nuovamente il login');
@@ -338,16 +344,24 @@ export async function rinnovaToken(tokenRefresh) {
     throw new ErroreNonAutenticato('Account non attivo');
   }
 
-  // Rotazione con grace period: vecchio token marcato revocato
-  // ma ancora accettato per 40 secondi (rete instabile mobile)
-  await prisma.refreshToken.update({
-    where: { id: tokenSalvato.id },
-    data: { revocato: true, revocoEffettivoDopo: new Date(Date.now() + GRAZIA_ROTAZIONE_MS) }
-  });
-
   // Propaga durata originale del token
   const durataGiorni = tokenSalvato.durataGiorni || (parseInt(process.env.JWT_SCADENZA_REFRESH) || 7);
   const { famiglia, dispositivo, iniziataIl } = tokenSalvato;
+
+  // Rinnovato da poco: niente rotazione, il client tiene il suo token
+  if (Date.now() - tokenSalvato.creato.getTime() < ROTAZIONE_MINIMA_MS) {
+    return {
+      accessToken: generaAccessToken(tokenSalvato.utente, famiglia),
+      refreshToken: tokenRefresh,
+      durataGiorni
+    };
+  }
+
+  // Rotazione: il token presentato e' sostituito dal suo successivo
+  await prisma.refreshToken.update({
+    where: { id: tokenSalvato.id },
+    data: { revocato: true }
+  });
 
   try {
     await creaRefreshToken({ token: successivo, utenteId: tokenSalvato.utenteId, durataGiorni, famiglia, dispositivo, iniziataIl });
@@ -462,22 +476,21 @@ async function creaRefreshToken({ token, utenteId, durataGiorni, famiglia, dispo
     }
   });
 
-  // Pulizia: elimina i refresh token scaduti o revocati (grace period scaduto) dell'utente
+  // Pulizia dei token dell'utente: quelli scaduti, e quelli sostituiti delle
+  // sessioni ormai chiuse. Nelle sessioni aperte i token sostituiti restano
+  // fino alla scadenza: servono a riconoscere chi e' rimasto indietro di una
+  // rotazione e chi di due (rinnovaToken).
+  const sessioniAperte = await prisma.refreshToken.findMany({
+    where: { utenteId, revocato: false },
+    distinct: ['famiglia'],
+    select: { famiglia: true }
+  });
   await prisma.refreshToken.deleteMany({
     where: {
       utenteId,
       OR: [
         { scadenza: { lt: new Date() } },
-        {
-          revocato: true,
-          revocoEffettivoDopo: { lt: new Date() }, // Grace period scaduto
-          creato: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-        },
-        {
-          revocato: true,
-          revocoEffettivoDopo: null, // Token revocati senza grace period (vecchi)
-          creato: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) }
-        }
+        { revocato: true, famiglia: { notIn: sessioniAperte.map(t => t.famiglia) } }
       ]
     }
   });

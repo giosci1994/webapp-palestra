@@ -109,9 +109,15 @@ describe('login', () => {
 });
 
 describe('rinnovo del refresh token', () => {
-  it('ruota il token: il nuovo funziona, il vecchio vale ancora solo 40 secondi', async () => {
+  /** Come se il token fosse stato rinnovato `minuti` fa: sotto i 5 non ruota */
+  const invecchia = (token, minuti = 10) => prisma.refreshToken.update({
+    where: { token: improntaToken(token) }, data: { creato: new Date(Date.now() - minuti * 60 * 1000) }
+  });
+
+  it("ruota il token rinnovato da piu' di 5 minuti: il nuovo e' attivo, il vecchio sostituito", async () => {
     const utente = await creaUtente({ password: PASSWORD });
     const vecchio = refreshTokenDa(await login(utente.email));
+    await invecchia(vecchio);
 
     const risposta = await rinnova(vecchio);
     assert.equal(risposta.stato, 200);
@@ -121,16 +127,27 @@ describe('rinnovo del refresh token', () => {
 
     const salvatoVecchio = await prisma.refreshToken.findUnique({ where: { token: improntaToken(vecchio) } });
     assert.equal(salvatoVecchio.revocato, true);
-    const grazia = salvatoVecchio.revocoEffettivoDopo.getTime() - Date.now();
-    assert.ok(grazia > 30 * 1000 && grazia <= 40 * 1000, `grazia di ${grazia} ms`);
     const salvatoNuovo = await prisma.refreshToken.findUnique({ where: { token: improntaToken(nuovo) } });
     assert.equal(salvatoNuovo.revocato, false);
   });
 
-  it('entro i 40 secondi il vecchio token restituisce il sostituto, senza crearne altri', async () => {
-    // Il telefono rinnova, la risposta si perde per strada e lui riprova col token di prima
+  it('rinnovato da meno di 5 minuti non ruota: stesso refresh token, access token nuovo', async () => {
+    const utente = await creaUtente({ password: PASSWORD });
+    const accesso = await login(utente.email);
+    const token = refreshTokenDa(accesso);
+
+    const risposta = await rinnova(token);
+    assert.equal(risposta.stato, 200);
+    assert.equal(refreshTokenDa(risposta), token);
+    assert.ok(risposta.corpo.dati.accessToken);
+    assert.equal(await prisma.refreshToken.count({ where: { utenteId: utente.id } }), 1);
+  });
+
+  it("chi e' rimasto indietro di una rotazione riceve di nuovo il sostituto, senza crearne altri", async () => {
+    // La risposta si e' persa, o due schede hanno rinnovato insieme
     const utente = await creaUtente({ password: PASSWORD });
     const vecchio = refreshTokenDa(await login(utente.email));
+    await invecchia(vecchio);
     const sostituto = refreshTokenDa(await rinnova(vecchio));
 
     const riprova = await rinnova(vecchio);
@@ -139,20 +156,38 @@ describe('rinnovo del refresh token', () => {
     assert.equal(await prisma.refreshToken.count({ where: { utenteId: utente.id } }), 2);
   });
 
-  it("riusare un token oltre la grazia fa pensare a un furto: si chiudono tutte le sessioni dell'utente", async () => {
+  it("l'app chiusa prima che il browser salvi il cookie nuovo non scollega (il caso del 10 ottobre)", async () => {
+    // Apertura: rinnovo e rotazione; l'aggiornamento dell'app ricarica la pagina
+    // e rinnova di nuovo 4 secondi dopo; l'app viene chiusa e sul disco resta il
+    // cookie di prima. Alla riapertura, minuti o giorni dopo, torna il vecchio.
     const utente = await creaUtente({ password: PASSWORD });
-    const vecchio = refreshTokenDa(await login(utente.email));
-    const sostituto = refreshTokenDa(await rinnova(vecchio));
-    await prisma.refreshToken.update({
-      where: { token: improntaToken(vecchio) },
-      data: { revocoEffettivoDopo: new Date(Date.now() - 1000) }
-    });
+    const suDisco = refreshTokenDa(await login(utente.email));
+    await invecchia(suDisco);
+    const inMemoria = refreshTokenDa(await rinnova(suDisco));
+    assert.equal(refreshTokenDa(await rinnova(inMemoria)), inMemoria, 'il secondo rinnovo non ruota');
 
-    const riuso = await rinnova(vecchio);
+    // Nel frattempo un altro dispositivo accede e fa pulizia dei token vecchi
+    await login(utente.email);
+
+    const riapertura = await rinnova(suDisco);
+    assert.equal(riapertura.stato, 200);
+    assert.equal(refreshTokenDa(riapertura), inMemoria);
+    assert.equal((await rinnova(inMemoria)).stato, 200, 'e poi prosegue normalmente');
+  });
+
+  it("indietro di due rotazioni vuol dire che qualcun altro usa la sessione: si chiude tutto", async () => {
+    const utente = await creaUtente({ password: PASSWORD });
+    const primo = refreshTokenDa(await login(utente.email));
+    await invecchia(primo);
+    const secondo = refreshTokenDa(await rinnova(primo));
+    await invecchia(secondo);
+    const terzo = refreshTokenDa(await rinnova(secondo));
+
+    const riuso = await rinnova(primo);
     assert.equal(riuso.stato, 401);
     assert.equal(riuso.corpo.messaggio, 'Token di sicurezza compromesso, effettua nuovamente il login');
 
-    assert.equal((await rinnova(sostituto)).stato, 401);
+    assert.equal((await rinnova(terzo)).stato, 401);
     assert.equal(await prisma.refreshToken.count({ where: { utenteId: utente.id, revocato: false } }), 0);
   });
 
