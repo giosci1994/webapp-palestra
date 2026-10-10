@@ -6,7 +6,7 @@
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api, scaricaFile } from '../config/api.js';
 import { RUOLI } from '../utils/costanti.js';
-import { formattaData } from '../utils/formattatori.js';
+import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';
@@ -14,7 +14,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   ChevronRight, Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil, Download
+  Pencil, Download, Smartphone, Monitor
 } from 'lucide-react';
 
 const OBIETTIVI = ['Massa Muscolare', 'Definizione', 'Resistenza', 'Salute Generale', 'Perdita Peso'];
@@ -74,6 +74,10 @@ export default function Profilo() {
   const [mostraListaPT, setMostraListaPT] = useState(false);
   const [messaggioPT, setMessaggioPT] = useState('');
   const [inviandoPT, setInviandoPT] = useState(false);
+
+  // Dispositivi collegati (Sicurezza)
+  const [sessioni, setSessioni] = useState(null);
+  const [erroreSessioni, setErroreSessioni] = useState('');
 
   // Esportazione dei dati (Privacy, e prima di eliminare l'account)
   const [scaricandoDati, setScaricandoDati] = useState(false);
@@ -171,9 +175,11 @@ export default function Profilo() {
     if (pwForm.nuova.length < 8) return setPwMsg({ testo: 'Minimo 8 caratteri', tipo: 'err' });
     try {
       setPwSalvando(true);
-      await api.post('/utenti/cambia-password', { vecchiaPassword: pwForm.vecchia, nuovaPassword: pwForm.nuova });
-      setPwMsg({ testo: 'Password aggiornata con successo!', tipo: 'ok' });
+      const r = await api.post('/utenti/cambia-password', { vecchiaPassword: pwForm.vecchia, nuovaPassword: pwForm.nuova });
+      setPwMsg({ testo: r.messaggio || 'Password aggiornata con successo!', tipo: 'ok' });
       setPwForm({ vecchia: '', nuova: '', conferma: '' });
+      // Il cambio ha scollegato gli altri dispositivi
+      if (sessioni) caricaSessioni();
     } catch (err) { setPwMsg({ testo: err.message, tipo: 'err' }); }
     finally { setPwSalvando(false); }
   };
@@ -198,6 +204,24 @@ export default function Profilo() {
     if (telegram) return;
     try { const r = await api.get('/utenti/telegram/stato'); setTelegram(r.dati); }
     catch { setTelegram({ collegato: false }); }
+  };
+
+  const caricaSessioni = async () => {
+    setErroreSessioni('');
+    try { const r = await api.get('/auth/sessioni'); setSessioni(r.dati); }
+    catch (err) { setErroreSessioni(err.message); setSessioni([]); }
+  };
+
+  const scollegaDispositivo = async (famiglia) => {
+    try { await api.delete(`/auth/sessioni/${famiglia}`); }
+    catch (err) { setErroreSessioni(err.message); }
+    caricaSessioni();
+  };
+
+  const scollegaAltri = async () => {
+    try { await api.post('/auth/sessioni/chiudi-altre'); }
+    catch (err) { setErroreSessioni(err.message); }
+    caricaSessioni();
   };
 
   const generaCodiceTelegram = async () => {
@@ -276,7 +300,7 @@ export default function Profilo() {
             <div className="flex items-center gap-2 flex-1">
               {TABS.filter(t => t.id !== 'pt' || utente?.ruolo === 'UTENTE').map((tab) => (
                 <button key={tab.id}
-                  onClick={() => { setTabAttivo(tab.id); if (tab.id === 'legale') caricaInfoApp(); if (tab.id === 'sicurezza') caricaTelegram(); }}
+                  onClick={() => { setTabAttivo(tab.id); if (tab.id === 'legale') caricaInfoApp(); if (tab.id === 'sicurezza') { caricaTelegram(); caricaSessioni(); } }}
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
                       ? 'px-10 text-[var(--testo-primario)]' 
@@ -585,6 +609,40 @@ export default function Profilo() {
                   {pwMsg.testo && <p className={`text-sm font-medium ${pwMsg.tipo === 'ok' ? 'text-[var(--successo)]' : 'text-[var(--pericolo)]'}`}>{pwMsg.testo}</p>}
                   <button onClick={cambiaPw} disabled={pwSalvando || !pwForm.vecchia || !pwForm.nuova || !pwForm.conferma}
                           className="btn-secondario disabled:opacity-50">{pwSalvando ? 'Aggiornamento...' : '🔑 Aggiorna Password'}</button>
+                  <p className="text-[10px] text-[var(--testo-terziario)] px-1">Cambiando password gli altri dispositivi vengono scollegati.</p>
+                </div>
+              </div>
+              {/* Dispositivi collegati */}
+              <div className="glass-card overflow-hidden mb-6">
+                <div className="p-card-inner border-b border-[var(--bordo-light)]">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Smartphone size={20} className="text-[var(--accent)]" /> Dispositivi collegati</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Dove sei entrato con il tuo account. Se non riconosci un dispositivo, scollegalo e cambia la password.</p>
+                </div>
+                <div className="p-card-inner flex flex-col gap-2">
+                  {sessioni === null && <p className="text-sm text-[var(--testo-terziario)]">Caricamento…</p>}
+                  {sessioni?.map(s => (
+                    <div key={s.famiglia} className="flex items-center justify-between gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/Android|iPhone|iPad/.test(s.dispositivo || '')
+                          ? <Smartphone size={18} className="shrink-0 text-[var(--testo-secondario)]" />
+                          : <Monitor size={18} className="shrink-0 text-[var(--testo-secondario)]" />}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {s.dispositivo || 'Dispositivo sconosciuto'}
+                            {s.corrente && <span className="ml-2 text-[10px] font-bold text-[var(--accent)]">QUESTO</span>}
+                          </p>
+                          <p className="text-[11px] text-[var(--testo-terziario)]">Entrato il {formattaData(s.iniziataIl)} · ultima attività {formattaDataRelativa(s.ultimoUso)}</p>
+                        </div>
+                      </div>
+                      {!s.corrente && (
+                        <button onClick={() => scollegaDispositivo(s.famiglia)} className="btn-secondario text-sm !py-1.5 shrink-0">Esci</button>
+                      )}
+                    </div>
+                  ))}
+                  {sessioni?.some(s => !s.corrente) && (
+                    <button onClick={scollegaAltri} className="btn-secondario text-sm mt-1">Esci da tutti gli altri dispositivi</button>
+                  )}
+                  {erroreSessioni && <p className="text-xs text-[var(--pericolo)]">{erroreSessioni}</p>}
                 </div>
               </div>
               {/* Bot Telegram */}
