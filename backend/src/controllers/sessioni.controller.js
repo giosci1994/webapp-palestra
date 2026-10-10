@@ -402,6 +402,47 @@ export async function completaSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+/** Entro quanto dalla fine si puo' riprendere un allenamento chiuso per sbaglio */
+export const RIAPERTURA_MAX_MINUTI = 30;
+
+/**
+ * PATCH /sessioni/:id/riapri — "Ho chiuso per sbaglio": l'allenamento appena
+ * concluso torna in corso, e la prossima chiusura ne ricalcola durata, volume
+ * e record. Solo entro mezz'ora dalla fine: un allenamento di giorni fa si
+ * corregge dallo storico, non si riapre.
+ */
+export async function riapriSessione(req, res, next) {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Sessione non valida');
+
+    const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
+    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
+      throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
+    }
+    if (!sessione.dataFine) throw new ErroreValidazione("L'allenamento è ancora in corso");
+    if (Date.now() - sessione.dataFine.getTime() > RIAPERTURA_MAX_MINUTI * 60000) {
+      throw new ErroreValidazione(`Un allenamento si può riprendere solo entro ${RIAPERTURA_MAX_MINUTI} minuti dalla fine`);
+    }
+
+    const riaperta = await prisma.$transaction(async (tx) => {
+      // Il calendario segnato come fatto alla chiusura torna da fare: la
+      // prossima chiusura lo segnera' di nuovo
+      await tx.allenamentoPianificato.updateMany({
+        where: { sessioneId: id, stato: 'COMPLETATO' },
+        data: { stato: 'PIANIFICATO', sessioneId: null }
+      });
+      return tx.sessioneAllenamento.update({
+        where: { id },
+        data: { dataFine: null, durataMinuti: null, volumeTotaleKg: null }
+      });
+    });
+
+    res.json({ successo: true, dati: riaperta });
+  } catch (errore) { next(errore); }
+}
+
 /** Registra una serie */
 export async function logSerie(req, res, next) {
   try {

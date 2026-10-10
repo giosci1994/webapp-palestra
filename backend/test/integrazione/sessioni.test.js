@@ -229,3 +229,78 @@ describe('avvio e chiusura di un allenamento', () => {
     assert.deepEqual(await recordDi(admin, panca), []);
   });
 });
+
+describe('riprendere un allenamento chiuso per sbaglio', () => {
+  const riapri = (sessione, chi = utente) =>
+    server.richiesta('PATCH', `/sessioni/${sessione.id}/riapri`, { token: tokenPer(chi) });
+  const completa = (sessione, chi = utente) =>
+    server.richiesta('PATCH', `/sessioni/${sessione.id}/completa`, { token: tokenPer(chi), corpo: {} });
+  /** Un allenamento cominciato 40 minuti fa e appena chiuso */
+  const appenaChiuso = async (dati = {}) => {
+    const sessione = await creaSessione(utente, scheda, {
+      inizio: new Date(Date.now() - 40 * MINUTO), conclusa: false, serie: [{ esercizio: panca, peso: 80, rep: 8 }], ...dati
+    });
+    assert.equal((await completa(sessione)).stato, 200);
+    return sessione;
+  };
+
+  it('torna in corso, e la nuova chiusura ricalcola durata e volume con le serie aggiunte', async () => {
+    const sessione = await appenaChiuso();
+
+    const risposta = await riapri(sessione);
+    assert.equal(risposta.stato, 200);
+    const riaperta = await prisma.sessioneAllenamento.findUnique({ where: { id: sessione.id } });
+    assert.deepEqual([riaperta.dataFine, riaperta.durataMinuti, riaperta.volumeTotaleKg], [null, null, null]);
+
+    const serie = await server.richiesta('POST', `/sessioni/${sessione.id}/serie`, {
+      token: tokenPer(utente), corpo: { esercizioId: panca.id, serieNumero: 2, pesoEffettivo: 90, repEffettive: 5 }
+    });
+    assert.equal(serie.stato, 201);
+    const chiusa = await completa(sessione);
+    assert.equal(chiusa.stato, 200);
+    assert.equal(chiusa.corpo.dati.volumeTotaleKg, 80 * 8 + 90 * 5);
+    assert.ok(chiusa.corpo.dati.durataMinuti >= 40);
+    // Il record dei 90 kg arriva con la seconda chiusura, quello degli 80 resta uno solo
+    assert.deepEqual((await recordDi(utente, panca)).map(r => r.pesoMaxRaggiunto), [80, 90]);
+  });
+
+  it('il calendario torna da fare e la nuova chiusura lo segna di nuovo', async () => {
+    const inizio = new Date(Date.now() - 40 * MINUTO);
+    const piano = await prisma.allenamentoPianificato.create({
+      data: { utenteId: utente.id, schedaId: scheda.id, data: giornoLocale(inizio) }
+    });
+    const sessione = await appenaChiuso({ inizio });
+    let dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', sessione.id]);
+
+    await riapri(sessione);
+    dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['PIANIFICATO', null]);
+
+    await completa(sessione);
+    dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', sessione.id]);
+  });
+
+  it('solo chi si e\' allenato, o il superadmin', async () => {
+    const sessione = await appenaChiuso();
+    assert.equal((await riapri(sessione, await creaUtente())).stato, 403);
+    assert.equal((await riapri(sessione, await creaUtente({ ruolo: 'SUPERADMIN' }))).stato, 200);
+  });
+
+  it('non si riapre un allenamento in corso, ne\' uno finito da piu\' di mezz\'ora', async () => {
+    const inCorso = await creaSessione(utente, scheda, { inizio: new Date(Date.now() - 10 * MINUTO), conclusa: false });
+    assert.equal((await riapri(inCorso)).stato, 400);
+
+    const vecchio = await creaSessione(utente, scheda, { inizio: new Date(Date.now() - 120 * MINUTO), durataMinuti: 60 });
+    const risposta = await riapri(vecchio);
+    assert.equal(risposta.stato, 400);
+    assert.match(risposta.corpo.messaggio, /entro 30 minuti/);
+    assert.notEqual((await prisma.sessioneAllenamento.findUnique({ where: { id: vecchio.id } })).dataFine, null);
+  });
+
+  it('id non valido 400, sessione inesistente 404', async () => {
+    assert.equal((await riapri({ id: 'abc' })).stato, 400);
+    assert.equal((await riapri({ id: 99999 })).stato, 404);
+  });
+});

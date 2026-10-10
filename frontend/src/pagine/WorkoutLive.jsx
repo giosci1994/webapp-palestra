@@ -43,6 +43,7 @@ export default function WorkoutLive() {
   const [form, setForm] = useState(ss ? ss.form : { peso: '', rep: '', rpe: 7, minuti: '', resistenza: '' });
   const [serieCompletate, setSerieCompletate] = useState(ss ? ss.serieCompletate : []);
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
+  const [riprendendo, setRiprendendo] = useState(false);
   const [mostraSelettoreEsercizi, setMostraSelettoreEsercizi] = useState(false);
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
@@ -389,6 +390,23 @@ export default function WorkoutLive() {
     }
   };
 
+  // "Ho chiuso per sbaglio": la sessione torna in corso e si riparte da dove
+  // eri, con le serie gia' fatte (sono ancora tutte qui, in memoria)
+  const riprendiAllenamento = async () => {
+    setRiprendendo(true);
+    try {
+      await api.patch(`/sessioni/${sessione.id}/riapri`);
+      setNuoviRecord([]);
+      setMostraRiepilogo(false);
+      salvaProgressi(statoAttuale());
+      wakeLock.attiva();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRiprendendo(false);
+    }
+  };
+
   // Se il timer finisce, nascondi l'overlay
   useEffect(() => {
     if (timerAttivo && timer.secondiRimasti === 0 && !timer.inCorso) {
@@ -442,6 +460,10 @@ export default function WorkoutLive() {
           <button onClick={() => naviga('/dashboard')} className="btn-primario w-full">
             Torna alla Dashboard
           </button>
+          <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
+            {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+          </button>
+          <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro 30 minuti.</p>
         </motion.div>
       </div>
     );
