@@ -38,10 +38,10 @@ export class ErroreNonAutorizzato extends ErroreApp {
   }
 }
 
-/** 404 — Risorsa non trovata */
+/** 404 — Risorsa non trovata. Il messaggio e' la frase intera: "Scheda non trovata" */
 export class ErroreNonTrovato extends ErroreApp {
-  constructor(risorsa = 'Risorsa') {
-    super(`${risorsa} non trovato/a`, 404, 'NON_TROVATO');
+  constructor(messaggio = 'Risorsa non trovata') {
+    super(messaggio, 404, 'NON_TROVATO');
   }
 }
 

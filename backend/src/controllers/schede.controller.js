@@ -335,7 +335,7 @@ async function caricaSchedePerDocx(ids, utente) {
   const ordinate = [];
   for (const id of ids) {
     const scheda = trovate.get(id);
-    if (!scheda) throw new ErroreNonTrovato(`Scheda ${id}`);
+    if (!scheda) throw new ErroreNonTrovato(`Scheda ${id} non trovata`);
     // Stesso criterio del dettaglio: proprietario o scheda globale
     if (scheda.creatoreId !== utente.id && scheda.visibilita !== 'GLOBALE') {
       throw new ErroreNonAutorizzato(`Non hai accesso alla scheda "${scheda.titolo}"`);

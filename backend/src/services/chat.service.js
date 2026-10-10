@@ -17,7 +17,7 @@ export async function inviaRichiestaContatto(mittenteId, destinatarioId) {
 
   // Verifica che il destinatario esista
   const destinatario = await prisma.utente.findUnique({ where: { id: destinatarioId } });
-  if (!destinatario) throw new ErroreNonTrovato('Utente destinatario');
+  if (!destinatario) throw new ErroreNonTrovato('Utente destinatario non trovato');
 
   // Controlla se esiste già una richiesta (in entrambe le direzioni)
   const richiestaEsistente = await prisma.richiestaContatto.findFirst({
@@ -56,7 +56,7 @@ export async function rispondiRichiestaContatto(richiestaId, utenteId, stato) {
     where: { id: richiestaId }
   });
 
-  if (!richiesta) throw new ErroreNonTrovato('Richiesta di contatto');
+  if (!richiesta) throw new ErroreNonTrovato('Richiesta di contatto non trovata');
   if (richiesta.destinatarioId !== utenteId) {
     throw new ErroreNonAutorizzato('Puoi rispondere solo alle tue richieste');
   }

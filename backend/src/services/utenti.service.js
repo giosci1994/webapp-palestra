@@ -58,7 +58,7 @@ export async function ottieniTuttiGliUtenti({ pagina = 1, limite = 20, stato, ru
 export async function approvaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
 
-  if (!utente) throw new ErroreNonTrovato('Utente');
+  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
   if (utente.stato !== 'IN_ATTESA' && utente.stato !== 'BANNATO') {
     throw new ErroreNonAutorizzato(`Impossibile approvare un utente in stato: ${utente.stato}`);
   }
@@ -78,7 +78,7 @@ export async function approvaUtente(utenteId) {
  */
 export async function bannaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
-  if (!utente) throw new ErroreNonTrovato('Utente');
+  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
   if (utente.ruolo === 'SUPERADMIN') {
     throw new ErroreNonAutorizzato('Non puoi bannare un SuperAdmin');
@@ -105,7 +105,7 @@ export async function bannaUtente(utenteId) {
  */
 export async function cambiaRuolo(utenteId, nuovoRuolo) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
-  if (!utente) throw new ErroreNonTrovato('Utente');
+  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
   const utenteAggiornato = await prisma.utente.update({
     where: { id: utenteId },
@@ -147,7 +147,7 @@ export async function ottieniProfilo(utenteId) {
     }
   });
 
-  if (!utente) throw new ErroreNonTrovato('Utente');
+  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
   return utente;
 }
 
@@ -236,7 +236,7 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword) {
     select: { passwordHash: true }
   });
 
-  if (!utente) throw new ErroreNonTrovato('Utente');
+  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
   // Verifica la vecchia password
   const passwordValida = await argon2.verify(utente.passwordHash, vecchiaPassword);
@@ -266,7 +266,7 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword) {
  */
 export async function eliminaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
-  if (!utente) throw new ErroreNonTrovato('Utente');
+  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
   if (utente.ruolo === 'SUPERADMIN') {
     throw new ErroreNonAutorizzato('Impossibile eliminare un SuperAdmin. Declassalo prima a UTENTE.');

@@ -72,7 +72,7 @@ router.delete('/account', async (req, res, next) => {
       where: { id: req.utente.id },
       select: { id: true, passwordHash: true, ruolo: true }
     });
-    if (!utente) throw new ErroreNonTrovato('Utente');
+    if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
     if (!await argon2.verify(utente.passwordHash, password)) {
       throw new ErroreNonAutorizzato('Password non corretta');

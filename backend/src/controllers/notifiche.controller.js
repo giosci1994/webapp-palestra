@@ -28,7 +28,7 @@ export async function segnaLetta(req, res, next) {
     if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
 
     const fatto = await notificheService.segnaLetta(req.utente.id, id);
-    if (!fatto) throw new ErroreNonTrovato('Notifica');
+    if (!fatto) throw new ErroreNonTrovato('Notifica non trovata');
 
     res.json({ successo: true, dati: { nonLette: await notificheService.contaNonLette(req.utente.id) } });
   } catch (errore) {
