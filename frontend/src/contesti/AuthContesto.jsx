@@ -5,6 +5,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiChiamata, impostaToken, cancellaToken, refreshSessione, impostaGestoreSessioneScaduta } from '../config/api.js';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 const AuthContesto = createContext(null);
 
@@ -103,6 +104,30 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
+  /**
+   * Accesso con una passkey: il server manda una sfida, il dispositivo la firma
+   * (impronta, volto o PIN), il server verifica la firma e apre la sessione.
+   */
+  const loginConPasskey = useCallback(async (ricordaDispositivo = false) => {
+    setErrore(null);
+    try {
+      const { dati: sfida } = await apiChiamata('/auth/passkey/accesso/opzioni', { metodo: 'POST', skipAuth: true });
+      const risposta = await startAuthentication({ optionsJSON: sfida.opzioni });
+      const esito = await apiChiamata('/auth/passkey/accesso/verifica', {
+        metodo: 'POST',
+        body: { id: sfida.id, risposta, ricordaDispositivo },
+        skipAuth: true
+      });
+
+      impostaToken(esito.dati.accessToken);
+      setUtente(esito.dati.utente);
+      return esito.dati.utente;
+    } catch (err) {
+      setErrore(err.message);
+      throw err;
+    }
+  }, []);
+
   const registrazione = useCallback(async (dati) => {
     setErrore(null);
     try {
@@ -141,6 +166,7 @@ export function AuthProvider({ children }) {
     isAdmin: utente?.ruolo === 'SUPERADMIN',
     isPT: utente?.ruolo === 'PERSONAL_TRAINER',
     login,
+    loginConPasskey,
     registrazione,
     logout,
     aggiornaUtente,

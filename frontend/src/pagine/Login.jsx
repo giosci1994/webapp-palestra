@@ -7,6 +7,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { motion } from 'framer-motion';
+import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import FooterLegale from '../componenti/comuni/FooterLegale.jsx';
 
 export default function Login() {
@@ -20,7 +21,8 @@ export default function Login() {
   const [ricordaDispositivo, setRicordaDispositivo] = useState(
     () => localStorage.getItem('gymmaster_ricorda_dispositivo') === 'true'
   );
-  const { login } = useAuth();
+  const { login, loginConPasskey } = useAuth();
+  const [passkeySupportate] = useState(() => browserSupportsWebAuthn());
   const naviga = useNavigate();
 
   const gestisciRicorda = (e) => {
@@ -29,18 +31,33 @@ export default function Login() {
     localStorage.setItem('gymmaster_ricorda_dispositivo', valore ? 'true' : 'false');
   };
 
+  /** Dopo l'accesso: l'onboarding se il profilo e' da completare, altrimenti la dashboard */
+  const vaiDopoAccesso = (utenteLoggato) => {
+    naviga(utenteLoggato?.profiloCompletato === false ? '/onboarding' : '/dashboard', { replace: true });
+  };
+
+  const entraConPasskey = async () => {
+    setErroreLocale('');
+    setCaricamento(true);
+    try {
+      vaiDopoAccesso(await loginConPasskey(ricordaDispositivo));
+    } catch (err) {
+      // Annullato sul dispositivo: nessun errore da mostrare
+      if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
+        setErroreLocale(err.message || 'Accesso con passkey non riuscito');
+      }
+    } finally {
+      setCaricamento(false);
+    }
+  };
+
   const gestisciSubmit = async (e) => {
     e.preventDefault();
     setErroreLocale('');
     setCaricamento(true);
 
     try {
-      const utenteLoggato = await login(email, password, ricordaDispositivo);
-      if (utenteLoggato?.profiloCompletato === false) {
-        naviga('/onboarding', { replace: true });
-      } else {
-        naviga('/dashboard', { replace: true });
-      }
+      vaiDopoAccesso(await login(email, password, ricordaDispositivo));
     } catch (err) {
       setErroreLocale(err.message || 'Errore durante il login');
       if ((err.message || '').includes('Verifica la tua email')) setMostraReinvio(true);
@@ -176,6 +193,18 @@ export default function Login() {
               'Accedi'
             )}
           </button>
+
+          {passkeySupportate && (
+            <button
+              type="button"
+              onClick={entraConPasskey}
+              disabled={caricamento}
+              className="btn-secondario w-full justify-center"
+              style={{ padding: '14px 24px', fontSize: '1rem' }}
+            >
+              🔑 Accedi con una passkey
+            </button>
+          )}
         </form>
 
         {/* Link registrazione */}

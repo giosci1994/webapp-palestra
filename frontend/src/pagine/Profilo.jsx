@@ -8,13 +8,14 @@ import { api, scaricaFile } from '../config/api.js';
 import { RUOLI } from '../utils/costanti.js';
 import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import { Link } from 'react-router-dom';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';
 import { useState, useRef, useEffect } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   ChevronRight, Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil, Download, Smartphone, Monitor
+  Pencil, Download, Smartphone, Monitor, KeyRound
 } from 'lucide-react';
 
 const OBIETTIVI = ['Massa Muscolare', 'Definizione', 'Resistenza', 'Salute Generale', 'Perdita Peso'];
@@ -78,6 +79,13 @@ export default function Profilo() {
   // Dispositivi collegati (Sicurezza)
   const [sessioni, setSessioni] = useState(null);
   const [erroreSessioni, setErroreSessioni] = useState('');
+
+  // Passkey (Sicurezza)
+  const [passkeySupportate] = useState(() => browserSupportsWebAuthn());
+  const [passkey, setPasskey] = useState(null);
+  const [passwordPasskey, setPasswordPasskey] = useState('');
+  const [aggiungendoPasskey, setAggiungendoPasskey] = useState(false);
+  const [msgPasskey, setMsgPasskey] = useState({ testo: '', tipo: '' });
 
   // Esportazione dei dati (Privacy, e prima di eliminare l'account)
   const [scaricandoDati, setScaricandoDati] = useState(false);
@@ -224,6 +232,40 @@ export default function Profilo() {
     caricaSessioni();
   };
 
+  const caricaPasskey = async () => {
+    try { const r = await api.get('/auth/passkey'); setPasskey(r.dati); }
+    catch (err) { setMsgPasskey({ testo: err.message, tipo: 'err' }); setPasskey([]); }
+  };
+
+  /** Password, poi il gesto sul dispositivo (impronta, volto o PIN) */
+  const aggiungiPasskey = async () => {
+    setMsgPasskey({ testo: '', tipo: '' });
+    setAggiungendoPasskey(true);
+    try {
+      const { dati: sfida } = await api.post('/auth/passkey/registrazione/opzioni', { password: passwordPasskey });
+      const risposta = await startRegistration({ optionsJSON: sfida.opzioni });
+      await api.post('/auth/passkey/registrazione/verifica', { id: sfida.id, risposta });
+      setPasswordPasskey('');
+      setMsgPasskey({ testo: 'Passkey aggiunta: la prossima volta puoi entrare senza password.', tipo: 'ok' });
+      caricaPasskey();
+    } catch (err) {
+      const messaggio = {
+        NotAllowedError: 'Operazione annullata sul dispositivo.',
+        InvalidStateError: 'Questo dispositivo ha già una passkey per GymMaster.'
+      }[err?.name] || err.message;
+      setMsgPasskey({ testo: messaggio, tipo: 'err' });
+    } finally {
+      setAggiungendoPasskey(false);
+    }
+  };
+
+  const eliminaPasskey = async (id) => {
+    if (!confirm('Eliminare questa passkey? Per entrare da quel dispositivo servirà di nuovo la password.')) return;
+    try { await api.delete(`/auth/passkey/${id}`); }
+    catch (err) { setMsgPasskey({ testo: err.message, tipo: 'err' }); }
+    caricaPasskey();
+  };
+
   const generaCodiceTelegram = async () => {
     try {
       setTgLoading(true);
@@ -300,7 +342,7 @@ export default function Profilo() {
             <div className="flex items-center gap-2 flex-1">
               {TABS.filter(t => t.id !== 'pt' || utente?.ruolo === 'UTENTE').map((tab) => (
                 <button key={tab.id}
-                  onClick={() => { setTabAttivo(tab.id); if (tab.id === 'legale') caricaInfoApp(); if (tab.id === 'sicurezza') { caricaTelegram(); caricaSessioni(); } }}
+                  onClick={() => { setTabAttivo(tab.id); if (tab.id === 'legale') caricaInfoApp(); if (tab.id === 'sicurezza') { caricaTelegram(); caricaSessioni(); caricaPasskey(); } }}
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
                       ? 'px-10 text-[var(--testo-primario)]' 
@@ -643,6 +685,44 @@ export default function Profilo() {
                     <button onClick={scollegaAltri} className="btn-secondario text-sm mt-1">Esci da tutti gli altri dispositivi</button>
                   )}
                   {erroreSessioni && <p className="text-xs text-[var(--pericolo)]">{erroreSessioni}</p>}
+                </div>
+              </div>
+              {/* Passkey */}
+              <div className="glass-card overflow-hidden mb-6">
+                <div className="p-card-inner border-b border-[var(--bordo-light)]">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><KeyRound size={20} className="text-[var(--accent)]" /> Passkey</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Entra con l'impronta, il volto o il PIN del dispositivo invece della password. La password resta valida.</p>
+                </div>
+                <div className="p-card-inner flex flex-col gap-2">
+                  {passkey?.length === 0 && <p className="text-sm text-[var(--testo-terziario)]">Nessuna passkey per ora.</p>}
+                  {passkey?.map(p => (
+                    <div key={p.id} className="flex items-center justify-between gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {p.nome || 'Passkey'}
+                          {p.sincronizzata && <span className="ml-2 text-[10px] text-[var(--testo-terziario)]">sincronizzata</span>}
+                        </p>
+                        <p className="text-[11px] text-[var(--testo-terziario)]">
+                          Aggiunta il {formattaData(p.creataIl)} · {p.ultimoUso ? `usata ${formattaDataRelativa(p.ultimoUso)}` : 'mai usata'}
+                        </p>
+                      </div>
+                      <button onClick={() => eliminaPasskey(p.id)} className="btn-secondario text-sm !py-1.5 shrink-0">Elimina</button>
+                    </div>
+                  ))}
+                  {passkeySupportate ? (
+                    <div className="flex flex-col gap-2 mt-1">
+                      <input type="password" value={passwordPasskey} onChange={e => setPasswordPasskey(e.target.value)}
+                             className="campo-input" placeholder="Password attuale, per aggiungere una passkey" autoComplete="current-password" />
+                      <button onClick={aggiungiPasskey} disabled={!passwordPasskey || aggiungendoPasskey} className="btn-secondario disabled:opacity-50">
+                        {aggiungendoPasskey ? 'Segui le istruzioni del dispositivo…' : '🔑 Aggiungi una passkey'}
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-[var(--testo-terziario)]">Questo browser non supporta le passkey.</p>
+                  )}
+                  {msgPasskey.testo && (
+                    <p className={`text-xs ${msgPasskey.tipo === 'ok' ? 'text-[var(--successo)]' : 'text-[var(--pericolo)]'}`}>{msgPasskey.testo}</p>
+                  )}
                 </div>
               </div>
               {/* Bot Telegram */}
