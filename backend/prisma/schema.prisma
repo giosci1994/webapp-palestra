@@ -178,8 +178,30 @@ model Utente {
 
   // Notifiche in-app
   notifiche AllenamentoNotifica[]
+  passkey   Passkey[]
 
   @@map("utenti")
+}
+
+// Passkey (WebAuthn): entrare con impronta, volto o PIN del dispositivo invece
+// della password. La chiave privata resta sul dispositivo o nel gestore di
+// password; qui c'e' solo la pubblica, per verificare le firme.
+model Passkey {
+  id             Int       @id @default(autoincrement())
+  utenteId       Int       @map("utente_id")
+  credenziale    String    @unique // Id della credenziale, base64url
+  chiavePubblica String    @map("chiave_pubblica") // Chiave COSE, base64url
+  contatore      Int       @default(0) // Firme fatte: se torna indietro, la passkey e' stata clonata
+  trasporti      String? // JSON: ["internal", "hybrid"]
+  sincronizzata  Boolean   @default(false) // Salvata nel cloud (Google, iCloud): vale su piu' dispositivi
+  nome           String? // "Chrome · Android": da dove e' stata aggiunta
+  creataIl       DateTime  @default(now()) @map("creata_il")
+  ultimoUso      DateTime? @map("ultimo_uso")
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@index([utenteId])
+  @@map("passkey")
 }
 
 model RefreshToken {

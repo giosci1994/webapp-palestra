@@ -191,35 +191,31 @@ export async function reimpostaPasswordConToken(token, nuovaPassword) {
   logger.info({ utenteId: utente.id }, 'Password reimpostata via email');
 }
 
+// I campi dell'utente che servono ad aprire una sessione
+export const CAMPI_ACCESSO = {
+  id: true,
+  email: true,
+  nome: true,
+  ruolo: true,
+  stato: true,
+  palestraId: true,
+  profiloCompletato: true,
+  ruoloRichiesto: true,
+  emailVerificata: true
+};
+
 /**
  * Effettua il login e restituisce access token + refresh token.
  * @param {{ dispositivo?: string|null }} [contesto] - da dove arriva il login
  */
 export async function loginUtente({ email, password, ricordaDispositivo = false }, { dispositivo = null } = {}) {
   // Troppi errori di fila su questa email: si aspetta, anche con la password giusta
-  const attesa = attesaPer(email);
-  if (attesa > 0) {
-    const minuti = Math.ceil(attesa / 60000);
-    throw new ErroreTroppeRichieste(
-      `Troppi tentativi sbagliati per questo account: riprova tra ${minuti} ${minuti === 1 ? 'minuto' : 'minuti'}`
-    );
-  }
+  controllaTentativi(email);
 
   // Cerca l'utente
   const utente = await prisma.utente.findUnique({
     where: { email },
-    select: {
-      id: true,
-      email: true,
-      nome: true,
-      ruolo: true,
-      stato: true,
-      passwordHash: true,
-      palestraId: true,
-      profiloCompletato: true,
-      ruoloRichiesto: true,
-      emailVerificata: true
-    }
+    select: { ...CAMPI_ACCESSO, passwordHash: true }
   });
 
   if (!utente) {
@@ -227,15 +223,6 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
     registraErrore(email);
     // Messaggio generico per sicurezza (non rivela se l'email esiste)
     throw new ErroreNonAutenticato('Credenziali non valide');
-  }
-
-  // Verifica lo stato dell'account
-  if (utente.stato === 'BANNATO') {
-    throw new ErroreNonAutenticato('Il tuo account è stato sospeso');
-  }
-
-  if (utente.stato === 'IN_ATTESA') {
-    throw new ErroreNonAutenticato('Il tuo account è in attesa di approvazione da parte dell\'amministratore');
   }
 
   // Verifica la password
@@ -246,6 +233,39 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
     throw new ErroreNonAutenticato('Credenziali non valide');
   }
   azzeraTentativi(email);
+
+  const { passwordHash, ...datiUtente } = utente;
+  const sessione = await apriSessione(datiUtente, { ricordaDispositivo, dispositivo });
+  logger.info({ utenteId: utente.id, ricordaDispositivo, dispositivo }, 'Login effettuato');
+  return sessione;
+}
+
+/** 429 se l'email e' bloccata per troppi errori (utils/tentativiAccesso.js) */
+export function controllaTentativi(email) {
+  const attesa = attesaPer(email);
+  if (attesa > 0) {
+    const minuti = Math.ceil(attesa / 60000);
+    throw new ErroreTroppeRichieste(
+      `Troppi tentativi sbagliati per questo account: riprova tra ${minuti} ${minuti === 1 ? 'minuto' : 'minuti'}`
+    );
+  }
+}
+
+/**
+ * Apre una sessione per un utente gia' riconosciuto (password o passkey):
+ * controlla che possa entrare, poi crea la famiglia di refresh token e
+ * l'access token.
+ * @param {object} utente - con i campi di CAMPI_ACCESSO
+ */
+export async function apriSessione(utente, { ricordaDispositivo = false, dispositivo = null } = {}) {
+  // Verifica lo stato dell'account
+  if (utente.stato === 'BANNATO') {
+    throw new ErroreNonAutenticato('Il tuo account è stato sospeso');
+  }
+
+  if (utente.stato === 'IN_ATTESA') {
+    throw new ErroreNonAutenticato('Il tuo account è in attesa di approvazione da parte dell\'amministratore');
+  }
 
   // Email non verificata (solo se la verifica è attiva): blocca l'accesso
   if (utente.emailVerificata === false) {
@@ -258,8 +278,6 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
   const refreshToken = nuovoToken(40);
   await creaRefreshToken({ token: refreshToken, utenteId: utente.id, durataGiorni, famiglia, dispositivo, iniziataIl: new Date() });
   const accessToken = generaAccessToken(utente, famiglia);
-
-  logger.info({ utenteId: utente.id, ricordaDispositivo, dispositivo }, 'Login effettuato');
 
   return {
     accessToken,
