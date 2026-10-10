@@ -3,7 +3,7 @@
 // Provider per connessione WebSocket globale
 // ============================================
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContesto.jsx';
 import { ottieniToken } from '../config/api.js';
@@ -60,17 +60,24 @@ export function SocketProvider({ children }) {
     };
   }, [autenticato]);
 
-  const valore = {
-    socket: socketRef.current,
-    connesso,
-    emit: (evento, dati, callback) => {
-      socketRef.current?.emit(evento, dati, callback);
-    },
-    on: (evento, handler) => {
-      socketRef.current?.on(evento, handler);
-      return () => socketRef.current?.off(evento, handler);
-    }
-  };
+  // Stabili fra un render e l'altro: chi le mette fra le dipendenze di un
+  // effetto non si riscrive a ogni render
+  const emit = useCallback((evento, dati, callback) => {
+    socketRef.current?.emit(evento, dati, callback);
+  }, []);
+
+  // Cambia quando cambia la connessione, non a ogni render: chi si iscrive in
+  // un effetto che dipende da `on` (la campanella, la sidebar) si iscrive di
+  // nuovo quando il socket si collega, anche se al primo render non c'era.
+  // La pulizia toglie l'handler dal socket su cui e' stato messo, anche se nel
+  // frattempo ne e' nato un altro (nuovo login).
+  const on = useCallback((evento, handler) => {
+    const socket = socketRef.current;
+    socket?.on(evento, handler);
+    return () => socket?.off(evento, handler);
+  }, [connesso]); // eslint-disable-line react-hooks/exhaustive-deps -- vedi sopra
+
+  const valore = useMemo(() => ({ connesso, emit, on }), [connesso, emit, on]);
 
   return (
     <SocketContesto.Provider value={valore}>
