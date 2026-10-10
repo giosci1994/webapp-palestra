@@ -3,7 +3,9 @@
 // Modale per creare una nuova scheda allenamento
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { indicizzaEsercizi, cerca, preferitiPrima } from '../../utils/ricerca.js';
+import { usePreferiti } from '../../hooks/usePreferiti.js';
 import { nomeEsercizio } from '../../utils/formattatori.js';
 import { api } from '../../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
@@ -46,11 +48,14 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
     api.get('/esercizi').then(r => setEserciziCatalogo(r.dati || [])).catch(() => {});
   }, []);
 
-  const eserciziFiltrati = eserciziCatalogo.filter(e => {
-    if (filtroGruppo && e.gruppoMuscoloPrimario !== filtroGruppo) return false;
-    if (ricerca && !`${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(ricerca.toLowerCase())) return false;
-    return true;
-  });
+  // Ricerca tollerante (utils/ricerca.js): l'indice si prepara una volta.
+  // I preferiti dell'utente (stella nel catalogo) vengono per primi
+  const { preferiti } = usePreferiti();
+  const indiceRicerca = useMemo(() => indicizzaEsercizi(eserciziCatalogo), [eserciziCatalogo]);
+  const eserciziFiltrati = useMemo(
+    () => preferitiPrima(cerca(indiceRicerca, ricerca).filter(e => !filtroGruppo || e.gruppoMuscoloPrimario === filtroGruppo), preferiti),
+    [indiceRicerca, ricerca, filtroGruppo, preferiti]
+  );
 
   const gruppiUnici = [...new Set(eserciziCatalogo.map(e => e.gruppoMuscoloPrimario))].sort();
 
@@ -312,7 +317,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                             }`}>
                       <span className="text-lg">{selezionato ? '✅' : '➕'}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{nomeEsercizio(es)}</p>
+                        <p className="font-medium truncate">{preferiti.has(es.id) && <span title="Preferito">⭐ </span>}{nomeEsercizio(es)}</p>
                         <p className="text-xs text-[var(--testo-terziario)]">
                           {es.gruppoMuscoloPrimario} {es.attrezzatura ? `· ${es.attrezzatura.nome}` : ''}
                         </p>

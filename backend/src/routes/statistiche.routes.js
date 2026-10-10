@@ -8,6 +8,7 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_PRINCIPALI, GRUPPI_NON_MUSCOLARI } from '../utils/gruppiMuscolari.js';
 import { consiglioAllenamento } from '../services/consiglio.service.js';
+import { giornoLocale } from '../utils/date.js';
 
 const router = Router();
 router.use(verificaToken);
@@ -406,6 +407,38 @@ router.get('/frequenza', async (req, res, next) => {
     }
 
     res.json({ successo: true, dati: settimane });
+  } catch (errore) { next(errore); }
+});
+
+// GET /api/v1/statistiche/attivita-annuale — Allenamenti e serie completate per
+// giorno di calendario locale, nelle ultime 53 settimane (la griglia stile GitHub)
+const GIORNI_ATTIVITA = 53 * 7;
+router.get('/attivita-annuale', async (req, res, next) => {
+  try {
+    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
+    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
+    // Un giorno in piu': il primo giorno locale comincia la sera prima in UTC
+    const inizio = new Date(Date.now() - (GIORNI_ATTIVITA + 1) * 86400000);
+
+    const sessioni = await prisma.sessioneAllenamento.findMany({
+      where: {
+        utenteId: req.utente.id,
+        dataFine: { not: null },
+        dataInizio: { gte: inizio > resetDate ? inizio : resetDate }
+      },
+      select: { dataInizio: true, _count: { select: { logSerie: { where: { completato: true } } } } }
+    });
+
+    const perGiorno = new Map();
+    for (const s of sessioni) {
+      const giorno = giornoLocale(s.dataInizio).toISOString().slice(0, 10);
+      const voce = perGiorno.get(giorno) || { giorno, allenamenti: 0, serie: 0 };
+      voce.allenamenti++;
+      voce.serie += s._count.logSerie;
+      perGiorno.set(giorno, voce);
+    }
+
+    res.json({ successo: true, dati: [...perGiorno.values()].sort((a, b) => a.giorno.localeCompare(b.giorno)) });
   } catch (errore) { next(errore); }
 });
 

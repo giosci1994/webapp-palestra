@@ -3,9 +3,12 @@
 // Interfaccia mobile-first per allenamento
 // ============================================
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
+import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
+import { usePreferiti } from '../hooks/usePreferiti.js';
+import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS } from '../utils/costanti.js';
@@ -40,6 +43,7 @@ export default function WorkoutLive() {
   const [form, setForm] = useState(ss ? ss.form : { peso: '', rep: '', rpe: 7, minuti: '', resistenza: '' });
   const [serieCompletate, setSerieCompletate] = useState(ss ? ss.serieCompletate : []);
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
+  const [riprendendo, setRiprendendo] = useState(false);
   const [mostraSelettoreEsercizi, setMostraSelettoreEsercizi] = useState(false);
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
@@ -165,10 +169,13 @@ export default function WorkoutLive() {
   const esercizi = eserciziLive;
   const esercizioAttuale = esercizi[esercizioIdx];
 
-  // Ricerca sul nome italiano e sull'originale inglese
-  const testoRicerca = ricercaTesto.trim().toLowerCase();
-  const eserciziFiltrati = catalogoEsercizi.filter(e =>
-    `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(testoRicerca)
+  // Ricerca tollerante sul nome italiano e sull'originale inglese (utils/ricerca.js),
+  // con i preferiti dell'utente per primi
+  const { preferiti } = usePreferiti();
+  const indiceRicerca = useMemo(() => indicizzaEsercizi(catalogoEsercizi), [catalogoEsercizi]);
+  const eserciziFiltrati = useMemo(
+    () => preferitiPrima(cerca(indiceRicerca, ricercaTesto), preferiti),
+    [indiceRicerca, ricercaTesto, preferiti]
   );
 
   // --- Tracking esercizi completati ---
@@ -219,6 +226,10 @@ export default function WorkoutLive() {
   const serieEsercizio = serieCompletate.filter(
     s => s.esercizioId === esercizioAttuale?.esercizioId
   );
+
+  // Col bilanciere, i dischi da caricare per lato per il peso scritto
+  const bilanciere = bilanciereDi(esercizioAttuale?.esercizio);
+  const dischi = bilanciere ? dischiPerLato(form.peso, bilanciere.peso) : null;
 
   const isCardio = esercizioAttuale?.esercizio?.attrezzatura?.categoria === 'CARDIO' || 
                    esercizioAttuale?.esercizio?.gruppoMuscoloPrimario?.toLowerCase() === 'cardio';
@@ -379,6 +390,23 @@ export default function WorkoutLive() {
     }
   };
 
+  // "Ho chiuso per sbaglio": la sessione torna in corso e si riparte da dove
+  // eri, con le serie gia' fatte (sono ancora tutte qui, in memoria)
+  const riprendiAllenamento = async () => {
+    setRiprendendo(true);
+    try {
+      await api.patch(`/sessioni/${sessione.id}/riapri`);
+      setNuoviRecord([]);
+      setMostraRiepilogo(false);
+      salvaProgressi(statoAttuale());
+      wakeLock.attiva();
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRiprendendo(false);
+    }
+  };
+
   // Se il timer finisce, nascondi l'overlay
   useEffect(() => {
     if (timerAttivo && timer.secondiRimasti === 0 && !timer.inCorso) {
@@ -432,6 +460,10 @@ export default function WorkoutLive() {
           <button onClick={() => naviga('/dashboard')} className="btn-primario w-full">
             Torna alla Dashboard
           </button>
+          <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
+            {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+          </button>
+          <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro 30 minuti.</p>
         </motion.div>
       </div>
     );
@@ -701,6 +733,14 @@ export default function WorkoutLive() {
               )}
             </div>
 
+            {!isCardio && dischi && (
+              <p className="text-xs text-center text-[var(--testo-secondario)] -mt-1">
+                🏋️ Per lato: <strong className="text-[var(--testo-primario)]">{descriviDischi(dischi.perLato)}</strong>
+                <span className="text-[var(--testo-terziario)]"> · {bilanciere.nome} {bilanciere.peso} kg</span>
+                {dischi.mancano > 0 && <span className="text-[var(--avviso)]"> · mancano {String(dischi.mancano).replace('.', ',')} kg</span>}
+              </p>
+            )}
+
             {/* RPE slider */}
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -904,7 +944,7 @@ export default function WorkoutLive() {
                     className="flex items-center justify-between p-3 rounded-xl border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors text-left"
                   >
                     <div>
-                      <p className="font-semibold text-sm">{nomeEsercizio(es)}</p>
+                      <p className="font-semibold text-sm">{preferiti.has(es.id) && <span title="Preferito">⭐ </span>}{nomeEsercizio(es)}</p>
                       <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{es.gruppoMuscoloPrimario} · {es.attrezzatura?.nome || 'Varie'}</p>
                     </div>
                     <span className="text-[var(--accent)] font-bold">➕</span>

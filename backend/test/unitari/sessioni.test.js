@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  leggiValoriSerie, leggiInizio, leggiDurata, formattaPerStorico
+  leggiValoriSerie, leggiInizio, leggiDurata, formattaPerStorico, eserciziDaSessione
 } from '../../src/controllers/sessioni.controller.js';
 import { ErroreValidazione } from '../../src/utils/errori.js';
 
@@ -165,5 +165,57 @@ describe('formattaPerStorico', () => {
       scheda: { id: 4, titolo: 'Push', numEsercizi: 3 },
       serieCompletate: 3
     });
+  });
+});
+
+describe('eserciziDaSessione', () => {
+  let prossimoId = 0;
+  const serie = (esercizioId, repEffettive, altro = {}) =>
+    ({ id: ++prossimoId, esercizioId, repEffettive, pesoEffettivo: 50, completato: true, ...altro });
+
+  it("gli esercizi nell'ordine in cui li hai cominciati, con le serie fatte e le ripetizioni", () => {
+    const esercizi = eserciziDaSessione([
+      serie(7, 10), serie(7, 10), serie(3, 12), serie(7, 10), serie(3, 8), serie(3, 10)
+    ]);
+    assert.deepEqual(esercizi.map(e => [e.esercizioId, e.ordineEsecuzione, e.serieTarget, e.repTarget]), [
+      [7, 1, 3, '10'],
+      [3, 2, 3, '8-12']
+    ]);
+  });
+
+  it("l'ordine segue le serie registrate, anche se arrivano mescolate", () => {
+    const [a, b] = [serie(1, 10), serie(2, 10)];
+    assert.deepEqual(eserciziDaSessione([b, a]).map(e => e.esercizioId), [1, 2]);
+  });
+
+  it('salta le serie non completate e gli esercizi saltati del tutto', () => {
+    const esercizi = eserciziDaSessione([
+      serie(1, 10), serie(1, 4, { completato: false }), serie(2, 10, { completato: false })
+    ]);
+    assert.deepEqual(esercizi.map(e => [e.esercizioId, e.serieTarget, e.repTarget]), [[1, 1, '10']]);
+  });
+
+  it('recupero, note e riscaldamento dalla scheda seguita; per gli esercizi aggiunti il recupero standard', () => {
+    const scheda = [{ esercizioId: 1, recuperoSecondi: 150, note: 'Scapole addotte', riscaldamento: false }];
+    const [panca, aggiunto] = eserciziDaSessione([serie(1, 5), serie(9, 12)], scheda);
+    assert.deepEqual([panca.recuperoSecondi, panca.note, panca.riscaldamento], [150, 'Scapole addotte', false]);
+    assert.deepEqual([aggiunto.recuperoSecondi, aggiunto.note, aggiunto.riscaldamento], [90, null, false]);
+  });
+
+  it("senza ripetizioni (cardio) prende durata e parametri dell'ultima serie", () => {
+    const [tapis] = eserciziDaSessione([
+      serie(5, 0, { durataMinuti: 8, velocitaKmh: 9, inclinazione: 2 }),
+      serie(5, 0, { durataMinuti: 10, velocitaKmh: 10, inclinazione: 1, distanzaKm: 1.7 })
+    ], [{ esercizioId: 5, recuperoSecondi: 0, note: null, riscaldamento: true }]);
+    assert.equal(tapis.repTarget, null);
+    assert.deepEqual(
+      [tapis.durataMinuti, tapis.velocitaKmh, tapis.inclinazione, tapis.distanzaKm, tapis.riscaldamento],
+      [10, 10, 1, 1.7, true]
+    );
+  });
+
+  it('le serie a zero ripetizioni non allargano la forbice', () => {
+    const [esercizio] = eserciziDaSessione([serie(1, 10), serie(1, 0), serie(1, 8)]);
+    assert.deepEqual([esercizio.serieTarget, esercizio.repTarget, esercizio.durataMinuti], [3, '8-10', null]);
   });
 });

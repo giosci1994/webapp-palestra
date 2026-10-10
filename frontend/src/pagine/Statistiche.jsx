@@ -8,6 +8,7 @@ import { api } from '../config/api.js';
 import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
 import SeriePerMuscolo from '../componenti/specifici/SeriePerMuscolo.jsx';
 import FrequenzaSettimanale from '../componenti/specifici/FrequenzaSettimanale.jsx';
+import AttivitaAnnuale from '../componenti/specifici/AttivitaAnnuale.jsx';
 import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
 
 // Periodi selezionabili
@@ -25,6 +26,7 @@ export default function Statistiche() {
   // Gruppi muscolari nel periodo: un'unica fonte per la sagoma e per le barre
   const [muscoli, setMuscoli] = useState(null);
   const [frequenza, setFrequenza] = useState([]);
+  const [attivita, setAttivita] = useState([]);
   // Istante del caricamento: riferimento unico per dividere i due periodi
   const [caricatoIl, setCaricatoIl] = useState(0);
   const [periodo, setPeriodo] = useState(30);
@@ -33,17 +35,19 @@ export default function Statistiche() {
   const caricaDati = async () => {
     try {
       setCaricamento(true);
-      const [rie, ses, grp, freq] = await Promise.all([
+      const [rie, ses, grp, freq, att] = await Promise.all([
         api.get('/statistiche/riepilogo'),
         api.get(`/statistiche/sessioni?giorni=${periodo * 2}`),
         api.get(`/statistiche/muscoli?giorni=${periodo}`),
-        api.get('/statistiche/frequenza')
+        api.get('/statistiche/frequenza'),
+        api.get('/statistiche/attivita-annuale')
       ]);
       setRiepilogo(rie.dati);
       setGiorniDoppi(ses.dati || []);
       setCaricatoIl(Date.now());
       setMuscoli(grp.dati || null);
       setFrequenza(freq.dati || []);
+      setAttivita(att.dati || []);
     } catch (err) {
       console.error('Errore caricamento statistiche:', err);
     } finally {
@@ -96,6 +100,11 @@ export default function Statistiche() {
 
         {/* Serie a settimana per muscolo, con la fascia consigliata */}
         <SeriePerMuscolo dati={muscoli} />
+      </div>
+
+      {/* Un quadretto per giorno nell'ultimo anno */}
+      <div className="mt-7">
+        <AttivitaAnnuale giorni={attivita} />
       </div>
     </div>
   );

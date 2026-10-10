@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { verificaToken, verificaTokenOpzionale } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
+import { ErroreNonTrovato, ErroreValidazione } from '../utils/errori.js';
 
 const router = Router();
 
@@ -43,6 +44,51 @@ router.get('/esercizi', verificaToken, async (req, res, next) => {
       mostrato(a).localeCompare(mostrato(b), 'it'));
 
     res.json({ successo: true, dati: esercizi });
+  } catch (errore) { next(errore); }
+});
+
+// --- Esercizi preferiti: la stella, per ciascun utente ---
+
+/** L'id dell'esercizio dalla rotta; 404 se l'esercizio non esiste */
+async function esercizioDaRotta(req) {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Esercizio non valido');
+  const esiste = await prisma.esercizio.count({ where: { id } });
+  if (!esiste) throw new ErroreNonTrovato('Esercizio non trovato');
+  return id;
+}
+
+// GET /api/v1/esercizi/preferiti — Gli id degli esercizi preferiti, dal piu' recente
+router.get('/esercizi/preferiti', verificaToken, async (req, res, next) => {
+  try {
+    const preferiti = await prisma.esercizioPreferito.findMany({
+      where: { utenteId: req.utente.id },
+      orderBy: { creatoIl: 'desc' },
+      select: { esercizioId: true }
+    });
+    res.json({ successo: true, dati: preferiti.map(p => p.esercizioId) });
+  } catch (errore) { next(errore); }
+});
+
+// PUT /api/v1/esercizi/:id/preferito — Aggiunge la stella (ripeterlo non cambia niente)
+router.put('/esercizi/:id/preferito', verificaToken, async (req, res, next) => {
+  try {
+    const esercizioId = await esercizioDaRotta(req);
+    await prisma.esercizioPreferito.upsert({
+      where: { utenteId_esercizioId: { utenteId: req.utente.id, esercizioId } },
+      create: { utenteId: req.utente.id, esercizioId },
+      update: {}
+    });
+    res.json({ successo: true });
+  } catch (errore) { next(errore); }
+});
+
+// DELETE /api/v1/esercizi/:id/preferito — Toglie la stella (anche se non c'era)
+router.delete('/esercizi/:id/preferito', verificaToken, async (req, res, next) => {
+  try {
+    const esercizioId = await esercizioDaRotta(req);
+    await prisma.esercizioPreferito.deleteMany({ where: { utenteId: req.utente.id, esercizioId } });
+    res.json({ successo: true });
   } catch (errore) { next(errore); }
 });
 

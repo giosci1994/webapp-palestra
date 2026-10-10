@@ -27,6 +27,8 @@ router.get('/:id', controller.dettaglioSessione);
 // PATCH /api/v1/sessioni/:id — Corregge un allenamento concluso (orari, note, serie)
 router.patch('/:id', controller.modificaSessione);
 router.patch('/:id/completa', controller.completaSessione);
+router.patch('/:id/riapri', controller.riapriSessione);
+router.post('/:id/scheda', controller.salvaComeScheda);
 router.delete('/:id', controller.eliminaSessione);
 
 // --- Log Serie dentro una sessione ---

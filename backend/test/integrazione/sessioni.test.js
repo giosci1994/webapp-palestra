@@ -229,3 +229,147 @@ describe('avvio e chiusura di un allenamento', () => {
     assert.deepEqual(await recordDi(admin, panca), []);
   });
 });
+
+describe('riprendere un allenamento chiuso per sbaglio', () => {
+  const riapri = (sessione, chi = utente) =>
+    server.richiesta('PATCH', `/sessioni/${sessione.id}/riapri`, { token: tokenPer(chi) });
+  const completa = (sessione, chi = utente) =>
+    server.richiesta('PATCH', `/sessioni/${sessione.id}/completa`, { token: tokenPer(chi), corpo: {} });
+  /** Un allenamento cominciato 40 minuti fa e appena chiuso */
+  const appenaChiuso = async (dati = {}) => {
+    const sessione = await creaSessione(utente, scheda, {
+      inizio: new Date(Date.now() - 40 * MINUTO), conclusa: false, serie: [{ esercizio: panca, peso: 80, rep: 8 }], ...dati
+    });
+    assert.equal((await completa(sessione)).stato, 200);
+    return sessione;
+  };
+
+  it('torna in corso, e la nuova chiusura ricalcola durata e volume con le serie aggiunte', async () => {
+    const sessione = await appenaChiuso();
+
+    const risposta = await riapri(sessione);
+    assert.equal(risposta.stato, 200);
+    const riaperta = await prisma.sessioneAllenamento.findUnique({ where: { id: sessione.id } });
+    assert.deepEqual([riaperta.dataFine, riaperta.durataMinuti, riaperta.volumeTotaleKg], [null, null, null]);
+
+    const serie = await server.richiesta('POST', `/sessioni/${sessione.id}/serie`, {
+      token: tokenPer(utente), corpo: { esercizioId: panca.id, serieNumero: 2, pesoEffettivo: 90, repEffettive: 5 }
+    });
+    assert.equal(serie.stato, 201);
+    const chiusa = await completa(sessione);
+    assert.equal(chiusa.stato, 200);
+    assert.equal(chiusa.corpo.dati.volumeTotaleKg, 80 * 8 + 90 * 5);
+    assert.ok(chiusa.corpo.dati.durataMinuti >= 40);
+    // Il record dei 90 kg arriva con la seconda chiusura, quello degli 80 resta uno solo
+    assert.deepEqual((await recordDi(utente, panca)).map(r => r.pesoMaxRaggiunto), [80, 90]);
+  });
+
+  it('il calendario torna da fare e la nuova chiusura lo segna di nuovo', async () => {
+    const inizio = new Date(Date.now() - 40 * MINUTO);
+    const piano = await prisma.allenamentoPianificato.create({
+      data: { utenteId: utente.id, schedaId: scheda.id, data: giornoLocale(inizio) }
+    });
+    const sessione = await appenaChiuso({ inizio });
+    let dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', sessione.id]);
+
+    await riapri(sessione);
+    dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['PIANIFICATO', null]);
+
+    await completa(sessione);
+    dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', sessione.id]);
+  });
+
+  it('solo chi si e\' allenato, o il superadmin', async () => {
+    const sessione = await appenaChiuso();
+    assert.equal((await riapri(sessione, await creaUtente())).stato, 403);
+    assert.equal((await riapri(sessione, await creaUtente({ ruolo: 'SUPERADMIN' }))).stato, 200);
+  });
+
+  it('non si riapre un allenamento in corso, ne\' uno finito da piu\' di mezz\'ora', async () => {
+    const inCorso = await creaSessione(utente, scheda, { inizio: new Date(Date.now() - 10 * MINUTO), conclusa: false });
+    assert.equal((await riapri(inCorso)).stato, 400);
+
+    const vecchio = await creaSessione(utente, scheda, { inizio: new Date(Date.now() - 120 * MINUTO), durataMinuti: 60 });
+    const risposta = await riapri(vecchio);
+    assert.equal(risposta.stato, 400);
+    assert.match(risposta.corpo.messaggio, /entro 30 minuti/);
+    assert.notEqual((await prisma.sessioneAllenamento.findUnique({ where: { id: vecchio.id } })).dataFine, null);
+  });
+
+  it('id non valido 400, sessione inesistente 404', async () => {
+    assert.equal((await riapri({ id: 'abc' })).stato, 400);
+    assert.equal((await riapri({ id: 99999 })).stato, 404);
+  });
+});
+
+describe('salvare un allenamento come scheda', () => {
+  const salva = (sessione, corpo = {}, chi = utente) =>
+    server.richiesta('POST', `/sessioni/${sessione.id}/scheda`, { token: tokenPer(chi), corpo });
+  const schedaCreata = id => prisma.schedaAllenamento.findUnique({
+    where: { id }, include: { esercizi: { orderBy: { ordineEsecuzione: 'asc' } } }
+  });
+
+  it('crea una scheda personale con gli esercizi davvero fatti', async () => {
+    const squat = await creaEsercizio({ nome: 'Squat' });
+    const rematore = await creaEsercizio({ nome: 'Rematore' });
+    const seguita = await creaScheda(utente, [panca, squat], { titolo: 'Push A', livello: 'INTERMEDIO' });
+    await prisma.esercizioScheda.updateMany({ where: { schedaId: seguita.id, esercizioId: panca.id }, data: { recuperoSecondi: 180, note: 'Fermo al petto' } });
+    // In palestra: lo squat saltato, il rematore aggiunto, una serie di panca in piu'
+    const sessione = await creaSessione(utente, seguita, {
+      inizio: new Date('2026-10-09T10:00:00Z'),
+      serie: [
+        { esercizio: panca, peso: 80, rep: 8 }, { esercizio: panca, peso: 80, rep: 8 },
+        { esercizio: panca, peso: 80, rep: 7 }, { esercizio: panca, peso: 70, rep: 10 },
+        { esercizio: rematore, peso: 60, rep: 12 }, { esercizio: rematore, peso: 60, rep: 12 }
+      ]
+    });
+
+    const risposta = await salva(sessione);
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.titolo, 'Push A (9 ott)');
+
+    const nuova = await schedaCreata(risposta.corpo.dati.id);
+    assert.deepEqual(
+      [nuova.creatoreId, nuova.visibilita, nuova.livello, nuova.descrizione],
+      [utente.id, 'PERSONALE', 'INTERMEDIO', "Dall'allenamento del 9 ottobre 2026"]
+    );
+    assert.deepEqual(
+      nuova.esercizi.map(e => [e.esercizioId, e.serieTarget, e.repTarget, e.recuperoSecondi, e.note]),
+      [[panca.id, 4, '7-10', 180, 'Fermo al petto'], [rematore.id, 2, '12', 90, null]]
+    );
+  });
+
+  it('con un titolo scelto, ripulito dagli spazi', async () => {
+    const sessione = await creaSessione(utente, scheda, { serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    const risposta = await salva(sessione, { titolo: '  Panca leggera  ' });
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.titolo, 'Panca leggera');
+  });
+
+  it('solo i propri allenamenti conclusi, con almeno una serie', async () => {
+    const fatta = await creaSessione(utente, scheda, { serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    assert.equal((await salva(fatta, {}, await creaUtente())).stato, 403);
+
+    const inCorso = await creaSessione(utente, scheda, { conclusa: false, serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    assert.equal((await salva(inCorso)).stato, 400);
+
+    const vuota = await creaSessione(utente, scheda);
+    const risposta = await salva(vuota);
+    assert.equal(risposta.stato, 400);
+    assert.equal(risposta.corpo.messaggio, 'Nessuna serie completata da salvare');
+
+    assert.equal(await prisma.schedaAllenamento.count({ where: { creatoreId: { not: utente.id } } }), 0);
+    assert.equal(await prisma.schedaAllenamento.count(), 1); // solo quella di partenza
+  });
+
+  it('titolo troppo lungo o non testo 400, id non valido 400, sessione inesistente 404', async () => {
+    const sessione = await creaSessione(utente, scheda, { serie: [{ esercizio: panca, peso: 60, rep: 10 }] });
+    assert.equal((await salva(sessione, { titolo: 'x'.repeat(101) })).stato, 400);
+    assert.equal((await salva(sessione, { titolo: 42 })).stato, 400);
+    assert.equal((await salva({ id: 'abc' })).stato, 400);
+    assert.equal((await salva({ id: 99999 })).stato, 404);
+  });
+});

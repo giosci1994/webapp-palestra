@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
@@ -27,10 +28,26 @@ export default function StoricoAllenamenti() {
   const [eliminando, setEliminando] = useState(null);
   const [mostraPassato, setMostraPassato] = useState(false);
   const [conferma, setConferma] = useState('');
+  const [salvandoScheda, setSalvandoScheda] = useState(false);
+  const naviga = useNavigate();
 
   const mostraConferma = (testo) => {
     setConferma(testo);
     setTimeout(() => setConferma(''), 6000);
+  };
+
+  // Gli esercizi fatti quel giorno, con serie e ripetizioni, diventano una
+  // nuova scheda personale: si apre subito, per rinominarla o ritoccarla
+  const salvaComeScheda = async (sessione) => {
+    try {
+      setSalvandoScheda(true);
+      const risposta = await api.post(`/sessioni/${sessione.id}/scheda`, {});
+      naviga(`/schede/${risposta.dati.id}`);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setSalvandoScheda(false);
+    }
   };
 
   // Carica le schede disponibili per il filtro
@@ -439,6 +456,22 @@ export default function StoricoAllenamenti() {
                     );
                   })}
                 </div>
+
+                {/* Salva come scheda */}
+                {sessioneAperta.serieCompletate > 0 && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => salvaComeScheda(sessioneAperta)}
+                      disabled={salvandoScheda}
+                      className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-[var(--accent)] bg-[var(--accent-dim)] hover:bg-[var(--accent)] hover:text-white transition-all disabled:opacity-50"
+                    >
+                      {salvandoScheda ? 'Salvataggio...' : '📋 Salva come nuova scheda'}
+                    </button>
+                    <p className="text-[11px] text-[var(--testo-terziario)] text-center mt-1.5">
+                      Gli esercizi fatti quel giorno, con le serie e le ripetizioni.
+                    </p>
+                  </div>
+                )}
 
                 {/* Bottone elimina sessione */}
                 <button
