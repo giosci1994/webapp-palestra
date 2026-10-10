@@ -390,8 +390,9 @@ export async function completaSessione(req, res, next) {
       data: { stato: 'COMPLETATO', sessioneId: id }
     });
 
-    // Controlla record personali
-    const recordAggiornati = await controllaRecord(req.utente.id, serie);
+    // Controlla record personali: di chi si e' allenato, anche se a chiudere
+    // la sessione e' il superadmin
+    const recordAggiornati = await controllaRecord(sessione.utenteId, serie);
 
     res.json({
       successo: true,
