@@ -3,7 +3,7 @@
 // Riutilizzabile: modalità proprietario o PT-per-cliente.
 // ============================================
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -48,8 +48,8 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
   const [form, setForm] = useState(FORM_VUOTO);
   const [salvando, setSalvando] = useState(false);
 
-  const carica = () => api.get(base).then(r => setLista(r.dati || [])).catch(() => setLista([]));
-  useEffect(() => { carica(); }, [clienteId]);
+  const carica = useCallback(() => api.get(base).then(r => setLista(r.dati || [])).catch(() => setLista([])), [base]);
+  useEffect(() => { carica(); }, [carica]);
 
   const ultima = lista?.[0];
   const penultima = lista?.[1];

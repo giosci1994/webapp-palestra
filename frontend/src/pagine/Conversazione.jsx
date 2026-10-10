@@ -56,7 +56,7 @@ export default function Conversazione() {
     };
 
     caricaMessaggi();
-  }, [id]);
+  }, [id, conversazioneId, utente.id]);
 
   // Presenza reale dell'altro utente: richiede lo stato e ascolta i cambi
   useEffect(() => {
@@ -68,7 +68,7 @@ export default function Conversazione() {
       if (ultimoAccesso) setAltroUltimoAccesso(ultimoAccesso);
     });
     return cleanup;
-  }, [altroId, connesso]);
+  }, [altroId, connesso, emit, on]);
 
   // Adatta altezza alla tastiera mobile (Visual Viewport API)
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function Conversazione() {
     });
 
     return () => { cleanup1(); cleanup2(); cleanup3(); };
-  }, [connesso, utente.id]);
+  }, [connesso, utente.id, on]);
 
   // Auto-scroll in fondo
   useEffect(() => {
@@ -157,7 +157,7 @@ export default function Conversazione() {
     emit('chat:smesso_scrivere', { conversazioneId });
     setTesto('');
     inputRef.current?.focus();
-  }, [testo, connesso, conversazioneId]);
+  }, [testo, connesso, conversazioneId, emit]);
 
   // Gestisci "sta scrivendo..."
   const gestisciInput = (e) => {

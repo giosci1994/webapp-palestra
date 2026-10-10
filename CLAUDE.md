@@ -11,6 +11,6 @@ Rules:
 ## Test
 
 - Backend: `cd backend && npm test` esegue i test unitari e d'integrazione. Serve Docker: avvia un Postgres e un Redis usa-e-getta (`backend/test/docker-compose.yml`) e non tocca mai il database vero. Senza Docker: `npm run test:unitari`.
-- Frontend: `cd frontend && npm test` (Vitest) e `npm run lint`: gli errori di ESLint bloccano la CI, gli avvisi no.
+- Frontend: `cd frontend && npm test` (Vitest) e `npm run lint`: ESLint e' a zero errori e zero avvisi, e la CI blocca entrambi (`--max-warnings 0`). Per caricare i dati in un effetto: `api.get(...).then(...)` con lo stato aggiornato nelle callback, e "caricamento" ricavato da cosa e' stato caricato (vedi Statistiche, Storico).
 - Chi cambia una logica (record, volume, date, permessi, autenticazione) aggiunge o aggiorna il suo test: nel backend in `backend/test/` con `node:test`, nel frontend accanto al file (`*.test.js`). Le pull request li eseguono su GitHub Actions (`.github/workflows/test.yml`).
 - Ogni modifica a `backend/prisma/schema.prisma` va con la sua migrazione (`npx prisma migrate dev --name ...`), mai `db push`: i test applicano le migrazioni a un database vuoto e falliscono se il risultato non coincide con lo schema.

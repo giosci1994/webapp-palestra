@@ -3,7 +3,7 @@
 // Hub principale: Attività e Statistiche
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
@@ -77,29 +77,26 @@ export default function Dashboard() {
     return () => { annullato = true; };
   }, [dataCalendario, modoCalendario]);
 
+  const palestraId = utente?.palestraId || utente?.palestra?.id;
+
   // Carica dati affluenza palestra
-  const caricaAffluenza = async (palestraId) => {
-    if (!palestraId) return;
-    try {
-      setAffluenzaCaricamento(true);
-      const res = await api.get(`/palestre/${palestraId}/affluenza`);
-      if (res.dati) setAffluenza(res.dati);
-    } catch {
-      setAffluenza(null);
-    } finally {
-      setAffluenzaCaricamento(false);
-    }
-  };
+  const caricaAffluenza = useCallback((idPalestra) => {
+    if (!idPalestra) return;
+    setAffluenzaCaricamento(true);
+    api.get(`/palestre/${idPalestra}/affluenza`)
+      .then(res => { if (res.dati) setAffluenza(res.dati); })
+      .catch(() => setAffluenza(null))
+      .finally(() => setAffluenzaCaricamento(false));
+  }, []);
 
-  const caricaDati = async () => {
-    try {
-      setCaricamento(true);
-      const [resSess, resBanner, resConsiglio] = await Promise.all([
-        api.get('/sessioni?limite=30'),
-        api.get('/banner').catch(() => ({ dati: { visibile: false, testo: '' } })),
-        api.get('/statistiche/consiglio').catch(() => ({ dati: null }))
-      ]);
-
+  // Al primo caricamento con lo spinner; eliminata un'attivita', i dati si
+  // aggiornano sul posto
+  const caricaDati = useCallback(() => Promise.all([
+    api.get('/sessioni?limite=30'),
+    api.get('/banner').catch(() => ({ dati: { visibile: false, testo: '' } })),
+    api.get('/statistiche/consiglio').catch(() => ({ dati: null }))
+  ])
+    .then(([resSess, resBanner, resConsiglio]) => {
       // Conteggio messaggi non letti (non bloccante)
       api.get('/chat/non-letti')
         .then(r => setMessaggiNonLetti(r.dati?.totale || 0))
@@ -110,12 +107,10 @@ export default function Dashboard() {
         if (r.dati?.stato === 'ATTIVA') setMioPTDash(r.dati);
         setSenzaPT(!r.dati); // nessun rapporto PT (né attivo né in attesa)
       }).catch(() => {});
-      
+
       // Carica affluenza se utente ha palestra
-      if (utente?.palestraId || utente?.palestra?.id) {
-        caricaAffluenza(utente.palestraId || utente.palestra?.id);
-      }
-      
+      caricaAffluenza(palestraId);
+
       setSessioniRecenti(resSess.dati || []);
       if (resBanner.dati) {
         setBanner(resBanner.dati);
@@ -123,17 +118,13 @@ export default function Dashboard() {
       }
 
       setConsiglio(resConsiglio.dati || null);
-
-    } catch (err) {
-      console.error('Errore caricamento dashboard:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
+    })
+    .catch(err => console.error('Errore caricamento dashboard:', err))
+    .finally(() => setCaricamento(false)), [palestraId, caricaAffluenza]);
 
   useEffect(() => {
     caricaDati();
-  }, []);
+  }, [caricaDati]);
 
   const caricaDatiPT = async () => {
     try {
@@ -146,11 +137,10 @@ export default function Dashboard() {
 
   // Polling affluenza ogni 5 minuti
   useEffect(() => {
-    const palestraId = utente?.palestraId || utente?.palestra?.id;
     if (!palestraId) return;
     const intervallo = setInterval(() => caricaAffluenza(palestraId), 5 * 60 * 1000);
     return () => clearInterval(intervallo);
-  }, [utente?.palestraId, utente?.palestra?.id]);
+  }, [palestraId, caricaAffluenza]);
 
   const salvaBanner = async (visibile) => {
     try {

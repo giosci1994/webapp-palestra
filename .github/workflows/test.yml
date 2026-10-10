@@ -51,7 +51,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      # Gli errori bloccano, gli avvisi no
+      # Errori e avvisi bloccano: il frontend e' a zero e ci resta
       - run: npm run lint
       - run: npm test
       # Un import rotto o un JSX sbagliato fanno fallire la build prima di

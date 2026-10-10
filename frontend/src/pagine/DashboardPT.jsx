@@ -3,7 +3,7 @@
 // Panoramica, Clienti, Calendario, Esercizi & Schede
 // ============================================
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
@@ -58,24 +58,23 @@ export default function DashboardPT() {
   const risultatiEsercizi = useMemo(() => cerca(indiceEsercizi, ricercaEsercizio), [indiceEsercizi, ricercaEsercizio]);
   const [creandoScheda, setCreandoScheda] = useState(false);
 
-  const caricaDati = async () => {
-    try {
-      setCaricamento(true);
-      const [s, c, r, a, sc, an] = await Promise.all([
-        api.get('/pt/dashboard'),
-        api.get('/pt/clienti'),
-        api.get('/pt/richieste'),
-        api.get('/pt/appuntamenti'),
-        api.get('/pt/schede'),
-        api.get('/pt/annunci'),
-      ]);
+  // Al primo caricamento con lo spinner; accettato un cliente, i dati si aggiornano sul posto
+  const caricaDati = useCallback(() => Promise.all([
+    api.get('/pt/dashboard'),
+    api.get('/pt/clienti'),
+    api.get('/pt/richieste'),
+    api.get('/pt/appuntamenti'),
+    api.get('/pt/schede'),
+    api.get('/pt/annunci'),
+  ])
+    .then(([s, c, r, a, sc, an]) => {
       setStats(s.dati); setClienti(c.dati || []); setRichieste(r.dati || []);
       setAppuntamenti(a.dati || []); setSchede(sc.dati || []); setAnnunci(an.dati || []);
-    } catch (err) { console.error('Errore caricamento dati PT:', err); }
-    finally { setCaricamento(false); }
-  };
+    })
+    .catch(err => console.error('Errore caricamento dati PT:', err))
+    .finally(() => setCaricamento(false)), []);
 
-  useEffect(() => { caricaDati(); }, []);
+  useEffect(() => { caricaDati(); }, [caricaDati]);
 
   const gestisciRichiesta = async (id, azione) => {
     try { await api.patch(`/pt/richieste/${id}/${azione}`); setRichieste(prev => prev.filter(r => r.id !== id)); if (azione === 'accetta') caricaDati(); }

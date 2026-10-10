@@ -27,9 +27,12 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
   const [note, setNote] = useState('');
 
   const [dettaglioSerie, setDettaglioSerie] = useState(false);
-  const [esercizi, setEsercizi] = useState([]);
+  // Gli esercizi caricati, con la scheda a cui appartengono: finche' non e'
+  // quella scelta, si stanno caricando
+  const [caricati, setCaricati] = useState({ schedaId: '', esercizi: [] });
+  const esercizi = caricati.schedaId === schedaId ? caricati.esercizi : [];
+  const caricandoScheda = Boolean(schedaId) && caricati.schedaId !== schedaId;
   const [valori, setValori] = useState({});   // "esercizioId-serieNumero" → { peso, rep }
-  const [caricandoScheda, setCaricandoScheda] = useState(false);
 
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState('');
@@ -37,18 +40,12 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
   // Alla scelta della scheda si caricano gli esercizi con i target, cosi' la
   // griglia dei carichi e' gia' pronta e resta solo da inserire i pesi.
   useEffect(() => {
-    if (!schedaId) { setEsercizi([]); setValori({}); return; }
+    if (!schedaId) return;
     let annullato = false;
-    setCaricandoScheda(true);
     api.get(`/schede/${schedaId}`)
-      .then(r => {
-        if (annullato) return;
-        const voci = (r.dati?.esercizi || []).filter(v => !v.riscaldamento);
-        setEsercizi(voci);
-        setValori({});
-      })
-      .catch(() => { if (!annullato) setEsercizi([]); })
-      .finally(() => { if (!annullato) setCaricandoScheda(false); });
+      .then(r => (r.dati?.esercizi || []).filter(v => !v.riscaldamento))
+      .catch(() => [])
+      .then(voci => { if (!annullato) setCaricati({ schedaId, esercizi: voci }); });
     return () => { annullato = true; };
   }, [schedaId]);
 
@@ -133,7 +130,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
         <div className="p-card-inner flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Scheda seguita</span>
-            <select value={schedaId} onChange={e => setSchedaId(e.target.value)} className="campo-input">
+            <select value={schedaId} onChange={e => { setSchedaId(e.target.value); setValori({}); }} className="campo-input">
               <option value="">Scegli una scheda…</option>
               {schede.map(s => <option key={s.id} value={s.id}>{s.titolo}</option>)}
             </select>

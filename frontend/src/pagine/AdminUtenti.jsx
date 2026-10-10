@@ -3,7 +3,7 @@
 // Gestione utenti: approva, banna, cambia ruolo
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { RUOLI } from '../utils/costanti.js';
@@ -19,26 +19,25 @@ const STATI = {
 export default function AdminUtenti() {
   const { utente: utenteCorrente } = useAuth();
   const [utenti, setUtenti] = useState([]);
-  const [caricamento, setCaricamento] = useState(true);
   const [filtroStato, setFiltroStato] = useState('');
   const [filtroRuolo, setFiltroRuolo] = useState('');
+  // I filtri dell'elenco mostrato: cambiandoli torna lo spinner, mentre dopo
+  // un'azione su un utente l'elenco si aggiorna sul posto
+  const filtri = `${filtroStato}|${filtroRuolo}`;
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = caricatoPer !== filtri;
 
-  const caricaUtenti = async () => {
-    try {
-      setCaricamento(true);
-      let url = '/utenti?limite=100';
-      if (filtroStato) url += `&stato=${filtroStato}`;
-      if (filtroRuolo) url += `&ruolo=${filtroRuolo}`;
-      const risposta = await api.get(url);
-      setUtenti(risposta.dati?.utenti || risposta.dati || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
+  const caricaUtenti = useCallback(() => {
+    let url = '/utenti?limite=100';
+    if (filtroStato) url += `&stato=${filtroStato}`;
+    if (filtroRuolo) url += `&ruolo=${filtroRuolo}`;
+    return api.get(url)
+      .then(risposta => setUtenti(risposta.dati?.utenti || risposta.dati || []))
+      .catch(err => console.error(err))
+      .finally(() => setCaricatoPer(`${filtroStato}|${filtroRuolo}`));
+  }, [filtroStato, filtroRuolo]);
 
-  useEffect(() => { caricaUtenti(); }, [filtroStato, filtroRuolo]);
+  useEffect(() => { caricaUtenti(); }, [caricaUtenti]);
 
   const approvaUtente = async (id) => {
     try {

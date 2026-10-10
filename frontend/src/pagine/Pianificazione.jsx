@@ -24,6 +24,9 @@ const STATI = {
   SALTATO: { etichetta: 'Saltato', colore: 'var(--testo-terziario)' }
 };
 
+/** Il periodo del calendario come chiave: "2026-09-28|2026-11-08" */
+const chiavePeriodo = ({ da, a }) => `${da}|${a}`;
+
 export default function Pianificazione() {
   // Sul telefono la griglia mensile stringe troppo i giorni: lì si parte dalla
   // settimana. Finché non si sceglie esplicitamente, la vista segue la
@@ -35,7 +38,6 @@ export default function Pianificazione() {
   const [ancora, setAncora] = useState(() => new Date());
   const [allenamenti, setAllenamenti] = useState([]);
   const [schede, setSchede] = useState([]);
-  const [caricamento, setCaricamento] = useState(true);
   const [giornoScelto, setGiornoScelto] = useState(aStringa(new Date()));
   const [pannelloPiano, setPannelloPiano] = useState(false);
   const [errore, setErrore] = useState('');
@@ -57,22 +59,24 @@ export default function Pianificazione() {
     return { da: aStringa(da), a: aStringa(a) };
   }, [ancora, modo]);
 
-  const carica = useCallback(async () => {
-    try {
-      setCaricamento(true);
-      const { da, a } = intervallo();
-      const [resPiano, resSchede] = await Promise.all([
-        api.get(`/pianificazione?da=${da}&a=${a}`),
-        api.get('/schede').catch(() => ({ dati: [] }))
-      ]);
-      setAllenamenti(resPiano.dati || []);
-      setSchede(resSchede.dati || []);
-      setErrore('');
-    } catch (err) {
-      setErrore(err?.message || 'Impossibile caricare il calendario');
-    } finally {
-      setCaricamento(false);
-    }
+  // Il periodo mostrato: spostandosi di settimana o di mese torna lo spinner,
+  // mentre dopo una modifica il calendario si aggiorna sul posto
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = caricatoPer !== chiavePeriodo(intervallo());
+
+  const carica = useCallback(() => {
+    const periodo = intervallo();
+    return Promise.all([
+      api.get(`/pianificazione?da=${periodo.da}&a=${periodo.a}`),
+      api.get('/schede').catch(() => ({ dati: [] }))
+    ])
+      .then(([resPiano, resSchede]) => {
+        setAllenamenti(resPiano.dati || []);
+        setSchede(resSchede.dati || []);
+        setErrore('');
+      })
+      .catch(err => setErrore(err?.message || 'Impossibile caricare il calendario'))
+      .finally(() => setCaricatoPer(chiavePeriodo(periodo)));
   }, [intervallo]);
 
   useEffect(() => { carica(); }, [carica]);

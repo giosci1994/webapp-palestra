@@ -3,7 +3,7 @@
 // Visualizzazione dettagliata degli allenamenti passati
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
@@ -21,7 +21,6 @@ const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MIN
 
 export default function StoricoAllenamenti() {
   const [sessioni, setSessioni] = useState([]);
-  const [caricamento, setCaricamento] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [paginazione, setPaginazione] = useState(null);
   const [schedaFiltro, setSchedaFiltro] = useState('');
@@ -75,24 +74,21 @@ export default function StoricoAllenamenti() {
       .catch(() => {});
   }, []);
 
-  const caricaStorico = async () => {
-    try {
-      setCaricamento(true);
-      const query = `?pagina=${pagina}&limite=15${schedaFiltro ? `&schedaId=${schedaFiltro}` : ''}`;
-      const risposta = await api.get(`/sessioni/storico${query}`);
+  // La pagina mostrata: cambiando pagina o filtro torna lo spinner, mentre
+  // dopo una modifica l'elenco si aggiorna sul posto
+  const query = `?pagina=${pagina}&limite=15${schedaFiltro ? `&schedaId=${schedaFiltro}` : ''}`;
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = caricatoPer !== query;
+
+  const caricaStorico = useCallback(() => api.get(`/sessioni/storico${query}`)
+    .then(risposta => {
       setSessioni(risposta.dati || []);
       setPaginazione(risposta.paginazione || null);
-    } catch (err) {
-      console.error('Errore caricamento storico:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
+    })
+    .catch(err => console.error('Errore caricamento storico:', err))
+    .finally(() => setCaricatoPer(query)), [query]);
 
-  // Carica storico sessioni
-  useEffect(() => {
-    caricaStorico();
-  }, [pagina, schedaFiltro]);
+  useEffect(() => { caricaStorico(); }, [caricaStorico]);
 
   const eliminaSessione = async (id) => {
     if (!confirm('Sei sicuro di voler eliminare questa sessione? I dati saranno persi.')) return;

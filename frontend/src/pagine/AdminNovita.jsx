@@ -2,7 +2,7 @@
 // GymMaster — Admin: Gestione Novità (storie in-app)
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -46,12 +46,13 @@ export default function AdminNovita() {
   const [form, setForm] = useState(FORM_VUOTO);
   const [pickerAperto, setPickerAperto] = useState(null); // 'icona' | `punto-${i}` | null
 
-  const carica = async () => {
-    try { setCaricamento(true); const r = await api.get('/admin/novita'); setLista(r.dati || []); }
-    catch (err) { console.error(err); } finally { setCaricamento(false); }
-  };
+  // Al primo caricamento con lo spinner; dopo una modifica l'elenco si aggiorna sul posto
+  const carica = useCallback(() => api.get('/admin/novita')
+    .then(r => setLista(r.dati || []))
+    .catch(err => console.error(err))
+    .finally(() => setCaricamento(false)), []);
 
-  useEffect(() => { carica(); }, []);
+  useEffect(() => { carica(); }, [carica]);
 
   const apriForm = (n = null) => {
     if (n) {

@@ -9,6 +9,7 @@ import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
+import { useAPezzi } from '../hooks/useAPezzi.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -258,9 +259,15 @@ export default function CatalogoEsercizi() {
   const [soloPreferiti, setSoloPreferiti] = useState(false);
   const { preferiti, alternaPreferito } = usePreferiti();
   const [mostraFiltri, setMostraFiltri] = useState(false);
-  const [expandedId, setExpandedId] = useState(null);
-  const [paginaVisibile, setPaginaVisibile] = useState(1);
   const loaderRef = useRef(null);
+
+  // Pagine caricate ed esercizio aperto valgono per i filtri con cui li hai
+  // scelti: cambiando un filtro si riparte dall'inizio, tutto chiuso. Mettere
+  // una stella non cambia i filtri, quindi non fa ripartire la lista.
+  const chiaveFiltri = [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, ricerca].join('|');
+  const [aperto, setAperto] = useState({ chiave: chiaveFiltri, id: null });
+  const expandedId = aperto.chiave === chiaveFiltri ? aperto.id : null;
+  const setExpandedId = id => setAperto({ chiave: chiaveFiltri, id });
 
   // Caricamento dati
   useEffect(() => {
@@ -286,27 +293,17 @@ export default function CatalogoEsercizi() {
   }, [indiceRicerca, filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, preferiti, ricerca]);
 
   // Paginazione virtuale (carica PAGE_SIZE alla volta)
-  const eserciziVisibili = useMemo(() => {
-    return eserciziFiltrati.slice(0, paginaVisibile * PAGE_SIZE);
-  }, [eserciziFiltrati, paginaVisibile]);
+  const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati, PAGE_SIZE, chiaveFiltri);
 
   // Infinite scroll
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && eserciziVisibili.length < eserciziFiltrati.length) {
-        setPaginaVisibile(prev => prev + 1);
-      }
+      if (entries[0].isIntersecting && restanti > 0) mostraAltri();
     }, { threshold: 0.1 });
 
     if (loaderRef.current) observer.observe(loaderRef.current);
     return () => observer.disconnect();
-  }, [eserciziVisibili.length, eserciziFiltrati.length]);
-
-  // Reset pagina quando cambiano i filtri
-  useEffect(() => {
-    setPaginaVisibile(1);
-    setExpandedId(null);
-  }, [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, ricerca]);
+  }, [eserciziVisibili.length, restanti, mostraAltri]);
 
   const gruppiUnici = useMemo(() => {
     return [...new Set(esercizi.map(e => e.gruppoMuscoloPrimario))].sort();
@@ -484,14 +481,14 @@ export default function CatalogoEsercizi() {
           </div>
 
           {/* Infinite scroll trigger */}
-          {eserciziVisibili.length < eserciziFiltrati.length && (
+          {restanti > 0 && (
             <div ref={loaderRef} className="flex justify-center py-6">
               <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
             </div>
           )}
 
           {/* Counter finale */}
-          {eserciziVisibili.length >= eserciziFiltrati.length && eserciziFiltrati.length > 0 && (
+          {restanti === 0 && eserciziFiltrati.length > 0 && (
             <p className="text-center text-xs text-[var(--testo-terziario)] mt-6 pb-4">
               {eserciziFiltrati.length.toLocaleString('it-IT')} esercizi totali
             </p>

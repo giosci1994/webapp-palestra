@@ -57,7 +57,9 @@ export default function WorkoutLive() {
   const [eserciziLive, setEserciziLive] = useState(() =>
     ss?.eserciziLive?.length ? ss.eserciziLive : [...(location.state?.sessione?.scheda?.esercizi ?? [])]);
   const [caricamento, setCaricamento] = useState(!location.state?.sessione);
-  const [timerAttivo, setTimerAttivo] = useState(false);
+  // Recupero avviato dall'ultima serie: e' attivo finche' il timer non arriva a
+  // zero (timerAttivo, ricavato dal timer senza un effetto che lo spenga)
+  const [recuperoAvviato, setRecuperoAvviato] = useState(false);
   // Durata del recupero in corso: la barra di avanzamento non puo' usare quella
   // dell'esercizio attuale, che dopo il passaggio automatico e' gia' il successivo
   const [durataRecupero, setDurataRecupero] = useState(0);
@@ -65,6 +67,7 @@ export default function WorkoutLive() {
   // l'ultima serie si mostra gia' l'esercizio successivo, cosi' durante il
   // recupero vedi cosa ti aspetta e puoi spostarti al macchinario.
   const [recuperoInCima, setRecuperoInCima] = useState(false);
+  const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
   const [nuoviRecord, setNuoviRecord] = useState([]);
   const [mostraVideo, setMostraVideo] = useState(false);
   const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
@@ -75,13 +78,13 @@ export default function WorkoutLive() {
   const inviandoRef = useRef(false);
   const [inviando, setInviando] = useState(false);
 
-  const salvaProgressi = (stato) => {
+  const salvaProgressi = useCallback((stato) => {
     try {
       localStorage.setItem(CHIAVE_PROGRESSO, JSON.stringify(stato));
     } catch {
       // localStorage pieno o non disponibile — ignora silenziosamente
     }
-  };
+  }, [CHIAVE_PROGRESSO]);
   const statoAttuale = () => ({ esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio });
 
   // --- Salva progressi in localStorage (debounce 500ms) ---
@@ -93,12 +96,13 @@ export default function WorkoutLive() {
     if (!id || mostraRiepilogo) return; // Non salvare dopo completamento
 
     if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
-    salvaTimeoutRef.current = setTimeout(() => salvaProgressi(statoAttuale()), 500);
+    salvaTimeoutRef.current = setTimeout(
+      () => salvaProgressi({ esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio }), 500);
 
     return () => {
       if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
     };
-  }, [esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio, id, mostraRiepilogo]);
+  }, [esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio, id, mostraRiepilogo, salvaProgressi]);
 
   /** Pulisci progressi salvati (completamento o abbandono) */
   const pulisciProgressi = useCallback(() => {
@@ -130,13 +134,14 @@ export default function WorkoutLive() {
         .catch(() => naviga('/schede'))
         .finally(() => setCaricamento(false));
     }
-  }, [id]);
+  }, [id, sessione, ss, naviga]);
 
-  // Attiva wake lock
+  // Attiva wake lock (attiva e disattiva non cambiano fra un render e l'altro)
+  const { attiva: attivaWakeLock, disattiva: disattivaWakeLock } = wakeLock;
   useEffect(() => {
-    wakeLock.attiva();
-    return () => wakeLock.disattiva();
-  }, []);
+    attivaWakeLock();
+    return () => disattivaWakeLock();
+  }, [attivaWakeLock, disattivaWakeLock]);
 
   // Carichi dell'ultima volta per ogni esercizio in programma. Prima si
   // guardava solo l'ultima sessione della stessa scheda: con una scheda nuova
@@ -370,13 +375,13 @@ export default function WorkoutLive() {
   const avviaRecupero = (secondi, inCima) => {
     timer.avvia(secondi);
     setDurataRecupero(secondi);
-    setTimerAttivo(true);
+    setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
   };
 
   const fermaRecupero = () => {
     timer.resetta();
-    setTimerAttivo(false);
+    setRecuperoAvviato(false);
     setRecuperoInCima(false);
   };
 
@@ -418,14 +423,6 @@ export default function WorkoutLive() {
       setRiprendendo(false);
     }
   };
-
-  // Se il timer finisce, nascondi l'overlay
-  useEffect(() => {
-    if (timerAttivo && timer.secondiRimasti === 0 && !timer.inCorso) {
-      setTimerAttivo(false);
-      setRecuperoInCima(false);
-    }
-  }, [timer.secondiRimasti, timer.inCorso, timerAttivo]);
 
   if (caricamento) {
     return (
