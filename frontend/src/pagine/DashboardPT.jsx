@@ -3,10 +3,11 @@
 // Panoramica, Clienti, Calendario, Esercizi & Schede
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
+import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,6 +53,9 @@ export default function DashboardPT() {
   const [formScheda, setFormScheda] = useState({ titolo: '', descrizione: '', livello: 'BASE', esercizi: [] });
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
   const [ricercaEsercizio, setRicercaEsercizio] = useState('');
+  // Ricerca tollerante (utils/ricerca.js): l'indice si prepara una volta
+  const indiceEsercizi = useMemo(() => indicizzaEsercizi(catalogoEsercizi), [catalogoEsercizi]);
+  const risultatiEsercizi = useMemo(() => cerca(indiceEsercizi, ricercaEsercizio), [indiceEsercizi, ricercaEsercizio]);
   const [creandoScheda, setCreandoScheda] = useState(false);
 
   const caricaDati = async () => {
@@ -597,14 +601,14 @@ export default function DashboardPT() {
                     <input type="text" value={ricercaEsercizio} onChange={e => setRicercaEsercizio(e.target.value)} className="campo-input" placeholder="Cerca esercizio..." />
                     {ricercaEsercizio.length >= 2 && (
                       <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-secondario)] border border-[var(--bordo)] rounded-[var(--raggio-md)] max-h-48 overflow-y-auto z-10 shadow-xl">
-                        {catalogoEsercizi.filter(e => `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(ricercaEsercizio.toLowerCase())).slice(0, 15).map(e => (
+                        {risultatiEsercizi.slice(0, 15).map(e => (
                           <button key={e.id} onClick={() => aggiungiEsercizioAScheda(e)}
                             className="w-full text-left px-4 py-2.5 text-sm hover:bg-[var(--bg-terziario)] border-b border-[var(--bordo)] last:border-0 flex items-center justify-between">
                             <span className="truncate">{nomeEsercizio(e)}</span>
                             <span className="text-[10px] text-[var(--testo-terziario)] shrink-0 ml-2">{e.gruppoMuscoloPrimario}</span>
                           </button>
                         ))}
-                        {catalogoEsercizi.filter(e => `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(ricercaEsercizio.toLowerCase())).length === 0 && (
+                        {risultatiEsercizi.length === 0 && (
                           <p className="px-4 py-3 text-xs text-[var(--testo-terziario)]">Nessun risultato</p>
                         )}
                       </div>

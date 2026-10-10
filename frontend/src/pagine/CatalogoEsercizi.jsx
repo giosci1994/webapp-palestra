@@ -7,6 +7,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { api } from '../config/api.js';
+import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -253,23 +254,19 @@ export default function CatalogoEsercizi() {
       .finally(() => setCaricamento(false));
   }, []);
 
-  // Filtri combinati
+  // Ricerca tollerante (utils/ricerca.js): l'indice si prepara una volta
+  const indiceRicerca = useMemo(() => indicizzaEsercizi(esercizi, { conDettagli: true }), [esercizi]);
+
+  // Filtri combinati; con una ricerca, i risultati in ordine di pertinenza
   const eserciziFiltrati = useMemo(() => {
-    return esercizi.filter(e => {
+    return cerca(indiceRicerca, ricerca).filter(e => {
       if (filtroGruppo && e.gruppoMuscoloPrimario !== filtroGruppo) return false;
       if (filtroDifficulty && e.difficulty !== filtroDifficulty) return false;
       if (filtroRegion && e.bodyRegion !== filtroRegion) return false;
       if (filtroMechanics && e.mechanics !== filtroMechanics) return false;
-      if (ricerca) {
-        const q = ricerca.toLowerCase();
-        if (!`${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(q) && 
-            !e.gruppoMuscoloPrimario?.toLowerCase().includes(q) &&
-            !(e.gruppoMuscoloSecondario || '').toLowerCase().includes(q) &&
-            !(e.attrezzatura?.nome || '').toLowerCase().includes(q)) return false;
-      }
       return true;
     });
-  }, [esercizi, filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, ricerca]);
+  }, [indiceRicerca, filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, ricerca]);
 
   // Paginazione virtuale (carica PAGE_SIZE alla volta)
   const eserciziVisibili = useMemo(() => {

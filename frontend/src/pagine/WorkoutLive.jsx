@@ -3,9 +3,10 @@
 // Interfaccia mobile-first per allenamento
 // ============================================
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
+import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS } from '../utils/costanti.js';
@@ -165,11 +166,9 @@ export default function WorkoutLive() {
   const esercizi = eserciziLive;
   const esercizioAttuale = esercizi[esercizioIdx];
 
-  // Ricerca sul nome italiano e sull'originale inglese
-  const testoRicerca = ricercaTesto.trim().toLowerCase();
-  const eserciziFiltrati = catalogoEsercizi.filter(e =>
-    `${e.nomeIt || ''} ${e.nome}`.toLowerCase().includes(testoRicerca)
-  );
+  // Ricerca tollerante sul nome italiano e sull'originale inglese (utils/ricerca.js)
+  const indiceRicerca = useMemo(() => indicizzaEsercizi(catalogoEsercizi), [catalogoEsercizi]);
+  const eserciziFiltrati = useMemo(() => cerca(indiceRicerca, ricercaTesto), [indiceRicerca, ricercaTesto]);
 
   // --- Tracking esercizi completati ---
   // Un esercizio è "completato" quando ha >= serieTarget serie registrate

@@ -3,8 +3,9 @@
 // Catalogo esercizi + Gestione suggerimenti utenti
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { api } from '../config/api.js';
+import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -99,11 +100,12 @@ export default function AdminEsercizi() {
 
   // --- Filtri ---
   const gruppiUnici = [...new Set(esercizi.map(e => e.gruppoMuscoloPrimario))].sort();
-  const eserciziFiltrati = esercizi.filter(e => {
-    if (filtroGruppo && e.gruppoMuscoloPrimario !== filtroGruppo) return false;
-    if (ricerca && !e.nome.toLowerCase().includes(ricerca.toLowerCase())) return false;
-    return true;
-  });
+  // Ricerca tollerante (utils/ricerca.js) sul nome italiano e inglese
+  const indiceRicerca = useMemo(() => indicizzaEsercizi(esercizi), [esercizi]);
+  const eserciziFiltrati = useMemo(
+    () => cerca(indiceRicerca, ricerca).filter(e => !filtroGruppo || e.gruppoMuscoloPrimario === filtroGruppo),
+    [indiceRicerca, ricerca, filtroGruppo]
+  );
 
   const suggerimentiPendenti = suggerimenti.filter(s => s.stato === 'IN_ATTESA');
   const suggerimentiGestiti = suggerimenti.filter(s => s.stato !== 'IN_ATTESA');
