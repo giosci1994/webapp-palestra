@@ -2,10 +2,12 @@
 // le rotte vere e un database vero.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import jwt from 'jsonwebtoken';
 import { avviaServer } from '../supporto/server.js';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
 import { creaUtente, tokenPer, GIORNO } from '../supporto/dati.js';
+import { improntaToken } from '../../src/utils/token.js';
 
 const PASSWORD = 'Password123';
 let server;
@@ -34,8 +36,10 @@ describe('login', () => {
     assert.match(cookie, /HttpOnly/);
     assert.match(cookie, /SameSite=Strict/);
     assert.match(cookie, /Path=\/api\/v1\/auth/);
-    const salvato = await prisma.refreshToken.findUnique({ where: { token: refreshTokenDa(risposta) } });
+    const token = refreshTokenDa(risposta);
+    const salvato = await prisma.refreshToken.findUnique({ where: { token: improntaToken(token) } });
     assert.equal(salvato.utenteId, utente.id);
+    assert.equal(await prisma.refreshToken.count({ where: { token } }), 0, 'nel database solo l\'impronta');
 
     const protetta = await server.richiesta('GET', '/sessioni', { token: risposta.corpo.dati.accessToken });
     assert.equal(protetta.stato, 200);
@@ -81,14 +85,16 @@ describe('login', () => {
 
     const ricordato = await login(utente.email, { ricordaDispositivo: true });
     assert.match(cookieRefresh(ricordato), /Max-Age=2592000/);
-    const salvato = await prisma.refreshToken.findUnique({ where: { token: refreshTokenDa(ricordato) } });
+    const salvato = await prisma.refreshToken.findUnique({ where: { token: improntaToken(refreshTokenDa(ricordato)) } });
     assert.equal(salvato.durataGiorni, 30);
   });
 
   it('dopo 20 tentativi dallo stesso indirizzo si ferma per 15 minuti, gli altri indirizzi no', async () => {
     const ip = '192.0.2.7';
+    // Un'email diversa a ogni tentativo: qui conta l'indirizzo, non l'account
+    let n = 0;
     const tentativo = indirizzo => server.richiesta('POST', '/auth/login', {
-      ip: indirizzo, corpo: { email: 'nessuno@test.local', password: 'Sbagliata123' }
+      ip: indirizzo, corpo: { email: `nessuno${++n}@test.local`, password: 'Sbagliata123' }
     });
 
     for (let i = 0; i < 20; i++) {
@@ -113,11 +119,11 @@ describe('rinnovo del refresh token', () => {
     const nuovo = refreshTokenDa(risposta);
     assert.notEqual(nuovo, vecchio);
 
-    const salvatoVecchio = await prisma.refreshToken.findUnique({ where: { token: vecchio } });
+    const salvatoVecchio = await prisma.refreshToken.findUnique({ where: { token: improntaToken(vecchio) } });
     assert.equal(salvatoVecchio.revocato, true);
     const grazia = salvatoVecchio.revocoEffettivoDopo.getTime() - Date.now();
     assert.ok(grazia > 30 * 1000 && grazia <= 40 * 1000, `grazia di ${grazia} ms`);
-    const salvatoNuovo = await prisma.refreshToken.findUnique({ where: { token: nuovo } });
+    const salvatoNuovo = await prisma.refreshToken.findUnique({ where: { token: improntaToken(nuovo) } });
     assert.equal(salvatoNuovo.revocato, false);
   });
 
@@ -138,7 +144,7 @@ describe('rinnovo del refresh token', () => {
     const vecchio = refreshTokenDa(await login(utente.email));
     const sostituto = refreshTokenDa(await rinnova(vecchio));
     await prisma.refreshToken.update({
-      where: { token: vecchio },
+      where: { token: improntaToken(vecchio) },
       data: { revocoEffettivoDopo: new Date(Date.now() - 1000) }
     });
 
@@ -164,7 +170,7 @@ describe('rinnovo del refresh token', () => {
   it('un token scaduto non rinnova', async () => {
     const utente = await creaUtente();
     await prisma.refreshToken.create({
-      data: { token: 'scaduto', utenteId: utente.id, scadenza: new Date(Date.now() - GIORNO) }
+      data: { token: improntaToken('scaduto'), utenteId: utente.id, scadenza: new Date(Date.now() - GIORNO), famiglia: 'f-scaduta' }
     });
 
     const risposta = await rinnova('scaduto');
@@ -213,5 +219,104 @@ describe('rotte protette', () => {
       assert.equal(risposta.stato, 401, messaggio);
       assert.equal(risposta.corpo.messaggio, messaggio);
     }
+  });
+});
+
+describe('blocco per account dopo troppe password sbagliate', () => {
+  const sbaglia = email => login(email, { password: 'Sbagliata123' });
+
+  it("alla quinta password sbagliata l'account si ferma, anche per chi poi la azzecca", async () => {
+    const utente = await creaUtente({ password: PASSWORD });
+    for (let i = 0; i < 4; i++) assert.equal((await sbaglia(utente.email)).stato, 401);
+
+    const quinta = await sbaglia(utente.email);
+    assert.equal(quinta.stato, 401, 'la quinta risponde ancora "credenziali non valide"');
+
+    const giusta = await login(utente.email);
+    assert.equal(giusta.stato, 429);
+    assert.equal(giusta.corpo.messaggio, 'Troppi tentativi sbagliati per questo account: riprova tra 1 minuto');
+  });
+
+  it("vale anche per un'email che non esiste: il blocco non rivela chi e' iscritto", async () => {
+    for (let i = 0; i < 5; i++) await sbaglia('fantasma@test.local');
+    const risposta = await sbaglia('fantasma@test.local');
+    assert.equal(risposta.stato, 429);
+  });
+
+  it('gli altri account non ne risentono', async () => {
+    const bersaglio = await creaUtente({ password: PASSWORD });
+    const altro = await creaUtente({ password: PASSWORD });
+    for (let i = 0; i < 5; i++) await sbaglia(bersaglio.email);
+
+    assert.equal((await login(altro.email)).stato, 200);
+  });
+
+  it('un accesso riuscito azzera il conto degli errori', async () => {
+    const utente = await creaUtente({ password: PASSWORD });
+    for (let i = 0; i < 4; i++) await sbaglia(utente.email);
+    assert.equal((await login(utente.email)).stato, 200);
+
+    for (let i = 0; i < 4; i++) await sbaglia(utente.email);
+    assert.equal((await login(utente.email)).stato, 200);
+  });
+});
+
+describe('token di verifica email e di reset password', () => {
+  const unOra = () => new Date(Date.now() + 60 * 60 * 1000);
+
+  it("il link di verifica funziona col token in chiaro, mentre nel database c'e' l'impronta", async () => {
+    const utente = await creaUtente({
+      emailVerificata: false, tokenVerificaEmail: improntaToken('token-verifica'), tokenVerificaScadenza: unOra()
+    });
+
+    assert.equal((await server.richiesta('GET', '/auth/verifica-email?token=improntaqualsiasi')).stato, 400);
+    const risposta = await server.richiesta('GET', '/auth/verifica-email?token=token-verifica');
+    assert.equal(risposta.stato, 200);
+    const dopo = await prisma.utente.findUnique({ where: { id: utente.id } });
+    assert.equal(dopo.emailVerificata, true);
+  });
+
+  it("il reset cambia la password, chiude le sessioni e sblocca l'account", async () => {
+    const utente = await creaUtente({
+      password: PASSWORD, tokenResetPassword: improntaToken('token-reset'), tokenResetScadenza: unOra()
+    });
+    const sessione = refreshTokenDa(await login(utente.email));
+    for (let i = 0; i < 5; i++) await login(utente.email, { password: 'Sbagliata123' });
+
+    // Chi conosce solo l'impronta (per esempio da un backup) non puo' usarla
+    const conImpronta = await server.richiesta('POST', '/auth/reimposta-password', {
+      corpo: { token: improntaToken('token-reset'), password: 'NuovaPassword1' }
+    });
+    assert.equal(conImpronta.stato, 400);
+
+    const risposta = await server.richiesta('POST', '/auth/reimposta-password', {
+      corpo: { token: 'token-reset', password: 'NuovaPassword1' }
+    });
+    assert.equal(risposta.stato, 200);
+    assert.equal((await rinnova(sessione)).stato, 401, 'le sessioni aperte sono chiuse');
+    assert.equal((await login(utente.email, { password: 'NuovaPassword1' })).stato, 200, 'e il blocco e\' tolto');
+  });
+});
+
+describe('conversione dei token gia\' emessi (migrazione 20261010_token_come_impronta)', () => {
+  const istruzioni = readFileSync(
+    new URL('../../prisma/migrations/20261010_token_come_impronta/migration.sql', import.meta.url), 'utf8'
+  ).split('\n').filter(riga => riga.startsWith('UPDATE '));
+
+  it('chi era collegato resta collegato, e i link gia\' spediti funzionano ancora', async () => {
+    // Come sono oggi in produzione: token in chiaro nel database
+    const utente = await creaUtente({
+      emailVerificata: false, tokenVerificaEmail: 'verifica-in-chiaro', tokenVerificaScadenza: new Date(Date.now() + GIORNO)
+    });
+    await prisma.refreshToken.create({
+      data: { token: 'refresh-in-chiaro', utenteId: utente.id, scadenza: new Date(Date.now() + GIORNO), famiglia: 'f-vecchia' }
+    });
+
+    assert.equal(istruzioni.length, 3);
+    for (const istruzione of istruzioni) await prisma.$executeRawUnsafe(istruzione);
+
+    assert.equal(await prisma.refreshToken.count({ where: { token: 'refresh-in-chiaro' } }), 0);
+    assert.equal((await rinnova('refresh-in-chiaro')).stato, 200);
+    assert.equal((await server.richiesta('GET', '/auth/verifica-email?token=verifica-in-chiaro')).stato, 200);
   });
 });

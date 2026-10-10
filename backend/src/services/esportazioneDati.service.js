@@ -68,7 +68,7 @@ export async function esportaDatiUtente(utenteId) {
     utente, schede, sessioni, recordPersonali, misurazioni, pianificazione, notifiche,
     partecipazioni, conversazioniAI, suggerimenti, richiesteInviate, richiesteRicevute,
     iscrizioni, appuntamentiCliente, annunciRicevuti,
-    clienti, appuntamentiTrainer, annunciPubblicati, schedeAssegnate
+    clienti, appuntamentiTrainer, annunciPubblicati, schedeAssegnate, dispositivi
   ] = await Promise.all([
     prisma.utente.findUnique({
       where: { id: utenteId },
@@ -132,6 +132,12 @@ export async function esportaDatiUtente(utenteId) {
       where: { assegnataDaPTId: utenteId },
       orderBy: { creatoIl: 'asc' },
       select: { id: true, titolo: true, creatoIl: true, creatore: SOLO_NOME }
+    }),
+    // Le sessioni aperte, senza i token: solo da dove e quando
+    prisma.refreshToken.findMany({
+      where: { utenteId, revocato: false },
+      orderBy: { iniziataIl: 'asc' },
+      select: { dispositivo: true, iniziataIl: true, creato: true, scadenza: true }
     })
   ]);
 
@@ -178,6 +184,7 @@ export async function esportaDatiUtente(utenteId) {
     })),
     assistente: conversazioniAI,
     suggerimentiEsercizi: suggerimenti,
+    dispositivi: dispositivi.map(({ creato, ...d }) => ({ ...d, ultimoUso: creato })),
     richiesteContatto: {
       inviate: richiesteInviate.map(({ destinatario, ...r }) => ({ ...r, a: destinatario.nome })),
       ricevute: richiesteRicevute.map(({ mittente, ...r }) => ({ ...r, da: mittente.nome }))

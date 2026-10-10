@@ -7,6 +7,7 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import argon2 from 'argon2';
 import logger from '../utils/logger.js';
+import { chiudiAltreSessioni } from './autenticazione.service.js';
 
 /**
  * Recupera la lista di tutti gli utenti (solo SuperAdmin).
@@ -222,7 +223,12 @@ export async function aggiornaProfilo(utenteId, dati) {
 /**
  * Cambia la password dell'utente.
  */
-export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword) {
+/**
+ * Cambia la password e scollega gli altri dispositivi: se qualcuno era entrato
+ * con la vecchia, resta fuori. La sessione da cui arriva il cambio resta aperta.
+ * @param {string|null} famigliaCorrente - la sessione della richiesta
+ */
+export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, famigliaCorrente = null) {
   if (!vecchiaPassword || !nuovaPassword) {
     throw new ErroreValidazione('Vecchia password e nuova password sono obbligatorie');
   }
@@ -256,6 +262,7 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword) {
     where: { id: utenteId },
     data: { passwordHash: nuovoHash }
   });
+  await chiudiAltreSessioni(utenteId, famigliaCorrente);
 
   logger.info({ utenteId }, 'Password cambiata');
   return true;

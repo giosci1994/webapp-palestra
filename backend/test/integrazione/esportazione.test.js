@@ -46,7 +46,9 @@ beforeEach(async () => {
     data: { utenteId: utente.id, schedaId: scheda.id, data: giornoLocale(new Date()), creatoDaId: trainer.id }
   });
   await prisma.allenamentoNotifica.create({ data: { utenteId: utente.id, titolo: 'Oggi si spinge', messaggio: 'Scheda Spinta' } });
-  await prisma.refreshToken.create({ data: { token: 'refresh-segreto', utenteId: utente.id, scadenza: giorniFa(-7) } });
+  await prisma.refreshToken.create({
+    data: { token: 'refresh-segreto', utenteId: utente.id, scadenza: giorniFa(-7), famiglia: 'f1', dispositivo: 'Chrome · Android' }
+  });
   await prisma.collegamentoTelegram.create({
     data: { utenteId: utente.id, telegramChatId: 123456789012n, codice: 'codice-segreto', collegatoIl: giorniFa(30) }
   });
@@ -123,6 +125,7 @@ describe('esportazione dei dati', () => {
     assert.deepEqual(dati.notifiche.map(n => n.titolo), ['Oggi si spinge']);
     assert.deepEqual(dati.assistente[0].messaggi.map(m => m.contenuto), ['Quante serie?', 'Tre.']);
     assert.deepEqual(dati.suggerimentiEsercizi.map(s => s.nome), ['Hip thrust con elastico']);
+    assert.deepEqual(dati.dispositivi.map(d => d.dispositivo), ['Chrome · Android']);
   });
 
   it('nelle chat ci sono anche i messaggi ricevuti, ma degli altri solo il nome', async () => {

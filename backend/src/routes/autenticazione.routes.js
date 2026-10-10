@@ -4,7 +4,8 @@
 // ============================================
 
 import { Router } from 'express';
-import { registrazione, login, refresh, logout, verificaEmail, reinviaVerifica, richiediReset, reimpostaPassword } from '../controllers/autenticazione.controller.js';
+import { registrazione, login, refresh, logout, verificaEmail, reinviaVerifica, richiediReset, reimpostaPassword, sessioni, chiudiSessione, chiudiAltreSessioni } from '../controllers/autenticazione.controller.js';
+import { verificaToken } from '../middleware/autenticazione.js';
 import { valida } from '../middleware/validazione.js';
 import { schemaRegistrazione, schemaLogin } from '../validators/autenticazione.schema.js';
 import { limitatoreAuth } from '../middleware/limitatore.js';
@@ -32,7 +33,12 @@ router.post('/reimposta-password', limitatoreAuth, reimpostaPassword);
 // POST /api/v1/auth/refresh — Rinnova access token
 router.post('/refresh', refresh);
 
-// POST /api/v1/auth/logout — Revoca refresh token
+// POST /api/v1/auth/logout — Chiude la sessione di questo dispositivo
 router.post('/logout', logout);
+
+// Dispositivi collegati: elenco, scollega uno, scollega tutti gli altri
+router.get('/sessioni', verificaToken, sessioni);
+router.post('/sessioni/chiudi-altre', verificaToken, chiudiAltreSessioni);
+router.delete('/sessioni/:famiglia', verificaToken, chiudiSessione);
 
 export default router;
