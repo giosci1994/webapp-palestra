@@ -14,8 +14,21 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     languageOptions: {
-      globals: globals.browser,
+      globals: {
+        ...globals.browser,
+        // Iniettata da Vite (vite.config.js, define): la versione dell'app
+        __APP_VERSION__: 'readonly',
+      },
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    rules: {
+      // Il provider e il suo hook nello stesso file (useAuth, useSocket) sono
+      // lo schema dei contesti: il ricaricamento a caldo li gestisce comunque
+      'react-refresh/only-export-components': ['error', { allowExportNames: ['useAuth', 'useSocket'] }],
+      // Le pagine caricano i dati in un effetto, mettendo "caricamento" a true
+      // prima della richiesta: e' lo schema del progetto, non un errore. Resta
+      // un avviso, per i casi in cui lo stato si potrebbe calcolare e basta.
+      'react-hooks/set-state-in-effect': 'warn',
     },
   },
 ])

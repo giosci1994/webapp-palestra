@@ -9,7 +9,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User, Dumbbell, Camera, Calendar, Ruler, Target, Shield,
+  User, Camera, Calendar, Ruler, Target, Shield,
   ChevronRight, ChevronLeft, Check, AlertCircle, Sparkles, Award, Briefcase
 } from 'lucide-react';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';

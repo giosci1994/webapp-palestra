@@ -4,14 +4,14 @@
 // esercizi con video YouTube integrati
 // ============================================
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
 import { api } from '../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Search, Filter, X, Play, ChevronDown, ChevronUp, 
-  Dumbbell, Target, Zap, ArrowLeft, SlidersHorizontal
+  Search, X, Play, ChevronDown, ChevronUp, 
+  Dumbbell, Target, SlidersHorizontal
 } from 'lucide-react';
 import SuggerisciEsercizio from '../componenti/specifici/SuggerisciEsercizio.jsx';
 
@@ -66,7 +66,7 @@ function getYouTubeEmbedUrl(url) {
     } else if (url.includes('youtube.com/embed/')) {
       videoId = url.split('embed/')[1]?.split(/[?&#]/)[0];
     }
-  } catch (e) { /* URL non valido */ }
+  } catch { /* URL non valido */ }
   
   if (!videoId) return null;
   return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;

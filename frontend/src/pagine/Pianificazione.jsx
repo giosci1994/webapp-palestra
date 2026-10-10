@@ -12,7 +12,8 @@ import {
   SkipForward, PlayCircle, X, CalendarClock, ClipboardList
 } from 'lucide-react';
 import Spinner from '../componenti/comuni/Spinner.jsx';
-import Calendario, { aStringaData as aStringa, lunediDi } from '../componenti/comuni/Calendario.jsx';
+import Calendario from '../componenti/comuni/Calendario.jsx';
+import { aStringaData as aStringa, lunediDi } from '../utils/formattatori.js';
 import { useTelefono } from '../hooks/useMediaQuery.js';
 
 const GIORNI_NOMI = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];

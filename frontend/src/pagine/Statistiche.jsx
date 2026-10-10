@@ -30,8 +30,6 @@ export default function Statistiche() {
   const [periodo, setPeriodo] = useState(30);
   const [caricamento, setCaricamento] = useState(true);
 
-  useEffect(() => { caricaDati(); }, [periodo]);
-
   const caricaDati = async () => {
     try {
       setCaricamento(true);
@@ -52,6 +50,8 @@ export default function Statistiche() {
       setCaricamento(false);
     }
   };
+
+  useEffect(() => { caricaDati(); }, [periodo]);
 
   if (caricamento) {
     return (

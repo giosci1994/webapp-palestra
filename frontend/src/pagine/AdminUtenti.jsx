@@ -23,8 +23,6 @@ export default function AdminUtenti() {
   const [filtroStato, setFiltroStato] = useState('');
   const [filtroRuolo, setFiltroRuolo] = useState('');
 
-  useEffect(() => { caricaUtenti(); }, [filtroStato, filtroRuolo]);
-
   const caricaUtenti = async () => {
     try {
       setCaricamento(true);
@@ -39,6 +37,8 @@ export default function AdminUtenti() {
       setCaricamento(false);
     }
   };
+
+  useEffect(() => { caricaUtenti(); }, [filtroStato, filtroRuolo]);
 
   const approvaUtente = async (id) => {
     try {

@@ -9,12 +9,12 @@ import { RUOLI } from '../utils/costanti.js';
 import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';
 import { useState, useRef, useEffect } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
-  ChevronRight, Sparkles, AlertCircle, ExternalLink, Building, LogOut,
+  Sparkles, AlertCircle, ExternalLink, Building, LogOut,
   Pencil, Download, Smartphone, Monitor, KeyRound
 } from 'lucide-react';
 
@@ -32,12 +32,32 @@ const TABS = [
   { id: 'elimina', label: 'Elimina Account', icona: Trash2 },
 ];
 
+/**
+ * Interruttore on/off. Fuori da Profilo: dichiarato dentro, a ogni render
+ * sarebbe un componente nuovo, ricreato da capo, e il pallino non scorrerebbe.
+ */
+function Toggle({ attivo, onClick }) {
+  return (
+    <button onClick={onClick}
+      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${attivo ? 'bg-[var(--accent)]' : 'bg-[var(--bordo)]'}`}>
+      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${attivo ? 'left-[26px]' : 'left-0.5'}`} />
+    </button>
+  );
+}
+
 export default function Profilo() {
   const { utente, logout, aggiornaUtente } = useAuth();
   const [richiedendoPT, setRichiedendoPT] = useState(false);
   const [fotoDaRitagliare, setFotoDaRitagliare] = useState(null);
   const fileRef = useRef(null);
-  const [tabAttivo, setTabAttivo] = useState('profilo');
+  // Le schede visibili; quella iniziale si puo' scegliere dall'indirizzo,
+  // per esempio /profilo?tab=sicurezza
+  const tabVisibili = TABS.filter(t => t.id !== 'pt' || utente?.ruolo === 'UTENTE');
+  const [parametri] = useSearchParams();
+  const [tabAttivo, setTabAttivo] = useState(() => {
+    const richiesta = parametri.get('tab');
+    return tabVisibili.some(t => t.id === richiesta) ? richiesta : 'profilo';
+  });
 
   // Form dati profilo
   const [form, setForm] = useState({
@@ -73,7 +93,6 @@ export default function Profilo() {
   const [mioPT, setMioPT] = useState(undefined);
   const [listaTrainers, setListaTrainers] = useState([]);
   const [mostraListaPT, setMostraListaPT] = useState(false);
-  const [messaggioPT, setMessaggioPT] = useState('');
   const [inviandoPT, setInviandoPT] = useState(false);
 
   // Dispositivi collegati (Sicurezza)
@@ -177,43 +196,6 @@ export default function Profilo() {
     }
   };
 
-  const cambiaPw = async () => {
-    setPwMsg({ testo: '', tipo: '' });
-    if (pwForm.nuova !== pwForm.conferma) return setPwMsg({ testo: 'Le password non corrispondono', tipo: 'err' });
-    if (pwForm.nuova.length < 8) return setPwMsg({ testo: 'Minimo 8 caratteri', tipo: 'err' });
-    try {
-      setPwSalvando(true);
-      const r = await api.post('/utenti/cambia-password', { vecchiaPassword: pwForm.vecchia, nuovaPassword: pwForm.nuova });
-      setPwMsg({ testo: r.messaggio || 'Password aggiornata con successo!', tipo: 'ok' });
-      setPwForm({ vecchia: '', nuova: '', conferma: '' });
-      // Il cambio ha scollegato gli altri dispositivi
-      if (sessioni) caricaSessioni();
-    } catch (err) { setPwMsg({ testo: err.message, tipo: 'err' }); }
-    finally { setPwSalvando(false); }
-  };
-
-  const eseguiReset = async () => {
-    if (confermaReset !== 'CONFERMO') return;
-    try {
-      setAvviandoReset(true);
-      await api.post('/utenti/reset-statistiche');
-      alert('Statistiche azzerate!'); window.location.reload();
-    } catch (err) { alert(err.message); }
-    finally { setAvviandoReset(false); setMostraReset(false); setConfermaReset(''); }
-  };
-
-  const caricaInfoApp = async () => {
-    if (infoApp) return;
-    try { const r = await api.get('/utenti/info-app'); setInfoApp(r.dati); }
-    catch { setInfoApp({ versione: 'N/A', stack: {}, changelog: [] }); }
-  };
-
-  const caricaTelegram = async () => {
-    if (telegram) return;
-    try { const r = await api.get('/utenti/telegram/stato'); setTelegram(r.dati); }
-    catch { setTelegram({ collegato: false }); }
-  };
-
   const caricaSessioni = async () => {
     setErroreSessioni('');
     try { const r = await api.get('/auth/sessioni'); setSessioni(r.dati); }
@@ -266,6 +248,53 @@ export default function Profilo() {
     caricaPasskey();
   };
 
+  const caricaTelegram = async () => {
+    if (telegram) return;
+    try { const r = await api.get('/utenti/telegram/stato'); setTelegram(r.dati); }
+    catch { setTelegram({ collegato: false }); }
+  };
+
+  const caricaInfoApp = async () => {
+    if (infoApp) return;
+    try { const r = await api.get('/utenti/info-app'); setInfoApp(r.dati); }
+    catch { setInfoApp({ versione: 'N/A', stack: {}, changelog: [] }); }
+  };
+
+  /** I dati che una scheda carica quando si apre */
+  const caricaTab = (id) => {
+    if (id === 'legale') caricaInfoApp();
+    if (id === 'sicurezza') { caricaTelegram(); caricaSessioni(); caricaPasskey(); }
+  };
+
+  // Aperta da un link direttamente su una scheda: i suoi dati si caricano subito
+  const tabIniziale = useRef(tabAttivo);
+  useEffect(() => { caricaTab(tabIniziale.current); }, []);
+
+  const cambiaPw = async () => {
+    setPwMsg({ testo: '', tipo: '' });
+    if (pwForm.nuova !== pwForm.conferma) return setPwMsg({ testo: 'Le password non corrispondono', tipo: 'err' });
+    if (pwForm.nuova.length < 8) return setPwMsg({ testo: 'Minimo 8 caratteri', tipo: 'err' });
+    try {
+      setPwSalvando(true);
+      const r = await api.post('/utenti/cambia-password', { vecchiaPassword: pwForm.vecchia, nuovaPassword: pwForm.nuova });
+      setPwMsg({ testo: r.messaggio || 'Password aggiornata con successo!', tipo: 'ok' });
+      setPwForm({ vecchia: '', nuova: '', conferma: '' });
+      // Il cambio ha scollegato gli altri dispositivi
+      if (sessioni) caricaSessioni();
+    } catch (err) { setPwMsg({ testo: err.message, tipo: 'err' }); }
+    finally { setPwSalvando(false); }
+  };
+
+  const eseguiReset = async () => {
+    if (confermaReset !== 'CONFERMO') return;
+    try {
+      setAvviandoReset(true);
+      await api.post('/utenti/reset-statistiche');
+      alert('Statistiche azzerate!'); window.location.reload();
+    } catch (err) { alert(err.message); }
+    finally { setAvviandoReset(false); setMostraReset(false); setConfermaReset(''); }
+  };
+
   const generaCodiceTelegram = async () => {
     try {
       setTgLoading(true);
@@ -288,13 +317,6 @@ export default function Profilo() {
   const ruoloInfo = RUOLI[utente?.ruolo] || RUOLI.UTENTE;
 
   // === Toggle component riutilizzabile ===
-  const Toggle = ({ attivo, onClick }) => (
-    <button onClick={onClick}
-      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${attivo ? 'bg-[var(--accent)]' : 'bg-[var(--bordo)]'}`}>
-      <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${attivo ? 'left-[26px]' : 'left-0.5'}`} />
-    </button>
-  );
-
   // === RENDER ===
   return (
     <div className="py-2 pb-24">
@@ -340,9 +362,9 @@ export default function Profilo() {
         <div style={{ paddingTop: '0px', paddingBottom: '25px', width: '100%' }}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ background: 'var(--vetro)', border: '1px solid var(--vetro-bordo)', padding: '10px', borderRadius: '32px', boxShadow: 'var(--ombra-card)' }}>
             <div className="flex items-center gap-2 flex-1">
-              {TABS.filter(t => t.id !== 'pt' || utente?.ruolo === 'UTENTE').map((tab) => (
+              {tabVisibili.map((tab) => (
                 <button key={tab.id}
-                  onClick={() => { setTabAttivo(tab.id); if (tab.id === 'legale') caricaInfoApp(); if (tab.id === 'sicurezza') { caricaTelegram(); caricaSessioni(); caricaPasskey(); } }}
+                  onClick={() => { setTabAttivo(tab.id); caricaTab(tab.id); }}
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
                       ? 'px-10 text-[var(--testo-primario)]' 
@@ -591,7 +613,7 @@ export default function Profilo() {
                                 </div>
                               </Link>
                               <button onClick={async () => {
-                                try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: messaggioPT || null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); }
+                                try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); }
                                 catch (err) { alert(err.message); } finally { setInviandoPT(false); }
                               }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent)] text-white shrink-0">Iscriviti</button>
                             </div>

@@ -61,8 +61,6 @@ export default function SchedeAllenamento() {
   const [filtroGruppo, setFiltroGruppo] = useState('');
   const [filtroDifficolta, setFiltroDifficolta] = useState('');
 
-  useEffect(() => { caricaSchede(); }, []);
-
   const caricaSchede = async () => {
     try {
       setCaricamento(true);
@@ -74,6 +72,8 @@ export default function SchedeAllenamento() {
       setCaricamento(false);
     }
   };
+
+  useEffect(() => { caricaSchede(); }, []);
 
   const eliminaScheda = async (id) => {
     if (!confirm('Sei sicuro di voler eliminare questa scheda?')) return;

@@ -21,8 +21,6 @@ export default function Chat() {
   const [risultatiRicerca, setRisultatiRicerca] = useState([]);
   const [tab, setTab] = useState('chat'); // chat, richieste
 
-  useEffect(() => { caricaDati(); }, []);
-
   const caricaDati = async () => {
     try {
       setCaricamento(true);
@@ -38,6 +36,8 @@ export default function Chat() {
       setCaricamento(false);
     }
   };
+
+  useEffect(() => { caricaDati(); }, []);
 
   const cercaUtenti = async (q) => {
     setRicerca(q);

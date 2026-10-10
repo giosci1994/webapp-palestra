@@ -8,11 +8,11 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaData, formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio} from '../utils/formattatori.js';
+import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 import ComposizioneCorporea from '../componenti/specifici/ComposizioneCorporea.jsx';
 
@@ -49,13 +49,10 @@ export default function DashboardPT() {
 
   // Schede state
   const [subTabSchede, setSubTabSchede] = useState('mie');
-  const [mostraCreaScheda, setMostraCreaScheda] = useState(false);
   const [formScheda, setFormScheda] = useState({ titolo: '', descrizione: '', livello: 'BASE', esercizi: [] });
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
   const [ricercaEsercizio, setRicercaEsercizio] = useState('');
   const [creandoScheda, setCreandoScheda] = useState(false);
-
-  useEffect(() => { caricaDati(); }, []);
 
   const caricaDati = async () => {
     try {
@@ -73,6 +70,8 @@ export default function DashboardPT() {
     } catch (err) { console.error('Errore caricamento dati PT:', err); }
     finally { setCaricamento(false); }
   };
+
+  useEffect(() => { caricaDati(); }, []);
 
   const gestisciRichiesta = async (id, azione) => {
     try { await api.patch(`/pt/richieste/${id}/${azione}`); setRichieste(prev => prev.filter(r => r.id !== id)); if (azione === 'accetta') caricaDati(); }
@@ -162,7 +161,7 @@ export default function DashboardPT() {
       const r = await api.post('/pt/schede', formScheda);
       setSchede(prev => [r.dati, ...prev]);
       setFormScheda({ titolo: '', descrizione: '', livello: 'BASE', esercizi: [] });
-      setMostraCreaScheda(false); setSubTabSchede('mie');
+      setSubTabSchede('mie');
     } catch (err) { alert(err.message); }
     finally { setCreandoScheda(false); }
   };
@@ -222,7 +221,7 @@ export default function DashboardPT() {
           <div className="glass-card p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-3">Azioni rapide</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <button onClick={() => { setTab('esercizi'); setMostraCreaScheda(true); }} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-[var(--bg-terziario)] hover:bg-[var(--accent-dim)] transition-colors">
+              <button onClick={() => setTab('esercizi')} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-[var(--bg-terziario)] hover:bg-[var(--accent-dim)] transition-colors">
                 <span className="text-xl">➕</span><span className="text-xs font-semibold">Crea scheda</span>
               </button>
               <button onClick={() => setTab('calendario')} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-[var(--bg-terziario)] hover:bg-[var(--accent-dim)] transition-colors">

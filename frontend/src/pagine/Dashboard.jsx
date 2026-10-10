@@ -7,10 +7,10 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
-import { formattaDataRelativa, formattaData } from '../utils/formattatori.js';
+import { formattaDataRelativa, aStringaData, lunediDi } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  MessageCircle, ChevronRight, ChevronLeft, ClipboardList, History, 
+  MessageCircle, ChevronRight, ClipboardList, History, 
   Trophy, Activity, Info, Edit2, Check, X, Bot, CalendarDays, Trash2, Library,
   Megaphone, Dumbbell, Users, Clock, BarChart3, Calendar, PlayCircle, Building,
   CalendarHeart, FileText, CheckCircle, CalendarClock
@@ -18,7 +18,7 @@ import {
 import Statistiche from './Statistiche.jsx';
 import CaroselloAzioni from '../componenti/specifici/CaroselloAzioni.jsx';
 import MiglioriOrari from '../componenti/specifici/MiglioriOrari.jsx';
-import Calendario, { aStringaData, lunediDi } from '../componenti/comuni/Calendario.jsx';
+import Calendario from '../componenti/comuni/Calendario.jsx';
 import SezioneCollassabile from '../componenti/comuni/SezioneCollassabile.jsx';
 import { useTelefono } from '../hooks/useMediaQuery.js';
 
@@ -43,7 +43,6 @@ export default function Dashboard() {
   const [mioPTDash, setMioPTDash] = useState(null);
   const [senzaPT, setSenzaPT] = useState(false);
   const [ptDashboard, setPtDashboard] = useState(null);
-  const [ptCaricamento, setPtCaricamento] = useState(false);
 
   // Calendario: oltre alle sessioni svolte mostra gli allenamenti in programma,
   // che prima non comparivano affatto.
@@ -59,10 +58,6 @@ export default function Dashboard() {
   // Affluenza palestra
   const [affluenza, setAffluenza] = useState(null);
   const [affluenzaCaricamento, setAffluenzaCaricamento] = useState(false);
-
-  useEffect(() => {
-    caricaDati();
-  }, []);
 
   // Ricarica quando cambia il periodo mostrato: il calendario deve restare
   // aggiornato anche scorrendo avanti e indietro fra i mesi.
@@ -81,6 +76,20 @@ export default function Dashboard() {
       .catch(() => { if (!annullato) setPianificati([]); });
     return () => { annullato = true; };
   }, [dataCalendario, modoCalendario]);
+
+  // Carica dati affluenza palestra
+  const caricaAffluenza = async (palestraId) => {
+    if (!palestraId) return;
+    try {
+      setAffluenzaCaricamento(true);
+      const res = await api.get(`/palestre/${palestraId}/affluenza`);
+      if (res.dati) setAffluenza(res.dati);
+    } catch {
+      setAffluenza(null);
+    } finally {
+      setAffluenzaCaricamento(false);
+    }
+  };
 
   const caricaDati = async () => {
     try {
@@ -122,29 +131,16 @@ export default function Dashboard() {
     }
   };
 
+  useEffect(() => {
+    caricaDati();
+  }, []);
+
   const caricaDatiPT = async () => {
     try {
-      setPtCaricamento(true);
       const res = await api.get('/utenti/mio-pt/dashboard');
       if (res.dati) setPtDashboard(res.dati);
     } catch (err) {
       console.error('Errore caricamento dati PT:', err);
-    } finally {
-      setPtCaricamento(false);
-    }
-  };
-
-  // Carica dati affluenza palestra
-  const caricaAffluenza = async (palestraId) => {
-    if (!palestraId) return;
-    try {
-      setAffluenzaCaricamento(true);
-      const res = await api.get(`/palestre/${palestraId}/affluenza`);
-      if (res.dati) setAffluenza(res.dati);
-    } catch {
-      setAffluenza(null);
-    } finally {
-      setAffluenzaCaricamento(false);
     }
   };
 
@@ -162,7 +158,7 @@ export default function Dashboard() {
       await api.put('/admin/banner', nuovoBanner);
       setBanner(nuovoBanner);
       setEditBanner(false);
-    } catch (err) {
+    } catch {
       alert("Errore salvataggio banner");
     }
   };

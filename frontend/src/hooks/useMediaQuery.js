@@ -2,29 +2,27 @@
 // GymMaster — Hook media query
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 /**
  * Segue una media query CSS e restituisce true quando è soddisfatta.
  * Serve a scegliere comportamenti diversi fra telefono e desktop senza
  * duplicare i componenti (es. calendario settimanale sotto i 768px).
+ *
+ * useSyncExternalStore e' il modo di React per leggere un valore che cambia
+ * fuori da React: niente stato copiato e risincronizzato in un effetto.
  */
 export function useMediaQuery(query) {
-  const [attiva, setAttiva] = useState(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return false;
-    return window.matchMedia(query).matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
+  const iscriviti = useCallback((avvisa) => {
+    if (typeof window === 'undefined' || !window.matchMedia) return () => {};
     const mq = window.matchMedia(query);
-    const aggiorna = (e) => setAttiva(e.matches);
-    setAttiva(mq.matches);
-    mq.addEventListener('change', aggiorna);
-    return () => mq.removeEventListener('change', aggiorna);
+    mq.addEventListener('change', avvisa);
+    return () => mq.removeEventListener('change', avvisa);
   }, [query]);
 
-  return attiva;
+  const leggi = () => typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia(query).matches;
+
+  return useSyncExternalStore(iscriviti, leggi, () => false);
 }
 
 /** true su schermi da telefono (sotto il breakpoint md di Tailwind). */

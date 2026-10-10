@@ -40,11 +40,6 @@ export default function StoricoAllenamenti() {
       .catch(() => {});
   }, []);
 
-  // Carica storico sessioni
-  useEffect(() => {
-    caricaStorico();
-  }, [pagina, schedaFiltro]);
-
   const caricaStorico = async () => {
     try {
       setCaricamento(true);
@@ -58,6 +53,11 @@ export default function StoricoAllenamenti() {
       setCaricamento(false);
     }
   };
+
+  // Carica storico sessioni
+  useEffect(() => {
+    caricaStorico();
+  }, [pagina, schedaFiltro]);
 
   const eliminaSessione = async (id) => {
     if (!confirm('Sei sicuro di voler eliminare questa sessione? I dati saranno persi.')) return;

@@ -11,11 +11,12 @@ import { motion } from 'framer-motion';
 export default function VerificaEmail() {
   const [params] = useSearchParams();
   const token = params.get('token');
-  const [stato, setStato] = useState('verifica'); // 'verifica' | 'ok' | 'errore'
-  const [messaggio, setMessaggio] = useState('');
+  // Senza token nel link non c'e' niente da verificare: errore subito
+  const [stato, setStato] = useState(token ? 'verifica' : 'errore'); // 'verifica' | 'ok' | 'errore'
+  const [messaggio, setMessaggio] = useState(token ? '' : 'Link di verifica non valido.');
 
   useEffect(() => {
-    if (!token) { setStato('errore'); setMessaggio('Link di verifica non valido.'); return; }
+    if (!token) return;
     api.get(`/auth/verifica-email?token=${encodeURIComponent(token)}`)
       .then(r => { setStato('ok'); setMessaggio(r.messaggio || 'Email verificata!'); })
       .catch(err => { setStato('errore'); setMessaggio(err.message || 'Verifica non riuscita.'); });
