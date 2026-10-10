@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
+import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS } from '../utils/costanti.js';
@@ -218,6 +219,10 @@ export default function WorkoutLive() {
   const serieEsercizio = serieCompletate.filter(
     s => s.esercizioId === esercizioAttuale?.esercizioId
   );
+
+  // Col bilanciere, i dischi da caricare per lato per il peso scritto
+  const bilanciere = bilanciereDi(esercizioAttuale?.esercizio);
+  const dischi = bilanciere ? dischiPerLato(form.peso, bilanciere.peso) : null;
 
   const isCardio = esercizioAttuale?.esercizio?.attrezzatura?.categoria === 'CARDIO' || 
                    esercizioAttuale?.esercizio?.gruppoMuscoloPrimario?.toLowerCase() === 'cardio';
@@ -699,6 +704,14 @@ export default function WorkoutLive() {
                 </>
               )}
             </div>
+
+            {!isCardio && dischi && (
+              <p className="text-xs text-center text-[var(--testo-secondario)] -mt-1">
+                🏋️ Per lato: <strong className="text-[var(--testo-primario)]">{descriviDischi(dischi.perLato)}</strong>
+                <span className="text-[var(--testo-terziario)]"> · {bilanciere.nome} {bilanciere.peso} kg</span>
+                {dischi.mancano > 0 && <span className="text-[var(--avviso)]"> · mancano {String(dischi.mancano).replace('.', ',')} kg</span>}
+              </p>
+            )}
 
             {/* RPE slider */}
             <div>
