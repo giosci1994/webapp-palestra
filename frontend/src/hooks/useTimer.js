@@ -6,6 +6,29 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 /**
+ * Il segnale di fine recupero: tre bip generati con la Web Audio API. Prima
+ * si suonava /sounds/timer-fine.mp3, un file che non e' mai esistito: il
+ * recupero finiva in silenzio, con la sola vibrazione.
+ */
+function suonaFine(contesto) {
+  if (!contesto) return;
+  try {
+    for (const inizio of [0, 0.25, 0.5]) {
+      const oscillatore = contesto.createOscillator();
+      const volume = contesto.createGain();
+      const t = contesto.currentTime + inizio;
+      oscillatore.frequency.value = 880;
+      volume.gain.setValueAtTime(0.0001, t);
+      volume.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      oscillatore.connect(volume).connect(contesto.destination);
+      oscillatore.start(t);
+      oscillatore.stop(t + 0.2);
+    }
+  } catch { /* audio non disponibile: resta la vibrazione */ }
+}
+
+/**
  * Hook per il timer di recupero tra le serie.
  * Supporta countdown, pausa e notifica audio al termine.
  *
@@ -17,17 +40,21 @@ export function useTimer() {
   const intervalloRef = useRef(null);
   const audioRef = useRef(null);
 
-  // Pre-carica l'audio
-  useEffect(() => {
-    audioRef.current = new Audio('/sounds/timer-fine.mp3');
-    audioRef.current.volume = 0.7;
-    return () => {
-      if (intervalloRef.current) clearInterval(intervalloRef.current);
-    };
+  useEffect(() => () => {
+    if (intervalloRef.current) clearInterval(intervalloRef.current);
+    audioRef.current?.close().catch(() => {});
   }, []);
 
   const avvia = useCallback((secondi) => {
     if (intervalloRef.current) clearInterval(intervalloRef.current);
+
+    // L'audio si prepara qui, all'avvio, che arriva sempre da un tocco
+    // ("Serie completata"): senza un gesto dell'utente i browser non lo
+    // lasciano partire, e a fine recupero il gesto non c'e'
+    try {
+      audioRef.current ??= new (window.AudioContext || window.webkitAudioContext)();
+      if (audioRef.current.state === 'suspended') audioRef.current.resume().catch(() => {});
+    } catch { /* audio non disponibile */ }
 
     setSecondiRimasti(secondi);
     setInCorso(true);
@@ -39,9 +66,7 @@ export function useTimer() {
           intervalloRef.current = null;
           setInCorso(false);
           // Notifica audio
-          try {
-            audioRef.current?.play();
-          } catch { /* ignore autoplay block */ }
+          suonaFine(audioRef.current);
           // Vibrazione (se supportata)
           if (navigator.vibrate) {
             navigator.vibrate([200, 100, 200]);
