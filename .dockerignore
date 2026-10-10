@@ -1,0 +1,18 @@
+# Cosa resta fuori dal contesto di build delle immagini (backend, bot,
+# scraper: tutte partono dalla radice del progetto).
+
+# Le dipendenze le installa npm ci dentro l'immagine: quelle della macchina
+# (altre versioni, altri permessi) finivano copiate sopra con COPY backend/ .
+**/node_modules
+
+# Segreti: nessuna immagine li copia, e non devono nemmeno passare per Docker.
+# Arrivano ai container da env_file nel compose.
+.env
+.env.*
+
+# Nessuna immagine li usa: il frontend lo serve nginx montando frontend/dist
+.git
+frontend
+docs
+graphify-out
+backend/test
