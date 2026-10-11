@@ -8,6 +8,7 @@ import { PrismaClient } from '@prisma/client';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { datiEsercizioCatalogo } from '../src/utils/catalogoEsercizi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -66,8 +67,8 @@ async function main() {
   const erroriDettaglio = [];
 
   // Carica tutti i nomi esistenti per check rapido
-  const eserciziEsistenti = await prisma.esercizio.findMany({ select: { id: true, nome: true } });
-  const mappaEsistenti = new Map(eserciziEsistenti.map(e => [e.nome, e.id]));
+  const eserciziEsistenti = await prisma.esercizio.findMany({ select: { id: true, nome: true, nomeIt: true } });
+  const mappaEsistenti = new Map(eserciziEsistenti.map(e => [e.nome, e]));
 
   for (let i = 0; i < eserciziJSON.length; i++) {
     const es = eserciziJSON[i];
@@ -77,30 +78,18 @@ async function main() {
         ? mappaAttrezzature.get(es.attrezzatura) || null
         : null;
 
-      const dati = {
-        nome: es.nome,
-        gruppoMuscoloPrimario: es.gruppoMuscoloPrimario,
-        gruppoMuscoloSecondario: es.gruppoMuscoloSecondario || null,
-        attrezzaturaRichiestaId: attrezzaturaId,
-        descrizione: es.descrizione || null,
-        linkVideo: es.linkVideo || null,
-        difficulty: es.difficulty || null,
-        bodyRegion: es.bodyRegion || null,
-        mechanics: es.mechanics || null,
-        posture: es.posture || null,
-        movementPattern: es.movementPattern || null,
-        laterality: es.laterality || null,
-        forceType: es.forceType || null,
-        classification: es.classification || null,
-      };
+      // With the Italian name too (src/utils/catalogoEsercizi.js)
+      const dati = datiEsercizioCatalogo(es, attrezzaturaId);
 
-      const idEsistente = mappaEsistenti.get(es.nome);
+      const esistente = mappaEsistenti.get(es.nome);
 
-      if (idEsistente) {
-        // Aggiorna i campi aggiuntivi se l'esercizio esiste già
+      if (esistente) {
+        // Already there: update the extra fields, and the Italian name only
+        // where it is missing (one already there may have been corrected by hand)
         await prisma.esercizio.update({
-          where: { id: idEsistente },
+          where: { id: esistente.id },
           data: {
+            ...(esistente.nomeIt == null && dati.nomeIt && { nomeIt: dati.nomeIt }),
             difficulty: dati.difficulty,
             bodyRegion: dati.bodyRegion,
             mechanics: dati.mechanics,

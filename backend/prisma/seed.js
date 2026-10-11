@@ -8,6 +8,7 @@ import argon2 from 'argon2';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { datiEsercizioCatalogo } from '../src/utils/catalogoEsercizi.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -210,24 +211,8 @@ async function main() {
           ? mappaAttrezzature.get(es.attrezzatura) || null
           : null;
 
-        await prisma.esercizio.create({
-          data: {
-            nome: es.nome,
-            gruppoMuscoloPrimario: es.gruppoMuscoloPrimario,
-            gruppoMuscoloSecondario: es.gruppoMuscoloSecondario || null,
-            attrezzaturaRichiestaId: attrezzaturaId,
-            descrizione: es.descrizione || null,
-            linkVideo: es.linkVideo || null,
-            difficulty: es.difficulty || null,
-            bodyRegion: es.bodyRegion || null,
-            mechanics: es.mechanics || null,
-            posture: es.posture || null,
-            movementPattern: es.movementPattern || null,
-            laterality: es.laterality || null,
-            forceType: es.forceType || null,
-            classification: es.classification || null,
-          }
-        });
+        // With the Italian name too (src/utils/catalogoEsercizi.js)
+        await prisma.esercizio.create({ data: datiEsercizioCatalogo(es, attrezzaturaId) });
         eserciziCreati++;
       } else {
         eserciziSkipped++;
