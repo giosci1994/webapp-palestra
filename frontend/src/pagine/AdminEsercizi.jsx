@@ -9,14 +9,19 @@ import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAPezzi } from '../hooks/useAPezzi.js';
+import { useLingua } from '../hooks/useLingua.js';
+import { localeCorrente } from '../i18n/index.js';
+import { formattaNumero, nomeAttrezzatura, nomeEsercizio, nomeGruppo } from '../utils/formattatori.js';
 
+// label is a translation key: show it with t()
 const STATI_BADGE = {
-  IN_ATTESA: { label: 'In attesa', classe: 'bg-[var(--avviso-dim)] text-[var(--avviso)]' },
-  APPROVATO: { label: 'Approvato', classe: 'bg-[var(--successo-dim)] text-[var(--successo)]' },
-  RIFIUTATO: { label: 'Rifiutato', classe: 'bg-[var(--pericolo-dim)] text-[var(--pericolo)]' }
+  IN_ATTESA: { label: 'adminEsercizi.stati.IN_ATTESA', classe: 'bg-[var(--avviso-dim)] text-[var(--avviso)]' },
+  APPROVATO: { label: 'adminEsercizi.stati.APPROVATO', classe: 'bg-[var(--successo-dim)] text-[var(--successo)]' },
+  RIFIUTATO: { label: 'adminEsercizi.stati.RIFIUTATO', classe: 'bg-[var(--pericolo-dim)] text-[var(--pericolo)]' }
 };
 
 export default function AdminEsercizi() {
+  const { t } = useLingua();
   const [esercizi, setEsercizi] = useState([]);
   const [attrezzature, setAttrezzature] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
@@ -55,7 +60,7 @@ export default function AdminEsercizi() {
   };
 
   const elimina = async (id) => {
-    if (!confirm('Elimina questo esercizio?')) return;
+    if (!confirm(t('adminEsercizi.confermaElimina'))) return;
     try { await api.delete(`/admin/esercizi/${id}`); setEsercizi(prev => prev.filter(e => e.id !== id)); }
     catch (err) { alert(err.message); }
   };
@@ -90,7 +95,7 @@ export default function AdminEsercizi() {
   };
 
   const rifiutaSuggerimento = async (sugg) => {
-    const motivo = prompt('Motivo del rifiuto (opzionale):');
+    const motivo = prompt(t('adminEsercizi.motivoRifiuto'));
     setGestendo(sugg.id);
     try {
       await api.patch(`/admin/suggerimenti/${sugg.id}/rifiuta`, { motivoRifiuto: motivo || '' });
@@ -116,10 +121,10 @@ export default function AdminEsercizi() {
     <div className="py-2">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">📚 Gestione Esercizi</h1>
-          <p className="text-sm text-[var(--testo-secondario)]">{esercizi.length} esercizi nel catalogo</p>
+          <h1 className="text-2xl font-bold">{t('adminEsercizi.titolo')}</h1>
+          <p className="text-sm text-[var(--testo-secondario)]">{t('adminEsercizi.nelCatalogo', { count: esercizi.length })}</p>
         </div>
-        <button onClick={() => apriForm()} className="btn-primario">＋ Nuovo</button>
+        <button onClick={() => apriForm()} className="btn-primario">{t('adminEsercizi.nuovo')}</button>
       </div>
 
       {/* ========================================= */}
@@ -133,7 +138,7 @@ export default function AdminEsercizi() {
         >
           <div className="flex items-center gap-2 mb-3">
             <span className="text-lg">📬</span>
-            <h2 className="text-lg font-bold">Suggerimenti dagli utenti</h2>
+            <h2 className="text-lg font-bold">{t('adminEsercizi.suggerimentiUtenti')}</h2>
             <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-[var(--avviso)] text-white">
               {suggerimentiPendenti.length}
             </span>
@@ -160,12 +165,12 @@ export default function AdminEsercizi() {
                       <div>
                         <span className="text-sm font-medium">{sugg.utente?.nome}</span>
                         <span className="text-xs text-[var(--testo-terziario)] ml-2">
-                          {new Date(sugg.creatoIl).toLocaleDateString('it-IT')}
+                          {new Date(sugg.creatoIl).toLocaleDateString(localeCorrente())}
                         </span>
                       </div>
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATI_BADGE[sugg.stato]?.classe}`}>
-                      {STATI_BADGE[sugg.stato]?.label}
+                      {STATI_BADGE[sugg.stato] && t(STATI_BADGE[sugg.stato].label)}
                     </span>
                   </div>
 
@@ -176,43 +181,43 @@ export default function AdminEsercizi() {
                       value={mod.nome !== undefined ? mod.nome : sugg.nome}
                       onChange={e => aggiornaEditSugg(sugg.id, 'nome', e.target.value)}
                       className="campo-input text-sm"
-                      placeholder="Nome esercizio"
+                      placeholder={t('adminEsercizi.nomeEsercizio')}
                     />
                     <select
                       value={mod.gruppoMuscoloPrimario !== undefined ? mod.gruppoMuscoloPrimario : sugg.gruppoMuscoloPrimario}
                       onChange={e => aggiornaEditSugg(sugg.id, 'gruppoMuscoloPrimario', e.target.value)}
                       className="campo-input text-sm"
                     >
-                      <option value="" disabled>Gruppo primario</option>
-                      {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="" disabled>{t('adminEsercizi.gruppoPrimario')}</option>
+                      {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{nomeGruppo(g)}</option>)}
                     </select>
                     <select
                       value={mod.gruppoMuscoloSecondario !== undefined ? mod.gruppoMuscoloSecondario : (sugg.gruppoMuscoloSecondario || '')}
                       onChange={e => aggiornaEditSugg(sugg.id, 'gruppoMuscoloSecondario', e.target.value)}
                       className="campo-input text-sm"
                     >
-                      <option value="">Gruppo secondario (opz.)</option>
-                      {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{g}</option>)}
+                      <option value="">{t('adminEsercizi.gruppoSecondario')}</option>
+                      {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{nomeGruppo(g)}</option>)}
                     </select>
                     <select
                       value={mod.attrezzaturaRichiestaId !== undefined ? mod.attrezzaturaRichiestaId : ''}
                       onChange={e => aggiornaEditSugg(sugg.id, 'attrezzaturaRichiestaId', e.target.value)}
                       className="campo-input text-sm"
                     >
-                      <option value="">Attrezzatura (opz.)</option>
-                      {attrezzature.map(a => <option key={a.id} value={a.id}>{a.nome} ({a.categoria})</option>)}
+                      <option value="">{t('adminEsercizi.attrezzatura')}</option>
+                      {attrezzature.map(a => <option key={a.id} value={a.id}>{nomeAttrezzatura(a.nome)} ({a.categoria})</option>)}
                     </select>
                   </div>
 
                   {/* Notes suggested by the user */}
                   {sugg.attrezzaturaSuggerita && (
                     <p className="text-xs text-[var(--testo-terziario)] mb-2 italic">
-                      💬 Attrezzatura suggerita dall'utente: "{sugg.attrezzaturaSuggerita}"
+                      {t('adminEsercizi.attrezzaturaSuggerita', { attrezzatura: sugg.attrezzaturaSuggerita })}
                     </p>
                   )}
                   {sugg.descrizione && (
                     <p className="text-xs text-[var(--testo-terziario)] mb-2 italic">
-                      📝 Note: "{sugg.descrizione}"
+                      {t('adminEsercizi.note', { descrizione: sugg.descrizione })}
                     </p>
                   )}
 
@@ -222,7 +227,7 @@ export default function AdminEsercizi() {
                       value={mod.descrizione !== undefined ? mod.descrizione : (sugg.descrizione || '')}
                       onChange={e => aggiornaEditSugg(sugg.id, 'descrizione', e.target.value)}
                       className="campo-input text-sm"
-                      placeholder="Descrizione (opz.)"
+                      placeholder={t('adminEsercizi.descrizione')}
                       rows={1}
                     />
                     <input
@@ -230,7 +235,7 @@ export default function AdminEsercizi() {
                       value={mod.linkVideo || ''}
                       onChange={e => aggiornaEditSugg(sugg.id, 'linkVideo', e.target.value)}
                       className="campo-input text-sm"
-                      placeholder="Link video (opz.)"
+                      placeholder={t('adminEsercizi.linkVideo')}
                     />
                   </div>
 
@@ -241,7 +246,7 @@ export default function AdminEsercizi() {
                       disabled={isGestendo}
                       className="flex-1 py-2 rounded-[var(--raggio-md)] text-sm font-semibold bg-[var(--successo)] text-white hover:brightness-110 transition-all disabled:opacity-50"
                     >
-                      {isGestendo ? '...' : '✅ Approva e aggiungi al catalogo'}
+                      {isGestendo ? '...' : t('adminEsercizi.approvaEAggiungi')}
                     </button>
                     <button
                       onClick={() => rifiutaSuggerimento(sugg)}
@@ -260,7 +265,7 @@ export default function AdminEsercizi() {
           {suggerimentiGestiti.length > 0 && (
             <details className="mt-3">
               <summary className="text-xs text-[var(--testo-terziario)] cursor-pointer hover:text-[var(--testo-secondario)]">
-                Suggerimenti già gestiti ({suggerimentiGestiti.length})
+                {t('adminEsercizi.suggerimentiGestiti', { numero: suggerimentiGestiti.length })}
               </summary>
               <div className="flex flex-col gap-1 mt-2">
                 {suggerimentiGestiti.map(s => (
@@ -268,10 +273,10 @@ export default function AdminEsercizi() {
                     <span className="text-sm">{GRUPPI_MUSCOLARI[s.gruppoMuscoloPrimario]?.emoji || '💪'}</span>
                     <div className="flex-1 min-w-0">
                       <span className="text-xs font-medium">{s.nome}</span>
-                      <span className="text-[10px] text-[var(--testo-terziario)] ml-2">da {s.utente?.nome}</span>
+                      <span className="text-[10px] text-[var(--testo-terziario)] ml-2">{t('adminEsercizi.da', { nome: s.utente?.nome })}</span>
                     </div>
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATI_BADGE[s.stato]?.classe}`}>
-                      {STATI_BADGE[s.stato]?.label}
+                      {STATI_BADGE[s.stato] && t(STATI_BADGE[s.stato].label)}
                     </span>
                   </div>
                 ))}
@@ -289,25 +294,25 @@ export default function AdminEsercizi() {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
             <div className="glass-card p-card-inner">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input type="text" value={form.nome} onChange={e => setForm(p => ({...p, nome: e.target.value}))} className="campo-input" placeholder="Nome esercizio *" />
+                <input type="text" value={form.nome} onChange={e => setForm(p => ({...p, nome: e.target.value}))} className="campo-input" placeholder={t('adminEsercizi.nomeEsercizioObbligatorio')} />
                 <select value={form.gruppoMuscoloPrimario} onChange={e => setForm(p => ({...p, gruppoMuscoloPrimario: e.target.value}))} className="campo-input">
-                  <option value="" disabled>Gruppo primario *</option>
-                  {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{g}</option>)}
+                  <option value="" disabled>{t('adminEsercizi.gruppoPrimarioObbligatorio')}</option>
+                  {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{nomeGruppo(g)}</option>)}
                 </select>
                 <select value={form.gruppoMuscoloSecondario} onChange={e => setForm(p => ({...p, gruppoMuscoloSecondario: e.target.value}))} className="campo-input">
-                  <option value="">Gruppo secondario (opz.)</option>
-                  {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{g}</option>)}
+                  <option value="">{t('adminEsercizi.gruppoSecondario')}</option>
+                  {Object.keys(GRUPPI_MUSCOLARI).map(g => <option key={g} value={g}>{nomeGruppo(g)}</option>)}
                 </select>
                 <select value={form.attrezzaturaRichiestaId} onChange={e => setForm(p => ({...p, attrezzaturaRichiestaId: e.target.value}))} className="campo-input">
-                  <option value="">Attrezzatura (opz.)</option>
-                  {attrezzature.map(a => <option key={a.id} value={a.id}>{a.nome} ({a.categoria})</option>)}
+                  <option value="">{t('adminEsercizi.attrezzatura')}</option>
+                  {attrezzature.map(a => <option key={a.id} value={a.id}>{nomeAttrezzatura(a.nome)} ({a.categoria})</option>)}
                 </select>
-                <textarea value={form.descrizione} onChange={e => setForm(p => ({...p, descrizione: e.target.value}))} className="campo-input" placeholder="Descrizione (opz.)" rows={2} />
-                <input type="url" value={form.linkVideo} onChange={e => setForm(p => ({...p, linkVideo: e.target.value}))} className="campo-input" placeholder="Link video (opz.)" />
+                <textarea value={form.descrizione} onChange={e => setForm(p => ({...p, descrizione: e.target.value}))} className="campo-input" placeholder={t('adminEsercizi.descrizione')} rows={2} />
+                <input type="url" value={form.linkVideo} onChange={e => setForm(p => ({...p, linkVideo: e.target.value}))} className="campo-input" placeholder={t('adminEsercizi.linkVideo')} />
               </div>
               <div className="flex gap-2 mt-3">
-                <button onClick={salva} disabled={!form.nome || !form.gruppoMuscoloPrimario} className="btn-primario">{editId ? 'Salva' : 'Crea'}</button>
-                <button onClick={() => setMostraForm(false)} className="btn-secondario">Annulla</button>
+                <button onClick={salva} disabled={!form.nome || !form.gruppoMuscoloPrimario} className="btn-primario">{editId ? t('comune.salva') : t('adminEsercizi.crea')}</button>
+                <button onClick={() => setMostraForm(false)} className="btn-secondario">{t('comune.annulla')}</button>
               </div>
             </div>
           </motion.div>
@@ -318,10 +323,10 @@ export default function AdminEsercizi() {
       {/* FILTERS + EXERCISE LIST */}
       {/* ========================================= */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
-        <input type="text" value={ricerca} onChange={e => setRicerca(e.target.value)} className="campo-input campo-ricerca flex-1" placeholder="🔍 Cerca esercizio..." />
+        <input type="text" value={ricerca} onChange={e => setRicerca(e.target.value)} className="campo-input campo-ricerca flex-1" placeholder={t('adminEsercizi.cercaEsercizio')} />
         <select value={filtroGruppo} onChange={e => setFiltroGruppo(e.target.value)} className="campo-input campo-select-compact" style={{ width: 'auto', minWidth: '140px', maxWidth: '180px' }}>
-          <option value="">Tutti i gruppi</option>
-          {gruppiUnici.map(g => <option key={g} value={g}>{g}</option>)}
+          <option value="">{t('adminEsercizi.tuttiIGruppi')}</option>
+          {gruppiUnici.map(g => <option key={g} value={g}>{nomeGruppo(g)}</option>)}
         </select>
       </div>
 
@@ -334,8 +339,8 @@ export default function AdminEsercizi() {
                         className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] hover:bg-[var(--bg-terziario)] transition-all group">
               <span className="text-lg">{GRUPPI_MUSCOLARI[e.gruppoMuscoloPrimario]?.emoji || '💪'}</span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{e.nome}</p>
-                <p className="text-[10px] text-[var(--testo-terziario)]">{e.gruppoMuscoloPrimario}{e.gruppoMuscoloSecondario ? ` + ${e.gruppoMuscoloSecondario}` : ''}{e.attrezzatura ? ` · ${e.attrezzatura.nome}` : ''}</p>
+                <p className="text-sm font-medium truncate">{nomeEsercizio(e)}</p>
+                <p className="text-[10px] text-[var(--testo-terziario)]">{nomeGruppo(e.gruppoMuscoloPrimario)}{e.gruppoMuscoloSecondario ? ` + ${nomeGruppo(e.gruppoMuscoloSecondario)}` : ''}{e.attrezzatura ? ` · ${nomeAttrezzatura(e.attrezzatura.nome)}` : ''}</p>
               </div>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => apriForm(e)} className="text-xs text-[var(--accent)] px-1">✏️</button>
@@ -345,7 +350,7 @@ export default function AdminEsercizi() {
           ))}
           {restanti > 0 && (
             <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
-              Mostra altri ({restanti.toLocaleString('it-IT')})
+              {t('adminEsercizi.mostraAltri', { numero: formattaNumero(restanti) })}
             </button>
           )}
         </div>

@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminPalestre() {
+  const { t } = useLingua();
   const [palestre, setPalestre] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
   const [mostraForm, setMostraForm] = useState(false);
@@ -32,30 +34,30 @@ export default function AdminPalestre() {
   };
 
   const elimina = async (id) => {
-    if (!confirm('Elimina questa palestra?')) return;
+    if (!confirm(t('adminPalestre.confermaElimina'))) return;
     try { await api.delete(`/admin/palestre/${id}`); caricaPalestre(); } catch (err) { alert(err.message); }
   };
 
   return (
     <div className="py-2">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">🏢 Gestione Palestre</h1>
-        <button onClick={() => apriForm()} className="btn-primario">＋ Nuova</button>
+        <h1 className="text-2xl font-bold">{t('adminPalestre.titolo')}</h1>
+        <button onClick={() => apriForm()} className="btn-primario">{t('adminPalestre.nuova')}</button>
       </div>
       <AnimatePresence>
         {mostraForm && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
             <div className="glass-card p-card-inner">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input type="text" value={form.nomeCatena} onChange={e => setForm(p => ({...p, nomeCatena: e.target.value}))} className="campo-input" placeholder="Nome Catena *" />
-                <input type="text" value={form.citta} onChange={e => setForm(p => ({...p, citta: e.target.value}))} className="campo-input" placeholder="Città *" />
-                <input type="text" value={form.indirizzo} onChange={e => setForm(p => ({...p, indirizzo: e.target.value}))} className="campo-input" placeholder="Indirizzo *" />
-                <input type="text" value={form.nazione} onChange={e => setForm(p => ({...p, nazione: e.target.value}))} className="campo-input" placeholder="Nazione" />
+                <input type="text" value={form.nomeCatena} onChange={e => setForm(p => ({...p, nomeCatena: e.target.value}))} className="campo-input" placeholder={t('adminPalestre.nomeCatena')} />
+                <input type="text" value={form.citta} onChange={e => setForm(p => ({...p, citta: e.target.value}))} className="campo-input" placeholder={t('adminPalestre.citta')} />
+                <input type="text" value={form.indirizzo} onChange={e => setForm(p => ({...p, indirizzo: e.target.value}))} className="campo-input" placeholder={t('adminPalestre.indirizzo')} />
+                <input type="text" value={form.nazione} onChange={e => setForm(p => ({...p, nazione: e.target.value}))} className="campo-input" placeholder={t('adminPalestre.nazione')} />
               </div>
-              <input type="text" value={form.googlePlaceId} onChange={e => setForm(p => ({...p, googlePlaceId: e.target.value}))} className="campo-input mt-3" placeholder="Google Place ID (opzionale — per affluenza)" />
+              <input type="text" value={form.googlePlaceId} onChange={e => setForm(p => ({...p, googlePlaceId: e.target.value}))} className="campo-input mt-3" placeholder={t('adminPalestre.googlePlaceId')} />
               <div className="flex gap-2 mt-3">
-                <button onClick={salva} disabled={!form.nomeCatena || !form.citta || !form.indirizzo} className="btn-primario">{editId ? 'Salva' : 'Crea'}</button>
-                <button onClick={() => setMostraForm(false)} className="btn-secondario">Annulla</button>
+                <button onClick={salva} disabled={!form.nomeCatena || !form.citta || !form.indirizzo} className="btn-primario">{editId ? t('comune.salva') : t('adminPalestre.crea')}</button>
+                <button onClick={() => setMostraForm(false)} className="btn-secondario">{t('comune.annulla')}</button>
               </div>
             </div>
           </motion.div>
@@ -76,7 +78,7 @@ export default function AdminPalestre() {
                 </div>
               </div>
               <p className="text-sm text-[var(--testo-secondario)]">📍 {p.indirizzo}, {p.citta}</p>
-              <p className="text-xs text-[var(--testo-terziario)] mt-1">{p.nazione} {p.attrezzature?.length > 0 ? `· 🔧 ${p.attrezzature.length}` : ''} {p.googlePlaceId ? '· 📊 Affluenza attiva' : ''}</p>
+              <p className="text-xs text-[var(--testo-terziario)] mt-1">{p.nazione} {p.attrezzature?.length > 0 ? `· 🔧 ${p.attrezzature.length}` : ''} {p.googlePlaceId ? t('adminPalestre.affluenzaAttiva') : ''}</p>
             </motion.div>
           ))}
         </div>

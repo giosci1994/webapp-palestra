@@ -1,0 +1,12 @@
+{
+  "titolo": "🏢 Gym management",
+  "nuova": "＋ New",
+  "confermaElimina": "Delete this gym?",
+  "nomeCatena": "Chain name *",
+  "citta": "City *",
+  "indirizzo": "Address *",
+  "nazione": "Country",
+  "googlePlaceId": "Google Place ID (optional — for crowd levels)",
+  "crea": "Create",
+  "affluenzaAttiva": "· 📊 Crowd tracking on"
+}

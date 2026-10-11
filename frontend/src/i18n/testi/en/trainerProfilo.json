@@ -1,0 +1,22 @@
+{
+  "richiestaInviata": "Request sent! 🎉",
+  "nonTrovato": "Personal trainer not found.",
+  "indietro": "← Back",
+  "clienti": "Clients",
+  "schede": "Plans",
+  "esperienza": "Experience",
+  "anni_one": "{count} year",
+  "anni_other": "{count} years",
+  "giaIscritto": "✅ You're signed up with this personal trainer",
+  "iscrittoAltrove": "You're already signed up with another personal trainer. End that relationship from your Profile to switch.",
+  "invioRichiesta": "Sending request…",
+  "iscriviti": "＋ Sign up with this personal trainer",
+  "specializzazioni": "Specializations",
+  "certificazioni": "Certifications",
+  "tariffa": "Rate",
+  "contatto": "Contact",
+  "schedePubbliche": "Public plans",
+  "sessioni_one": "{count} session",
+  "sessioni_other": "{count} sessions",
+  "nessunaSchedaPubblica": "This personal trainer has no public plans yet."
+}

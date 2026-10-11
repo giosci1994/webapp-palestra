@@ -1,0 +1,22 @@
+{
+  "confermaElimina": "Eliminare questa novità?",
+  "titolo": "✨ Gestione Novità",
+  "nuova": "＋ Nuova",
+  "scegliEmoji": "Scegli un'emoji",
+  "titoloCampo": "Titolo *",
+  "sottotitolo": "Sottotitolo",
+  "punti": "Punti",
+  "descrizionePunto": "Descrizione del punto",
+  "rimuovi": "Rimuovi",
+  "nuovoPunto": "＋ Punto",
+  "ctaTesto": "Testo bottone (es. Collega Telegram)",
+  "ctaRotta": "Destinazione bottone (es. /profilo)",
+  "colore1": "Colore 1",
+  "colore2": "Colore 2",
+  "ordine": "Ordine",
+  "attiva": "Attiva",
+  "crea": "Crea",
+  "nessuna": "Nessuna novità. Creane una! ✨",
+  "sottotitoloOrdine": "{sottotitolo} · ordine {ordine}",
+  "nascosta": "Nascosta"
+}

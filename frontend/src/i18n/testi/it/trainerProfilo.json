@@ -1,0 +1,22 @@
+{
+  "richiestaInviata": "Richiesta inviata! 🎉",
+  "nonTrovato": "Personal Trainer non trovato.",
+  "indietro": "← Indietro",
+  "clienti": "Clienti",
+  "schede": "Schede",
+  "esperienza": "Esperienza",
+  "anni_one": "{count} anno",
+  "anni_other": "{count} anni",
+  "giaIscritto": "✅ Sei iscritto con questo Personal Trainer",
+  "iscrittoAltrove": "Sei già iscritto con un altro PT. Termina quel rapporto dal Profilo per cambiarlo.",
+  "invioRichiesta": "Invio richiesta...",
+  "iscriviti": "＋ Iscriviti a questo PT",
+  "specializzazioni": "Specializzazioni",
+  "certificazioni": "Certificazioni",
+  "tariffa": "Tariffa",
+  "contatto": "Contatto",
+  "schedePubbliche": "Schede pubbliche",
+  "sessioni_one": "{count} sessione",
+  "sessioni_other": "{count} sessioni",
+  "nessunaSchedaPubblica": "Questo PT non ha ancora schede pubbliche."
+}

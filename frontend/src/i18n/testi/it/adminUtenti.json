@@ -1,0 +1,43 @@
+{
+  "titolo": "👥 Gestione Utenti",
+  "stati": {
+    "IN_ATTESA": "In attesa",
+    "ATTIVO": "Attivo",
+    "BANNATO": "Bannato"
+  },
+  "confermaBanna": "Sei sicuro di voler bannare questo utente?",
+  "confermaElimina": "Sei sicuro di voler ELIMINARE definitivamente questo utente? Questa operazione è irreversibile e cancellerà tutto il suo storico.",
+  "confermaResetPassword": "Resettare la password di questo utente? Verrà generata una password temporanea da comunicargli.",
+  "passwordTemporanea": "Password temporanea generata:\n\n{password}\n\nComunicala all'utente: potrà cambiarla dopo l'accesso.",
+  "passwordErrore": "(errore)",
+  "inAttesaApprovazione_one": "{count} utente in attesa di approvazione",
+  "inAttesaApprovazione_other": "{count} utenti in attesa di approvazione",
+  "mostra": "Mostra",
+  "richiedonoPT_one": "{count} utente richiede il ruolo di Personal Trainer",
+  "richiedonoPT_other": "{count} utenti richiedono il ruolo di Personal Trainer",
+  "tuttiGliStati": "Tutti gli stati",
+  "tuttiIRuoli": "Tutti i ruoli",
+  "filtroRuolo": {
+    "UTENTE": "Utente",
+    "PERSONAL_TRAINER": "Personal Trainer",
+    "SUPERADMIN": "SuperAdmin"
+  },
+  "utenti_one": "{count} utente",
+  "utenti_other": "{count} utenti",
+  "emailNonVerificata": "Email non verificata",
+  "ultimoAccesso": "Ultimo accesso {quando}",
+  "maiConnesso": "Mai connesso",
+  "vuoleDiventarePT": "🏋️ Vuole diventare PT",
+  "dataRegistrazione": "Data registrazione",
+  "approva": "✓ Approva",
+  "approvaPT": "✓ Approva PT",
+  "tuoAccount": "Non puoi modificare o eliminare il tuo stesso account",
+  "tu": "👤 Tu",
+  "ruoloBreve": {
+    "UTENTE": "Utente",
+    "PERSONAL_TRAINER": "PT",
+    "SUPERADMIN": "Admin"
+  },
+  "riattiva": "Riattiva",
+  "resetPassword": "Resetta password (genera una temporanea)"
+}

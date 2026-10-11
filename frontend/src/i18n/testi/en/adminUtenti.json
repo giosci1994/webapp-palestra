@@ -1,0 +1,43 @@
+{
+  "titolo": "👥 User management",
+  "stati": {
+    "IN_ATTESA": "Pending",
+    "ATTIVO": "Active",
+    "BANNATO": "Banned"
+  },
+  "confermaBanna": "Are you sure you want to ban this user?",
+  "confermaElimina": "Are you sure you want to PERMANENTLY DELETE this user? This can't be undone and will erase their entire history.",
+  "confermaResetPassword": "Reset this user's password? A temporary password will be generated for you to pass on to them.",
+  "passwordTemporanea": "Temporary password generated:\n\n{password}\n\nGive it to the user: they can change it after signing in.",
+  "passwordErrore": "(error)",
+  "inAttesaApprovazione_one": "{count} user waiting for approval",
+  "inAttesaApprovazione_other": "{count} users waiting for approval",
+  "mostra": "Show",
+  "richiedonoPT_one": "{count} user is asking for the Personal Trainer role",
+  "richiedonoPT_other": "{count} users are asking for the Personal Trainer role",
+  "tuttiGliStati": "All statuses",
+  "tuttiIRuoli": "All roles",
+  "filtroRuolo": {
+    "UTENTE": "Member",
+    "PERSONAL_TRAINER": "Personal Trainer",
+    "SUPERADMIN": "SuperAdmin"
+  },
+  "utenti_one": "{count} user",
+  "utenti_other": "{count} users",
+  "emailNonVerificata": "Email not verified",
+  "ultimoAccesso": "Last seen {quando}",
+  "maiConnesso": "Never signed in",
+  "vuoleDiventarePT": "🏋️ Wants to become a trainer",
+  "dataRegistrazione": "Sign-up date",
+  "approva": "✓ Approve",
+  "approvaPT": "✓ Approve trainer",
+  "tuoAccount": "You can't edit or delete your own account",
+  "tu": "👤 You",
+  "ruoloBreve": {
+    "UTENTE": "Member",
+    "PERSONAL_TRAINER": "Trainer",
+    "SUPERADMIN": "Admin"
+  },
+  "riattiva": "Reactivate",
+  "resetPassword": "Reset password (generates a temporary one)"
+}

@@ -6,10 +6,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../config/api.js';
+import { useLingua } from '../hooks/useLingua.js';
+import { LIVELLI } from '../utils/costanti.js';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, ClipboardList, Building, Award, ChevronRight } from 'lucide-react';
 
 export default function TrainerProfilo() {
+  const { t } = useLingua();
   const { id } = useParams();
   const naviga = useNavigate();
   const [pt, setPt] = useState(null);
@@ -29,7 +32,7 @@ export default function TrainerProfilo() {
       setIscrivendo(true);
       await api.post('/utenti/iscrizione-pt', { trainerId: parseInt(id) });
       const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati);
-      alert('Richiesta inviata! 🎉');
+      alert(t('trainerProfilo.richiestaInviata'));
     } catch (err) { alert(err.message); } finally { setIscrivendo(false); }
   };
 
@@ -39,8 +42,8 @@ export default function TrainerProfilo() {
   if (!pt) {
     return (
       <div className="py-16 text-center text-[var(--testo-terziario)]">
-        <p>Personal Trainer non trovato.</p>
-        <button onClick={() => naviga(-1)} className="btn-secondario mt-4">← Indietro</button>
+        <p>{t('trainerProfilo.nonTrovato')}</p>
+        <button onClick={() => naviga(-1)} className="btn-secondario mt-4">{t('trainerProfilo.indietro')}</button>
       </div>
     );
   }
@@ -52,7 +55,7 @@ export default function TrainerProfilo() {
   return (
     <div className="py-2 pb-12 flex flex-col gap-6">
       <button onClick={() => naviga(-1)} className="flex items-center gap-2 text-sm text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors self-start">
-        <ArrowLeft size={18} /> Indietro
+        <ArrowLeft size={18} /> {t('comune.indietro')}
       </button>
 
       {/* Hero */}
@@ -63,7 +66,7 @@ export default function TrainerProfilo() {
             {pt.immagineProfilo ? <img src={pt.immagineProfilo} alt="" className="w-full h-full object-cover" /> : pt.nome?.charAt(0)?.toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">Personal Trainer</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">{t('costanti.ruoli.PERSONAL_TRAINER')}</p>
             <h1 className="text-2xl font-extrabold truncate">{pt.nome}</h1>
             {pt.palestra && <p className="text-sm text-[var(--testo-terziario)] flex items-center gap-1 mt-1"><Building size={14} /> {pt.palestra.nomeCatena} · {pt.palestra.citta}</p>}
           </div>
@@ -74,9 +77,9 @@ export default function TrainerProfilo() {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { icona: <Users size={20} className="text-[var(--accent)]" />, valore: pt._count?.clientiComePT || 0, label: 'Clienti' },
-          { icona: <ClipboardList size={20} className="text-blue-400" />, valore: pt._count?.schedeCreate || 0, label: 'Schede' },
-          { icona: <Award size={20} className="text-green-400" />, valore: pt.anniEsperienza != null ? `${pt.anniEsperienza} anni` : '—', label: 'Esperienza' },
+          { icona: <Users size={20} className="text-[var(--accent)]" />, valore: pt._count?.clientiComePT || 0, label: t('trainerProfilo.clienti') },
+          { icona: <ClipboardList size={20} className="text-blue-400" />, valore: pt._count?.schedeCreate || 0, label: t('trainerProfilo.schede') },
+          { icona: <Award size={20} className="text-green-400" />, valore: pt.anniEsperienza != null ? t('trainerProfilo.anni', { count: pt.anniEsperienza }) : '—', label: t('trainerProfilo.esperienza') },
         ].map((s, i) => (
           <div key={i} className="glass-card p-card-inner text-center">
             <div className="flex justify-center mb-1">{s.icona}</div>
@@ -88,11 +91,11 @@ export default function TrainerProfilo() {
 
       {/* Sign-up CTA */}
       {giaIscritto ? (
-        <div className="glass-card p-card-inner text-center text-sm text-[var(--successo)] font-bold">✅ Sei iscritto con questo Personal Trainer</div>
+        <div className="glass-card p-card-inner text-center text-sm text-[var(--successo)] font-bold">{t('trainerProfilo.giaIscritto')}</div>
       ) : iscrittoAltrove ? (
-        <div className="glass-card p-card-inner text-center text-sm text-[var(--testo-terziario)]">Sei già iscritto con un altro PT. Termina quel rapporto dal Profilo per cambiarlo.</div>
+        <div className="glass-card p-card-inner text-center text-sm text-[var(--testo-terziario)]">{t('trainerProfilo.iscrittoAltrove')}</div>
       ) : (
-        <button onClick={iscriviti} disabled={iscrivendo} className="btn-primario w-full disabled:opacity-50">{iscrivendo ? 'Invio richiesta...' : '＋ Iscriviti a questo PT'}</button>
+        <button onClick={iscriviti} disabled={iscrivendo} className="btn-primario w-full disabled:opacity-50">{iscrivendo ? t('trainerProfilo.invioRichiesta') : t('trainerProfilo.iscriviti')}</button>
       )}
 
       {/* Professional details */}
@@ -100,7 +103,7 @@ export default function TrainerProfilo() {
         <div className="glass-card p-card-inner flex flex-col gap-4">
           {specs.length > 0 && (
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-2">Specializzazioni</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-2">{t('trainerProfilo.specializzazioni')}</p>
               <div className="flex flex-wrap gap-2">
                 {specs.map(s => <span key={s} className="px-3 py-1 rounded-full text-xs font-medium bg-[var(--accent-dim)] text-[var(--accent)]">{s}</span>)}
               </div>
@@ -108,7 +111,7 @@ export default function TrainerProfilo() {
           )}
           {pt.certificazioni && (
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-1">Certificazioni</p>
+              <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-1">{t('trainerProfilo.certificazioni')}</p>
               <p className="text-sm text-[var(--testo-secondario)] whitespace-pre-line">{pt.certificazioni}</p>
             </div>
           )}
@@ -116,13 +119,13 @@ export default function TrainerProfilo() {
             <div className="flex flex-wrap gap-x-8 gap-y-2">
               {pt.tariffaIndicativa && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)]">Tariffa</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)]">{t('trainerProfilo.tariffa')}</p>
                   <p className="text-sm text-[var(--testo-secondario)]">{pt.tariffaIndicativa}</p>
                 </div>
               )}
               {pt.contattoPubblico && (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)]">Contatto</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)]">{t('trainerProfilo.contatto')}</p>
                   <p className="text-sm text-[var(--testo-secondario)] break-all">{pt.contattoPubblico}</p>
                 </div>
               )}
@@ -134,7 +137,7 @@ export default function TrainerProfilo() {
       {/* Public plans */}
       <div className="glass-card overflow-hidden">
         <div className="p-card-inner border-b border-[var(--bordo-light)]">
-          <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList size={20} className="text-[var(--accent)]" /> Schede pubbliche</h3>
+          <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList size={20} className="text-[var(--accent)]" /> {t('trainerProfilo.schedePubbliche')}</h3>
         </div>
         {pt.schede?.length > 0 ? (
           <div className="divide-y divide-[var(--bordo-light)]">
@@ -142,14 +145,14 @@ export default function TrainerProfilo() {
               <Link key={s.id} to={`/schede/${s.id}`} className="flex items-center justify-between px-card-inner py-4 hover:bg-[var(--bg-terziario)] transition-colors group">
                 <div className="min-w-0">
                   <p className="font-semibold text-sm truncate">{s.titolo}</p>
-                  <p className="text-xs text-[var(--testo-terziario)]">{s.livello} · {s._count?.esercizi || 0} esercizi · {s._count?.sessioni || 0} sessioni</p>
+                  <p className="text-xs text-[var(--testo-terziario)]">{LIVELLI[s.livello] ? t(LIVELLI[s.livello].label) : s.livello} · {t('comune.esercizi', { count: s._count?.esercizi || 0 })} · {t('trainerProfilo.sessioni', { count: s._count?.sessioni || 0 })}</p>
                 </div>
                 <ChevronRight size={18} className="text-[var(--testo-terziario)] group-hover:text-[var(--accent)] transition-colors shrink-0" />
               </Link>
             ))}
           </div>
         ) : (
-          <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">Questo PT non ha ancora schede pubbliche.</p>
+          <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">{t('trainerProfilo.nessunaSchedaPubblica')}</p>
         )}
       </div>
     </div>

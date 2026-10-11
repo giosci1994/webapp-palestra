@@ -1,0 +1,11 @@
+{
+  "titolo": "Trova un Personal Trainer",
+  "sottotitolo": "Scegli un professionista e segui schede su misura per i tuoi obiettivi.",
+  "cercaPlaceholder": "Cerca per nome...",
+  "nessunPT": "Nessun Personal Trainer disponibile al momento.",
+  "nessunRisultato": "Nessun risultato per la ricerca.",
+  "clienti_one": "{count} cliente",
+  "clienti_other": "{count} clienti",
+  "schede_one": "{count} scheda",
+  "schede_other": "{count} schede"
+}
