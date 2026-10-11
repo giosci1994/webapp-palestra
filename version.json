@@ -1,7 +1,25 @@
 {
-  "versione": "1.1.125",
-  "build": "2026-07-06",
+  "versione": "1.2.0",
+  "build": "2026-10-11",
   "changelog": [
+    {
+      "versione": "1.2.0",
+      "data": "2026-10-11",
+      "modifiche": [
+        "Notifiche sul telefono anche ad app chiusa: fine del recupero, messaggi in chat e promemoria (Profilo → Notifiche)",
+        "Progressione automatica dei carichi: durante l'allenamento l'app propone quanto caricare, e dice perché",
+        "Accesso con passkey ed elenco dei dispositivi collegati (Profilo → Sicurezza); le sessioni non scollegano più",
+        "Allenamenti: riprendi quello chiuso per sbaglio, correggi uno già concluso, registra quelli fatti senza app, salvane uno come scheda",
+        "Gli allenamenti lasciati aperti si chiudono da soli all'ultima serie, con la durata giusta",
+        "Catalogo in italiano, con ricerca tollerante agli errori, preferiti e calcolo dei dischi",
+        "Statistiche: sezione Corpo con i muscoli allenati, andamento degli esercizi, massimali stimati e attività dell'anno",
+        "Pianificazione: calendario delle schede, promemoria e notifiche nella campanella",
+        "Schede in Word (.docx), anche più insieme, e note tecniche per ogni esercizio",
+        "Affluenza: l'app suggerisce quando la palestra è più libera",
+        "Scarica tutti i dati del tuo account o elimina l'account definitivamente",
+        "Più affidabilità: test automatici, dipendenze senza vulnerabilità note"
+      ]
+    },
     {
       "versione": "1.1.125",
       "data": "2026-07-06",
@@ -945,6 +963,7 @@
     "database": "PostgreSQL 17 + Redis 7",
     "proxy": "Nginx Alpine",
     "hosting": "Docker (self-hosted)",
-    "sicurezza": "Argon2id + JWT + Helmet + CORS"
+    "sicurezza": "Argon2id + Passkey (WebAuthn) + JWT + Helmet + CORS",
+    "notifiche": "Web Push + Telegram"
   }
 }

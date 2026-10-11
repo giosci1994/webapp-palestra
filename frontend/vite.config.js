@@ -14,11 +14,30 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const versionData = JSON.parse(readFileSync(resolve(__dirname, '..', 'version.json'), 'utf-8'));
 
+/**
+ * Pubblica /version.json con ogni build: l'app lo scarica ogni 2 minuti e,
+ * se la versione e' diversa da quella con cui e' stata costruita, si
+ * aggiorna da sola (hooks/useAutoAggiornamento.js). Basta la versione: il
+ * changelog lo legge il server.
+ */
+const pubblicaVersione = {
+  name: 'gymmaster-version-json',
+  apply: 'build',
+  generateBundle() {
+    this.emitFile({
+      type: 'asset',
+      fileName: 'version.json',
+      source: JSON.stringify({ versione: versionData.versione, build: versionData.build }) + '\n'
+    });
+  }
+};
+
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(versionData.versione)
   },
   plugins: [
+    pubblicaVersione,
     react(),
     tailwindcss(),
     VitePWA({

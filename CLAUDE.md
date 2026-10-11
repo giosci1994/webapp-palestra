@@ -14,3 +14,9 @@ Rules:
 - Frontend: `cd frontend && npm test` (Vitest) e `npm run lint`: ESLint e' a zero errori e zero avvisi, e la CI blocca entrambi (`--max-warnings 0`). Per caricare i dati in un effetto: `api.get(...).then(...)` con lo stato aggiornato nelle callback, e "caricamento" ricavato da cosa e' stato caricato (vedi Statistiche, Storico).
 - Chi cambia una logica (record, volume, date, permessi, autenticazione) aggiunge o aggiorna il suo test: nel backend in `backend/test/` con `node:test`, nel frontend accanto al file (`*.test.js`). Le pull request li eseguono su GitHub Actions (`.github/workflows/test.yml`).
 - Ogni modifica a `backend/prisma/schema.prisma` va con la sua migrazione (`npx prisma migrate dev --name ...`), mai `db push`: i test applicano le migrazioni a un database vuoto e falliscono se il risultato non coincide con lo schema.
+
+## Versione
+
+- `version.json` in radice e' la versione dell'app: la mostra Profilo → Info Applicazione (app e server), la legge il backend all'avvio e Vite la pubblica come `/version.json` a ogni build. I client la scaricano ogni 2 minuti e, se cambia, si aggiornano da soli.
+- Una pull request con novita' per gli utenti aggiorna `version.json`: `versione` (minor per funzioni nuove, patch per correzioni), `build` con la data e una voce in `changelog` scritta per gli utenti. Se cambia la tecnologia usata, anche `stack`.
+- Dopo il deploy il backend va riavviato (`docker compose up -d --no-deps backend`) per leggere la versione nuova.

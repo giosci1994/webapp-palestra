@@ -5,6 +5,7 @@
 // ============================================
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { aggiornaApp } from '../utils/aggiornamento.js';
 
 // Versione corrente iniettata al build time
 const VERSIONE_CORRENTE = __APP_VERSION__;
@@ -12,25 +13,8 @@ const VERSIONE_CORRENTE = __APP_VERSION__;
 // Ogni 2 minuti controlla se c'è una nuova versione
 const INTERVALLO_CHECK = 2 * 60 * 1000;
 
-// Pulisce service worker + cache e ricarica (hard reload).
-async function pulisciERicarica() {
-  try {
-    if ('serviceWorker' in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const reg of regs) {
-        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-        await reg.unregister();
-      }
-    }
-    if ('caches' in window) {
-      const nomi = await caches.keys();
-      await Promise.all(nomi.map((n) => caches.delete(n)));
-    }
-    window.location.reload();
-  } catch {
-    window.location.reload();
-  }
-}
+// Durante un allenamento non si ricarica: si aspetta che finisca
+const inAllenamento = () => /^\/allenamento\/[^/]+/.test(window.location.pathname);
 
 /**
  * Hook che monitora nuove versioni dell'app.
@@ -67,10 +51,9 @@ export function useAutoAggiornamento() {
 
         // Auto-aggiornamento: ricarica da sola dopo qualche secondo (mostra prima
         // il banner), tranne durante un allenamento in corso per non interromperlo.
-        const inAllenamento = /^\/allenamento\/[^/]+/.test(window.location.pathname);
-        if (!haForzatoRef.current && !inAllenamento) {
+        if (!haForzatoRef.current && !inAllenamento()) {
           haForzatoRef.current = true;
-          setTimeout(pulisciERicarica, 4000);
+          setTimeout(() => aggiornaApp(), 4000);
         }
       }
     } catch {
@@ -82,7 +65,7 @@ export function useAutoAggiornamento() {
   const forzaAggiornamento = useCallback(async () => {
     if (haForzatoRef.current) return;
     haForzatoRef.current = true;
-    await pulisciERicarica();
+    await aggiornaApp();
   }, []);
 
   // Check periodico
@@ -104,7 +87,9 @@ export function useAutoAggiornamento() {
     if (!aggiornamentoDisponibile) return;
 
     const gestisciVisibilita = () => {
-      if (document.visibilityState === 'visible') {
+      // Anche qui non durante un allenamento: si torna all'app sbloccando il
+      // telefono fra una serie e l'altra
+      if (document.visibilityState === 'visible' && !inAllenamento()) {
         forzaAggiornamento();
       }
     };
