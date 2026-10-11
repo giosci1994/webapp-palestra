@@ -8,6 +8,8 @@
 // ricostruisce dalle serie registrate sul server: senza, si ripartiva dalla
 // prima serie e le serie gia' fatte venivano registrate una seconda volta.
 
+import { diLavoro } from './tipiSerie.js';
+
 /** Valori per un esercizio aggiunto durante l'allenamento (come in WorkoutLive) */
 export const ESERCIZIO_EXTRA = { serieTarget: 3, repTarget: 10, recuperoSecondi: 90 };
 
@@ -29,8 +31,8 @@ export function statoDaSessione(sessione) {
   const eserciziLive = [...eserciziScheda, ...extra];
 
   // Si riparte dal primo esercizio con serie ancora da fare: quelle saltate
-  // contano come fatte, come durante l'allenamento
-  const registrate = esercizioId => serie.filter(s => s.esercizioId === esercizioId).length;
+  // contano come fatte, come durante l'allenamento; riscaldamento e drop no
+  const registrate = esercizioId => serie.filter(s => s.esercizioId === esercizioId && diLavoro(s)).length;
   let esercizioIdx = eserciziLive.findIndex(e => registrate(e.esercizioId) < (e.serieTarget ?? 1));
   if (esercizioIdx === -1) esercizioIdx = Math.max(0, eserciziLive.length - 1);
   const attuale = eserciziLive[esercizioIdx];

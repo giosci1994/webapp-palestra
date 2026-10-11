@@ -38,8 +38,10 @@ Restituisce la lista delle sessioni completate con i log raggruppati per eserciz
         {
           "esercizio": { "id": 1, "nome": "Panca Piana", "gruppoMuscoloPrimario": "Petto" },
           "serie": [
-            { "id": 101, "serieNumero": 1, "pesoEffettivo": 80, "repEffettive": 10, "rpe": 7 },
-            { "id": 102, "serieNumero": 2, "pesoEffettivo": 85, "repEffettive": 8, "rpe": 8 }
+            { "id": 100, "serieNumero": 1, "tipo": "RISCALDAMENTO", "pesoEffettivo": 40, "repEffettive": 10, "rpe": null },
+            { "id": 101, "serieNumero": 1, "tipo": "LAVORO", "pesoEffettivo": 80, "repEffettive": 10, "rpe": 7 },
+            { "id": 103, "serieNumero": 1, "tipo": "DROP", "pesoEffettivo": 60, "repEffettive": 8, "rpe": null },
+            { "id": 102, "serieNumero": 2, "tipo": "LAVORO", "pesoEffettivo": 85, "repEffettive": 8, "rpe": 8 }
           ]
         }
       ]
@@ -65,7 +67,9 @@ Corregge un allenamento **concluso** (per uno in corso risponde 400). Solo il pr
 | `noteFinali` | string \| null | Vuote → `null` |
 | `serie` | array | Elenco **completo** delle serie svolte dopo la modifica, nell'ordine in cui mostrarle |
 
-Ogni elemento di `serie` è `{ id, ...valori }` per una serie esistente oppure `{ esercizioId, ...valori }` per una nuova, aggiunta a un esercizio già presente nella sessione. Le serie svolte che mancano dall'elenco vengono eliminate; quelle saltate (`completato: false`) non compaiono nello storico e restano come sono. Valori: `pesoEffettivo`, `repEffettive`, `rpe` (1-10), `durataMinuti`, `livelloResistenza`; un campo assente resta com'è.
+Ogni elemento di `serie` è `{ id, ...valori }` per una serie esistente oppure `{ esercizioId, ...valori }` per una nuova, aggiunta a un esercizio già presente nella sessione. Le serie svolte che mancano dall'elenco vengono eliminate; quelle saltate (`completato: false`) non compaiono nello storico e restano come sono. Valori: `pesoEffettivo`, `repEffettive`, `rpe` (1-10), `durataMinuti`, `livelloResistenza`, `tipo` (`LAVORO`, `RISCALDAMENTO`, `DROP`); un campo assente resta com'è.
+
+**Tipi di serie** (`backend/src/utils/tipiSerie.js`). Il riscaldamento si vede ma resta fuori da volume, conteggi delle serie, record, massimali e progressione; un drop conta nel volume ma non come serie a sé. Le serie di lavoro si numerano 1, 2, 3…, il riscaldamento ha la sua numerazione e un drop porta il numero della serie di lavoro che lo precede. Lo storico le mostra in quest'ordine: riscaldamento, poi ogni serie seguita dai suoi drop. In modifica, il tipo si cambia toccando il numero della serie.
 
 Dopo una modifica delle serie:
 - le serie di ogni esercizio vengono rinumerate 1..n;

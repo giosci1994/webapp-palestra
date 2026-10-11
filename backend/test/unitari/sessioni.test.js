@@ -141,7 +141,7 @@ describe('formattaPerStorico', () => {
   const panca = { id: 5, nome: 'Bench Press', nomeIt: 'Panca piana', gruppoMuscoloPrimario: 'Petto' };
   const croci = { id: 9, nome: 'Croci', nomeIt: null, gruppoMuscoloPrimario: 'Petto' };
   const serie = (id, esercizio, serieNumero, pesoEffettivo, repEffettive) => ({
-    id, esercizioId: esercizio.id, esercizio, serieNumero, pesoEffettivo, repEffettive,
+    id, esercizioId: esercizio.id, esercizio, serieNumero, tipo: 'LAVORO', pesoEffettivo, repEffettive,
     rpe: null, durataMinuti: null, livelloResistenza: null, distanzaKm: null, velocitaKmh: null,
     // Campi del log che lo storico non mostra
     completato: true, noteSerie: 'nota interna', sessioneId: 1
@@ -167,7 +167,7 @@ describe('formattaPerStorico', () => {
     assert.deepEqual(esercizi[0].esercizio, panca);
     assert.deepEqual(esercizi[0].serie.map(s => s.id), [10, 11]);
     assert.deepEqual(esercizi[1].serie[0], {
-      id: 12, serieNumero: 1, pesoEffettivo: 20, repEffettive: 12,
+      id: 12, serieNumero: 1, tipo: 'LAVORO', pesoEffettivo: 20, repEffettive: 12,
       rpe: null, durataMinuti: null, livelloResistenza: null, distanzaKm: null, velocitaKmh: null
     });
   });

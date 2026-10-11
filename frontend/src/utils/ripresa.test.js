@@ -4,8 +4,8 @@ import { statoDaSessione, ESERCIZIO_EXTRA } from './ripresa.js';
 const PANCA = { esercizioId: 1, esercizio: { id: 1, nome: 'Panca' }, serieTarget: 3 };
 const SQUAT = { esercizioId: 2, esercizio: { id: 2, nome: 'Squat' }, serieTarget: 2 };
 let prossimoId = 100;
-const serie = (esercizioId, completato = true) =>
-  ({ id: ++prossimoId, esercizioId, completato, esercizio: { id: esercizioId, nome: `Esercizio ${esercizioId}` } });
+const serie = (esercizioId, completato = true, tipo = 'LAVORO') =>
+  ({ id: ++prossimoId, esercizioId, completato, tipo, esercizio: { id: esercizioId, nome: `Esercizio ${esercizioId}` } });
 const sessione = (...logSerie) => ({ dataInizio: '2026-10-11T16:00:00.000Z', scheda: { esercizi: [PANCA, SQUAT] }, logSerie });
 
 describe('statoDaSessione', () => {
@@ -25,6 +25,12 @@ describe('statoDaSessione', () => {
     const stato = statoDaSessione(sessione(serie(1), serie(1, false), serie(1), serie(2)));
     expect([stato.esercizioIdx, stato.serieCorrente]).toEqual([1, 2]);
     expect(stato.serieCompletate.map(s => s.esercizioId)).toEqual([1, 1, 2]);
+  });
+
+  it('riscaldamento e drop non contano come serie fatte, ma restano fra le completate', () => {
+    const stato = statoDaSessione(sessione(serie(1, true, 'RISCALDAMENTO'), serie(1), serie(1, true, 'DROP')));
+    expect([stato.esercizioIdx, stato.serieCorrente]).toEqual([0, 2]);
+    expect(stato.serieCompletate.map(s => s.tipo)).toEqual(['RISCALDAMENTO', 'LAVORO', 'DROP']);
   });
 
   it('un esercizio saltato del tutto resta da fare: si torna li\'', () => {

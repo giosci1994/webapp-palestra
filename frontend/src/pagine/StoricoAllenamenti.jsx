@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
+import { diLavoro } from '../utils/tipiSerie.js';
 import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
@@ -406,7 +407,7 @@ export default function StoricoAllenamenti() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">{nomeEsercizio(es.esercizio)}</p>
                             <p className="text-[10px] text-[var(--testo-terziario)]">
-                              {es.esercizio.gruppoMuscoloPrimario} · {es.serie.length} serie
+                              {es.esercizio.gruppoMuscoloPrimario} · {es.serie.filter(diLavoro).length} serie
                             </p>
                           </div>
                         </div>
@@ -438,8 +439,9 @@ export default function StoricoAllenamenti() {
                                 sIdx < es.serie.length - 1 ? 'border-b border-[var(--bordo)]' : ''
                               }`}
                             >
-                              <span className="text-sm text-center text-[var(--testo-secondario)]">
-                                {serie.serieNumero}
+                              <span className="text-sm text-center text-[var(--testo-secondario)]"
+                                    title={serie.tipo === 'RISCALDAMENTO' ? 'Riscaldamento' : serie.tipo === 'DROP' ? `Drop della serie ${serie.serieNumero}` : undefined}>
+                                {serie.tipo === 'RISCALDAMENTO' ? '🔥' : serie.tipo === 'DROP' ? '↳' : serie.serieNumero}
                               </span>
                               {isCardio ? (
                                 <>
