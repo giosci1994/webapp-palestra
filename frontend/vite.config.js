@@ -52,6 +52,8 @@ export default defineConfig({
         // Non precachare index.html — Nginx lo serve con no-cache
         // Questo evita che il SW serva la vecchia versione
         navigateFallback: null,
+        // Le notifiche push (public/sw-push.js): il service worker generato le importa
+        importScripts: ['/sw-push.js'],
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [

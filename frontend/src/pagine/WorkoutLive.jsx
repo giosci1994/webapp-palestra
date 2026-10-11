@@ -4,13 +4,14 @@
 // ============================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
 import { statoDaSessione, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
 import { propostaCarico, incrementoPer } from '../utils/progressione.js';
+import { usePushNotifiche } from '../hooks/usePushNotifiche.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
@@ -32,6 +33,9 @@ export default function WorkoutLive() {
   const naviga = useNavigate();
   const wakeLock = useWakeLock();
   const timer = useTimer();
+  // Con le push attive, la fine del recupero arriva anche a schermo bloccato
+  const push = usePushNotifiche();
+  const avvisoRecuperoRef = useRef(false);
 
   // --- Persistenza progressi in localStorage ---
   // Chiave unica per sessione: sopravvive a tab kill / cambio app
@@ -332,7 +336,10 @@ export default function WorkoutLive() {
       }
 
       // Recupero: quello dell'esercizio appena finito, anche se si e' gia' passati avanti
-      if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti);
+      const prossimo = passaAvanti
+        ? `${nomeEsercizio(esercizi[prossimoIdx].esercizio)} · serie 1`
+        : `${nomeEsercizio(esercizioAttuale.esercizio)} · serie ${serieCorrente + 1}`;
+      if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo);
       else fermaRecupero();
     } catch (err) {
       alert(err.message);
@@ -394,17 +401,35 @@ export default function WorkoutLive() {
     setMostraVideo(false);
   };
 
-  const avviaRecupero = (secondi, inCima) => {
+  /**
+   * @param {number} secondi
+   * @param {boolean} inCima - recupero in cima, sopra l'esercizio successivo
+   * @param {string} prossimo - cosa tocca dopo, per la notifica: "Panca piana · serie 2"
+   */
+  const avviaRecupero = (secondi, inCima, prossimo) => {
     timer.avvia(secondi);
     setDurataRecupero(secondi);
     setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
+    // Il timer dell'app a schermo bloccato si ferma: avvisa il server
+    if (push.iscritto) {
+      avvisoRecuperoRef.current = true;
+      api.post('/notifiche/push/recupero', { secondi, prossimo }).catch(() => {});
+    }
+  };
+
+  /** Recupero interrotto o allenamento finito: niente avviso */
+  const annullaAvvisoRecupero = () => {
+    if (!avvisoRecuperoRef.current) return;
+    avvisoRecuperoRef.current = false;
+    api.delete('/notifiche/push/recupero').catch(() => {});
   };
 
   const fermaRecupero = () => {
     timer.resetta();
     setRecuperoAvviato(false);
     setRecuperoInCima(false);
+    annullaAvvisoRecupero();
   };
 
   const cambiaEsercizio = (nuovoIndice) => {
@@ -419,6 +444,7 @@ export default function WorkoutLive() {
       const risposta = await api.patch(`/sessioni/${sessione.id}/completa`, {
         noteFinali: ''
       });
+      annullaAvvisoRecupero();
       setNuoviRecord(risposta.recordPersonali || []);
       setFinitoAllUltimaSerie(risposta.dimenticata ? new Date(risposta.dati.dataFine) : null);
       setMostraRiepilogo(true);
@@ -697,6 +723,12 @@ export default function WorkoutLive() {
                       className="mt-4 text-sm text-[var(--accent)] font-medium px-4 py-1.5 rounded-full border border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors">
                 Salta recupero →
               </button>
+              {/* A schermo bloccato il timer si ferma: lo dice, e dove rimediare */}
+              {push.caricato && push.supportate && push.serverAttivo && !push.iscritto && push.permesso !== 'denied' && (
+                <p className="mt-3 text-[11px] text-[var(--testo-terziario)]">
+                  A schermo bloccato non suona: <Link to="/profilo?tab=notifiche" className="text-[var(--accent)] underline">attiva le notifiche</Link> per l'avviso di fine recupero.
+                </p>
+              )}
               <div className="mt-4 pt-3 border-t border-[var(--bordo)]">
                 <p className="text-xs text-[var(--testo-secondario)] font-semibold uppercase tracking-wider">
                   {serieCorrente <= esercizioAttuale.serieTarget 
