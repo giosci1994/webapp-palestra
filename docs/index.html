@@ -66,7 +66,7 @@
         </h1>
 
         <p class="lead">
-          A self-hosted web app for your gym, in Italian. Members log workouts from their phone, even without signal, and follow their progress; trainers manage clients and plans; everyone gets chat, live crowd levels and a Telegram bot.
+          A self-hosted web app for your gym. Members log workouts from their phone, even without signal, and follow their progress; trainers manage clients and plans; everyone gets chat, live crowd levels and a Telegram bot.
         </p>
 
         <div class="hero-actions">
@@ -205,7 +205,7 @@ git clone https://github.com/giosci1994/webapp-palestra.git
 cd webapp-palestra
 
 <span class="code-comment"># Settings: change passwords, JWT secrets, APP_URL and ORIGINI_CONSENTITE</span>
-cp .env.esempio .env
+cp .env.example .env
 
 <span class="code-comment"># Build the frontend (nginx serves frontend/dist)</span>
 (cd frontend &amp;&amp; npm ci &amp;&amp; npm run build)

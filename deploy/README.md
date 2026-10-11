@@ -1,81 +1,62 @@
-# Rilasci
+# Releases
 
-Il server di produzione si aggiorna da solo quando su GitHub esce una release
-nuova. Lo fa `deploy/rilascio.sh`, che cron lancia ogni 2 minuti: il server
-non deve essere raggiungibile da fuori e GitHub non ha nessun accesso al
-server, perché è il server che va a guardare.
+The production server updates itself when a new release comes out on GitHub. `deploy/rilascio.sh` does it, run by cron every 2 minutes. The server does not need to be reachable from outside and GitHub has no access to it: the server is the one that goes and looks.
 
-## Pubblicare una versione
+## Publishing a version
 
-1. La pull request porta `version.json` alla versione nuova (vedi CLAUDE.md)
-   e, se ci sono, le storie in `backend/prisma/novita.json`.
-2. Merge su `master`.
-3. Su GitHub: **Releases → Draft a new release**. Il tag è `v` più la versione
-   di `version.json` (per esempio `v1.2.1`), il ramo è `master`. Come testo
-   vanno bene le voci del changelog. **Publish release**.
+1. The pull request bumps `version.json` to the new version (see CLAUDE.md) and, if there are any, adds the stories to `backend/prisma/novita.json`.
+2. Merge into `master`.
+3. On GitHub: **Releases → Draft a new release**. The tag is `v` plus the version in `version.json` (for example `v1.2.1`), the branch is `master`. The changelog entries are fine as the text. **Publish release**.
 
-Entro un paio di minuti arriva su Telegram `✅ GymMaster 1.2.1 installata`,
-oppure cosa non è andato.
+Within a couple of minutes Telegram says `✅ GymMaster 1.2.1 installata` (installed), or what went wrong.
 
-## Cosa fa lo script
+## What the script does
 
-Installa una release solo se è più nuova di quella installata: non torna mai
-indietro da solo. Prima di cambiare qualcosa controlla che:
+It installs a release only if it is newer than the installed one: it never goes back on its own. Before changing anything it checks that:
 
-- nella cartella di produzione non ci siano modifiche fatte a mano;
-- il tag sia su `master`, quindi codice già unito;
-- `version.json` del tag dica la stessa versione del tag.
+- the production folder has no changes made by hand;
+- the tag is on `master`, so the code was merged;
+- `version.json` in the tag has the same version as the tag.
 
-Poi:
+Then it:
 
-1. fa una copia del database in `~/backup/gymmaster/` (tiene le ultime 10);
-2. prepara senza toccare il sito: immagine del backend, bot e scraper solo se
-   sono cambiati, build del frontend in una cartella a parte, prova della
-   configurazione di nginx se è cambiata;
-3. passa alla versione nuova: ricrea il backend, che applica le migrazioni,
-   ed eventualmente bot, scraper e nginx; pubblica il frontend;
-4. controlla che sito e server rispondano con la versione nuova;
-5. aggiunge le storie della versione (`backend/prisma/novita.json`).
+1. copies the database to `~/backup/gymmaster/` (keeping the last 10);
+2. prepares without touching the site: backend image, bot and scraper only if they changed, frontend build in a separate folder, nginx configuration test if it changed;
+3. switches to the new version: recreates the backend, which applies the migrations, and bot, scraper and nginx if needed; publishes the frontend;
+4. checks that site and server answer with the new version;
+5. adds the version's stories (`backend/prisma/novita.json`).
 
-Se la preparazione fallisce, il sito non è stato toccato. Se fallisce il
-passaggio, torna alla versione di prima. Le migrazioni del database però non
-si annullano: per quelle c'è la copia fatta al punto 1. Una release fallita non
-si riprova da sola.
+If the preparation fails, the site was not touched. If the switch fails, it goes back to the previous version. Database migrations are not undone, though: that is what the copy of step 1 is for. A failed release is not retried on its own.
 
-## Comandi sul server
+## Commands on the server
 
-Dalla cartella di produzione:
+From the production folder:
 
 ```bash
-deploy/rilascio.sh --controlla        # cosa farebbe adesso
-deploy/rilascio.sh --installa v1.2.1  # installa (o riprova) quella release
-deploy/rilascio.sh --prova-telegram   # messaggio di prova
+deploy/rilascio.sh --controlla        # what it would do now
+deploy/rilascio.sh --installa v1.2.1  # install (or retry) that release
+deploy/rilascio.sh --prova-telegram   # test message
 ```
 
 Log: `~/.local/state/gymmaster-rilascio/rilascio.log`.
 
-## Installazione sul server (una volta)
+## Installing on the server (once)
 
-La cartella di produzione è un clone a parte, dove nessuno lavora:
+The production folder is a separate clone, where nobody works:
 
 ```bash
 git clone https://github.com/giosci1994/webapp-palestra.git ~/gymmaster
-cp <vecchia cartella>/.env ~/gymmaster/.env   # e chmod 600
+cp <old folder>/.env ~/gymmaster/.env   # and chmod 600
 ```
 
-Nel `.env` servono `TELEGRAM_BOT_TOKEN` e `RILASCI_TELEGRAM_CHAT_ID` (vedi
-`.env.esempio`). Poi, con `crontab -e`:
+The `.env` needs `TELEGRAM_BOT_TOKEN` and `RILASCI_TELEGRAM_CHAT_ID` (see `.env.example`). Then, with `crontab -e` (cron wants the full path of your home):
 
 ```
-*/2 * * * * /home/pi/gymmaster/deploy/rilascio.sh
+*/2 * * * * /home/<user>/gymmaster/deploy/rilascio.sh
 ```
 
-Il compose ha il nome di progetto fissato (`web-apppalestra`): avviato dalla
-cartella nuova riprende gli stessi container e lo stesso volume del database.
-Per lo stesso motivo `docker compose` (quello di produzione) non va mai
-lanciato da un'altra copia del repository: prenderebbe in mano la produzione.
+The compose project name is fixed (`web-apppalestra`): started from the new folder, it takes over the same containers and the same database volume. For the same reason, the production `docker compose` must never be run from another copy of the repository: it would take over production.
 
-## Prove
+## Tests
 
-`bash deploy/test/rilascio.test.sh` prova lo script su un repository di prova,
-con docker, curl e npm finti: non tocca niente di vero. Le fa anche la CI.
+`bash deploy/test/rilascio.test.sh` tests the script on a test repository, with fake docker, curl and npm: it touches nothing real. CI runs it too.

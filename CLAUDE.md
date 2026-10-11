@@ -8,34 +8,36 @@ Rules:
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
 
-## Come lavoriamo
+## How we work
 
-- Rispondi sempre in italiano: l'utente e' Giovanni, il proprietario del progetto.
-- Un commit per funzionalita'. Finito il lavoro, con i test verdi, fai push e apri la pull request senza chiedere conferma. Le PR hanno base `master`, mai un altro branch: GitHub non sposta la base quando la PR sotto viene unita.
-- Il merge lo fa l'utente, dopo aver guardato i test della PR. La produzione si aggiorna quando l'utente pubblica una release su GitHub (vedi "Rilascio"): da una sessione di lavoro non si installa niente.
-- Il repository e' pubblico: niente segreti, chiavi, dati degli utenti o indirizzi interni in commit, PR e file.
+- Always talk to Giovanni, the project owner, in Italian: replies, questions and summaries.
+- Everything that goes into the repository is in English: README, docs, code comments, commit messages, pull requests, issue and PR comments. Code names stay in Italian (variables, functions, files, routes, database tables and columns): keep new ones consistent with the code around them. When you touch a file with Italian comments, translate the comments you change.
+- The app is meant for users all over the world: English is becoming its base language, with Italian as a translation and other languages to follow. The interface is still in Italian while the translation layer is being built.
+- One commit per feature. When the work is done and the tests are green, push and open the pull request without asking. Pull requests target `master`, never another branch: GitHub does not move the base when the PR below is merged.
+- Giovanni merges, after looking at the PR's tests. Production updates when he publishes a release on GitHub (see "Releases"): nothing is installed from a work session.
+- The repository is public: no secrets, keys, user data or internal addresses in commits, PRs and files.
 
-## Test
+## Tests
 
-- Backend: `cd backend && npm test` esegue i test unitari e d'integrazione. Serve Docker: avvia un Postgres e un Redis usa-e-getta (`backend/test/docker-compose.yml`) e non tocca mai il database vero. Senza Docker: `npm run test:unitari` (gli altri li esegue comunque la CI sulla PR).
-- Frontend: `cd frontend && npm test` (Vitest) e `npm run lint`: ESLint e' a zero errori e zero avvisi, e la CI blocca entrambi (`--max-warnings 0`). Per caricare i dati in un effetto: `api.get(...).then(...)` con lo stato aggiornato nelle callback, e "caricamento" ricavato da cosa e' stato caricato (vedi Statistiche, Storico).
-- Rilascio: `bash deploy/test/rilascio.test.sh` prova `deploy/rilascio.sh` con docker, curl e npm finti. Chi cambia lo script aggiorna anche le prove.
-- Chi cambia una logica (record, volume, date, permessi, autenticazione) aggiunge o aggiorna il suo test: nel backend in `backend/test/` con `node:test`, nel frontend accanto al file (`*.test.js`). Le pull request li eseguono su GitHub Actions (`.github/workflows/test.yml`).
+- Backend: `cd backend && npm test` runs the unit and integration tests. It needs Docker: it starts a throwaway Postgres and Redis (`backend/test/docker-compose.yml`) and never touches the real database. Without Docker: `npm run test:unitari` (CI runs the others on the PR anyway).
+- Frontend: `cd frontend && npm test` (Vitest) and `npm run lint`: ESLint is at zero errors and zero warnings, and CI blocks both (`--max-warnings 0`). To load data in an effect: `api.get(...).then(...)` with the state updated in the callbacks, and "loading" derived from what has been loaded (see Statistiche, Storico).
+- Releases: `bash deploy/test/rilascio.test.sh` tests `deploy/rilascio.sh` with fake docker, curl and npm. Whoever changes the script updates its tests too.
+- Whoever changes a piece of logic (records, volume, dates, permissions, authentication) adds or updates its test: in the backend in `backend/test/` with `node:test`, in the frontend next to the file (`*.test.js`). Pull requests run them on GitHub Actions (`.github/workflows/test.yml`).
 
 ## Database
 
-- Ogni modifica a `backend/prisma/schema.prisma` va con la sua migrazione (`npx prisma migrate dev --name ...`), mai `db push`: i test applicano le migrazioni a un database vuoto e falliscono se il risultato non coincide con lo schema.
-- Il nome della cartella di una migrazione nuova deve venire, in ordine alfabetico, dopo l'ultima esistente: alcune iniziano con una data futura (`20261014_...`), quindi la cartella creata da `migrate dev` va rinominata se finisce prima.
-- Mai `prisma format`: riscrive l'intero schema. La configurazione di Prisma e' in `backend/prisma.config.js`.
+- Every change to `backend/prisma/schema.prisma` comes with its migration (`npx prisma migrate dev --name ...`), never `db push`: the tests apply the migrations to an empty database and fail if the result differs from the schema.
+- The folder of a new migration must sort, alphabetically, after the last existing one: some start with a future date (`20261014_...`), so the folder created by `migrate dev` must be renamed if it sorts earlier.
+- Never `prisma format`: it rewrites the whole schema. The Prisma configuration is in `backend/prisma.config.js`.
 
-## Versione e novita'
+## Version and what's new
 
-- `version.json` in radice e' la versione dell'app: la mostra Profilo → Info Applicazione (app e server), la legge il backend all'avvio e Vite la pubblica come `/version.json` a ogni build. I client la scaricano ogni 2 minuti e, se cambia, si aggiornano da soli.
-- Una pull request con novita' per gli utenti aggiorna `version.json`: `versione` (minor per funzioni nuove, patch per correzioni), `build` con la data e una voce in `changelog` scritta per gli utenti. Se cambia la tecnologia usata, anche `stack`.
-- Le storie delle novita' (il popup a storie dell'app) stanno in `backend/prisma/novita.json`, ognuna con la `versione` che la porta: al rilascio di quella versione entrano nell'app, una volta sola. Campi: `titolo` (unico), `sottotitolo`, `icona` (emoji), `punti` (`[{ icona, testo }]`), `ctaTesto` e `ctaRotta` (un percorso dell'app), `coloreInizio` e `coloreFine` (`#rrggbb`). Un test controlla il file.
+- `version.json` at the root is the app's version: Profile → Info Applicazione shows it (app and server), the backend reads it at startup and Vite publishes it as `/version.json` at every build. Clients download it every 2 minutes and update themselves when it changes.
+- A pull request with something new for users updates `version.json`: `versione` (minor for new features, patch for fixes), `build` with the date and an entry in `changelog` written for users. If the technology changes, `stack` too.
+- The "what's new" stories (the app's story popup) live in `backend/prisma/novita.json`, each with the `versione` that brings it: when that version is released they enter the app, once. Fields: `titolo` (unique), `sottotitolo`, `icona` (emoji), `punti` (`[{ icona, testo }]`), `ctaTesto` and `ctaRotta` (an app route), `coloreInizio` and `coloreFine` (`#rrggbb`). A test checks the file.
 
-## Rilascio
+## Releases
 
-- La release su GitHub ha tag `v` + la versione di `version.json` (per esempio `v1.2.1`) e parte da `master`. Sul server `deploy/rilascio.sh` la installa da solo entro un paio di minuti: copia del database, immagini, migrazioni, frontend, controllo della versione, storie, messaggio su Telegram; se qualcosa fallisce torna alla versione di prima. Dettagli in `deploy/README.md`.
-- Dal repository non si possono fare le modifiche al `.env` del server, le correzioni ai dati nel database e le impostazioni di Cloudflare. Se una modifica ne ha bisogno, la PR lo scrive chiaramente in una sezione "Al rilascio".
-- Una variabile d'ambiente nuova va in `.env.esempio` con il suo commento, e il codice deve funzionare anche senza (la funzione resta spenta) finche' non viene impostata.
+- The GitHub release has tag `v` + the version in `version.json` (for example `v1.2.1`) and starts from `master`. On the server `deploy/rilascio.sh` installs it on its own within a couple of minutes: database copy, images, migrations, frontend, version check, stories, Telegram message; if something fails it goes back to the previous version. Details in `deploy/README.md`.
+- Changes to the server's `.env`, fixes to the data in the database and Cloudflare settings cannot be made from the repository. If a change needs them, the PR says so clearly in an "On release" section.
+- A new environment variable goes in `.env.example` with its comment, and the code must work without it (the feature stays off) until it is set.

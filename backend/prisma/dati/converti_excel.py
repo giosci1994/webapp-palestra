@@ -1,15 +1,18 @@
 # ============================================
-# GymMaster — Conversione Excel → JSON
-# Converte il database "Functional Fitness Exercise Database v2.9"
-# in formato JSON compatibile con lo schema Prisma
+# GymMaster — Excel → JSON conversion
+# Converts the "Functional Fitness Exercise Database v2.9" spreadsheet into
+# the JSON files the seed and prisma/import-esercizi.js read.
+#
+# Usage: python converti_excel.py <path to the .xlsx file>
 # ============================================
 
 import openpyxl
 import json
 import os
+import sys
 
-# --- Configurazione ---
-EXCEL_PATH = r'C:\Users\giova\Downloads\Functional+Fitness+Exercise+Database+(version+2.9).xlsx'
+# --- Configuration ---
+EXCEL_PATH = sys.argv[1] if len(sys.argv) > 1 else 'Functional+Fitness+Exercise+Database+(version+2.9).xlsx'
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Riga di inizio dati (0-indexed nell'array rows)
