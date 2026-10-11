@@ -4,6 +4,7 @@
 # Frontend: lint, test e build.
 # Immagini: le immagini Docker di produzione si costruiscono e il backend
 # parte davvero (.github/immagini/docker-compose.yml).
+# Rilascio: lo script che installa le release sul server (deploy/rilascio.sh).
 name: Test
 
 on:
@@ -83,3 +84,12 @@ jobs:
         run: docker compose logs
       - if: always()
         run: docker compose --profile controlli down -v
+
+  rilascio:
+    # Lo script gira da solo in produzione: shellcheck e le sue prove, con
+    # docker, curl e npm finti su un repository git di prova
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - run: shellcheck deploy/rilascio.sh deploy/test/rilascio.test.sh
+      - run: bash deploy/test/rilascio.test.sh

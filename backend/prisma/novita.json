@@ -1,0 +1,26 @@
+[
+  {
+    "versione": "1.2.0",
+    "titolo": "Ti avvisa anche in tasca",
+    "sottotitolo": "Notifiche sul telefono, anche ad app chiusa e schermo bloccato",
+    "icona": "🔔",
+    "punti": [
+      {
+        "icona": "⏱️",
+        "testo": "Recupero finito? Il telefono ti avvisa e ti dice cosa tocca dopo, anche se è in tasca"
+      },
+      {
+        "icona": "💬",
+        "testo": "Messaggi in chat, promemoria e avvisi arrivano anche ad app chiusa"
+      },
+      {
+        "icona": "📱",
+        "testo": "Su iPhone prima aggiungi l'app alla schermata Home, poi attivale dal Profilo"
+      }
+    ],
+    "ctaTesto": "Attiva le notifiche",
+    "ctaRotta": "/profilo?tab=notifiche",
+    "coloreInizio": "#ec4899",
+    "coloreFine": "#9060fb"
+  }
+]
