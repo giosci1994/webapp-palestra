@@ -7,19 +7,31 @@ import { inviaMessaggio } from '../../services/chat.service.js';
 import logger from '../../utils/logger.js';
 import prisma from '../../config/database.js';
 import { inviaNotificaTelegram, escapeHtml } from '../../services/telegram.service.js';
+import { inviaPush } from '../../services/push.service.js';
 
-// Notifica via Telegram i partecipanti che NON sono online (fire-and-forget)
-async function notificaDestinatariOffline(conversazioneId, mittenteId, messaggio, utentiConnessi) {
+// Avvisa gli altri partecipanti (fire-and-forget): una push a tutti (ad app
+// aperta il service worker la lascia alla chat; i messaggi della stessa
+// conversazione si sostituiscono) e Telegram a chi non e' collegato
+async function notificaDestinatari(conversazioneId, mittenteId, messaggio, utentiConnessi) {
   try {
     const partecipanti = await prisma.partecipanteChat.findMany({
       where: { conversazioneId, utenteId: { not: mittenteId } },
       select: { utenteId: true }
     });
-    const offline = partecipanti.filter(p => !utentiConnessi.has(p.utenteId));
-    if (offline.length === 0) return;
-
     const contenuto = messaggio.contenuto || '';
     const anteprima = contenuto.length > 120 ? contenuto.slice(0, 120) + '…' : contenuto;
+
+    for (const p of partecipanti) {
+      inviaPush(p.utenteId, {
+        titolo: `💬 ${messaggio.mittente?.nome || 'Nuovo messaggio'}`,
+        messaggio: anteprima,
+        percorso: `/chat/${conversazioneId}`,
+        tag: `chat-${conversazioneId}`
+      }).catch(() => {});
+    }
+
+    const offline = partecipanti.filter(p => !utentiConnessi.has(p.utenteId));
+    if (offline.length === 0) return;
     const testo = `💬 <b>${escapeHtml(messaggio.mittente?.nome || 'Qualcuno')}</b> ti ha scritto su GymMaster:\n${escapeHtml(anteprima)}`;
     for (const p of offline) {
       await inviaNotificaTelegram(p.utenteId, testo);
@@ -56,8 +68,8 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
         messaggio
       });
 
-      // Notifica Telegram ai destinatari offline (non blocca la risposta)
-      notificaDestinatariOffline(conversazioneId, utenteId, messaggio, utentiConnessi).catch(() => {});
+      // Push e Telegram ai destinatari (non blocca la risposta)
+      notificaDestinatari(conversazioneId, utenteId, messaggio, utentiConnessi).catch(() => {});
 
       callback?.({ successo: true, messaggio });
     } catch (errore) {

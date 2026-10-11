@@ -180,6 +180,7 @@ model Utente {
   notifiche AllenamentoNotifica[]
   passkey   Passkey[]
   eserciziPreferiti EsercizioPreferito[]
+  iscrizioniPush    IscrizionePush[]
 
   @@map("utenti")
 }
@@ -217,6 +218,23 @@ model Passkey {
 
   @@index([utenteId])
   @@map("passkey")
+}
+
+// Un dispositivo che riceve le notifiche push (Web Push): l'iscrizione che il
+// browser restituisce a pushManager.subscribe (services/push.service.js)
+model IscrizionePush {
+  id          Int      @id @default(autoincrement())
+  utenteId    Int      @map("utente_id")
+  endpoint    String   @unique
+  p256dh      String
+  auth        String
+  dispositivo String? // "Chrome · Android", dallo User-Agent
+  creataIl    DateTime @default(now()) @map("creata_il")
+
+  utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+
+  @@index([utenteId])
+  @@map("iscrizioni_push")
 }
 
 model RefreshToken {
