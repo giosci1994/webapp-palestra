@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  leggiValoriSerie, leggiInizio, leggiDurata, formattaPerStorico, eserciziDaSessione
+  leggiValoriSerie, leggiInizio, leggiDurata, formattaPerStorico, eserciziDaSessione, orarioDalTelefono
 } from '../../src/controllers/sessioni.controller.js';
 import { ErroreValidazione } from '../../src/utils/errori.js';
 
@@ -112,6 +112,27 @@ describe('leggiDurata', () => {
         erroreValidazione('La durata deve essere fra 1 e 600 minuti'),
         String(valore)
       );
+    }
+  });
+});
+
+describe('orarioDalTelefono', () => {
+  const inizio = new Date('2026-10-11T09:00:00Z');
+  const adesso = new Date('2026-10-11T12:00:00Z');
+
+  it("restituisce l'ora del telefono, come testo o come numero", () => {
+    assert.equal(orarioDalTelefono('2026-10-11T09:40:00Z', inizio, adesso).toISOString(), '2026-10-11T09:40:00.000Z');
+    assert.equal(orarioDalTelefono(Date.parse('2026-10-11T10:00:00Z'), inizio, adesso).toISOString(), '2026-10-11T10:00:00.000Z');
+  });
+
+  it("un orologio avanti o indietro non la porta fuori dall'allenamento", () => {
+    assert.equal(orarioDalTelefono('2026-10-11T13:00:00Z', inizio, adesso).getTime(), adesso.getTime());
+    assert.equal(orarioDalTelefono('2026-10-11T08:58:00Z', inizio, adesso).getTime(), inizio.getTime());
+  });
+
+  it('rifiuta un orario che non si legge', () => {
+    for (const valore of ['ieri', {}, true]) {
+      assert.throws(() => orarioDalTelefono(valore, inizio, adesso), erroreValidazione('Orario non valido'));
     }
   });
 });

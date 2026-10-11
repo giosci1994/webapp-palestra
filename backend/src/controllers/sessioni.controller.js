@@ -372,7 +372,7 @@ export async function dettaglioSessione(req, res, next) {
 export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    const { noteFinali } = req.body;
+    const { noteFinali, conclusaIl } = req.body;
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
     if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
@@ -380,7 +380,10 @@ export async function completaSessione(req, res, next) {
       throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
     }
 
-    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali });
+    // "Termina" toccato senza rete arriva quando torna la connessione: conta
+    // l'ora in cui e' stato toccato, non quella in cui e' arrivato
+    const adesso = conclusaIl != null ? orarioDalTelefono(conclusaIl, sessione.dataInizio) : undefined;
+    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso });
 
     res.json({
       successo: true,
@@ -526,47 +529,99 @@ export async function riapriSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Registra una serie */
+/** La chiave che il telefono da' a una serie (un UUID, o qualcosa di simile) */
+const ID_CLIENT = /^[A-Za-z0-9-]{8,64}$/;
+
+/**
+ * Un istante scritto dal telefono: quando e' stata fatta una serie, quando e'
+ * stato toccato "Termina". Senza rete arriva anche ore dopo, quindi conta
+ * l'ora del telefono, tenuta fra l'inizio dell'allenamento e adesso: un
+ * orologio un po' avanti o indietro non la porta fuori dall'allenamento.
+ */
+export function orarioDalTelefono(valore, dataInizio, adesso = new Date()) {
+  const orario = typeof valore === 'string' || typeof valore === 'number' ? new Date(valore) : null;
+  if (!orario || Number.isNaN(orario.getTime())) throw new ErroreValidazione('Orario non valido');
+  return new Date(Math.min(Math.max(orario.getTime(), dataInizio.getTime()), adesso.getTime()));
+}
+
+/**
+ * POST /sessioni/:id/serie — Registra una serie
+ *
+ * Il telefono tiene in coda le serie fatte senza rete (utils/codaSerie.js nel
+ * frontend) e le manda quando torna la connessione, ognuna con la sua chiave
+ * (idClient) e l'ora in cui e' stata fatta (registrataIl). Una serie gia'
+ * arrivata non si registra due volte: se la prima risposta si e' persa, il
+ * telefono ritenta e riceve quella gia' salvata.
+ */
 export async function logSerie(req, res, next) {
   try {
     const sessioneId = parseInt(req.params.id);
-    const { 
+    const {
       esercizioId, serieNumero, pesoEffettivo, repEffettive, rpe, completato, motivoSaltoEsercizio, noteSerie,
-      distanzaKm, durataMinuti, livelloResistenza, velocitaKmh, inclinazione 
+      distanzaKm, durataMinuti, livelloResistenza, velocitaKmh, inclinazione, idClient, registrataIl
     } = req.body;
 
     if (!esercizioId || !serieNumero) {
       throw new ErroreValidazione('esercizioId e serieNumero sono obbligatori');
     }
+    if (idClient != null && (typeof idClient !== 'string' || !ID_CLIENT.test(idClient))) {
+      throw new ErroreValidazione('idClient non valido');
+    }
 
     // Verifica che la sessione sia dell'utente prima di registrare la serie
-    const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id: sessioneId }, select: { utenteId: true } });
+    const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id: sessioneId } });
     if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato('Non puoi registrare serie in questa sessione');
     }
 
-    const log = await prisma.logSerie.create({
-      data: {
-        sessioneId,
-        esercizioId: parseInt(esercizioId),
-        serieNumero: parseInt(serieNumero),
-        pesoEffettivo: parseFloat(pesoEffettivo) || 0,
-        repEffettive: parseInt(repEffettive) || 0,
-        rpe: rpe ? parseInt(rpe) : null,
-        completato: completato !== false,
-        motivoSaltoEsercizio: motivoSaltoEsercizio || null,
-        noteSerie: noteSerie || null,
-        distanzaKm: distanzaKm ? parseFloat(distanzaKm) : null,
-        durataMinuti: durataMinuti ? parseInt(durataMinuti) : null,
-        livelloResistenza: livelloResistenza ? parseInt(livelloResistenza) : null,
-        velocitaKmh: velocitaKmh ? parseFloat(velocitaKmh) : null,
-        inclinazione: inclinazione ? parseFloat(inclinazione) : null
-      },
-      include: {
-        esercizio: { include: { attrezzatura: { select: { categoria: true } } } }
-      }
+    const includi = { esercizio: { include: { attrezzatura: { select: { categoria: true } } } } };
+    const giaArrivata = () => prisma.logSerie.findUnique({
+      where: { sessioneId_idClient: { sessioneId, idClient } },
+      include: includi
     });
+    if (idClient) {
+      const arrivata = await giaArrivata();
+      if (arrivata) return res.json({ successo: true, dati: arrivata });
+    }
+
+    let log;
+    try {
+      log = await prisma.logSerie.create({
+        data: {
+          sessioneId,
+          esercizioId: parseInt(esercizioId),
+          serieNumero: parseInt(serieNumero),
+          pesoEffettivo: parseFloat(pesoEffettivo) || 0,
+          repEffettive: parseInt(repEffettive) || 0,
+          rpe: rpe ? parseInt(rpe) : null,
+          completato: completato !== false,
+          motivoSaltoEsercizio: motivoSaltoEsercizio || null,
+          noteSerie: noteSerie || null,
+          distanzaKm: distanzaKm ? parseFloat(distanzaKm) : null,
+          durataMinuti: durataMinuti ? parseInt(durataMinuti) : null,
+          livelloResistenza: livelloResistenza ? parseInt(livelloResistenza) : null,
+          velocitaKmh: velocitaKmh ? parseFloat(velocitaKmh) : null,
+          inclinazione: inclinazione ? parseFloat(inclinazione) : null,
+          idClient: idClient || null,
+          ...(registrataIl != null && { registrataIl: orarioDalTelefono(registrataIl, sessione.dataInizio) })
+        },
+        include: includi
+      });
+    } catch (errore) {
+      // Due invii della stessa serie nello stesso istante: ne passa uno
+      if (errore.code !== 'P2002' || !idClient) throw errore;
+      return res.json({ successo: true, dati: await giaArrivata() });
+    }
+
+    // Arrivata ad allenamento gia' chiuso (dal controllo del server, mentre il
+    // telefono era senza rete): si richiude contando anche lei, cosi' durata,
+    // volume e record la comprendono
+    if (sessione.dataFine) {
+      await concludiSessione(sessione, {
+        adesso: new Date(Math.max(sessione.dataFine.getTime(), log.registrataIl.getTime()))
+      });
+    }
 
     res.status(201).json({ successo: true, dati: log });
   } catch (errore) { next(errore); }

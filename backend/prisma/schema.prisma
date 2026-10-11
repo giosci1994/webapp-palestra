@@ -457,8 +457,12 @@ model LogSerie {
   noteSerie            String? @map("note_serie")
   // Quando e' stata registrata: dice quando finisce un allenamento lasciato
   // aperto (services/conclusioneSessione.service.js). Vuota per le serie
-  // registrate prima che ci fosse.
+  // registrate prima che ci fosse. Una serie fatta senza rete la porta dal
+  // telefono: e' l'ora in cui e' stata fatta, non quella in cui e' arrivata.
   registrataIl         DateTime? @default(now()) @map("registrata_il")
+  // Scelto dal telefono per ogni serie: se la stessa serie arriva due volte
+  // (inviata senza rete e poi ritentata) si registra una volta sola
+  idClient             String?   @map("id_client")
 
   // Campi opzionali per CARDIO
   distanzaKm           Float?  @map("distanza_km")
@@ -470,6 +474,7 @@ model LogSerie {
   sessione  SessioneAllenamento @relation(fields: [sessioneId], references: [id], onDelete: Cascade)
   esercizio Esercizio            @relation(fields: [esercizioId], references: [id])
 
+  @@unique([sessioneId, idClient])
   @@map("log_serie")
 }
 

@@ -22,5 +22,29 @@
     "ctaRotta": "/profilo?tab=notifiche",
     "coloreInizio": "#ec4899",
     "coloreFine": "#9060fb"
+  },
+  {
+    "versione": "1.2.0",
+    "titolo": "Anche senza campo",
+    "sottotitolo": "In palestra la rete va e viene: l'allenamento no",
+    "icona": "📴",
+    "punti": [
+      {
+        "icona": "✅",
+        "testo": "Registri le serie come sempre, anche senza connessione: restano salvate sul telefono"
+      },
+      {
+        "icona": "📶",
+        "testo": "Quando torna la rete partono da sole, una volta sola, con l'ora in cui le hai fatte"
+      },
+      {
+        "icona": "🏁",
+        "testo": "Puoi anche chiudere l'allenamento senza rete: durata e record arrivano giusti"
+      }
+    ],
+    "ctaTesto": "Inizia un allenamento",
+    "ctaRotta": "/schede",
+    "coloreInizio": "#10b981",
+    "coloreFine": "#0ea5e9"
   }
 ]

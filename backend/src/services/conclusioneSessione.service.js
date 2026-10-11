@@ -21,6 +21,12 @@ const MINUTO = 60 * 1000;
 /** Senza serie nuove da tanto, l'allenamento e' stato dimenticato aperto */
 export const MINUTI_INATTIVITA = 120;
 
+/**
+ * Un allenamento aperto senza serie si elimina solo dopo un giorno: le serie
+ * possono essere ancora su un telefono senza rete, in coda, e arrivare tardi
+ */
+export const ORE_SESSIONE_VUOTA = 24;
+
 /** Per le serie registrate prima che avessero un orario: minuti stimati a serie */
 const MINUTI_PER_SERIE = 3;
 
@@ -82,8 +88,10 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
     data: { stato: 'COMPLETATO', sessioneId: sessione.id }
   });
 
-  // I record sono di chi si e' allenato, anche se a chiudere e' il superadmin
-  const recordPersonali = await controllaRecord(sessione.utenteId, completate);
+  // I record sono di chi si e' allenato, anche se a chiudere e' il superadmin,
+  // e del giorno dell'allenamento: chiuso tardi (dimenticato aperto, o con le
+  // serie arrivate dopo da un telefono senza rete) non diventano di oggi
+  const recordPersonali = await controllaRecord(sessione.utenteId, completate, fine);
 
   return { sessione: aggiornata, recordPersonali, dimenticata };
 }
@@ -94,8 +102,8 @@ const formatoOra = new Intl.DateTimeFormat('it-IT', { timeZone: FUSO_ORARIO, hou
 /**
  * Il controllo periodico (server.js): gli allenamenti fermi da piu' di
  * MINUTI_INATTIVITA minuti vengono chiusi all'ultima serie, e chi si allenava
- * riceve una notifica. Quelli senza nemmeno una serie non erano allenamenti:
- * si eliminano.
+ * riceve una notifica. Quelli senza nemmeno una serie dopo ORE_SESSIONE_VUOTA
+ * ore non erano allenamenti: si eliminano.
  * @returns {Promise<{ chiuse: number, eliminate: number }>}
  */
 export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
@@ -113,6 +121,7 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
     if (!fineEffettiva(aperta.dataInizio, aperta.logSerie, adesso).dimenticata) continue;
 
     if (aperta.logSerie.length === 0) {
+      if (adesso.getTime() - aperta.dataInizio.getTime() < ORE_SESSIONE_VUOTA * 60 * MINUTO) continue;
       await prisma.sessioneAllenamento.delete({ where: { id: aperta.id } });
       eliminate++;
       continue;

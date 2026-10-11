@@ -79,10 +79,16 @@ describe('controllo periodico degli allenamenti aperti', () => {
     assert.equal(notifica.percorso, '/storico');
   });
 
-  it('elimina quelli abbandonati senza nemmeno una serie', async () => {
-    const vuoto = await aperto(300);
+  it('elimina dopo un giorno quelli abbandonati senza nemmeno una serie', async () => {
+    const vuoto = await aperto(25 * 60);
     assert.deepEqual(await chiudiSessioniDimenticate(null), { chiuse: 0, eliminate: 1 });
     assert.equal(await sessione(vuoto), null);
+  });
+
+  it('senza serie da qualche ora lo lascia aperto: le serie possono essere su un telefono senza rete', async () => {
+    const senzaRete = await aperto(300);
+    assert.deepEqual(await chiudiSessioniDimenticate(null), { chiuse: 0, eliminate: 0 });
+    assert.equal((await sessione(senzaRete)).dataFine, null);
   });
 
   it('lascia stare quelli in corso: appena cominciati, o con una serie recente', async () => {
