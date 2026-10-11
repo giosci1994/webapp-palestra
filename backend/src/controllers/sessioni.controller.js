@@ -201,6 +201,9 @@ export async function ultimaSessioneScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+/** Le sedute di ogni esercizio che "ultimi carichi" restituisce, dalla piu' recente */
+const SEDUTE_PER_ESERCIZIO = 4;
+
 /**
  * Carichi dell'ultima volta per ciascun esercizio, in qualsiasi scheda.
  * Serve all'allenamento in corso per suggerire da che peso partire: con una
@@ -208,7 +211,7 @@ export async function ultimaSessioneScheda(req, res, next) {
  * l'esercizio magari e' gia' stato fatto altrove.
  *
  * Query: esercizi=1,2,3 · escludi=<id della sessione in corso>
- * Risposta: { [esercizioId]: { sessioneId, data, serie: [...] } }
+ * Risposta: { [esercizioId]: { sessioneId, data, serie: [...], storico: [{ sessioneId, data, serie }] } }
  */
 export async function ultimiCarichi(req, res, next) {
   try {
@@ -238,13 +241,20 @@ export async function ultimiCarichi(req, res, next) {
       orderBy: [{ sessione: { dataInizio: 'desc' } }, { serieNumero: 'asc' }, { id: 'asc' }]
     });
 
-    // Le righe arrivano dalla sessione piu' recente: per ogni esercizio si
-    // tiene solo la prima sessione incontrata.
+    // Le righe arrivano dalla sessione piu' recente. Per ogni esercizio:
+    // sessioneId, data e serie dell'ultima volta, e in storico le ultime
+    // SEDUTE_PER_ESERCIZIO volte, che servono alla progressione dei carichi
+    // (tre volte di fila sotto la forbice di ripetizioni: si scarica).
     const risultato = {};
     for (const s of serie) {
-      const voce = risultato[s.esercizioId] ??= { sessioneId: s.sessioneId, data: s.sessione.dataInizio, serie: [] };
-      if (voce.sessioneId !== s.sessioneId) continue;
-      voce.serie.push({
+      const voce = risultato[s.esercizioId] ??= { storico: [] };
+      let seduta = voce.storico.at(-1);
+      if (seduta?.sessioneId !== s.sessioneId) {
+        if (voce.storico.length === SEDUTE_PER_ESERCIZIO) continue;
+        seduta = { sessioneId: s.sessioneId, data: s.sessione.dataInizio, serie: [] };
+        voce.storico.push(seduta);
+      }
+      seduta.serie.push({
         serieNumero: s.serieNumero,
         pesoEffettivo: s.pesoEffettivo,
         repEffettive: s.repEffettive,
@@ -253,6 +263,7 @@ export async function ultimiCarichi(req, res, next) {
         livelloResistenza: s.livelloResistenza
       });
     }
+    for (const voce of Object.values(risultato)) Object.assign(voce, voce.storico[0], { storico: voce.storico });
 
     res.json({ successo: true, dati: risultato });
   } catch (errore) { next(errore); }

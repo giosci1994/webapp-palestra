@@ -10,12 +10,21 @@ import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
 import { statoDaSessione, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
+import { propostaCarico, incrementoPer } from '../utils/progressione.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaData, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
+
+/** La proposta di carico per esito: etichetta e colori della scheda */
+const STILE_PROPOSTA = {
+  sali: { etichetta: '📈 Proposta per oggi · si sale', colore: 'var(--successo)', bordo: 'var(--successo)', sfondo: 'var(--successo-dim)' },
+  resta: { etichetta: '🎯 Proposta per oggi', colore: 'var(--accent)', bordo: 'var(--accent-glow)', sfondo: 'var(--accent-dim)' },
+  scarico: { etichetta: '🔄 Proposta per oggi · scarico', colore: 'var(--avviso)', bordo: 'var(--avviso)', sfondo: 'var(--bg-terziario)' }
+};
+const kg = n => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
 
 export default function WorkoutLive() {
   const { id } = useParams();
@@ -260,6 +269,15 @@ export default function WorkoutLive() {
     : null;
   const riferimentoCardio = riferimento?.durataMinuti > 0;
 
+  // Il peso di oggi dalla doppia progressione sulle ultime volte (utils/progressione.js)
+  const proposta = isCardio ? null : propostaCarico({
+    storico: caricoPrecedente?.storico ?? [],
+    serieTarget: esercizioAttuale?.serieTarget,
+    repTarget: esercizioAttuale?.repTarget,
+    incremento: incrementoPer(esercizioAttuale?.esercizio)
+  });
+  const usaProposta = () => setForm(p => ({ ...p, peso: String(proposta.peso) }));
+
   const usaRiferimento = () => {
     if (!riferimento) return;
     // Solo i parametri da impostare prima della serie: le ripetizioni si
@@ -360,8 +378,12 @@ export default function WorkoutLive() {
     }
   };
 
-  /** Campi per un nuovo esercizio: peso e resistenza restano, ripetizioni e minuti no. */
-  const formPerNuovoEsercizio = (f) => ({ ...f, rep: '', minuti: '' });
+  /**
+   * Campi per un nuovo esercizio: peso, ripetizioni e minuti si svuotano (il
+   * peso di quello prima, coi suoi dischi, sarebbe solo fuorviante: il
+   * segnaposto mostra la proposta o l'ultima volta). RPE e resistenza restano.
+   */
+  const formPerNuovoEsercizio = (f) => ({ ...f, peso: '', rep: '', minuti: '' });
 
   /** Mostra un altro esercizio senza toccare il recupero. */
   const apriEsercizio = (nuovoIndice) => {
@@ -695,6 +717,29 @@ export default function WorkoutLive() {
               Serie {serieCorrente} / {esercizioAttuale.serieTarget}
             </p>
 
+            {/* Proposta di oggi: sale, resta o scarica, e perche' */}
+            {proposta && (
+              <button
+                type="button"
+                onClick={usaProposta}
+                className="flex items-center justify-between gap-3 w-full px-3 py-2.5 rounded-[var(--raggio-md)] border text-left hover:border-[var(--accent)] transition-colors"
+                style={{ borderColor: STILE_PROPOSTA[proposta.esito].bordo, background: STILE_PROPOSTA[proposta.esito].sfondo }}
+              >
+                <span className="min-w-0">
+                  <span className="block text-[11px] font-semibold" style={{ color: STILE_PROPOSTA[proposta.esito].colore }}>
+                    {STILE_PROPOSTA[proposta.esito].etichetta}
+                  </span>
+                  <span className="block text-base font-bold tabular-nums">
+                    {kg(proposta.peso)} kg × {proposta.ripetizioni.min === proposta.ripetizioni.max
+                      ? proposta.ripetizioni.min
+                      : `${proposta.ripetizioni.min}-${proposta.ripetizioni.max}`}
+                  </span>
+                  <span className="block text-[11px] leading-snug text-[var(--testo-secondario)] mt-0.5">{proposta.motivo}</span>
+                </span>
+                <span className="text-xs font-bold text-[var(--accent)] shrink-0">Usa</span>
+              </button>
+            )}
+
             {/* Ultima volta: per decidere il carico prima di iniziare la serie */}
             {riferimento && (
               <button
@@ -737,7 +782,7 @@ export default function WorkoutLive() {
                   <div>
                     <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Peso (kg)</label>
                     <input type="number" value={form.peso} onChange={e => setForm(p => ({...p, peso: e.target.value}))}
-                           className="campo-input text-center text-3xl font-bold py-5" placeholder={riferimento && !riferimentoCardio ? String(riferimento.pesoEffettivo) : '0'}
+                           className="campo-input text-center text-3xl font-bold py-5" placeholder={proposta ? String(proposta.peso) : riferimento && !riferimentoCardio ? String(riferimento.pesoEffettivo) : '0'}
                            inputMode="decimal" step="0.5" min="0" />
                   </div>
                   <div>
