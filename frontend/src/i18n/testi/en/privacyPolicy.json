@@ -1,0 +1,63 @@
+{
+  "tornaApp": "Back to the app",
+  "titolo": "Privacy Policy",
+  "ultimoAggiornamento": "Last updated: 11 May 2026",
+  "titolare": {
+    "titolo": "1. Data Controller",
+    "nome": "Giovanni — GymMaster open-source project",
+    "contatto": "Contact: <link>github.com/giosci1994</link>"
+  },
+  "datiRaccolti": {
+    "titolo": "2. Data Collected",
+    "intro": "We collect the following categories of personal data:",
+    "registrazione": "<b>Registration data:</b> name, email address, password (cryptographic hash)",
+    "profilo": "<b>Profile data:</b> profile photo, date of birth, sex, weight, height, fitness goal",
+    "allenamento": "<b>Workout data:</b> sessions, exercises, sets, reps, loads, personal records",
+    "tecnici": "<b>Technical data:</b> IP address, browser type, technical session cookies",
+    "comunicazione": "<b>Communication data:</b> messages in the internal chat"
+  },
+  "baseGiuridica": {
+    "titolo": "3. Legal Basis and Purposes",
+    "intro": "Data processing is based on:",
+    "consenso": "<b>Consent (Art. 6(1)(a) GDPR):</b> for optional features such as gamification, profile visibility and shared statistics",
+    "contratto": "<b>Performance of a contract (Art. 6(1)(b) GDPR):</b> to provide the service (account management, workouts, communications)",
+    "interesse": "<b>Legitimate interest (Art. 6(1)(f) GDPR):</b> for security, abuse prevention and service improvement"
+  },
+  "conservazione": {
+    "titolo": "4. Data Retention",
+    "intro": "Personal data is retained for as long as necessary for the purposes for which it was collected:",
+    "account": "Account data: until the account is deleted",
+    "allenamento": "Workout data: until the account is deleted or upon request",
+    "chat": "Chat messages: according to the retention settings configured by the user (default: 7 days)",
+    "log": "Technical logs: 90 days at most"
+  },
+  "diritti": {
+    "titolo": "5. User Rights",
+    "intro": "Under Regulation (EU) 2016/679 (GDPR), you have the right to:",
+    "accesso": "<b>Access:</b> obtain confirmation of the processing and a copy of your data",
+    "rettifica": "<b>Rectification:</b> correct inaccurate or incomplete data",
+    "cancellazione": "<b>Erasure:</b> request the deletion of your data (\"right to be forgotten\")",
+    "limitazione": "<b>Restriction:</b> restrict the processing in certain circumstances",
+    "portabilita": "<b>Portability:</b> receive your data in a structured and readable format",
+    "opposizione": "<b>Objection:</b> object to processing based on legitimate interest",
+    "revoca": "<b>Withdrawal of consent:</b> withdraw your consent at any time",
+    "esercizio": "You can download a complete copy of your data yourself, in JSON format, at any time from <b>Profile → Privacy → Your data</b>; from Profile you can also delete your account. To exercise your other rights, contact us through the GitHub profile indicated above."
+  },
+  "sicurezza": {
+    "titolo": "6. Security",
+    "intro": "We implement appropriate technical and organisational measures to protect your data:",
+    "password": "Password encryption with Argon2id",
+    "https": "Encrypted HTTPS connections",
+    "jwt": "JWT tokens with automatic rotation",
+    "rateLimiting": "Rate limiting and brute-force protection",
+    "helmet": "Helmet.js for HTTP header protection"
+  },
+  "trasferimento": {
+    "titolo": "7. Data Transfers",
+    "testo": "Data is stored on self-hosted servers in the European Union. We do not transfer personal data to third countries outside the European Economic Area (EEA)."
+  },
+  "modifiche": {
+    "titolo": "8. Changes",
+    "testo": "We reserve the right to update this policy. Changes will be communicated through the application. Continued use of the service after notification constitutes acceptance of the changes."
+  }
+}

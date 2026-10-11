@@ -1,0 +1,62 @@
+{
+  "tornaApp": "Torna all'app",
+  "titolo": "Termini e Condizioni",
+  "ultimoAggiornamento": "Ultimo aggiornamento: 11 maggio 2026",
+  "oggetto": {
+    "titolo": "1. Oggetto del Servizio",
+    "testo": "GymMaster è una piattaforma web di gestione degli allenamenti in palestra che consente agli utenti di creare e seguire schede di allenamento, tracciare i progressi, comunicare con altri utenti e interagire con personal trainer."
+  },
+  "registrazione": {
+    "titolo": "2. Registrazione e Account",
+    "datiVeritieri": "Per utilizzare il servizio è necessario creare un account fornendo dati veritieri e aggiornati.",
+    "personale": "L'account è personale e non trasferibile.",
+    "approvazione": "La registrazione è soggetta ad approvazione da parte dell'amministratore.",
+    "credenziali": "L'utente è responsabile della sicurezza delle proprie credenziali di accesso.",
+    "eta": "L'utente deve avere almeno 16 anni di età per registrarsi (ai sensi dell'Art. 8 GDPR)."
+  },
+  "obblighi": {
+    "titolo": "3. Obblighi dell'Utente",
+    "intro": "L'utente si impegna a:",
+    "lecito": "Utilizzare il servizio in modo lecito e conforme ai presenti termini",
+    "contenuti": "Non condividere contenuti offensivi, illegali o inappropriati",
+    "accessi": "Non tentare di accedere ad account o dati di altri utenti",
+    "automatismi": "Non utilizzare bot, script o strumenti automatizzati non autorizzati",
+    "sicurezza": "Non eludere le misure di sicurezza dell'applicazione"
+  },
+  "personalTrainer": {
+    "titolo": "4. Personal Trainer",
+    "ruolo": "Gli utenti possono richiedere il ruolo di Personal Trainer, soggetto ad approvazione.",
+    "attivita": "I Personal Trainer possono creare esercizi, gestire clienti e fissare appuntamenti.",
+    "qualifiche": "GymMaster non verifica le qualifiche professionali dei Personal Trainer e non si assume responsabilità per i loro servizi.",
+    "responsabilita": "L'utente che si iscrive a un Personal Trainer lo fa sotto la propria responsabilità."
+  },
+  "proprietaIntellettuale": {
+    "titolo": "5. Proprietà Intellettuale",
+    "testo": "GymMaster è un progetto open-source. Il codice sorgente è disponibile su <link>GitHub</link>. I contenuti creati dagli utenti (schede, esercizi personalizzati) rimangono di proprietà dei rispettivi autori."
+  },
+  "disclaimerMedico": {
+    "titolo": "6. Disclaimer Medico",
+    "testo": "GymMaster non fornisce consulenza medica. L'applicazione è uno strumento di monitoraggio degli allenamenti e non sostituisce il parere di un medico o di un professionista sanitario. Consulta sempre un medico prima di iniziare un nuovo programma di allenamento."
+  },
+  "responsabilita": {
+    "titolo": "7. Limitazione di Responsabilità",
+    "intro": "Il servizio è fornito \"così com'è\" senza garanzie di alcun tipo. Il titolare non è responsabile per:",
+    "interruzioni": "Interruzioni temporanee del servizio",
+    "perditaDati": "Perdita di dati dovuta a cause di forza maggiore",
+    "usoImproprio": "Danni derivanti dall'uso improprio dell'applicazione",
+    "infortuni": "Infortuni o danni fisici derivanti dagli allenamenti"
+  },
+  "sospensione": {
+    "titolo": "8. Sospensione e Cancellazione",
+    "ban": "L'amministratore può sospendere o bannare account che violano i presenti termini.",
+    "cancellazione": "L'utente può richiedere la cancellazione del proprio account e dei relativi dati in qualsiasi momento."
+  },
+  "modifiche": {
+    "titolo": "9. Modifiche ai Termini",
+    "testo": "Ci riserviamo il diritto di modificare i presenti termini. Le modifiche verranno comunicate tramite l'applicazione. L'uso continuato del servizio dopo la notifica costituisce accettazione dei nuovi termini."
+  },
+  "leggeApplicabile": {
+    "titolo": "10. Legge Applicabile",
+    "testo": "I presenti termini sono regolati dalla normativa dell'Unione Europea, in particolare dal Regolamento UE 2016/679 (GDPR). Per qualsiasi controversia sarà competente il foro del luogo di residenza dell'utente consumatore, in conformità con il Regolamento UE n. 1215/2012."
+  }
+}

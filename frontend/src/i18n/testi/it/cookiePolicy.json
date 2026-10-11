@@ -1,0 +1,41 @@
+{
+  "tornaApp": "Torna all'app",
+  "titolo": "Cookie Policy",
+  "ultimoAggiornamento": "Ultimo aggiornamento: 11 maggio 2026",
+  "cosaSono": {
+    "titolo": "1. Cosa sono i Cookie",
+    "testo": "I cookie sono piccoli file di testo che vengono memorizzati sul tuo dispositivo quando visiti un sito web. Servono a migliorare l'esperienza di navigazione e a garantire il funzionamento di alcune funzionalità."
+  },
+  "utilizzati": {
+    "titolo": "2. Cookie Utilizzati",
+    "colonnaNome": "Nome",
+    "colonnaTipo": "Tipo",
+    "colonnaFinalita": "Finalità",
+    "colonnaDurata": "Durata",
+    "tipoNecessario": "Necessario",
+    "refreshToken": {
+      "finalita": "Autenticazione — mantiene la sessione utente",
+      "durata": "7 giorni"
+    },
+    "cookieConsent": {
+      "finalita": "Memorizza le preferenze cookie dell'utente",
+      "durata": "1 anno"
+    }
+  },
+  "terzeParti": {
+    "titolo": "3. Cookie di Terze Parti",
+    "testo": "GymMaster <b>non utilizza</b> cookie di profilazione, tracking o di terze parti. Non utilizziamo Google Analytics, Facebook Pixel o altri servizi di tracciamento."
+  },
+  "gestione": {
+    "titolo": "4. Come Gestire i Cookie",
+    "intro": "Puoi gestire le preferenze dei cookie in qualsiasi momento:",
+    "banner": "Tramite il banner cookie presente nell'applicazione",
+    "browser": "Modificando le impostazioni del tuo browser",
+    "cancellazione": "Cancellando i cookie memorizzati dal browser",
+    "nota": "<b>Nota:</b> la disabilitazione dei cookie necessari potrebbe compromettere il funzionamento dell'applicazione (ad esempio, non sarà possibile mantenere la sessione di login)."
+  },
+  "baseGiuridica": {
+    "titolo": "5. Base Giuridica",
+    "testo": "I cookie strettamente necessari sono trattati sulla base dell'interesse legittimo (Art. 6(1)(f) GDPR). Per eventuali cookie non essenziali, verrà richiesto il consenso esplicito dell'utente (Art. 6(1)(a) GDPR)."
+  }
+}
