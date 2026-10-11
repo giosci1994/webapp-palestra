@@ -54,10 +54,15 @@ export function appiattisci(moduli) {
   return testi;
 }
 
-const TESTI = {
-  en: appiattisci(import.meta.glob('./testi/en/*.json', { eager: true, import: 'default' })),
-  it: appiattisci(import.meta.glob('./testi/it/*.json', { eager: true, import: 'default' }))
-};
+/** Every folder under testi/ is a language: { en: { "<namespace>.<key>": text }, it: {...} } */
+const TESTI = (() => {
+  const perLingua = {};
+  for (const [percorso, contenuto] of Object.entries(import.meta.glob('./testi/*/*.json', { eager: true, import: 'default' }))) {
+    const lingua = percorso.split('/').at(-2);
+    (perLingua[lingua] ??= {})[percorso] = contenuto;
+  }
+  return Object.fromEntries(Object.entries(perLingua).map(([lingua, moduli]) => [lingua, appiattisci(moduli)]));
+})();
 
 // --- Picking a language ---
 

@@ -12,7 +12,7 @@ Rules:
 
 - Always talk to Giovanni, the project owner, in Italian: replies, questions and summaries.
 - Everything that goes into the repository is in English: README, docs, code comments, commit messages, pull requests, issue and PR comments. Code names stay in Italian (variables, functions, files, routes, database tables and columns): keep new ones consistent with the code around them. When you touch a file with Italian comments, translate the comments you change.
-- The app is meant for users all over the world: English is becoming its base language, with Italian as a translation and other languages to follow. The interface is still in Italian while the translation layer is being built.
+- The app is for users all over the world: English is its base language, Italian a translation, and more can follow (`docs/translations.md`). Every text users see goes through `frontend/src/i18n`: `t('<namespace>.<key>')` with the text in `testi/en` and `testi/it`, the same keys in both, never hard-coded. Dates and numbers through `utils/formattatori.js` or `localeCorrente()`. The tests check the keys. Texts that come from the server are still Italian until the backend is translated.
 - One commit per feature. When the work is done and the tests are green, push and open the pull request without asking. Pull requests target `master`, never another branch: GitHub does not move the base when the PR below is merged.
 - Giovanni merges, after looking at the PR's tests. Production updates when he publishes a release on GitHub (see "Releases"): nothing is installed from a work session.
 - The repository is public: no secrets, keys, user data or internal addresses in commits, PRs and files.
