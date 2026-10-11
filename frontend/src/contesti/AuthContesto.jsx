@@ -4,7 +4,8 @@
 // ============================================
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { apiChiamata, impostaToken, cancellaToken, refreshSessione, impostaGestoreSessioneScaduta } from '../config/api.js';
+import { api, apiChiamata, impostaToken, cancellaToken, refreshSessione, impostaGestoreSessioneScaduta } from '../config/api.js';
+import { disiscriviDispositivo } from '../utils/push.js';
 import { startAuthentication } from '@simplewebauthn/browser';
 
 const AuthContesto = createContext(null);
@@ -139,6 +140,8 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
+      // Il dispositivo smette di ricevere le push di chi esce
+      await disiscriviDispositivo(api).catch(() => {});
       await apiChiamata('/auth/logout', { metodo: 'POST' });
     } catch {
       // Ignora errori di logout

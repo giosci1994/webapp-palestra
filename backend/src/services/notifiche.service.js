@@ -5,6 +5,7 @@
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
+import { inviaPush } from './push.service.js';
 
 // Quante notifiche tenere per utente: oltre questa soglia le più vecchie
 // vengono eliminate, così la tabella non cresce senza fine.
@@ -34,6 +35,10 @@ export async function creaNotifica(io, utenteId, { tipo = 'SISTEMA', titolo, mes
     } catch (err) {
       logger.warn({ err, utenteId }, 'Notifica salvata ma non emessa via socket');
     }
+
+    // E sul telefono, anche ad app chiusa (se l'utente ha attivato le push;
+    // ad app aperta il service worker la lascia alla campanella)
+    inviaPush(utenteId, { titolo, messaggio, percorso: percorso || '/', tag: tipo }).catch(() => {});
 
     potaVecchie(utenteId).catch(() => {});
     return notifica;

@@ -15,8 +15,9 @@ import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil, Download, Smartphone, Monitor, KeyRound
+  Pencil, Download, Smartphone, Monitor, KeyRound, Bell
 } from 'lucide-react';
+import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
 
 const OBIETTIVI = ['Massa Muscolare', 'Definizione', 'Resistenza', 'Salute Generale', 'Perdita Peso'];
 const GENERI = [{ v: 'M', l: 'Maschile' }, { v: 'F', l: 'Femminile' }, { v: 'Altro', l: 'Altro' }];
@@ -24,6 +25,7 @@ const VIS_DEFAULT = { palestra: true, peso: false, altezza: false, eta: false, o
 
 const TABS = [
   { id: 'profilo', label: 'Profilo', icona: User },
+  { id: 'notifiche', label: 'Notifiche', icona: Bell },
   { id: 'privacy', label: 'Privacy', icona: Shield },
   { id: 'pt', label: 'Personal Trainer', icona: Dumbbell },
   { id: 'sicurezza', label: 'Sicurezza', icona: Lock },
@@ -529,6 +531,12 @@ export default function Profilo() {
           )}
 
           {/* TAB 2: PRIVACY */}
+          {tabAttivo === 'notifiche' && (
+            <motion.div key="notifiche" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              <ImpostazioniNotifiche />
+            </motion.div>
+          )}
+
           {tabAttivo === 'privacy' && (
             <motion.div key="privacy" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden mb-6">
