@@ -1,31 +1,31 @@
 // ============================================
-// GymMaster — Esportazione Dati
-// Copia completa dei dati di un utente
+// GymMaster — Data export
+// Full copy of a user's data
 // ============================================
 //
-// Il diritto di accesso e quello alla portabilita' (GDPR, art. 15 e 20) che
-// la privacy policy promette: tutto cio' che GymMaster conserva su una
-// persona, in un file JSON che qualunque programma sa leggere.
+// The right of access and the right to data portability (GDPR, art. 15 and
+// 20) that the privacy policy promises: everything GymMaster keeps about a
+// person, in a JSON file that any program can read.
 //
-// Due regole:
-// - niente segreti: hash della password, token di sessione, di verifica e di
-//   reset, codice di collegamento a Telegram;
-// - degli altri utenti solo il nome. Le chat contengono anche i messaggi
-//   ricevuti, perche' una conversazione a meta' non serve a niente, ma email
-//   e profilo degli interlocutori sono dati loro.
+// Two rules:
+// - no secrets: password hash, session, verification and reset tokens,
+//   Telegram link code;
+// - of other users, only the name. Chats also contain the messages received,
+//   because half a conversation is useless, but the other people's email and
+//   profile are their data.
 //
-// Dei modelli senza segreti si esportano tutti i campi, cosi' una colonna
-// aggiunta domani entra da sola nel file. Il profilo invece va elencato campo
-// per campo (CAMPI_PROFILO / CAMPI_RISERVATI), e un test controlla che ogni
-// colonna di Utente stia in uno dei due elenchi.
+// For models without secrets every field is exported, so a column added
+// tomorrow gets into the file on its own. The profile instead is listed field
+// by field (CAMPI_PROFILO / CAMPI_RISERVATI), and a test checks that every
+// column of Utente is in one of the two lists.
 
 import prisma from '../config/database.js';
 import { giornoLocale } from '../utils/date.js';
 
-// Cambia se cambia la struttura del file
+// Changes when the file's structure changes
 export const VERSIONE_FORMATO = 1;
 
-/** Le colonne di Utente che finiscono nel file */
+/** The Utente columns that go into the file */
 export const CAMPI_PROFILO = [
   'id', 'email', 'nome', 'ruolo', 'stato', 'dataRegistrazione', 'emailVerificata', 'ultimoAccesso',
   'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm', 'genere', 'bio', 'obiettivoFitness',
@@ -35,7 +35,7 @@ export const CAMPI_PROFILO = [
   'dataResetStatistiche', 'dataResetGamification'
 ];
 
-/** Le colonne di Utente che restano fuori, e perche' */
+/** The Utente columns left out, and why */
 export const CAMPI_RISERVATI = {
   passwordHash: 'segreto',
   tokenVerificaEmail: 'segreto',
@@ -45,12 +45,12 @@ export const CAMPI_RISERVATI = {
   palestraId: 'sostituito dai dati della palestra'
 };
 
-// Campi del profilo salvati come testo JSON: nel file tornano oggetti
+// Profile fields saved as JSON text: in the file they become objects again
 const CAMPI_JSON = ['preferenzeVisibilita', 'consensoCookie', 'specializzazioni'];
 
-// Come compare un esercizio ovunque nel file
+// How an exercise appears everywhere in the file
 const ESERCIZIO = { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } };
-// Un altro utente compare solo per nome
+// Another user appears only by name
 const SOLO_NOME = { select: { nome: true } };
 
 function leggiJson(testo) {
@@ -60,7 +60,7 @@ function leggiJson(testo) {
 
 const nomeDi = utente => utente?.nome ?? null;
 
-/** Tutti i dati dell'utente, pronti per JSON.stringify */
+/** All of the user's data, ready for JSON.stringify */
 export async function esportaDatiUtente(utenteId) {
   const doveUtente = { where: { utenteId } };
 
@@ -121,7 +121,7 @@ export async function esportaDatiUtente(utenteId) {
     prisma.suggerimentoEsercizio.findMany({ ...doveUtente, orderBy: { creatoIl: 'asc' }, include: { esercizio: ESERCIZIO } }),
     prisma.richiestaContatto.findMany({ where: { mittenteId: utenteId }, include: { destinatario: SOLO_NOME } }),
     prisma.richiestaContatto.findMany({ where: { destinatarioId: utenteId }, include: { mittente: SOLO_NOME } }),
-    // Le note del PT sul cliente sono appunti del PT: finiscono nel suo file, non qui
+    // The personal trainer's notes on the client are the trainer's own: they go in the trainer's file, not here
     prisma.iscrizionePT.findMany({ ...doveUtente, omit: { notePT: true }, include: { trainer: SOLO_NOME } }),
     prisma.appuntamentoPT.findMany({ where: { clienteId: utenteId }, orderBy: { dataOra: 'asc' }, include: { trainer: SOLO_NOME } }),
     prisma.annuncioPT.findMany({ where: { destinatarioId: utenteId }, orderBy: { creatoIl: 'asc' }, include: { trainer: SOLO_NOME } }),
@@ -133,13 +133,13 @@ export async function esportaDatiUtente(utenteId) {
       orderBy: { creatoIl: 'asc' },
       select: { id: true, titolo: true, creatoIl: true, creatore: SOLO_NOME }
     }),
-    // Le sessioni aperte, senza i token: solo da dove e quando
+    // The open sessions, without the tokens: only where from and when
     prisma.refreshToken.findMany({
       where: { utenteId, revocato: false },
       orderBy: { iniziataIl: 'asc' },
       select: { dispositivo: true, iniziataIl: true, creato: true, scadenza: true }
     }),
-    // Le passkey, senza chiavi: solo nome e date
+    // The passkeys, without keys: only name and dates
     prisma.passkey.findMany({
       where: { utenteId },
       orderBy: { creataIl: 'asc' },
@@ -150,7 +150,7 @@ export async function esportaDatiUtente(utenteId) {
       orderBy: { creatoIl: 'asc' },
       select: { creatoIl: true, esercizio: ESERCIZIO }
     }),
-    // I dispositivi che ricevono le push, senza l'iscrizione (endpoint e chiavi)
+    // The devices that receive push notifications, without the subscription (endpoint and keys)
     prisma.iscrizionePush.findMany({
       where: { utenteId },
       orderBy: { creataIl: 'asc' },
@@ -163,7 +163,7 @@ export async function esportaDatiUtente(utenteId) {
     ...campi,
     ...Object.fromEntries(CAMPI_JSON.map(campo => [campo, leggiJson(campi[campo])])),
     palestra,
-    // L'id della chat Telegram e' un BigInt, che JSON non sa scrivere
+    // The Telegram chat id is a BigInt, which JSON cannot write
     telegram: collegamentoTelegram && {
       collegatoIl: collegamentoTelegram.collegatoIl,
       chatId: collegamentoTelegram.telegramChatId?.toString() ?? null
@@ -223,7 +223,7 @@ export async function esportaDatiUtente(utenteId) {
   };
 }
 
-/** Nome del file: gymmaster-dati-2026-10-10.json, col giorno di Copenaghen */
+/** File name: gymmaster-dati-2026-10-10.json, with the Copenhagen day */
 export function nomeFileEsportazione(adesso = new Date()) {
   return `gymmaster-dati-${giornoLocale(adesso).toISOString().slice(0, 10)}.json`;
 }

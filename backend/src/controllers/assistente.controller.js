@@ -1,11 +1,11 @@
 // ============================================
-// GymMaster — Controller Assistente AI
-// Gestisce le richieste HTTP per l'assistente virtuale
+// GymMaster — AI assistant controller
+// Handles the HTTP requests for the virtual assistant
 // ============================================
 
 import * as assistenteService from '../services/assistente.service.js';
 
-/** POST /api/v1/assistente/chiedi — Invia domanda all'assistente */
+/** POST /api/v1/assistente/chiedi — Sends a question to the assistant */
 export async function chiedi(req, res, next) {
   try {
     const { messaggio, conversazioneAiId } = req.body;
@@ -21,7 +21,7 @@ export async function chiedi(req, res, next) {
   }
 }
 
-/** GET /api/v1/assistente/conversazioni — Storico conversazioni AI */
+/** GET /api/v1/assistente/conversazioni — History of AI conversations */
 export async function storicoConversazioni(req, res, next) {
   try {
     const conversazioni = await assistenteService.ottieniConversazioniAI(req.utente.id);

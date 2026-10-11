@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Routes Suggerimenti Esercizi
-// Proposte di nuovi esercizi dagli utenti
+// GymMaster — Exercise Suggestion Routes
+// New exercises proposed by users
 // ============================================
 
 import { Router } from 'express';
@@ -10,7 +10,7 @@ import prisma from '../config/database.js';
 const router = Router();
 router.use(verificaToken);
 
-// POST /api/v1/suggerimenti-esercizi — Invia una proposta
+// POST /api/v1/suggerimenti-esercizi — Send a proposal
 router.post('/', async (req, res, next) => {
   try {
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaSuggerita, descrizione } = req.body;
@@ -36,10 +36,10 @@ router.post('/', async (req, res, next) => {
       }
     });
 
-    // Notifica gli admin connessi via Socket.io
+    // Notify the connected admins via Socket.io
     const io = req.app.get('io');
     if (io) {
-      // Trova tutti gli admin
+      // Find every admin
       const admins = await prisma.utente.findMany({
         where: { ruolo: 'SUPERADMIN', stato: 'ATTIVO' },
         select: { id: true }
@@ -64,7 +64,7 @@ router.post('/', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/suggerimenti-esercizi — Lista delle proprie proposte
+// GET /api/v1/suggerimenti-esercizi — List of your own proposals
 router.get('/', async (req, res, next) => {
   try {
     const suggerimenti = await prisma.suggerimentoEsercizio.findMany({

@@ -1,5 +1,5 @@
-// I mattoni della sicurezza dell'accesso: impronte e rotazione dei token,
-// blocco per account dopo troppi errori, nome del dispositivo.
+// The building blocks of sign-in security: token fingerprints and rotation,
+// per-account lockout after too many failures, device name.
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';

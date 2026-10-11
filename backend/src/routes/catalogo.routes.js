@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Routes Esercizi & Palestre
-// Lettura catalogo esercizi e palestre
+// GymMaster — Exercise & Gym Routes
+// Reading the exercise and gym catalogue
 // ============================================
 
 import { Router } from 'express';
@@ -10,10 +10,10 @@ import { ErroreNonTrovato, ErroreValidazione } from '../utils/errori.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 
-// --- Lista Esercizi (con filtri avanzati) ---
+// --- Exercise List (with advanced filters) ---
 router.get('/esercizi', verificaToken, async (req, res, next) => {
   try {
     const { gruppo, attrezzaturaId, ricerca, bodyRegion, difficulty, mechanics } = req.query;
@@ -24,8 +24,8 @@ router.get('/esercizi', verificaToken, async (req, res, next) => {
     if (bodyRegion) filtri.bodyRegion = bodyRegion;
     if (difficulty) filtri.difficulty = difficulty;
     if (mechanics) filtri.mechanics = mechanics;
-    // La ricerca interroga entrambi i nomi: chi scrive "affondo" e chi scrive
-    // "lunge" deve trovare le stesse voci.
+    // The search looks at both names: whoever types "affondo" and whoever
+    // types "lunge" must find the same entries.
     if (ricerca) {
       filtri.OR = [
         { nome: { contains: ricerca, mode: 'insensitive' } },
@@ -39,8 +39,8 @@ router.get('/esercizi', verificaToken, async (req, res, next) => {
       orderBy: [{ gruppoMuscoloPrimario: 'asc' }]
     });
 
-    // L'ordinamento alfabetico deve seguire il nome effettivamente mostrato,
-    // che è quello italiano quando c'è: non si può esprimere in orderBy.
+    // The alphabetical order must follow the name actually shown, which is
+    // the Italian one when there is one: orderBy cannot express that.
     const mostrato = (e) => e.nomeIt || e.nome;
     esercizi.sort((a, b) =>
       a.gruppoMuscoloPrimario.localeCompare(b.gruppoMuscoloPrimario, 'it') ||
@@ -50,9 +50,9 @@ router.get('/esercizi', verificaToken, async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// --- Esercizi preferiti: la stella, per ciascun utente ---
+// --- Favourite exercises: the star, for each user ---
 
-/** L'id dell'esercizio dalla rotta; 404 se l'esercizio non esiste */
+/** The exercise id from the route; 404 if the exercise does not exist */
 async function esercizioDaRotta(req) {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Esercizio non valido');
@@ -61,7 +61,7 @@ async function esercizioDaRotta(req) {
   return id;
 }
 
-// GET /api/v1/esercizi/preferiti — Gli id degli esercizi preferiti, dal piu' recente
+// GET /api/v1/esercizi/preferiti — The ids of the favourite exercises, most recent first
 router.get('/esercizi/preferiti', verificaToken, async (req, res, next) => {
   try {
     const preferiti = await prisma.esercizioPreferito.findMany({
@@ -73,7 +73,7 @@ router.get('/esercizi/preferiti', verificaToken, async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PUT /api/v1/esercizi/:id/preferito — Aggiunge la stella (ripeterlo non cambia niente)
+// PUT /api/v1/esercizi/:id/preferito — Adds the star (repeating it changes nothing)
 router.put('/esercizi/:id/preferito', verificaToken, async (req, res, next) => {
   try {
     const esercizioId = await esercizioDaRotta(req);
@@ -86,7 +86,7 @@ router.put('/esercizi/:id/preferito', verificaToken, async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/esercizi/:id/preferito — Toglie la stella (anche se non c'era)
+// DELETE /api/v1/esercizi/:id/preferito — Removes the star (even if it was not there)
 router.delete('/esercizi/:id/preferito', verificaToken, async (req, res, next) => {
   try {
     const esercizioId = await esercizioDaRotta(req);
@@ -95,7 +95,7 @@ router.delete('/esercizi/:id/preferito', verificaToken, async (req, res, next) =
   } catch (errore) { next(errore); }
 });
 
-// --- Lista Palestre ---
+// --- Gym List ---
 router.get('/palestre', verificaTokenOpzionale, async (req, res, next) => {
   try {
     const palestre = await prisma.palestra.findMany({
@@ -111,33 +111,33 @@ router.get('/palestre', verificaTokenOpzionale, async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// --- Affluenza Palestra (dati scraping Google Maps) ---
+// --- Gym Crowd Levels (Google Maps scraping data) ---
 router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, next) => {
   try {
     const palestraId = parseInt(req.params.id);
     if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: 'ID palestra non valido' });
 
-    // Usa timezone Europe/Copenhagen per calcolo giorno/ora
+    // Use the Europe/Copenhagen time zone to work out the day/hour
     const adesso = new Date();
     const opzioniTZ = { timeZone: 'Europe/Copenhagen' };
     const oraLocale = parseInt(adesso.toLocaleString('en-US', { ...opzioniTZ, hour: 'numeric', hour12: false }));
-    // Calcolo giorno: 0=Lun, 6=Dom
+    // Day calculation: 0=Mon, 6=Sun
     const giornoJS = new Date(adesso.toLocaleString('en-US', opzioniTZ)).getDay(); // 0=Sun
-    const giornoSettimana = (giornoJS + 6) % 7; // 0=Lun, 6=Dom
+    const giornoSettimana = (giornoJS + 6) % 7; // 0=Mon, 6=Sun
     const oraCorrente = oraLocale;
 
-    // Dati giornata completa (24 ore, solo ore valide 0-23)
+    // Data for the whole day (24 hours, only valid hours 0-23)
     const datiGiornata = await prisma.afluenzaPalestra.findMany({
       where: { palestraId, giornoSettimana, ora: { gte: 0, lte: 23 } },
       orderBy: { ora: 'asc' }
     });
 
-    // Dato ora corrente
+    // Data for the current hour
     const datoOraCorrente = datiGiornata.find(d => d.ora === oraCorrente);
 
-    // Il dato "in tempo reale" vale solo se appena raccolto: lo scraper gira
-    // ogni 30 minuti, quindi oltre i 90 minuti e' da considerarsi scaduto e si
-    // ricade sulla media storica invece di mostrare un live fuorviante.
+    // The "real time" figure is only valid when just collected: the scraper
+    // runs every 30 minutes, so after 90 minutes it counts as expired and we
+    // fall back to the historical average instead of showing a misleading live.
     const LIMITE_FRESCHEZZA_MS = 90 * 60 * 1000;
     const liveValido = (dato) =>
       dato?.liveLivello != null &&
@@ -146,7 +146,7 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
 
     const liveCorrente = liveValido(datoOraCorrente) ? datoOraCorrente : null;
 
-    // Livello testuale
+    // Level as text
     let livelloTesto = 'Nessun dato';
     let livelloColore = 'grigio';
     if (datoOraCorrente) {
@@ -178,16 +178,16 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
   } catch (errore) { next(errore); }
 });
 
-// --- Migliori orari per allenarsi ---
-// Lo scraper raccoglie 168 rilevazioni per palestra (7 giorni x 24 ore): qui
-// vengono lette per rispondere alla domanda pratica "quando trovo meno gente?".
+// --- Best times to train ---
+// The scraper collects 168 readings per gym (7 days x 24 hours): here they
+// are read to answer the practical question "when will I find fewer people?".
 router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, async (req, res, next) => {
   try {
     const palestraId = parseInt(req.params.id);
     if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: 'ID palestra non valido' });
 
-    // Fascia oraria considerata: di notte la palestra e' quasi sempre vuota, ma
-    // suggerire le 4 del mattino non aiuterebbe nessuno.
+    // Time window considered: at night the gym is almost always empty, but
+    // suggesting 4 a.m. would not help anyone.
     const da = Math.min(Math.max(parseInt(req.query.da) || 6, 0), 23);
     const a = Math.min(Math.max(parseInt(req.query.a) || 22, 0), 23);
     if (da > a) return res.status(400).json({ successo: false, errore: 'Fascia oraria rovesciata' });
@@ -204,7 +204,7 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
 
     const media = righe.reduce((t, r) => t + r.livelloPercentuale, 0) / righe.length;
 
-    // Per ogni giorno: le tre ore meno affollate e la media della giornata
+    // For each day: the three least crowded hours and the day's average
     const perGiornoMappa = new Map();
     for (const r of righe) {
       if (!perGiornoMappa.has(r.giornoSettimana)) perGiornoMappa.set(r.giornoSettimana, []);
@@ -222,7 +222,7 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
       }))
       .sort((x, y) => x.giornoSettimana - y.giornoSettimana);
 
-    // Le fasce migliori in assoluto della settimana
+    // The best slots of the whole week
     const migliori = [...righe]
       .sort((x, y) => x.livelloPercentuale - y.livelloPercentuale || x.giornoSettimana - y.giornoSettimana || x.ora - y.ora)
       .slice(0, 5)
@@ -245,7 +245,7 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
   } catch (errore) { next(errore); }
 });
 
-// --- Lista Attrezzature ---
+// --- Equipment List ---
 router.get('/attrezzature', verificaToken, async (req, res, next) => {
   try {
     const attrezzature = await prisma.attrezzatura.findMany({

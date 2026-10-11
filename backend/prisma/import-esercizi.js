@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Script di Importazione Esercizi
-// Importa esercizi dal database Functional Fitness v2.9
-// Utilizzabile sia per primo import che per aggiornamenti
+// GymMaster — Exercise import script
+// Imports exercises from the Functional Fitness v2.9 database
+// Usable both for the first import and for updates
 // ============================================
 
 import { PrismaClient } from '@prisma/client';
@@ -28,7 +28,7 @@ async function main() {
 
   const startTime = Date.now();
 
-  // === 1. IMPORTA ATTREZZATURE MANCANTI ===
+  // === 1. IMPORT MISSING EQUIPMENT ===
   console.log('[1/3] Verifica attrezzature...');
   const attrezzatureJSON = caricaJSON('attrezzature.json');
   let attrCreate = 0;
@@ -52,11 +52,11 @@ async function main() {
   }
   console.log(`  Attrezzature: ${attrCreate} nuove, ${attrezzatureJSON.length - attrCreate} esistenti\n`);
 
-  // === 2. CARICA MAPPA ATTREZZATURE ===
+  // === 2. LOAD EQUIPMENT MAP ===
   const tutteAttrezzature = await prisma.attrezzatura.findMany();
   const mappaAttrezzature = new Map(tutteAttrezzature.map(a => [a.nome, a.id]));
 
-  // === 3. IMPORTA ESERCIZI ===
+  // === 3. IMPORT EXERCISES ===
   console.log('[2/3] Importazione esercizi...');
   const eserciziJSON = caricaJSON('esercizi.json');
 
@@ -66,7 +66,7 @@ async function main() {
   let errori = 0;
   const erroriDettaglio = [];
 
-  // Carica tutti i nomi esistenti per check rapido
+  // Load all existing names for a quick check
   const eserciziEsistenti = await prisma.esercizio.findMany({ select: { id: true, nome: true, nomeIt: true } });
   const mappaEsistenti = new Map(eserciziEsistenti.map(e => [e.nome, e]));
 
@@ -98,7 +98,7 @@ async function main() {
             laterality: dati.laterality,
             forceType: dati.forceType,
             classification: dati.classification,
-            linkVideo: dati.linkVideo || undefined, // Solo se ha un link
+            linkVideo: dati.linkVideo || undefined, // Only if it has a link
           }
         });
         aggiornati++;
@@ -111,15 +111,15 @@ async function main() {
       erroriDettaglio.push({ nome: es.nome, errore: err.message });
     }
 
-    // Progresso ogni 500 esercizi
+    // Progress every 500 exercises
     if ((i + 1) % 500 === 0 || i === eserciziJSON.length - 1) {
       const pct = Math.round(((i + 1) / eserciziJSON.length) * 100);
       process.stdout.write(`\r  Progresso: ${pct}% (${i + 1}/${eserciziJSON.length})`);
     }
   }
-  console.log(''); // Nuova riga dopo progresso
+  console.log(''); // New line after the progress
 
-  // === 4. COLLEGAMENTO PALESTRE-ATTREZZATURE ===
+  // === 4. GYM-EQUIPMENT LINKS ===
   console.log('\n[3/3] Aggiornamento collegamenti palestra-attrezzatura...');
   const tuttePalestre = await prisma.palestra.findMany();
   const tutteAttrezzatureAggiornate = await prisma.attrezzatura.findMany();
@@ -149,7 +149,7 @@ async function main() {
   }
   console.log(`  Collegamenti creati: ${collegamentiCreati}`);
 
-  // === REPORT FINALE ===
+  // === FINAL REPORT ===
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   const totaleFinale = await prisma.esercizio.count();
   const totaleAttr = await prisma.attrezzatura.count();

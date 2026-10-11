@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Script di Seeding Iniziale
-// Popola il database con dati di base
+// GymMaster — Initial seeding script
+// Fills the database with the base data
 // ============================================
 
 import { PrismaClient } from '@prisma/client';
@@ -15,15 +15,15 @@ const __dirname = dirname(__filename);
 
 const prisma = new PrismaClient();
 
-// --- Carica file JSON ---
+// --- Load JSON files ---
 function caricaJSON(nomeFile) {
   const percorso = join(__dirname, 'dati', nomeFile);
   return JSON.parse(readFileSync(percorso, 'utf-8'));
 }
 
-// Esercizi cardio di base, collegati alle attrezzature CARDIO.
-// Garantiti a ogni avvio (anche quando il guard salta il seed completo),
-// così il bot Telegram può aggiungerli alle schede.
+// Basic cardio exercises, linked to the CARDIO equipment.
+// Guaranteed at every startup (even when the guard skips the full seed),
+// so the Telegram bot can add them to plans.
 async function garantisciEserciziCardio() {
   const cardio = ['Tapis Roulant', 'Cyclette', 'Ellittica', 'Vogatore (Rower)', 'Stepper', 'Air Bike'];
   let creati = 0;
@@ -44,8 +44,8 @@ async function garantisciEserciziCardio() {
   if (creati > 0) console.log(`✅ Esercizi cardio garantiti: ${creati} creati`);
 }
 
-// Crea la prima novità in-app (bot Telegram) solo se la tabella è vuota,
-// così l'admin può poi modificarla/eliminarla senza che venga ricreata.
+// Creates the first in-app "what's new" story (Telegram bot) only if the table
+// is empty, so the admin can later edit/delete it without it being recreated.
 async function garantisciNovitaIniziale() {
   const count = await prisma.novita.count();
   if (count > 0) return;
@@ -73,20 +73,20 @@ async function garantisciNovitaIniziale() {
 async function main() {
   console.log('🌱 Inizio seeding del database GymMaster...\n');
 
-  // Carica i dataset una sola volta (riutilizzati dal guard e dalle sezioni)
+  // Load the datasets only once (reused by the guard and by the sections)
   const attrezzatureJSON = caricaJSON('attrezzature.json');
   const palestreJSON = caricaJSON('palestre.json');
   const eserciziJSON = caricaJSON('esercizi.json');
 
-  // Garantisci sempre gli esercizi cardio e la novità iniziale (anche se il guard salta il resto)
+  // Always guarantee the cardio exercises and the first story (even if the guard skips the rest)
   await garantisciEserciziCardio();
   await garantisciNovitaIniziale();
 
-  // --- Guard di idempotenza ---
-  // Il seed viene eseguito a ogni avvio del container: se il DB risulta già
-  // popolato, esci subito per evitare migliaia di query di controllo esistenza
-  // a ogni restart. Se un dataset cresce, i conteggi non combaciano e il seed
-  // (comunque idempotente) riparte importando solo le voci mancanti.
+  // --- Idempotency guard ---
+  // The seed runs at every container start: if the DB is already populated,
+  // exit right away to avoid thousands of existence-check queries at every
+  // restart. If a dataset grows, the counts do not match and the seed (which is
+  // idempotent anyway) runs again, importing only the missing entries.
   const [numAttrezzature, numPalestre, numEsercizi, numAdmin] = await Promise.all([
     prisma.attrezzatura.count(),
     prisma.palestra.count(),
@@ -136,7 +136,7 @@ async function main() {
     console.log(`⏭️  SuperAdmin già esistente: ${emailAdmin}`);
   }
 
-  // === 2. ATTREZZATURE ===
+  // === 2. EQUIPMENT ===
   let attrezzatureCreate = 0;
 
   for (const attr of attrezzatureJSON) {
@@ -157,7 +157,7 @@ async function main() {
   }
   console.log(`✅ Attrezzature: ${attrezzatureCreate} create (${attrezzatureJSON.length - attrezzatureCreate} già esistenti)`);
 
-  // === 3. PALESTRE ===
+  // === 3. GYMS ===
   let palestreCreate = 0;
 
   for (const pal of palestreJSON) {
@@ -183,15 +183,15 @@ async function main() {
   }
   console.log(`✅ Palestre: ${palestreCreate} create (${palestreJSON.length - palestreCreate} già esistenti)`);
 
-  // === 4. ESERCIZI (3.242 dal database Functional Fitness v2.9) ===
+  // === 4. EXERCISES (3,242 from the Functional Fitness v2.9 database) ===
   let eserciziCreati = 0;
   let eserciziSkipped = 0;
 
-  // Carica mappa attrezzature per collegamento FK
+  // Load the equipment map for the FK link
   const tutteAttrezzature = await prisma.attrezzatura.findMany();
   const mappaAttrezzature = new Map(tutteAttrezzature.map(a => [a.nome, a.id]));
 
-  // Importa in batch da 50 per performance
+  // Import in batches of 50 for performance
   const BATCH_SIZE = 50;
   const batches = [];
   for (let i = 0; i < eserciziJSON.length; i += BATCH_SIZE) {
@@ -219,7 +219,7 @@ async function main() {
       }
     }
 
-    // Progresso ogni 10 batch
+    // Progress every 10 batches
     if ((batchIdx + 1) % 10 === 0 || batchIdx === batches.length - 1) {
       const progresso = Math.round(((batchIdx + 1) / batches.length) * 100);
       console.log(`  📊 Progresso: ${progresso}% (${eserciziCreati} creati, ${eserciziSkipped} esistenti)`);
@@ -228,8 +228,8 @@ async function main() {
 
   console.log(`✅ Esercizi: ${eserciziCreati} creati (${eserciziSkipped} già esistenti)`);
 
-  // === 5. COLLEGAMENTO PALESTRE-ATTREZZATURE ===
-  // Ogni palestra ha tutte le attrezzature di default
+  // === 5. GYM-EQUIPMENT LINKS ===
+  // Every gym has all the equipment by default
   const tuttePalestre = await prisma.palestra.findMany();
   const tutteAttrezzatureIds = tutteAttrezzature.map(a => a.id);
   let collegamentiCreati = 0;
@@ -258,7 +258,7 @@ async function main() {
   }
   console.log(`✅ Collegamenti palestra-attrezzatura: ${collegamentiCreati} creati`);
 
-  // === 6. SCHEDE ALLENAMENTO GLOBALI ===
+  // === 6. GLOBAL WORKOUT PLANS ===
   const admin = await prisma.utente.findFirst({ where: { ruolo: 'SUPERADMIN' } });
   if (admin) {
     const tuttiEsercizi = await prisma.esercizio.findMany();
@@ -316,7 +316,7 @@ async function main() {
 
     let schedeCreate = 0;
     for (const s of schedeDaCreare) {
-      if (!s.esercizi[0].es) continue; // Salta se non trova esercizi
+      if (!s.esercizi[0].es) continue; // Skip if no exercises are found
       const esiste = await prisma.schedaAllenamento.findFirst({ where: { titolo: s.titolo } });
       if (!esiste) {
         await prisma.schedaAllenamento.create({

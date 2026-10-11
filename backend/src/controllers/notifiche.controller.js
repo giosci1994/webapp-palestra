@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Controller Notifiche
+// GymMaster — Notifications controller
 // ============================================
 
 import * as notificheService from '../services/notifiche.service.js';
 import * as pushService from '../services/push.service.js';
 import { ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 
-/** GET /api/v1/notifiche?limite=&soloNonLette= — Elenco + conteggio non lette */
+/** GET /api/v1/notifiche?limite=&soloNonLette= — List + unread count */
 export async function lista(req, res, next) {
   try {
     const [notifiche, nonLette] = await Promise.all([
@@ -22,7 +22,7 @@ export async function lista(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/notifiche/:id/letta — Segna una notifica come letta */
+/** PATCH /api/v1/notifiche/:id/letta — Marks a notification as read */
 export async function segnaLetta(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
@@ -37,7 +37,7 @@ export async function segnaLetta(req, res, next) {
   }
 }
 
-/** POST /api/v1/notifiche/segna-tutte-lette — Azzera il contatore */
+/** POST /api/v1/notifiche/segna-tutte-lette — Resets the counter */
 export async function segnaTutteLette(req, res, next) {
   try {
     const aggiornate = await notificheService.segnaTutteLette(req.utente.id);
@@ -47,9 +47,9 @@ export async function segnaTutteLette(req, res, next) {
   }
 }
 
-// --- Notifiche push (services/push.service.js) ---
+// --- Push notifications (services/push.service.js) ---
 
-/** GET /api/v1/notifiche/push — La chiave pubblica e quanti dispositivi ricevono le push */
+/** GET /api/v1/notifiche/push — The public key and how many devices receive push notifications */
 export async function statoPush(req, res, next) {
   try {
     const chiave = pushService.chiavePubblica();
@@ -62,7 +62,7 @@ export async function statoPush(req, res, next) {
 
 const testoBreve = (valore, massimo) => typeof valore === 'string' && valore.length > 0 && valore.length <= massimo;
 
-/** L'endpoint di un'iscrizione: un indirizzo https del servizio push del browser */
+/** A subscription's endpoint: an https address of the browser's push service */
 function leggiEndpoint(endpoint) {
   if (!testoBreve(endpoint, 2048)) throw new ErroreValidazione('Iscrizione push non valida');
   let indirizzo;
@@ -71,7 +71,7 @@ function leggiEndpoint(endpoint) {
   return endpoint;
 }
 
-/** POST /api/v1/notifiche/push/iscrizione — Questo dispositivo riceve le push (corpo: PushSubscription.toJSON()) */
+/** POST /api/v1/notifiche/push/iscrizione — This device receives push notifications (body: PushSubscription.toJSON()) */
 export async function iscriviPush(req, res, next) {
   try {
     if (!pushService.chiavePubblica()) throw new ErroreValidazione('Le notifiche push non sono attive sul server');
@@ -82,7 +82,7 @@ export async function iscriviPush(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** DELETE /api/v1/notifiche/push/iscrizione — Questo dispositivo non riceve piu' le push (corpo: { endpoint }) */
+/** DELETE /api/v1/notifiche/push/iscrizione — This device no longer receives push notifications (body: { endpoint }) */
 export async function disiscriviPush(req, res, next) {
   try {
     await pushService.disiscrivi(req.utente.id, leggiEndpoint(req.body?.endpoint));
@@ -90,7 +90,7 @@ export async function disiscriviPush(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/notifiche/push/prova — Una notifica di prova a tutti i dispositivi dell'utente */
+/** POST /api/v1/notifiche/push/prova — A test notification to all of the user's devices */
 export async function provaPush(req, res, next) {
   try {
     const raggiunti = await pushService.inviaPush(req.utente.id, {
@@ -98,7 +98,7 @@ export async function provaPush(req, res, next) {
       messaggio: 'Da adesso GymMaster ti avvisa anche a schermo bloccato.',
       percorso: '/profilo?tab=notifiche',
       tag: 'prova',
-      // Si prova dal profilo, con l'app aperta: deve vedersi lo stesso
+      // The test is sent from the profile, with the app open: it must show anyway
       sempre: true
     });
     res.json({ successo: true, dati: { raggiunti } });
@@ -106,8 +106,8 @@ export async function provaPush(req, res, next) {
 }
 
 /**
- * POST /api/v1/notifiche/push/recupero — Avvisa allo scadere del recupero
- * (corpo: { secondi, prossimo? }: prossimo e' cosa tocca dopo, "Panca piana · serie 2")
+ * POST /api/v1/notifiche/push/recupero — Notifies when the rest ends
+ * (body: { secondi, prossimo? }: prossimo is what comes next, "Panca piana · serie 2")
  */
 export async function programmaRecupero(req, res, next) {
   try {
@@ -121,7 +121,7 @@ export async function programmaRecupero(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** DELETE /api/v1/notifiche/push/recupero — Il recupero e' stato interrotto: niente avviso */
+/** DELETE /api/v1/notifiche/push/recupero — The rest was stopped: no notification */
 export async function annullaRecupero(req, res, next) {
   try {
     res.json({ successo: true, dati: { annullato: pushService.annullaFineRecupero(req.utente.id) } });

@@ -1,16 +1,16 @@
 // ============================================
-// GymMaster — Middleware Rate Limiter
-// Limiti diversificati per tipo di rotta
+// GymMaster — Rate limiter middleware
+// Different limits for each type of route
 // ============================================
 
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 
-// Helper: estrae l'IP reale dalla richiesta
+// Helper: extracts the real IP from the request
 const getIp = (req) => req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip);
 
-// Helper: estrae l'ID utente dal JWT senza query DB (solo per rate limiting)
+// Helper: extracts the user ID from the JWT without a DB query (for rate limiting only)
 const getUserKey = (req) => {
   try {
     const auth = req.headers.authorization;
@@ -18,17 +18,17 @@ const getUserKey = (req) => {
       const payload = jwt.verify(auth.split(' ')[1], process.env.JWT_SEGRETO_ACCESS);
       if (payload?.utenteId) return `user:${payload.utenteId}`;
     }
-  } catch { /* token scaduto/invalido, usa IP */ }
+  } catch { /* expired/invalid token, use the IP */ }
   return getIp(req);
 };
 
 /**
- * Rate limiter globale per tutte le rotte API.
- * 500 richieste per finestra di 15 minuti.
- * Utenti autenticati usano il loro ID come chiave (non condividono il limite IP).
+ * Global rate limiter for all the API routes.
+ * 500 requests per 15-minute window.
+ * Authenticated users use their ID as the key (they do not share the IP limit).
  */
 export const limitatoreGlobale = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minuti
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
@@ -45,9 +45,9 @@ export const limitatoreGlobale = rateLimit({
 });
 
 /**
- * Rate limiter stretto per rotte di autenticazione.
- * 20 richieste per finestra di 15 minuti per IP.
- * Protegge da attacchi brute-force su login e registrazione.
+ * Strict rate limiter for the authentication routes.
+ * 20 requests per 15-minute window per IP.
+ * Protects against brute-force attacks on login and registration.
  */
 export const limitatoreAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -67,11 +67,11 @@ export const limitatoreAuth = rateLimit({
 });
 
 /**
- * Rate limiter per l'assistente AI.
- * 5 richieste per minuto per utente (prevenire abuso del tier gratuito Gemini).
+ * Rate limiter for the AI assistant.
+ * 5 requests per minute per user (to prevent abuse of the Gemini free tier).
  */
 export const limitatoreAI = rateLimit({
-  windowMs: 60 * 1000, // 1 minuto
+  windowMs: 60 * 1000, // 1 minute
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,

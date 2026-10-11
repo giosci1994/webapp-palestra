@@ -1,6 +1,6 @@
-// Le storie delle novita' stanno in prisma/novita.json e si aggiungono al
-// rilascio della loro versione. Un errore nel file deve fermare la pull
-// request, non il rilascio.
+// The "what's new" stories live in prisma/novita.json and are added when
+// their version is released. A mistake in the file must stop the pull
+// request, not the release.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

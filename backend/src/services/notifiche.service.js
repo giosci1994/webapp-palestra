@@ -1,25 +1,25 @@
 // ============================================
-// GymMaster — Servizio Notifiche
-// Persistenza + emissione real-time
+// GymMaster — Notifications service
+// Persistence + real-time delivery
 // ============================================
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { inviaPush } from './push.service.js';
 
-// Quante notifiche tenere per utente: oltre questa soglia le più vecchie
-// vengono eliminate, così la tabella non cresce senza fine.
+// How many notifications to keep per user: past this threshold the oldest
+// ones are deleted, so the table does not grow forever.
 const MAX_PER_UTENTE = 100;
 
 /**
- * Crea una notifica e la consegna in tempo reale se l'utente è collegato.
+ * Creates a notification and delivers it in real time if the user is connected.
  *
- * Le notifiche erano finora solo un evento socket volatile: chi non era
- * collegato in quel momento le perdeva. Qui vengono prima salvate e poi
- * emesse, così restano disponibili al rientro.
+ * Until now notifications were only a volatile socket event: whoever was not
+ * connected at that moment lost them. Here they are saved first and then
+ * emitted, so they are still there when the user comes back.
  *
- * @param {import('socket.io').Server|null} io - Istanza Socket.io (può mancare)
- * @param {number} utenteId - Destinatario
+ * @param {import('socket.io').Server|null} io - Socket.io instance (may be missing)
+ * @param {number} utenteId - Recipient
  * @param {{tipo?: string, titolo: string, messaggio: string, percorso?: string}} dati
  */
 export async function creaNotifica(io, utenteId, { tipo = 'SISTEMA', titolo, messaggio, percorso = null }) {
@@ -28,28 +28,29 @@ export async function creaNotifica(io, utenteId, { tipo = 'SISTEMA', titolo, mes
       data: { utenteId, tipo, titolo, messaggio, percorso }
     });
 
-    // L'emissione non deve poter far fallire l'azione che ha generato la
-    // notifica: se il socket non è disponibile la notifica resta comunque a DB.
+    // Emitting must never make the action that generated the notification
+    // fail: if the socket is not available the notification stays in the DB.
     try {
       io?.to(`utente:${utenteId}`).emit('notifica:nuova', notifica);
     } catch (err) {
       logger.warn({ err, utenteId }, 'Notifica salvata ma non emessa via socket');
     }
 
-    // E sul telefono, anche ad app chiusa (se l'utente ha attivato le push;
-    // ad app aperta il service worker la lascia alla campanella)
+    // And on the phone, even with the app closed (if the user turned on push
+    // notifications; with the app open the service worker leaves it to the
+    // notification bell)
     inviaPush(utenteId, { titolo, messaggio, percorso: percorso || '/', tag: tipo }).catch(() => {});
 
     potaVecchie(utenteId).catch(() => {});
     return notifica;
   } catch (err) {
-    // Una notifica mancata non deve mai rompere l'operazione principale
+    // A missed notification must never break the main operation
     logger.error({ err, utenteId, tipo }, 'Creazione notifica fallita');
     return null;
   }
 }
 
-/** Elimina le notifiche più vecchie oltre la soglia per utente. */
+/** Deletes the oldest notifications past the per-user threshold. */
 async function potaVecchie(utenteId) {
   const totale = await prisma.allenamentoNotifica.count({ where: { utenteId } });
   if (totale <= MAX_PER_UTENTE) return;
@@ -65,7 +66,7 @@ async function potaVecchie(utenteId) {
   });
 }
 
-/** Elenco notifiche dell'utente, più recenti per prime. */
+/** The user's notifications, most recent first. */
 export async function elenco(utenteId, { limite = 30, soloNonLette = false } = {}) {
   return prisma.allenamentoNotifica.findMany({
     where: { utenteId, ...(soloNonLette ? { letta: false } : {}) },
@@ -74,12 +75,12 @@ export async function elenco(utenteId, { limite = 30, soloNonLette = false } = {
   });
 }
 
-/** Quante notifiche non lette ha l'utente. */
+/** How many unread notifications the user has. */
 export function contaNonLette(utenteId) {
   return prisma.allenamentoNotifica.count({ where: { utenteId, letta: false } });
 }
 
-/** Segna una notifica come letta. Il filtro su utenteId impedisce di toccare quelle altrui. */
+/** Marks a notification as read. The filter on utenteId keeps other users' notifications untouched. */
 export async function segnaLetta(utenteId, notificaId) {
   const esito = await prisma.allenamentoNotifica.updateMany({
     where: { id: notificaId, utenteId },
@@ -88,7 +89,7 @@ export async function segnaLetta(utenteId, notificaId) {
   return esito.count > 0;
 }
 
-/** Segna come lette tutte le notifiche dell'utente. */
+/** Marks all of the user's notifications as read. */
 export async function segnaTutteLette(utenteId) {
   const esito = await prisma.allenamentoNotifica.updateMany({
     where: { utenteId, letta: false },
@@ -98,12 +99,12 @@ export async function segnaTutteLette(utenteId) {
 }
 
 /**
- * Promemoria degli allenamenti in programma oggi.
+ * Reminder of the workouts scheduled for today.
  *
- * Viene richiamato periodicamente dal server. È scritto per poter essere
- * eseguito più volte al giorno senza duplicare nulla: prima di inviare
- * controlla se per quell'utente esiste già un promemoria creato oggi, cosa che
- * rende l'operazione sicura anche dopo un riavvio del processo.
+ * The server calls it periodically. It is written so it can run several
+ * times a day without duplicating anything: before sending, it checks whether
+ * a reminder created today already exists for that user, which makes the
+ * operation safe even after a process restart.
  */
 export async function inviaPromemoriaAllenamenti(io) {
   const adesso = new Date();
@@ -117,7 +118,7 @@ export async function inviaPromemoriaAllenamenti(io) {
   });
   if (previsti.length === 0) return 0;
 
-  // Raggruppa per utente: un solo promemoria anche con più schede in giornata
+  // Group by user: a single reminder even with several plans in the day
   const perUtente = new Map();
   for (const p of previsti) {
     if (!perUtente.has(p.utenteId)) perUtente.set(p.utenteId, []);

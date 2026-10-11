@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Controller Utenti
-// Gestisce le richieste HTTP per gestione utenti
+// GymMaster — Users controller
+// Handles the HTTP requests for user management
 // ============================================
 
 import * as utentiService from '../services/utenti.service.js';
@@ -10,7 +10,7 @@ import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-/** GET /api/v1/utenti — Lista utenti (Solo SuperAdmin) */
+/** GET /api/v1/utenti — List of users (SuperAdmin only) */
 export async function listaUtenti(req, res, next) {
   try {
     const { pagina = 1, limite = 20, stato, ruolo } = req.query;
@@ -27,7 +27,7 @@ export async function listaUtenti(req, res, next) {
   }
 }
 
-/** GET /api/v1/utenti/profilo — Profilo utente autenticato */
+/** GET /api/v1/utenti/profilo — Profile of the authenticated user */
 export async function profilo(req, res, next) {
   try {
     const utente = await utentiService.ottieniProfilo(req.utente.id);
@@ -38,8 +38,8 @@ export async function profilo(req, res, next) {
 }
 
 /**
- * GET /api/v1/utenti/esportazione — Scarica tutti i propri dati in un file JSON
- * (accesso e portabilita', GDPR art. 15 e 20)
+ * GET /api/v1/utenti/esportazione — Downloads all of one's own data in a JSON file
+ * (access and portability, GDPR art. 15 and 20)
  */
 export async function esportaDati(req, res, next) {
   try {
@@ -48,7 +48,7 @@ export async function esportaDati(req, res, next) {
     res.set({
       'Content-Type': 'application/json; charset=utf-8',
       'Content-Disposition': `attachment; filename="${nomeFileEsportazione()}"`,
-      // Dati personali: ne' il browser ne' un proxy devono tenerne una copia
+      // Personal data: neither the browser nor a proxy may keep a copy
       'Cache-Control': 'no-store'
     });
     res.send(JSON.stringify(dati, null, 2));
@@ -57,7 +57,7 @@ export async function esportaDati(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/utenti/:id/approva — Approva utente (Solo SuperAdmin) */
+/** PATCH /api/v1/utenti/:id/approva — Approves a user (SuperAdmin only) */
 export async function approva(req, res, next) {
   try {
     const utente = await utentiService.approvaUtente(parseInt(req.params.id));
@@ -67,7 +67,7 @@ export async function approva(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/utenti/:id/banna — Banna utente (Solo SuperAdmin) */
+/** PATCH /api/v1/utenti/:id/banna — Bans a user (SuperAdmin only) */
 export async function banna(req, res, next) {
   try {
     const utente = await utentiService.bannaUtente(parseInt(req.params.id));
@@ -77,7 +77,7 @@ export async function banna(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/utenti/:id/ruolo — Cambia ruolo (Solo SuperAdmin) */
+/** PATCH /api/v1/utenti/:id/ruolo — Changes the role (SuperAdmin only) */
 export async function cambiaRuolo(req, res, next) {
   try {
     const { ruolo } = req.body;
@@ -88,7 +88,7 @@ export async function cambiaRuolo(req, res, next) {
   }
 }
 
-/** DELETE /api/v1/utenti/:id — Elimina utente (Solo SuperAdmin) */
+/** DELETE /api/v1/utenti/:id — Deletes a user (SuperAdmin only) */
 export async function elimina(req, res, next) {
   try {
     await utentiService.eliminaUtente(parseInt(req.params.id));
@@ -98,7 +98,7 @@ export async function elimina(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/utenti/profilo — Aggiorna profilo utente */
+/** PATCH /api/v1/utenti/profilo — Updates the user's profile */
 export async function aggiornaProfilo(req, res, next) {
   try {
     const utente = await utentiService.aggiornaProfilo(req.utente.id, req.body);
@@ -108,7 +108,7 @@ export async function aggiornaProfilo(req, res, next) {
   }
 }
 
-/** POST /api/v1/utenti/cambia-password — Cambia password */
+/** POST /api/v1/utenti/cambia-password — Changes the password */
 export async function cambiaPassword(req, res, next) {
   try {
     const { vecchiaPassword, nuovaPassword } = req.body;
@@ -119,10 +119,10 @@ export async function cambiaPassword(req, res, next) {
   }
 }
 
-/** GET /api/v1/utenti/info-app — Info tecniche dell'applicazione */
+/** GET /api/v1/utenti/info-app — Technical info about the application */
 export async function infoApp(req, res, next) {
   try {
-    // Leggi version.json dalla root del progetto
+    // Read version.json from the project root
     const __dirname = dirname(fileURLToPath(import.meta.url));
     const versionPath = resolve(__dirname, '../../../version.json');
     let versionData;

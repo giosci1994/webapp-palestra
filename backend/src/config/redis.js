@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Configurazione Redis (ioredis)
-// Singleton usato per lo stato effimero del bot Telegram
-// (bozza scheda in costruzione, storia conversazione, rate-limit).
+// GymMaster — Redis configuration (ioredis)
+// Singleton used for the Telegram bot's ephemeral state
+// (draft of the plan being built, conversation history, rate limit).
 // ============================================
 
 import Redis from 'ioredis';

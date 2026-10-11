@@ -1,6 +1,6 @@
-// Ogni rotta dell'API con un id nell'indirizzo, provata con un id che non e'
-// un numero e con uno che non esiste: la risposta dev'essere un errore del
-// client (400, 404…), mai un 500.
+// Every API route with an id in the path, tried with an id that is not a
+// number and with one that does not exist: the response must be a client
+// error (400, 404…), never a 500.
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -8,11 +8,11 @@ import { svuotaDatabase } from '../supporto/database.js';
 import { creaUtente, tokenPer } from '../supporto/dati.js';
 import router from '../../src/routes/indice.js';
 
-/** "/sessioni" dal pattern con cui Express 4 monta un sotto-router */
+/** "/sessioni" from the pattern Express 4 uses to mount a sub-router */
 const prefissoDi = strato => strato.regexp.source
   .replace(/^\^/, '').replace('\\/?(?=\\/|$)', '').replace(/\\\//g, '/');
 
-/** Tutte le rotte con dei parametri: [metodo, percorso con i :parametri] */
+/** Every route with parameters: [method, path with the :parameters] */
 function rotteConParametri() {
   const rotte = [];
   for (const strato of router.stack) {

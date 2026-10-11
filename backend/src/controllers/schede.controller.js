@@ -1,13 +1,13 @@
 // ============================================
-// GymMaster — Controller Schede Allenamento
+// GymMaster — Workout plans controller
 // ============================================
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.service.js';
 
-// Mappa una voce esercizio (dal client) in dati EsercizioScheda, preservando
-// i campi cardio (durata/velocità/inclinazione/resistenza/distanza + riscaldamento).
+// Maps an exercise entry (from the client) to EsercizioScheda data, keeping
+// the cardio fields (duration/speed/incline/resistance/distance + warm-up).
 function mappaEsercizioScheda(e, ordine) {
   return {
     esercizioId: e.esercizioId,
@@ -25,7 +25,7 @@ function mappaEsercizioScheda(e, ordine) {
   };
 }
 
-/** Lista schede dell'utente + schede globali */
+/** List of the user's plans + global plans */
 export async function listaSchede(req, res, next) {
   try {
     const schede = await prisma.schedaAllenamento.findMany({
@@ -52,7 +52,7 @@ export async function listaSchede(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Dettaglio singola scheda */
+/** Details of a single plan */
 export async function dettaglioScheda(req, res, next) {
   try {
     const scheda = await prisma.schedaAllenamento.findUnique({
@@ -74,7 +74,7 @@ export async function dettaglioScheda(req, res, next) {
 
     if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
 
-    // Verifica accesso: proprietario o scheda globale
+    // Check access: owner or global plan
     if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
       throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
     }
@@ -83,14 +83,14 @@ export async function dettaglioScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Crea nuova scheda */
+/** Creates a new plan */
 export async function creaScheda(req, res, next) {
   try {
     const { titolo, descrizione, livello, visibilita, esercizi } = req.body;
 
     if (!titolo) throw new ErroreValidazione('Il titolo è obbligatorio');
 
-    // Solo admin/PT possono creare schede globali
+    // Only admins/personal trainers can create global plans
     const vis = visibilita || 'PERSONALE';
     if (vis === 'GLOBALE' && !['SUPERADMIN', 'PERSONAL_TRAINER'].includes(req.utente.ruolo)) {
       throw new ErroreNonAutorizzato('Solo admin e PT possono creare schede globali');
@@ -119,7 +119,7 @@ export async function creaScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Clona una scheda (globale o propria) come nuova scheda personale dell'utente */
+/** Clones a plan (global or one's own) as a new personal plan of the user */
 export async function clonaScheda(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -129,7 +129,7 @@ export async function clonaScheda(req, res, next) {
     });
     if (!sorgente) throw new ErroreNonTrovato('Scheda non trovata');
 
-    // Accesso: clonabile solo se globale o di proprietà dell'utente
+    // Access: can be cloned only if global or owned by the user
     if (sorgente.visibilita !== 'GLOBALE' && sorgente.creatoreId !== req.utente.id) {
       throw new ErroreNonAutorizzato('Non puoi clonare questa scheda');
     }
@@ -157,7 +157,7 @@ export async function clonaScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Aggiorna scheda */
+/** Updates a plan */
 export async function aggiornaScheda(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -170,13 +170,13 @@ export async function aggiornaScheda(req, res, next) {
     const { titolo, descrizione, livello, visibilita, esercizi } = req.body;
 
     const scheda = await prisma.$transaction(async (tx) => {
-      // 1. Aggiorna dati base
+      // 1. Update the base data
       await tx.schedaAllenamento.update({
         where: { id },
         data: { titolo, descrizione, livello, visibilita }
       });
 
-      // 2. Se vengono forniti esercizi, ricreali (cancella i vecchi e metti i nuovi)
+      // 2. If exercises are given, recreate them (delete the old ones and add the new ones)
       if (esercizi && Array.isArray(esercizi)) {
         await tx.esercizioScheda.deleteMany({ where: { schedaId: id } });
         
@@ -187,7 +187,7 @@ export async function aggiornaScheda(req, res, next) {
         }
       }
 
-      // 3. Ritorna la scheda aggiornata
+      // 3. Return the updated plan
       return tx.schedaAllenamento.findUnique({
         where: { id },
         include: {
@@ -203,7 +203,7 @@ export async function aggiornaScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Elimina scheda */
+/** Deletes a plan */
 export async function eliminaScheda(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -213,17 +213,17 @@ export async function eliminaScheda(req, res, next) {
       throw new ErroreNonAutorizzato('Non puoi eliminare questa scheda');
     }
 
-    // Elimina a cascata in transazione: LogSerie → Sessioni → Esercizi → Scheda
+    // Cascade delete in a transaction: LogSerie → Sessioni → Esercizi → Scheda
     await prisma.$transaction(async (tx) => {
-      // 1. Elimina log serie delle sessioni collegate
+      // 1. Delete the set logs of the linked workouts
       await tx.logSerie.deleteMany({
         where: { sessione: { schedaId: id } }
       });
-      // 2. Elimina sessioni collegate
+      // 2. Delete the linked workouts
       await tx.sessioneAllenamento.deleteMany({ where: { schedaId: id } });
-      // 3. Elimina esercizi scheda
+      // 3. Delete the plan's exercises
       await tx.esercizioScheda.deleteMany({ where: { schedaId: id } });
-      // 4. Elimina scheda
+      // 4. Delete the plan
       await tx.schedaAllenamento.delete({ where: { id } });
     });
 
@@ -231,20 +231,20 @@ export async function eliminaScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Aggiungi esercizio a scheda */
+/** Adds an exercise to a plan */
 export async function aggiungiEsercizio(req, res, next) {
   try {
     const schedaId = parseInt(req.params.id);
     const { esercizioId, serieTarget, repTarget, recuperoSecondi } = req.body;
 
-    // Verifica proprietà
+    // Check ownership
     const scheda = await prisma.schedaAllenamento.findUnique({ where: { id: schedaId } });
     if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
     if (scheda.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato('Non puoi modificare questa scheda');
     }
 
-    // Trova l'ordine massimo attuale
+    // Find the current highest order
     const ultimo = await prisma.esercizioScheda.findFirst({
       where: { schedaId },
       orderBy: { ordineEsecuzione: 'desc' }
@@ -268,13 +268,13 @@ export async function aggiungiEsercizio(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Aggiorna parametri esercizio in scheda */
+/** Updates the parameters of an exercise in a plan */
 export async function aggiornaEsercizioScheda(req, res, next) {
   try {
     const esId = parseInt(req.params.esercizioSchedaId);
     const { serieTarget, repTarget, recuperoSecondi, ordineEsecuzione } = req.body;
 
-    // Verifica proprietà tramite la scheda padre
+    // Check ownership through the parent plan
     const es = await prisma.esercizioScheda.findUnique({
       where: { id: esId },
       include: { scheda: { select: { creatoreId: true } } }
@@ -293,12 +293,12 @@ export async function aggiornaEsercizioScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Rimuovi esercizio da scheda */
+/** Removes an exercise from a plan */
 export async function rimuoviEsercizio(req, res, next) {
   try {
     const esId = parseInt(req.params.esercizioSchedaId);
 
-    // Verifica proprietà tramite la scheda padre
+    // Check ownership through the parent plan
     const es = await prisma.esercizioScheda.findUnique({
       where: { id: esId },
       include: { scheda: { select: { creatoreId: true } } }
@@ -321,7 +321,7 @@ const INCLUDI_PER_DOCX = {
   }
 };
 
-/** Carica le schede richieste verificando l'accesso una per una. */
+/** Loads the requested plans, checking access one by one. */
 async function caricaSchedePerDocx(ids, utente) {
   const schede = await prisma.schedaAllenamento.findMany({
     where: { id: { in: ids } },
@@ -330,13 +330,13 @@ async function caricaSchedePerDocx(ids, utente) {
 
   const trovate = new Map(schede.map(s => [s.id, s]));
 
-  // Si rispetta l'ordine richiesto dal client: definisce quale scheda diventa
-  // la sessione 1, la 2 e cosi' via.
+  // Keep the order requested by the client: it sets which plan becomes
+  // session 1, session 2 and so on.
   const ordinate = [];
   for (const id of ids) {
     const scheda = trovate.get(id);
     if (!scheda) throw new ErroreNonTrovato(`Scheda ${id} non trovata`);
-    // Stesso criterio del dettaglio: proprietario o scheda globale
+    // Same rule as the details: owner or global plan
     if (scheda.creatoreId !== utente.id && scheda.visibilita !== 'GLOBALE') {
       throw new ErroreNonAutorizzato(`Non hai accesso alla scheda "${scheda.titolo}"`);
     }
@@ -354,10 +354,10 @@ function inviaDocx(res, buffer, titolo) {
 }
 
 /**
- * GET /api/v1/schede/:id/docx — Scarica una scheda come documento Word
+ * GET /api/v1/schede/:id/docx — Downloads a plan as a Word document
  *
- * Serve ad avere la scheda sottomano in palestra anche senza connessione,
- * aprendola con Word, Google Docs o LibreOffice.
+ * Useful to have the plan at hand in the gym even without a connection,
+ * opening it with Word, Google Docs or LibreOffice.
  */
 export async function esportaSchedaDocx(req, res, next) {
   try {
@@ -371,11 +371,11 @@ export async function esportaSchedaDocx(req, res, next) {
 }
 
 /**
- * GET /api/v1/schede/docx?ids=3,4,6&titolo=... — Piu' schede in un solo documento
+ * GET /api/v1/schede/docx?ids=3,4,6&titolo=... — Several plans in one document
  *
- * Un programma settimanale non e' una scheda ripetuta ogni giorno ma sedute
- * diverse distribuite sulla settimana: qui ciascuna scheda diventa una
- * sessione numerata dello stesso documento, nell'ordine in cui e' richiesta.
+ * A weekly program is not one plan repeated every day but different sessions
+ * spread over the week: here each plan becomes a numbered session of the same
+ * document, in the order it is requested.
  */
 export async function esportaSchedeDocxMultiplo(req, res, next) {
   try {

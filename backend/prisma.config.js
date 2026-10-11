@@ -1,11 +1,11 @@
 // ============================================
-// GymMaster — Configurazione di Prisma
+// GymMaster — Prisma configuration
 // ============================================
 //
-// Prima stava in package.json ("prisma": { "seed": ... }), che Prisma 7 non
-// leggera' piu'. Con un file di configurazione Prisma non carica da solo il
-// .env: lo fa dotenv, come in src/server.js. Le variabili gia' impostate (dal
-// compose, dai test) restano quelle.
+// This used to live in package.json ("prisma": { "seed": ... }), which Prisma 7
+// will no longer read. With a configuration file Prisma does not load the .env
+// by itself: dotenv does it, as in src/server.js. Variables that are already
+// set (by compose, by the tests) keep their values.
 
 import 'dotenv/config';
 import { defineConfig } from 'prisma/config';

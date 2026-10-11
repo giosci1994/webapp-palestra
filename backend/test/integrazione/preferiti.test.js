@@ -1,4 +1,4 @@
-// Esercizi preferiti: la stella nel catalogo, per ciascun utente.
+// Favourite exercises: the star in the catalogue, for each user.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -36,7 +36,7 @@ describe('esercizi preferiti', () => {
     await stella('PUT', panca.id);
     assert.equal((await stella('PUT', panca.id)).stato, 200);
     assert.equal(await prisma.esercizioPreferito.count(), 1);
-    await stella('DELETE', squat.id); // mai stato preferito
+    await stella('DELETE', squat.id); // never a favourite
     assert.deepEqual((await preferiti()).corpo.dati, [panca.id]);
   });
 

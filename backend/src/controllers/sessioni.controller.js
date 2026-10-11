@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Controller Sessioni Allenamento
-// Avvio, completamento e log serie
+// GymMaster — Workout sessions controller
+// Start, completion and set logs
 // ============================================
 
 import prisma from '../config/database.js';
@@ -9,7 +9,7 @@ import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
 import { concludiSessione, controllaRecord, STATI_DA_CHIUDERE } from '../services/conclusioneSessione.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
-/** Lista sessioni dell'utente */
+/** List of the user's workouts */
 export async function listaSessioni(req, res, next) {
   try {
     const { limite = 20, pagina = 1 } = req.query;
@@ -29,8 +29,8 @@ export async function listaSessioni(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-// Cosa serve allo storico di una sessione: lo usano l'elenco e la modifica,
-// che restituisce la sessione corretta gia' pronta da mostrare
+// What a workout's history entry needs: used by the list and by the edit,
+// which returns the corrected workout ready to show
 const INCLUDI_STORICO = {
   scheda: {
     select: {
@@ -38,7 +38,7 @@ const INCLUDI_STORICO = {
       titolo: true,
       esercizi: {
         select: { id: true },
-        // Solo per conteggio esercizi
+        // Only to count the exercises
       }
     }
   },
@@ -51,11 +51,11 @@ const INCLUDI_STORICO = {
     },
     orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
   },
-  // Le serie fatte: riscaldamento, drop e serie saltate non contano
+  // The sets done: warm-up sets, drop sets and skipped sets do not count
   _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } }
 };
 
-/** Una sessione letta con INCLUDI_STORICO, con i log raggruppati per esercizio */
+/** A workout read with INCLUDI_STORICO, with the logs grouped by exercise */
 export function formattaPerStorico(s) {
   const eserciziRaggruppati = {};
   s.logSerie.forEach(log => {
@@ -78,7 +78,7 @@ export function formattaPerStorico(s) {
       velocitaKmh: log.velocitaKmh
     });
   });
-  // Riscaldamento, poi ogni serie di lavoro con i suoi drop
+  // Warm-up, then each working set with its drop sets
   for (const gruppo of Object.values(eserciziRaggruppati)) gruppo.serie.sort(ordineSerie);
 
   return {
@@ -99,25 +99,25 @@ export function formattaPerStorico(s) {
   };
 }
 
-/** Storico sessioni completo con dettagli log per ogni esercizio */
+/** Full workout history with log details for each exercise */
 export async function storicoSessioniCompleto(req, res, next) {
   try {
     const { limite = 15, pagina = 1, schedaId } = req.query;
     const skip = (parseInt(pagina) - 1) * parseInt(limite);
     const take = parseInt(limite);
 
-    // Filtro base: solo sessioni completate dell'utente
+    // Base filter: only the user's completed workouts
     const where = {
       utenteId: req.utente.id,
       dataFine: { not: null }
     };
 
-    // Filtro opzionale per scheda
+    // Optional filter by plan
     if (schedaId) {
       where.schedaId = parseInt(schedaId);
     }
 
-    // Conteggio totale per paginazione
+    // Total count for pagination
     const totale = await prisma.sessioneAllenamento.count({ where });
 
     const sessioni = await prisma.sessioneAllenamento.findMany({
@@ -143,12 +143,12 @@ export async function storicoSessioniCompleto(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Recupera i dati dell'ultima sessione completata per una scheda specifica */
+/** Fetches the data of the last completed workout for a given plan */
 export async function ultimaSessioneScheda(req, res, next) {
   try {
     const schedaId = parseInt(req.params.schedaId);
 
-    // Trova l'ultima sessione completata per questa scheda
+    // Find the last completed workout for this plan
     const ultimaSessione = await prisma.sessioneAllenamento.findFirst({
       where: {
         utenteId: req.utente.id,
@@ -173,7 +173,7 @@ export async function ultimaSessioneScheda(req, res, next) {
       return res.json({ successo: true, dati: null });
     }
 
-    // Raggruppa i log per esercizioId per un accesso rapido dal frontend
+    // Group the logs by esercizioId for quick access from the frontend
     const logPerEsercizio = {};
     ultimaSessione.logSerie.forEach(log => {
       if (!logPerEsercizio[log.esercizioId]) {
@@ -206,17 +206,17 @@ export async function ultimaSessioneScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Le sedute di ogni esercizio che "ultimi carichi" restituisce, dalla piu' recente */
+/** The sessions of each exercise that "last loads" returns, most recent first */
 const SEDUTE_PER_ESERCIZIO = 4;
 
 /**
- * Carichi dell'ultima volta per ciascun esercizio, in qualsiasi scheda.
- * Serve all'allenamento in corso per suggerire da che peso partire: con una
- * scheda nuova l'ultima sessione della stessa scheda non esiste, ma
- * l'esercizio magari e' gia' stato fatto altrove.
+ * Last time's loads for each exercise, in any plan.
+ * The ongoing workout uses them to suggest which weight to start from: with a
+ * new plan there is no last workout of the same plan, but the exercise may
+ * have already been done elsewhere.
  *
- * Query: esercizi=1,2,3 · escludi=<id della sessione in corso>
- * Risposta: { [esercizioId]: { sessioneId, data, serie: [...], storico: [{ sessioneId, data, serie }] } }
+ * Query: esercizi=1,2,3 · escludi=<id of the ongoing workout>
+ * Response: { [esercizioId]: { sessioneId, data, serie: [...], storico: [{ sessioneId, data, serie }] } }
  */
 export async function ultimiCarichi(req, res, next) {
   try {
@@ -232,7 +232,7 @@ export async function ultimiCarichi(req, res, next) {
       where: {
         esercizioId: { in: ids },
         completato: true,
-        // L'ultima volta e la progressione guardano le serie di lavoro
+        // The last time and the progression look at the working sets
         ...SOLO_LAVORO,
         sessione: {
           utenteId: req.utente.id,
@@ -248,10 +248,10 @@ export async function ultimiCarichi(req, res, next) {
       orderBy: [{ sessione: { dataInizio: 'desc' } }, { serieNumero: 'asc' }, { id: 'asc' }]
     });
 
-    // Le righe arrivano dalla sessione piu' recente. Per ogni esercizio:
-    // sessioneId, data e serie dell'ultima volta, e in storico le ultime
-    // SEDUTE_PER_ESERCIZIO volte, che servono alla progressione dei carichi
-    // (tre volte di fila sotto la forbice di ripetizioni: si scarica).
+    // The rows come from the most recent workout first. For each exercise:
+    // sessioneId, date and sets of the last time, and in storico the last
+    // SEDUTE_PER_ESERCIZIO times, which the load progression needs
+    // (three times in a row below the rep range: deload).
     const risultato = {};
     for (const s of serie) {
       const voce = risultato[s.esercizioId] ??= { storico: [] };
@@ -276,13 +276,13 @@ export async function ultimiCarichi(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Avvia una nuova sessione */
+/** Starts a new workout */
 export async function avviaSessione(req, res, next) {
   try {
     const { schedaId, minutiRiscaldamento } = req.body;
     if (!schedaId) throw new ErroreValidazione('schedaId è obbligatorio');
 
-    // Verifica che la scheda esista
+    // Check that the plan exists
     const scheda = await prisma.schedaAllenamento.findUnique({
       where: { id: parseInt(schedaId) },
       include: {
@@ -298,8 +298,8 @@ export async function avviaSessione(req, res, next) {
     });
 
     if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
-    // Come per il dettaglio della scheda: le proprie (anche quelle assegnate
-    // dal PT, che le intesta al cliente) e quelle globali
+    // As for the plan details: one's own (including those assigned by the
+    // personal trainer, who puts them in the client's name) and global ones
     if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
       throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
     }
@@ -331,7 +331,7 @@ export async function avviaSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Dettaglio sessione con tutti i log */
+/** Workout details with all the logs */
 export async function dettaglioSessione(req, res, next) {
   try {
     const sessione = await prisma.sessioneAllenamento.findUnique({
@@ -372,9 +372,10 @@ export async function dettaglioSessione(req, res, next) {
 }
 
 /**
- * PATCH /sessioni/:id/completa — "Termina": volume, calendario e record in
- * services/conclusioneSessione.service.js. Se l'allenamento era rimasto aperto
- * per ore, finisce all'ultima serie e la risposta lo dice (dimenticata).
+ * PATCH /sessioni/:id/completa — "Termina" (finish): volume, calendar and
+ * records in services/conclusioneSessione.service.js. If the workout had been
+ * left open for hours, it ends at the last set and the response says so
+ * (dimenticata).
  */
 export async function completaSessione(req, res, next) {
   try {
@@ -387,8 +388,8 @@ export async function completaSessione(req, res, next) {
       throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
     }
 
-    // "Termina" toccato senza rete arriva quando torna la connessione: conta
-    // l'ora in cui e' stato toccato, non quella in cui e' arrivato
+    // "Termina" tapped without a network arrives when the connection is back:
+    // what counts is the time it was tapped, not the time it arrived
     const adesso = conclusaIl != null ? orarioDalTelefono(conclusaIl, sessione.dataInizio) : undefined;
     const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso });
 
@@ -402,17 +403,17 @@ export async function completaSessione(req, res, next) {
 }
 
 /**
- * Gli esercizi di una nuova scheda ricavati da un allenamento fatto: quelli con
- * almeno una serie completata, nell'ordine in cui li hai cominciati, con le
- * serie fatte e le ripetizioni (un numero, o "min-max" se sono cambiate).
- * Recupero, note e riscaldamento vengono dalla scheda seguita, se l'esercizio
- * c'era; per gli esercizi senza ripetizioni (cardio) i valori dell'ultima serie.
+ * The exercises of a new plan taken from a finished workout: those with at
+ * least one completed set, in the order you started them, with the sets done
+ * and the reps (a number, or "min-max" if they changed). Rest, notes and
+ * warm-up come from the plan followed, if the exercise was in it; for the
+ * exercises without reps (cardio), the values of the last set.
  */
 export function eserciziDaSessione(logSerie, eserciziScheda = []) {
   const dallaScheda = new Map(eserciziScheda.map(e => [e.esercizioId, e]));
   const perEsercizio = new Map();
   for (const serie of [...logSerie].sort((a, b) => a.id - b.id)) {
-    // La scheda nuova ha le serie di lavoro: riscaldamento e drop restano fuori
+    // The new plan has the working sets: warm-up and drop sets stay out
     if (!serie.completato || !diLavoro(serie)) continue;
     if (!perEsercizio.has(serie.esercizioId)) perEsercizio.set(serie.esercizioId, []);
     perEsercizio.get(serie.esercizioId).push(serie);
@@ -445,11 +446,10 @@ export function eserciziDaSessione(logSerie, eserciziScheda = []) {
 const TITOLO_SCHEDA_MAX = 100;
 
 /**
- * POST /sessioni/:id/scheda — Salva un allenamento fatto come nuova scheda
- * personale: gli esercizi davvero fatti, nell'ordine, con le serie e le
- * ripetizioni di quel giorno. Per quando in palestra la scheda e' cambiata
- * strada facendo (esercizi aggiunti o saltati, serie in piu') e la versione
- * buona e' quella fatta.
+ * POST /sessioni/:id/scheda — Saves a finished workout as a new personal
+ * plan: the exercises actually done, in order, with that day's sets and reps.
+ * For when the plan changed along the way at the gym (exercises added or
+ * skipped, extra sets) and the right version is the one that was done.
  */
 export async function salvaComeScheda(req, res, next) {
   try {
@@ -496,14 +496,14 @@ export async function salvaComeScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Entro quanto dalla fine si puo' riprendere un allenamento chiuso per sbaglio */
+/** How long after the end a workout closed by mistake can be resumed */
 export const RIAPERTURA_MAX_MINUTI = 30;
 
 /**
- * PATCH /sessioni/:id/riapri — "Ho chiuso per sbaglio": l'allenamento appena
- * concluso torna in corso, e la prossima chiusura ne ricalcola durata, volume
- * e record. Solo entro mezz'ora dalla fine: un allenamento di giorni fa si
- * corregge dallo storico, non si riapre.
+ * PATCH /sessioni/:id/riapri — "I closed it by mistake": the workout just
+ * finished goes back to ongoing, and the next close recalculates its duration,
+ * volume and records. Only within half an hour of the end: a workout from days
+ * ago is corrected from the history, not reopened.
  */
 export async function riapriSessione(req, res, next) {
   try {
@@ -521,8 +521,8 @@ export async function riapriSessione(req, res, next) {
     }
 
     const riaperta = await prisma.$transaction(async (tx) => {
-      // Il calendario segnato come fatto alla chiusura torna da fare: la
-      // prossima chiusura lo segnera' di nuovo
+      // The calendar entry marked as done at close goes back to to-do: the
+      // next close will mark it again
       await tx.allenamentoPianificato.updateMany({
         where: { sessioneId: id, stato: 'COMPLETATO' },
         data: { stato: 'PIANIFICATO', sessioneId: null }
@@ -537,14 +537,14 @@ export async function riapriSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** La chiave che il telefono da' a una serie (un UUID, o qualcosa di simile) */
+/** The key the phone gives to a set (a UUID, or something similar) */
 const ID_CLIENT = /^[A-Za-z0-9-]{8,64}$/;
 
 /**
- * Un istante scritto dal telefono: quando e' stata fatta una serie, quando e'
- * stato toccato "Termina". Senza rete arriva anche ore dopo, quindi conta
- * l'ora del telefono, tenuta fra l'inizio dell'allenamento e adesso: un
- * orologio un po' avanti o indietro non la porta fuori dall'allenamento.
+ * An instant written by the phone: when a set was done, when "Termina" was
+ * tapped. Without a network it can arrive hours later, so the phone's time is
+ * what counts, kept between the start of the workout and now: a clock a bit
+ * fast or slow does not push it outside the workout.
  */
 export function orarioDalTelefono(valore, dataInizio, adesso = new Date()) {
   const orario = typeof valore === 'string' || typeof valore === 'number' ? new Date(valore) : null;
@@ -553,13 +553,13 @@ export function orarioDalTelefono(valore, dataInizio, adesso = new Date()) {
 }
 
 /**
- * POST /sessioni/:id/serie — Registra una serie
+ * POST /sessioni/:id/serie — Records a set
  *
- * Il telefono tiene in coda le serie fatte senza rete (utils/codaSerie.js nel
- * frontend) e le manda quando torna la connessione, ognuna con la sua chiave
- * (idClient) e l'ora in cui e' stata fatta (registrataIl). Una serie gia'
- * arrivata non si registra due volte: se la prima risposta si e' persa, il
- * telefono ritenta e riceve quella gia' salvata.
+ * The phone queues the sets done without a network (utils/codaSerie.js in the
+ * frontend) and sends them when the connection is back, each with its key
+ * (idClient) and the time it was done (registrataIl). A set that already
+ * arrived is not recorded twice: if the first response got lost, the phone
+ * retries and receives the one already saved.
  */
 export async function logSerie(req, res, next) {
   try {
@@ -577,7 +577,7 @@ export async function logSerie(req, res, next) {
       throw new ErroreValidazione('idClient non valido');
     }
 
-    // Verifica che la sessione sia dell'utente prima di registrare la serie
+    // Check that the workout belongs to the user before recording the set
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id: sessioneId } });
     if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
@@ -619,14 +619,14 @@ export async function logSerie(req, res, next) {
         include: includi
       });
     } catch (errore) {
-      // Due invii della stessa serie nello stesso istante: ne passa uno
+      // Two sends of the same set at the same instant: one gets through
       if (errore.code !== 'P2002' || !idClient) throw errore;
       return res.json({ successo: true, dati: await giaArrivata() });
     }
 
-    // Arrivata ad allenamento gia' chiuso (dal controllo del server, mentre il
-    // telefono era senza rete): si richiude contando anche lei, cosi' durata,
-    // volume e record la comprendono
+    // Arrived after the workout was already closed (by the server's check,
+    // while the phone had no network): close it again counting this set too,
+    // so duration, volume and records include it
     if (sessione.dataFine) {
       await concludiSessione(sessione, {
         adesso: new Date(Math.max(sessione.dataFine.getTime(), log.registrataIl.getTime()))
@@ -637,7 +637,7 @@ export async function logSerie(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Elimina una sessione */
+/** Deletes a workout */
 export async function eliminaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -648,8 +648,8 @@ export async function eliminaSessione(req, res, next) {
       throw new ErroreNonAutorizzato('Non puoi eliminare le sessioni di altri utenti');
     }
 
-    // Le LogSerie sono eliminate automaticamente se c'è onDelete: Cascade nel database.
-    // Per sicurezza, eliminiamole esplicitamente prima in una transazione:
+    // The schema already deletes the LogSerie rows (onDelete: Cascade); deleting
+    // them explicitly, in the same transaction, does not depend on it:
     await prisma.$transaction([
       prisma.logSerie.deleteMany({ where: { sessioneId: id } }),
       prisma.sessioneAllenamento.delete({ where: { id } })
@@ -659,16 +659,16 @@ export async function eliminaSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-// Limiti di buon senso per un allenamento inserito o corretto a posteriori
+// Common-sense limits for a workout entered or corrected afterwards
 const DURATA_MIN = 1;
-const DURATA_MAX = 600;          // 10 ore
+const DURATA_MAX = 600;          // 10 hours
 const ANNI_INDIETRO_MAX = 2;
-const TOLLERANZA_FUTURO_MS = 5 * 60 * 1000;  // scarto d'orologio fra client e server
+const TOLLERANZA_FUTURO_MS = 5 * 60 * 1000;  // clock drift between client and server
 
 /**
- * Inizio di un allenamento dichiarato dal client. Arriva come istante completo
- * di fuso: cosi' l'ora salvata e' quella in cui l'utente si e' davvero
- * allenato, non quella del server.
+ * Start of a workout stated by the client. It arrives as a full instant with
+ * its time zone: this way the saved time is when the user actually trained,
+ * not the server's time.
  */
 export function leggiInizio(valore) {
   const inizio = new Date(valore);
@@ -685,7 +685,7 @@ export function leggiInizio(valore) {
   return inizio;
 }
 
-/** Durata in minuti di un allenamento dichiarato dal client */
+/** Duration in minutes of a workout stated by the client */
 export function leggiDurata(valore) {
   const durata = parseInt(valore);
   if (Number.isNaN(durata) || durata < DURATA_MIN || durata > DURATA_MAX) {
@@ -695,16 +695,16 @@ export function leggiDurata(valore) {
 }
 
 /**
- * POST /api/v1/sessioni/passata — Registra un allenamento gia' svolto
+ * POST /api/v1/sessioni/passata — Records a workout already done
  *
- * Il flusso normale non serve allo scopo: avviaSessione fissa la data a
- * "adesso" e completaSessione ricava la durata dal tempo trascorso, quindi una
- * sessione retrodatata risulterebbe lunga giorni. Qui sessione e serie vengono
- * scritte insieme, con la data e la durata dichiarate.
+ * The normal flow does not fit: avviaSessione sets the date to "now" and
+ * completaSessione takes the duration from the elapsed time, so a backdated
+ * workout would turn out days long. Here the workout and its sets are written
+ * together, with the stated date and duration.
  *
- * Nasce dal caso concreto di chi si allena senza connessione seguendo una
- * scheda scaricata e registra la seduta sull'orologio: i dati esistono gia',
- * vanno solo riportati.
+ * It comes from the real case of someone who trains without a connection
+ * following a downloaded plan and records the session on their watch: the
+ * data already exists, it only needs to be copied over.
  */
 export async function registraSessionePassata(req, res, next) {
   try {
@@ -726,8 +726,8 @@ export async function registraSessionePassata(req, res, next) {
       throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
     }
 
-    // Le serie sono facoltative: chi ha solo il riepilogo dell'orologio
-    // registra data e durata, chi ha annotato i carichi li aggiunge.
+    // The sets are optional: whoever has only the watch summary records date
+    // and duration, whoever wrote down the loads adds them.
     const righe = Array.isArray(serie) ? serie : [];
     const preparate = righe.map((r, i) => {
       const esercizioId = parseInt(r.esercizioId);
@@ -759,7 +759,7 @@ export async function registraSessionePassata(req, res, next) {
 
     const fine = new Date(inizio.getTime() + durata * 60000);
 
-    // Sessione e serie insieme: una sessione a meta' sarebbe peggio di nessuna
+    // Workout and sets together: a half-written workout would be worse than none
     const sessione = await prisma.$transaction(async (tx) => {
       const creata = await tx.sessioneAllenamento.create({
         data: {
@@ -780,8 +780,8 @@ export async function registraSessionePassata(req, res, next) {
         });
       }
 
-      // Se quel giorno era in calendario, l'allenamento risulta fatto: cosi'
-      // non resta segnato come "da fare" dopo essere stato registrato.
+      // If that day was in the calendar, the workout shows as done: this way
+      // it does not stay marked as "to do" after being recorded.
       await tx.allenamentoPianificato.updateMany({
         where: { utenteId: req.utente.id, schedaId: idScheda, data: giornoLocale(inizio), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
         data: { stato: 'COMPLETATO', sessioneId: creata.id }
@@ -790,7 +790,7 @@ export async function registraSessionePassata(req, res, next) {
       return creata;
     });
 
-    // I record vengono datati al giorno dell'allenamento, non a oggi
+    // The records are dated to the day of the workout, not to today
     const recordAggiornati = await controllaRecord(
       req.utente.id,
       preparate.filter(r => r.completato),
@@ -801,8 +801,8 @@ export async function registraSessionePassata(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-// Valori di una serie che si correggono dallo storico. Peso e ripetizioni non
-// possono mancare nel database: vuoti valgono 0, come nel corpo libero.
+// Values of a set that can be corrected from the history. Weight and reps
+// cannot be missing in the database: empty means 0, as for bodyweight.
 const CAMPI_SERIE = {
   pesoEffettivo:     { errore: 'peso non valido', max: 1000, zeroSeVuoto: true },
   repEffettive:      { errore: 'ripetizioni non valide', max: 1000, intero: true, zeroSeVuoto: true },
@@ -812,7 +812,7 @@ const CAMPI_SERIE = {
 };
 const SERIE_MAX = 300;
 
-/** Valori di una serie ricevuta: un campo assente resta com'era, uno vuoto si svuota. */
+/** Values of a received set: a missing field stays as it was, an empty one is cleared. */
 export function leggiValoriSerie(riga, n) {
   const valori = {};
   for (const [campo, regola] of Object.entries(CAMPI_SERIE)) {
@@ -828,21 +828,21 @@ export function leggiValoriSerie(riga, n) {
     }
     valori[campo] = v;
   }
-  // Una serie segnata male in palestra (era un riscaldamento) si corregge qui
+  // A set logged wrong at the gym (it was a warm-up) is corrected here
   if (riga.tipo !== undefined) valori.tipo = leggiTipo(riga.tipo, `Serie ${n}: `);
   return valori;
 }
 
 /**
- * Riallinea i record personali dopo la correzione delle serie di una sessione.
+ * Realigns the personal records after the sets of a workout are corrected.
  *
- * Un record nato da un peso sbagliato (800 kg invece di 80) sparisce quando la
- * serie viene corretta e nessun'altra lo raggiunge; se il massimo vero resta
- * senza record, ne nasce uno datato all'allenamento in cui e' stato
- * sollevato. Si eliminano solo record con un peso che la sessione conteneva
- * prima della modifica: quelli nati da altri allenamenti restano.
+ * A record born from a wrong weight (800 kg instead of 80) disappears when the
+ * set is corrected and no other set reaches it; if the real maximum is left
+ * without a record, a new one is created, dated to the workout in which it was
+ * lifted. Only records with a weight the workout contained before the edit
+ * are deleted: those born from other workouts stay.
  *
- * @param pesiPrima esercizioId → pesi delle serie della sessione prima della modifica
+ * @param pesiPrima esercizioId → weights of the workout's sets before the edit
  */
 async function riallineaRecord(tx, utenteId, pesiPrima) {
   const creati = [];
@@ -876,21 +876,21 @@ async function riallineaRecord(tx, utenteId, pesiPrima) {
 }
 
 /**
- * PATCH /api/v1/sessioni/:id — Corregge un allenamento concluso dallo storico
+ * PATCH /api/v1/sessioni/:id — Corrects a finished workout from the history
  *
- * Nasce da un allenamento rimasto aperto tutta la notte: "Termina" la mattina
- * dopo ricava la durata dal tempo trascorso, piu' di dieci ore, e ore totali,
- * durata per giorno e badge ne risultano falsati. Prima l'unico rimedio era
- * eliminare la sessione, perdendo anche le serie.
+ * It comes from a workout left open all night: "Termina" the next morning
+ * takes the duration from the elapsed time, more than ten hours, and total
+ * hours, duration per day and badges all come out wrong. Before, the only fix
+ * was deleting the workout, losing the sets too.
  *
- * Cambia solo cio' che arriva:
- * - dataInizio, durataMinuti: la fine si ricalcola da inizio + durata;
- * - minutiRiscaldamento, noteFinali: null li svuota;
- * - serie: l'elenco completo delle serie svolte dopo la modifica, nell'ordine
- *   in cui mostrarle. Quelle con id si aggiornano, quelle senza si aggiungono
- *   a un esercizio gia' presente, quelle che mancano si eliminano. Le serie
- *   saltate non compaiono nello storico e restano come sono.
- * Volume e record personali seguono le serie corrette.
+ * Only what arrives changes:
+ * - dataInizio, durataMinuti: the end is recalculated from start + duration;
+ * - minutiRiscaldamento, noteFinali: null clears them;
+ * - serie: the full list of the sets done after the edit, in the order to
+ *   show them. Those with an id are updated, those without are added to an
+ *   exercise already present, the missing ones are deleted. Skipped sets do
+ *   not show in the history and stay as they are.
+ * Volume and personal records follow the corrected sets.
  */
 export async function modificaSessione(req, res, next) {
   try {
@@ -903,8 +903,8 @@ export async function modificaSessione(req, res, next) {
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
     }
-    // Uno in corso si chiude con "Termina": qui si scontrerebbe con le serie
-    // che l'allenamento sta ancora registrando
+    // An ongoing one is closed with "Termina": here it would clash with the
+    // sets the workout is still recording
     if (!sessione.dataFine) throw new ErroreValidazione('Puoi modificare solo un allenamento concluso');
 
     const { dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
@@ -938,7 +938,7 @@ export async function modificaSessione(req, res, next) {
       dati.noteFinali = typeof noteFinali === 'string' && noteFinali.trim() ? noteFinali.trim() : null;
     }
 
-    // Le serie ricevute si confrontano con quelle svolte gia' registrate
+    // The received sets are compared with the done sets already recorded
     const svolte = sessione.logSerie.filter(l => l.completato);
     let righe = null;
     if (serie !== undefined) {
@@ -967,8 +967,8 @@ export async function modificaSessione(req, res, next) {
     }
 
     const { aggiornata, recordPersonali } = await prisma.$transaction(async (tx) => {
-      // Esercizi in cui il peso massimo puo' essere cambiato, con i pesi che
-      // avevano prima della modifica: servono a riallineare i record
+      // Exercises whose max weight may have changed, with the weights they
+      // had before the edit: needed to realign the records
       const toccati = new Map();
       const tocca = (esercizioId) => {
         if (!toccati.has(esercizioId)) {
@@ -984,9 +984,9 @@ export async function modificaSessione(req, res, next) {
           eliminate.forEach(l => tocca(l.esercizioId));
         }
 
-        // Numerazione 1..n per esercizio nell'ordine ricevuto: tolta una serie
-        // registrata due volte non resta il buco ("1, 3, 4"). Il riscaldamento
-        // ha la sua numerazione, un drop il numero della serie di lavoro prima
+        // Numbering 1..n per exercise in the order received: removing a set
+        // recorded twice leaves no gap ("1, 3, 4"). Warm-up sets are numbered
+        // on their own, a drop set takes the number of the working set before
         const contatori = new Map();
         let volume = 0;
         for (const r of righe) {
@@ -1019,8 +1019,8 @@ export async function modificaSessione(req, res, next) {
 
       const aggiornata = await tx.sessioneAllenamento.update({ where: { id }, data: dati, include: INCLUDI_STORICO });
 
-      // Spostato in un altro giorno, l'allenamento non chiude piu' quello
-      // programmato nel giorno vecchio, ma quello del giorno nuovo
+      // Moved to another day, the workout no longer closes the one scheduled
+      // on the old day, but the one on the new day
       if (dati.dataInizio && giornoLocale(dati.dataInizio).getTime() !== giornoLocale(sessione.dataInizio).getTime()) {
         await tx.allenamentoPianificato.updateMany({
           where: { sessioneId: id },
@@ -1032,7 +1032,7 @@ export async function modificaSessione(req, res, next) {
         });
       }
 
-      // Dopo l'aggiornamento della sessione: un record nuovo prende la data corretta
+      // After the workout update: a new record gets the corrected date
       const recordPersonali = await riallineaRecord(tx, sessione.utenteId, toccati);
       return { aggiornata, recordPersonali };
     });

@@ -1,7 +1,7 @@
-// Il profilo si esporta campo per campo: qui si controlla che ogni colonna di
-// Utente sia stata assegnata a una delle due liste. Chi aggiunge una colonna
-// allo schema deve decidere se finisce nel file dell'utente o resta riservata;
-// senza questo test sparirebbe dall'esportazione in silenzio.
+// The profile is exported field by field: this checks that every Utente
+// column has been assigned to one of the two lists. Whoever adds a column to
+// the schema must decide whether it goes into the user's file or stays
+// private; without this test it would silently vanish from the export.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Prisma } from '@prisma/client';

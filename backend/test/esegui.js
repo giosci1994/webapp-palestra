@@ -1,14 +1,15 @@
 // ============================================
-// GymMaster — Avvio dei test del backend
+// GymMaster — Backend test runner
 // ============================================
 //
-//   npm test                unitari e d'integrazione (serve Docker)
-//   npm run test:unitari    solo unitari: niente Docker, pochi secondi
+//   npm test                unit and integration tests (needs Docker)
+//   npm run test:unitari    unit tests only: no Docker, a few seconds
 //
-// I test d'integrazione parlano con un Postgres e un Redis veri ma usa-e-getta:
-// li avvia Docker Compose (test/docker-compose.yml) e li spegne alla fine.
-// Con TEST_DATABASE_URL (e TEST_REDIS_URL) si usano invece servizi gia'
-// avviati. In ogni caso il database deve chiamarsi *_test: i test lo svuotano.
+// The integration tests talk to a real but throwaway Postgres and Redis:
+// Docker Compose (test/docker-compose.yml) starts them and stops them at the
+// end. With TEST_DATABASE_URL (and TEST_REDIS_URL) services that are already
+// running are used instead. Either way the database must be named *_test: the
+// tests empty it.
 
 import { spawnSync } from 'node:child_process';
 import crypto from 'node:crypto';
@@ -19,8 +20,8 @@ import { fileURLToPath } from 'node:url';
 const BACKEND = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const COMPOSE = ['compose', '-f', 'test/docker-compose.yml'];
 
-// Ctrl+C arriva anche ai test, che si chiudono da soli: qui si ignora, cosi'
-// si arriva comunque a spegnere i servizi
+// Ctrl+C reaches the tests too, and they exit on their own: here it is
+// ignored, so we still get to stop the services
 process.on('SIGINT', () => {});
 process.on('SIGTERM', () => {});
 
@@ -28,14 +29,14 @@ const ambiente = {
   ...process.env,
   AMBIENTE: 'test',
   LIVELLO_LOG: process.env.LIVELLO_LOG || 'silent',
-  // Le passkey dei test nascono per un dominio di prova
+  // The test passkeys are created for a test domain
   APP_URL: 'https://palestra.test',
-  // Segreti nuovi a ogni esecuzione
+  // New secrets on every run
   JWT_SEGRETO_ACCESS: crypto.randomBytes(32).toString('hex'),
   JWT_SEGRETO_REFRESH: crypto.randomBytes(32).toString('hex')
 };
-// Durate di default dei token, e nessuna chiamata a servizi esterni (email,
-// Gemini, Telegram). Il database lo decide avviaServizi().
+// Default token lifetimes, and no calls to external services (email, Gemini,
+// Telegram). avviaServizi() picks the database.
 for (const chiave of [
   'JWT_SCADENZA_ACCESS', 'JWT_SCADENZA_REFRESH', 'RESEND_API_KEY', 'GEMINI_API_KEY',
   'TELEGRAM_BOT_TOKEN', 'DATABASE_URL', 'REDIS_URL'
@@ -72,7 +73,7 @@ function controllaNomeDatabase(url) {
   }
 }
 
-/** Prepara Postgres e Redis; restituisce la funzione che li spegne */
+/** Sets up Postgres and Redis; returns the function that stops them */
 function avviaServizi() {
   if (process.env.TEST_DATABASE_URL) {
     controllaNomeDatabase(process.env.TEST_DATABASE_URL);
@@ -81,7 +82,7 @@ function avviaServizi() {
     return () => {};
   }
 
-  // Un'esecuzione interrotta di colpo puo' averli lasciati accesi
+  // A run that was cut short may have left them running
   docker('down', '--remove-orphans');
   console.log('Avvio di Postgres e Redis per i test...');
   docker('up', '--detach', '--wait');
@@ -90,16 +91,16 @@ function avviaServizi() {
   return () => docker('down', '--remove-orphans');
 }
 
-// La CLI di Prisma passando da node: node_modules/.bin/prisma non sempre e'
-// eseguibile (per questo il Dockerfile fa chmod +x)
+// The Prisma CLI run through node: node_modules/.bin/prisma is not always
+// executable (that is why the Dockerfile runs chmod +x)
 const CLI_PRISMA = createRequire(import.meta.url).resolve('prisma/build/index.js');
 const prisma = argomenti => esegui(process.execPath, [CLI_PRISMA, ...argomenti], { mostra: false });
 
 /**
- * Crea le tabelle con le migrazioni, come fa il backend all'avvio, e controlla
- * che il risultato sia proprio prisma/schema.prisma: una tabella creata fuori
- * dalle migrazioni (db push) o una migrazione dimenticata fanno fallire i test
- * invece di accorgersene il giorno di un'installazione nuova.
+ * Creates the tables with the migrations, as the backend does at startup, and
+ * checks that the result is exactly prisma/schema.prisma: a table created
+ * outside the migrations (db push) or a forgotten migration makes the tests
+ * fail, instead of being found out the day of a fresh install.
  */
 function applicaMigrazioni() {
   const migrazione = prisma(['migrate', 'deploy']);
@@ -107,7 +108,7 @@ function applicaMigrazioni() {
     throw new Error(`Le migrazioni non partono da un database vuoto:\n${migrazione.stdout}${migrazione.stderr}`);
   }
 
-  // --exit-code: 0 se coincidono, 2 se ci sono differenze
+  // --exit-code: 0 if they match, 2 if there are differences
   const differenze = prisma([
     'migrate', 'diff', '--from-url', ambiente.DATABASE_URL,
     '--to-schema-datamodel', 'prisma/schema.prisma', '--script', '--exit-code'
@@ -120,7 +121,7 @@ function applicaMigrazioni() {
   }
 }
 
-/** I test di una cartella; node:test esegue ogni file nel suo processo */
+/** The tests of a folder; node:test runs each file in its own process */
 function eseguiTest(cartella, opzioni = []) {
   return esegui(process.execPath, [
     '--test', '--test-reporter=spec', '--test-force-exit', ...opzioni, `test/${cartella}/**/*.test.js`
@@ -133,7 +134,7 @@ if (!process.argv.includes('--solo-unitari')) {
   const spegni = avviaServizi();
   try {
     applicaMigrazioni();
-    // Un file alla volta: condividono lo stesso database
+    // One file at a time: they share the same database
     esiti.push(eseguiTest('integrazione', ['--test-concurrency=1']));
   } finally {
     spegni();

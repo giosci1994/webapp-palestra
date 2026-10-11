@@ -1,6 +1,5 @@
-// Le funzioni pure dietro la correzione di un allenamento dallo storico e la
-// registrazione di uno passato: lettura dei valori dal client e formato dello
-// storico.
+// The pure functions behind correcting a workout from the history and logging
+// a past one: reading the values from the client and the history format.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -10,7 +9,7 @@ import { ErroreValidazione } from '../../src/utils/errori.js';
 
 const MINUTO = 60 * 1000;
 
-/** Per assert.throws: un ErroreValidazione con esattamente questo messaggio */
+/** For assert.throws: an ErroreValidazione with exactly this message */
 const erroreValidazione = messaggio => errore => {
   assert.ok(errore instanceof ErroreValidazione, `atteso un ErroreValidazione, arrivato: ${errore}`);
   assert.equal(errore.message, messaggio);
@@ -143,7 +142,7 @@ describe('formattaPerStorico', () => {
   const serie = (id, esercizio, serieNumero, pesoEffettivo, repEffettive) => ({
     id, esercizioId: esercizio.id, esercizio, serieNumero, tipo: 'LAVORO', pesoEffettivo, repEffettive,
     rpe: null, durataMinuti: null, livelloResistenza: null, distanzaKm: null, velocitaKmh: null,
-    // Campi del log che lo storico non mostra
+    // Log fields the history does not show
     completato: true, noteSerie: 'nota interna', sessioneId: 1
   });
   const sessione = {
@@ -157,7 +156,7 @@ describe('formattaPerStorico', () => {
     utenteId: 3,
     scheda: { id: 4, titolo: 'Push', esercizi: [{ id: 1 }, { id: 2 }, { id: 3 }] },
     _count: { logSerie: 3 },
-    // Come le ordina la query dello storico: per esercizio, poi per numero
+    // As the history query orders them: by exercise, then by number
     logSerie: [serie(10, panca, 1, 80, 8), serie(11, panca, 2, 80, 7), serie(12, croci, 1, 20, 12)]
   };
 

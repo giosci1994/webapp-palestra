@@ -2,17 +2,17 @@
 // GymMaster — Passkey (WebAuthn)
 // ============================================
 //
-// Entrare con l'impronta, il volto o il PIN del dispositivo invece della
-// password. Il dispositivo (o il gestore di password che sincronizza la
-// passkey) custodisce la chiave privata e firma una sfida; qui si conserva solo
-// la chiave pubblica che verifica la firma.
+// Signing in with the device's fingerprint, face or PIN instead of the
+// password. The device (or the password manager that syncs the passkey)
+// keeps the private key and signs a challenge; here we only keep the public
+// key that checks the signature.
 //
-// Le passkey si aggiungono dal profilo confermando la password: chi ruba una
-// sessione non deve poter aggiungere la propria e restare dentro anche dopo un
-// cambio password. La password resta: la passkey e' un modo in piu' di entrare.
+// Passkeys are added from the profile by confirming the password: someone who
+// steals a session must not be able to add their own and stay in even after a
+// password change. The password stays: a passkey is one more way to sign in.
 //
-// Una passkey vale solo sul dominio per cui e' nata (RP ID): lo si ricava da
-// APP_URL, come i link nelle email.
+// A passkey only works on the domain it was created for (RP ID): it is taken
+// from APP_URL, like the links in the emails.
 
 import crypto from 'crypto';
 import argon2 from 'argon2';
@@ -28,21 +28,21 @@ import { registraErrore, azzeraTentativi } from '../utils/tentativiAccesso.js';
 import { CAMPI_ACCESSO, apriSessione, controllaTentativi } from './autenticazione.service.js';
 
 const NOME_SERVIZIO = 'GymMaster';
-// Tempo per completare il gesto sul dispositivo
+// Time to complete the gesture on the device
 const DURATA_SFIDA_MS = 5 * 60 * 1000;
 const MAX_SFIDE = 10000;
 
-// Cosa si mostra di una passkey nel profilo
+// What the profile shows of a passkey
 const CAMPI_ELENCO = { id: true, nome: true, sincronizzata: true, creataIl: true, ultimoUso: true };
 
-/** Origine e RP ID, dalle stesse variabili dei link nelle email */
+/** Origin and RP ID, from the same variables as the links in the emails */
 export function configurazionePasskey() {
   const url = new URL(process.env.APP_URL || `https://gymmaster.${process.env.DOMINIO || 'casadm.uk'}`);
   return { origine: url.origin, rpID: url.hostname };
 }
 
-// Sfide in attesa della firma: id -> { tipo, sfida, utenteId, scade }. In
-// memoria: durano pochi minuti, e un riavvio costa solo un nuovo tentativo.
+// Challenges waiting for a signature: id -> { tipo, sfida, utenteId, scade }.
+// In memory: they last a few minutes, and a restart only costs a new attempt.
 const sfide = new Map();
 
 function conservaSfida(dati) {
@@ -56,7 +56,7 @@ function conservaSfida(dati) {
   return id;
 }
 
-/** Ogni sfida si usa una volta sola: riusare una firma non serve a niente */
+/** Each challenge is used only once: reusing a signature gets you nothing */
 function prendiSfida(id, tipo) {
   const chiave = String(id || '');
   const sfida = sfide.get(chiave);
@@ -67,7 +67,7 @@ function prendiSfida(id, tipo) {
   return sfida;
 }
 
-/** Come l'autenticatore riconosce l'utente: opaco, senza email ne' nome */
+/** How the authenticator recognizes the user: opaque, with no email or name */
 function handleUtente(utenteId) {
   return crypto.createHash('sha256').update(`gymmaster-passkey:${utenteId}`).digest();
 }
@@ -76,14 +76,14 @@ function leggiTrasporti(testo) {
   try { return JSON.parse(testo) ?? undefined; } catch { return undefined; }
 }
 
-/** Le passkey dell'utente, per il profilo */
+/** The user's passkeys, for the profile */
 export function elencaPasskey(utenteId) {
   return prisma.passkey.findMany({ where: { utenteId }, orderBy: { creataIl: 'asc' }, select: CAMPI_ELENCO });
 }
 
 /**
- * Prima meta' dell'aggiunta: dopo la password, la sfida da far firmare al
- * dispositivo. Le passkey gia' registrate sono escluse, per non duplicarle.
+ * First half of adding one: after the password, the challenge for the device
+ * to sign. Passkeys already registered are excluded, so they are not duplicated.
  */
 export async function opzioniRegistrazione(utenteId, password) {
   const utente = await prisma.utente.findUnique({
@@ -92,7 +92,7 @@ export async function opzioniRegistrazione(utenteId, password) {
   });
   if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
-  // Una password sbagliata qui conta come un accesso sbagliato
+  // A wrong password here counts as a failed sign-in
   controllaTentativi(utente.email);
   if (typeof password !== 'string' || !password || !await argon2.verify(utente.passwordHash, password)) {
     registraErrore(utente.email);
@@ -109,14 +109,14 @@ export async function opzioniRegistrazione(utenteId, password) {
     userID: handleUtente(utente.id),
     attestationType: 'none',
     excludeCredentials: utente.passkey.map(p => ({ id: p.credenziale, transports: leggiTrasporti(p.trasporti) })),
-    // Passkey "rilevabili": all'accesso non serve scrivere l'email
+    // "Discoverable" passkeys: no need to type the email to sign in
     authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' }
   });
 
   return { id: conservaSfida({ tipo: 'registrazione', sfida: opzioni.challenge, utenteId }), opzioni };
 }
 
-/** Seconda meta': la risposta del dispositivo diventa una passkey dell'utente */
+/** Second half: the device's response becomes one of the user's passkeys */
 export async function verificaRegistrazione(utenteId, idSfida, risposta, nome = null) {
   const sfida = prendiSfida(idSfida, 'registrazione');
   if (sfida.utenteId !== utenteId) throw new ErroreValidazione('Richiesta scaduta: riprova');
@@ -168,7 +168,7 @@ export async function eliminaPasskey(utenteId, id) {
   logger.info({ utenteId, passkeyId: idPasskey }, 'Passkey eliminata');
 }
 
-/** Prima meta' dell'accesso: la sfida, senza sapere ancora chi e' */
+/** First half of signing in: the challenge, without knowing yet who it is */
 export async function opzioniAccesso() {
   const { rpID } = configurazionePasskey();
   const opzioni = await generateAuthenticationOptions({ rpID, userVerification: 'preferred' });
@@ -176,9 +176,9 @@ export async function opzioniAccesso() {
 }
 
 /**
- * Seconda meta': la firma del dispositivo apre una sessione, come una
- * password giusta. Passkey sconosciuta e firma sbagliata danno lo stesso
- * messaggio.
+ * Second half: the device's signature opens a session, like a correct
+ * password. An unknown passkey and a wrong signature give the same
+ * message.
  */
 export async function verificaAccesso(idSfida, risposta, { ricordaDispositivo = false, dispositivo = null } = {}) {
   const sfida = prendiSfida(idSfida, 'accesso');
@@ -209,7 +209,7 @@ export async function verificaAccesso(idSfida, risposta, { ricordaDispositivo = 
       }
     });
   } catch (errore) {
-    // Fra i motivi: un contatore tornato indietro, cioe' una passkey clonata
+    // Among the reasons: a counter that went backwards, that is a cloned passkey
     logger.warn({ utenteId: passkey.utenteId, errore: errore.message }, 'Accesso con passkey rifiutato');
     throw nonRiconosciuta;
   }

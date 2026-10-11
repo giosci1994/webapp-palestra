@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Service Chat
-// Logica di business per messaggistica e contatti
+// GymMaster — Chat service
+// Business logic for messaging and contacts
 // ============================================
 
 import prisma from '../config/database.js';
@@ -8,18 +8,18 @@ import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreConflitto, ErroreValidazi
 import logger from '../utils/logger.js';
 
 /**
- * Invia una richiesta di contatto a un altro utente.
+ * Sends a contact request to another user.
  */
 export async function inviaRichiestaContatto(mittenteId, destinatarioId) {
   if (mittenteId === destinatarioId) {
     throw new ErroreValidazione('Non puoi inviare una richiesta a te stesso');
   }
 
-  // Verifica che il destinatario esista
+  // Check that the recipient exists
   const destinatario = await prisma.utente.findUnique({ where: { id: destinatarioId } });
   if (!destinatario) throw new ErroreNonTrovato('Utente destinatario non trovato');
 
-  // Controlla se esiste già una richiesta (in entrambe le direzioni)
+  // Check whether a request already exists (in either direction)
   const richiestaEsistente = await prisma.richiestaContatto.findFirst({
     where: {
       OR: [
@@ -49,7 +49,7 @@ export async function inviaRichiestaContatto(mittenteId, destinatarioId) {
 }
 
 /**
- * Rispondi a una richiesta di contatto (accetta, rifiuta, blocca).
+ * Answers a contact request (accept, decline, block).
  */
 export async function rispondiRichiestaContatto(richiestaId, utenteId, stato) {
   const richiesta = await prisma.richiestaContatto.findUnique({
@@ -69,9 +69,9 @@ export async function rispondiRichiestaContatto(richiestaId, utenteId, stato) {
     data: { stato, dataRisposta: new Date() }
   });
 
-  // Se accettata, crea la conversazione
+  // If accepted, create the conversation
   if (stato === 'ACCETTATA') {
-    // Determina il tipo di chat basato sul ruolo
+    // Pick the chat type based on the role
     const mittente = await prisma.utente.findUnique({
       where: { id: richiesta.mittenteId },
       select: { ruolo: true }
@@ -110,7 +110,7 @@ export async function rispondiRichiestaContatto(richiestaId, utenteId, stato) {
 }
 
 /**
- * Ottieni le richieste di contatto ricevute dall'utente.
+ * Gets the contact requests the user received.
  */
 export async function ottieniRichiesteRicevute(utenteId) {
   return prisma.richiestaContatto.findMany({
@@ -123,7 +123,7 @@ export async function ottieniRichiesteRicevute(utenteId) {
 }
 
 /**
- * Ottieni le conversazioni dell'utente.
+ * Gets the user's conversations.
  */
 export async function ottieniConversazioni(utenteId) {
   return prisma.conversazione.findMany({
@@ -136,7 +136,7 @@ export async function ottieniConversazioni(utenteId) {
       },
       messaggi: {
         orderBy: { inviatoIl: 'desc' },
-        take: 1, // Solo ultimo messaggio per anteprima
+        take: 1, // Only the latest message, for the preview
         select: { contenuto: true, inviatoIl: true, mittenteId: true, letto: true }
       }
     },
@@ -145,10 +145,10 @@ export async function ottieniConversazioni(utenteId) {
 }
 
 /**
- * Ottieni i messaggi di una conversazione (con paginazione).
+ * Gets a conversation's messages (paginated).
  */
 export async function ottieniMessaggi(conversazioneId, utenteId, { pagina = 1, limite = 50 }) {
-  // Verifica che l'utente sia partecipante
+  // Check that the user is a participant
   const partecipazione = await prisma.partecipanteChat.findUnique({
     where: {
       conversazioneId_utenteId: { conversazioneId, utenteId }
@@ -172,7 +172,7 @@ export async function ottieniMessaggi(conversazioneId, utenteId, { pagina = 1, l
     prisma.messaggio.count({ where: { conversazioneId } })
   ]);
 
-  // Segna come letti i messaggi degli altri
+  // Mark the others' messages as read
   await prisma.messaggio.updateMany({
     where: {
       conversazioneId,
@@ -183,16 +183,16 @@ export async function ottieniMessaggi(conversazioneId, utenteId, { pagina = 1, l
   });
 
   return {
-    messaggi: messaggi.reverse(), // Ordine cronologico
+    messaggi: messaggi.reverse(), // Chronological order
     paginazione: { pagina, limite, totale, pagine: Math.ceil(totale / limite) }
   };
 }
 
 /**
- * Invia un messaggio in una conversazione.
+ * Sends a message in a conversation.
  */
 export async function inviaMessaggio(conversazioneId, mittenteId, contenuto) {
-  // Verifica partecipazione
+  // Check participation
   const partecipazione = await prisma.partecipanteChat.findUnique({
     where: {
       conversazioneId_utenteId: { conversazioneId, utenteId: mittenteId }
@@ -214,10 +214,10 @@ export async function inviaMessaggio(conversazioneId, mittenteId, contenuto) {
 }
 
 /**
- * Pulizia messaggi scaduti basata sulla retention dell'utente.
+ * Cleans up expired messages based on each user's retention.
  */
 export async function pulisciMessaggiScaduti() {
-  // Trova utenti con retention configurata (> 0 giorni)
+  // Find users with a retention set (> 0 days)
   const utentiConRetention = await prisma.utente.findMany({
     where: { chatRetentionGiorni: { gt: 0 } },
     select: { id: true, chatRetentionGiorni: true }
@@ -247,8 +247,8 @@ export async function pulisciMessaggiScaduti() {
 }
 
 /**
- * Conta i messaggi non ancora letti indirizzati all'utente.
- * Esclude i propri messaggi: "non letto" ha senso solo per quelli ricevuti.
+ * Counts the unread messages addressed to the user.
+ * Leaves out the user's own messages: "unread" only makes sense for received ones.
  */
 export async function contaNonLetti(utenteId) {
   return prisma.messaggio.count({

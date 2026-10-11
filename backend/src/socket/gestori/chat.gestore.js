@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Gestore Socket Chat
-// Gestisce gli eventi di messaggistica real-time
+// GymMaster — Chat socket handler
+// Handles the real-time messaging events
 // ============================================
 
 import { inviaMessaggio } from '../../services/chat.service.js';
@@ -9,9 +9,9 @@ import prisma from '../../config/database.js';
 import { inviaNotificaTelegram, escapeHtml } from '../../services/telegram.service.js';
 import { inviaPush } from '../../services/push.service.js';
 
-// Avvisa gli altri partecipanti (fire-and-forget): una push a tutti (ad app
-// aperta il service worker la lascia alla chat; i messaggi della stessa
-// conversazione si sostituiscono) e Telegram a chi non e' collegato
+// Notifies the other participants (fire-and-forget): a push to everyone (with
+// the app open the service worker leaves it to the chat; messages of the same
+// conversation replace each other) and Telegram to those who are not connected
 async function notificaDestinatari(conversazioneId, mittenteId, messaggio, utentiConnessi) {
   try {
     const partecipanti = await prisma.partecipanteChat.findMany({
@@ -42,12 +42,12 @@ async function notificaDestinatari(conversazioneId, mittenteId, messaggio, utent
 }
 
 /**
- * Registra i gestori degli eventi chat per un socket.
+ * Registers the chat event handlers for a socket.
  */
 export function gestoreChatMessaggi(io, socket, utentiConnessi) {
   const utenteId = socket.utente.utenteId;
 
-  // --- Invio messaggio real-time ---
+  // --- Real-time message sending ---
   socket.on('chat:invia_messaggio', async (dati, callback) => {
     try {
       const { conversazioneId, contenuto } = dati;
@@ -60,15 +60,15 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
         return callback?.({ errore: 'Messaggio troppo lungo (max 2000 caratteri)' });
       }
 
-      // Salva il messaggio nel database
+      // Save the message in the database
       const messaggio = await inviaMessaggio(conversazioneId, utenteId, contenuto.trim());
 
-      // Invia il messaggio a tutti i partecipanti della conversazione
+      // Send the message to all the participants of the conversation
       io.to(`conversazione:${conversazioneId}`).emit('chat:nuovo_messaggio', {
         messaggio
       });
 
-      // Push e Telegram ai destinatari (non blocca la risposta)
+      // Push and Telegram to the recipients (does not block the response)
       notificaDestinatari(conversazioneId, utenteId, messaggio, utentiConnessi).catch(() => {});
 
       callback?.({ successo: true, messaggio });
@@ -78,11 +78,11 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
     }
   });
 
-  // --- Unisciti a una conversazione (room) ---
+  // --- Join a conversation (room) ---
   socket.on('chat:entra_conversazione', async (dati) => {
     const conversazioneId = dati?.conversazioneId;
     if (!conversazioneId) return;
-    // Verifica la partecipazione prima di unirsi alla room (evita di ricevere messaggi altrui)
+    // Check participation before joining the room (avoids receiving other people's messages)
     const partecipa = await prisma.partecipanteChat.findUnique({
       where: { conversazioneId_utenteId: { conversazioneId, utenteId } }
     }).catch(() => null);
@@ -94,7 +94,7 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
     logger.debug({ utenteId, conversazioneId }, 'Utente entrato nella conversazione');
   });
 
-  // --- Esci da una conversazione (room) ---
+  // --- Leave a conversation (room) ---
   socket.on('chat:esci_conversazione', (dati) => {
     const { conversazioneId } = dati;
     if (conversazioneId) {
@@ -102,7 +102,7 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
     }
   });
 
-  // --- Indicatore "sta scrivendo..." ---
+  // --- "sta scrivendo..." (typing) indicator ---
   socket.on('chat:sta_scrivendo', (dati) => {
     const { conversazioneId } = dati;
     if (conversazioneId) {

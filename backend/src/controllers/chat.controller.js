@@ -1,11 +1,11 @@
 // ============================================
-// GymMaster — Controller Chat
-// Gestisce le richieste HTTP per la messaggistica
+// GymMaster — Chat controller
+// Handles the HTTP requests for messaging
 // ============================================
 
 import * as chatService from '../services/chat.service.js';
 
-/** POST /api/v1/chat/contatti/richiesta — Invia richiesta di contatto */
+/** POST /api/v1/chat/contatti/richiesta — Sends a contact request */
 export async function inviaRichiesta(req, res, next) {
   try {
     const richiesta = await chatService.inviaRichiestaContatto(
@@ -18,7 +18,7 @@ export async function inviaRichiesta(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/chat/contatti/:id/rispondi — Rispondi a una richiesta */
+/** PATCH /api/v1/chat/contatti/:id/rispondi — Answers a request */
 export async function rispondiRichiesta(req, res, next) {
   try {
     const risultato = await chatService.rispondiRichiestaContatto(
@@ -32,7 +32,7 @@ export async function rispondiRichiesta(req, res, next) {
   }
 }
 
-/** GET /api/v1/chat/contatti/ricevute — Richieste ricevute in attesa */
+/** GET /api/v1/chat/contatti/ricevute — Pending received requests */
 export async function richiesteRicevute(req, res, next) {
   try {
     const richieste = await chatService.ottieniRichiesteRicevute(req.utente.id);
@@ -42,7 +42,7 @@ export async function richiesteRicevute(req, res, next) {
   }
 }
 
-/** GET /api/v1/chat/conversazioni — Lista conversazioni */
+/** GET /api/v1/chat/conversazioni — List of conversations */
 export async function listaConversazioni(req, res, next) {
   try {
     const conversazioni = await chatService.ottieniConversazioni(req.utente.id);
@@ -52,7 +52,7 @@ export async function listaConversazioni(req, res, next) {
   }
 }
 
-/** GET /api/v1/chat/conversazioni/:id/messaggi — Messaggi di una conversazione */
+/** GET /api/v1/chat/conversazioni/:id/messaggi — Messages of a conversation */
 export async function messaggiConversazione(req, res, next) {
   try {
     const { pagina = 1, limite = 50 } = req.query;
@@ -67,7 +67,7 @@ export async function messaggiConversazione(req, res, next) {
   }
 }
 
-/** GET /api/v1/chat/non-letti — Numero di messaggi non letti */
+/** GET /api/v1/chat/non-letti — Number of unread messages */
 export async function contatoreNonLetti(req, res, next) {
   try {
     const totale = await chatService.contaNonLetti(req.utente.id);

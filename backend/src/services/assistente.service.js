@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Service Assistente AI (Gemini)
-// Integrazione Google Gemini API per suggerimenti fitness
+// GymMaster — AI assistant service (Gemini)
+// Google Gemini API integration for fitness tips
 // ============================================
 
 import { GoogleGenAI } from '@google/genai';
@@ -8,7 +8,7 @@ import prisma from '../config/database.js';
 import { ErroreApp, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 
-// Inizializza il client Gemini (lazy)
+// Initializes the Gemini client (lazily)
 let clientAI = null;
 
 function ottieniClientAI() {
@@ -26,7 +26,7 @@ function ottieniClientAI() {
   return clientAI;
 }
 
-// System prompt per contestualizzare l'assistente
+// System prompt that gives the assistant its context
 const SYSTEM_PROMPT = `Sei GymBot, un assistente fitness virtuale integrato nell'app GymMaster.
 
 Le tue competenze:
@@ -45,7 +45,7 @@ Regole:
 6. Non inventare dati: usa solo le informazioni fornite dal contesto utente`;
 
 /**
- * Invia un messaggio all'assistente AI con contesto dell'utente.
+ * Sends a message to the AI assistant along with the user's context.
  */
 export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = null) {
   if (!messaggio || messaggio.trim().length === 0) {
@@ -58,10 +58,10 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
 
   const ai = ottieniClientAI();
 
-  // Recupera contesto utente per personalizzare la risposta
+  // Load the user's context to personalize the answer
   const contestoUtente = await costruisciContestoUtente(utenteId);
 
-  // Gestisci conversazione (nuova o esistente)
+  // Handle the conversation (new or existing)
   let conversazioneAI;
 
   if (conversazioneAiId) {
@@ -70,7 +70,7 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
       include: {
         messaggi: {
           orderBy: { inviatoIl: 'asc' },
-          take: 20 // Ultimi 20 messaggi per contesto
+          take: 20 // Last 20 messages for context
         }
       }
     });
@@ -88,7 +88,7 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
     });
   }
 
-  // Salva il messaggio dell'utente
+  // Save the user's message
   await prisma.messaggioAI.create({
     data: {
       conversazioneAiId: conversazioneAI.id,
@@ -97,20 +97,20 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
     }
   });
 
-  // Costruisci lo storico per Gemini
+  // Build the history for Gemini
   const storicoConversazione = (conversazioneAI.messaggi || []).map(m => ({
     role: m.ruolo === 'utente' ? 'user' : 'model',
     parts: [{ text: m.contenuto }]
   }));
 
-  // Aggiungi il messaggio corrente
+  // Add the current message
   storicoConversazione.push({
     role: 'user',
     parts: [{ text: messaggio }]
   });
 
   try {
-    // Chiama Gemini API
+    // Call the Gemini API
     const risposta = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: storicoConversazione,
@@ -123,7 +123,7 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
 
     const testoRisposta = risposta.text || 'Mi dispiace, non sono riuscito a generare una risposta.';
 
-    // Salva la risposta dell'assistente
+    // Save the assistant's answer
     await prisma.messaggioAI.create({
       data: {
         conversazioneAiId: conversazioneAI.id,
@@ -158,7 +158,7 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
 }
 
 /**
- * Ottieni lo storico delle conversazioni AI dell'utente.
+ * Gets the user's AI conversation history.
  */
 export async function ottieniConversazioniAI(utenteId) {
   return prisma.conversazioneAI.findMany({
@@ -166,7 +166,7 @@ export async function ottieniConversazioniAI(utenteId) {
     include: {
       messaggi: {
         orderBy: { inviatoIl: 'desc' },
-        take: 1 // Solo ultimo messaggio per anteprima
+        take: 1 // Only the latest message, for the preview
       }
     },
     orderBy: { creatoIl: 'desc' },
@@ -175,7 +175,7 @@ export async function ottieniConversazioniAI(utenteId) {
 }
 
 /**
- * Costruisce un contesto personalizzato con i dati dell'utente.
+ * Builds a personalized context from the user's data.
  */
 async function costruisciContestoUtente(utenteId) {
   const utente = await prisma.utente.findUnique({
@@ -194,7 +194,7 @@ async function costruisciContestoUtente(utenteId) {
     contesto += `\nPalestra: ${utente.palestra.nomeCatena} (${utente.palestra.citta})`;
   }
 
-  // Recupera le ultime 5 sessioni per contesto
+  // Load the last 5 workouts for context
   const ultimeSessioni = await prisma.sessioneAllenamento.findMany({
     where: { utenteId },
     orderBy: { dataInizio: 'desc' },
@@ -214,7 +214,7 @@ async function costruisciContestoUtente(utenteId) {
     }
   }
 
-  // Record personali recenti
+  // Recent personal records
   const records = await prisma.recordPersonale.findMany({
     where: { utenteId },
     orderBy: { dataRecord: 'desc' },

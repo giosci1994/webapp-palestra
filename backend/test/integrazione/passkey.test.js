@@ -1,6 +1,6 @@
-// Passkey: aggiungerne una dal profilo (con la password), entrare senza
-// password, eliminarla. Le risposte del dispositivo le produce un
-// autenticatore software (supporto/passkey.js) e passano per la verifica vera.
+// Passkeys: adding one from the profile (with the password), signing in
+// without a password, deleting it. The device responses come from a software
+// authenticator (supporto/passkey.js) and go through the real verification.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -31,7 +31,7 @@ async function entraConPassword(chi) {
   return risposta.corpo.dati.accessToken;
 }
 
-/** Aggiunge una passkey all'utente col suo access token; restituisce l'autenticatore */
+/** Adds a passkey to the user with their access token; returns the authenticator */
 async function aggiungiPasskey(token = accesso, autenticatore = creaAutenticatore(config)) {
   const opzioni = await server.richiesta('POST', '/auth/passkey/registrazione/opzioni', { token, corpo: { password: PASSWORD } });
   assert.equal(opzioni.stato, 200);
@@ -43,7 +43,7 @@ async function aggiungiPasskey(token = accesso, autenticatore = creaAutenticator
   return autenticatore;
 }
 
-/** Il giro completo di un accesso con passkey */
+/** The full round of a passkey sign-in */
 async function entraConPasskey(autenticatore, opzioniFirma = {}) {
   const opzioni = await server.richiesta('POST', '/auth/passkey/accesso/opzioni');
   assert.equal(opzioni.stato, 200);
@@ -75,7 +75,7 @@ describe('aggiungere una passkey', () => {
     const elenco = await server.richiesta('GET', '/auth/passkey', { token: accesso });
     assert.equal(elenco.stato, 200);
     assert.deepEqual(elenco.corpo.dati.map(p => [p.nome, p.ultimoUso]), [['Chrome · Android', null]]);
-    // Nel database la chiave pubblica, non quella privata (che non lascia mai il dispositivo)
+    // The public key goes in the database, not the private one (which never leaves the device)
     const [salvata] = await prisma.passkey.findMany({ where: { utenteId: utente.id } });
     assert.ok(salvata.chiavePubblica.length > 50);
   });

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Setup Socket.io
-// Configurazione WebSocket per chat real-time
+// GymMaster — Socket.io setup
+// WebSockets for real-time chat, presence and notifications
 // ============================================
 
 import { Server } from 'socket.io';
@@ -10,17 +10,17 @@ import { gestoreNotifiche } from './gestori/notifiche.gestore.js';
 import logger from '../utils/logger.js';
 import prisma from '../config/database.js';
 
-// Mappa utenti connessi: utenteId -> Set<socketId>
+// Map of connected users: utenteId -> Set<socketId>
 const utentiConnessi = new Map();
 
-// Aggiorna (non bloccante) l'ultimo accesso dell'utente
+// Updates the user's last access (non-blocking)
 function aggiornaUltimoAccesso(utenteId) {
   prisma.utente.update({ where: { id: utenteId }, data: { ultimoAccesso: new Date() } })
-    .catch(() => { /* non bloccante */ });
+    .catch(() => { /* non-blocking */ });
 }
 
 /**
- * Inizializza Socket.io sul server HTTP.
+ * Initializes Socket.io on the HTTP server.
  * @param {import('http').Server} serverHttp
  * @returns {import('socket.io').Server}
  */
@@ -38,7 +38,7 @@ export function inizializzaSocket(serverHttp) {
     pingInterval: 25000
   });
 
-  // --- Middleware Autenticazione WebSocket ---
+  // --- WebSocket authentication middleware ---
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
 
@@ -55,21 +55,21 @@ export function inizializzaSocket(serverHttp) {
     }
   });
 
-  // --- Gestione Connessioni ---
+  // --- Connection handling ---
   io.on('connection', (socket) => {
     const utenteId = socket.utente.utenteId;
 
-    // Registra l'utente come connesso (rileva la transizione offline -> online)
+    // Register the user as connected (detects the offline -> online transition)
     const eraOffline = !utentiConnessi.has(utenteId);
     if (eraOffline) {
       utentiConnessi.set(utenteId, new Set());
     }
     utentiConnessi.get(utenteId).add(socket.id);
 
-    // Unisciti alla room personale dell'utente
+    // Join the user's personal room
     socket.join(`utente:${utenteId}`);
 
-    // Aggiorna ultimo accesso; notifica la presenza solo alla transizione online
+    // Update the last access; announce presence only on the transition to online
     aggiornaUltimoAccesso(utenteId);
     if (eraOffline) {
       io.emit('presenza:cambio', { utenteId, online: true });
@@ -77,11 +77,11 @@ export function inizializzaSocket(serverHttp) {
 
     logger.debug({ utenteId, socketId: socket.id }, 'Utente connesso via WebSocket');
 
-    // Registra i gestori di eventi
+    // Register the event handlers
     gestoreChatMessaggi(io, socket, utentiConnessi);
     gestoreNotifiche(io, socket, utentiConnessi);
 
-    // Richiesta puntuale dello stato di presenza di un utente (es. apertura conversazione)
+    // One-off request for a user's presence status (e.g. opening a conversation)
     socket.on('presenza:richiedi', async ({ utenteId: targetId } = {}) => {
       if (!targetId) return;
       const online = utentiConnessi.has(targetId);
@@ -90,19 +90,19 @@ export function inizializzaSocket(serverHttp) {
         try {
           const u = await prisma.utente.findUnique({ where: { id: targetId }, select: { ultimoAccesso: true } });
           ultimoAccesso = u?.ultimoAccesso || null;
-        } catch { /* ignora */ }
+        } catch { /* ignore */ }
       }
       socket.emit('presenza:cambio', { utenteId: targetId, online, ultimoAccesso });
     });
 
-    // --- Disconnessione ---
+    // --- Disconnection ---
     socket.on('disconnect', (motivo) => {
       const sockets = utentiConnessi.get(utenteId);
       if (sockets) {
         sockets.delete(socket.id);
         if (sockets.size === 0) {
           utentiConnessi.delete(utenteId);
-          // Transizione online -> offline
+          // Online -> offline transition
           aggiornaUltimoAccesso(utenteId);
           io.emit('presenza:cambio', { utenteId, online: false });
         }
@@ -111,7 +111,7 @@ export function inizializzaSocket(serverHttp) {
       logger.debug({ utenteId, motivo }, 'Utente disconnesso dal WebSocket');
     });
 
-    // --- Errori ---
+    // --- Errors ---
     socket.on('error', (errore) => {
       logger.error({ utenteId, errore: errore.message }, 'Errore WebSocket');
     });
@@ -122,7 +122,7 @@ export function inizializzaSocket(serverHttp) {
 }
 
 /**
- * Verifica se un utente è attualmente connesso.
+ * Checks whether a user is currently connected.
  */
 export function utenteConnesso(utenteId) {
   return utentiConnessi.has(utenteId);

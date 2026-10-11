@@ -1,6 +1,7 @@
 // ============================================
-// GymMaster — Routes Admin (Palestre + Esercizi)
-// CRUD completo per SuperAdmin
+// GymMaster — Admin Routes (gyms, exercises, equipment, suggestions,
+// banner, "what's new", password resets)
+// Full CRUD for the SuperAdmin
 // ============================================
 
 import { Router } from 'express';
@@ -15,18 +16,18 @@ import logger from '../utils/logger.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.use(verificaToken);
 router.use(autorizza('SUPERADMIN'));
 
-// PUT /api/v1/admin/utenti/:id/reset-password — Genera una password temporanea casuale
+// PUT /api/v1/admin/utenti/:id/reset-password — Generate a random temporary password
 router.put('/utenti/:id/reset-password', async (req, res, next) => {
   try {
     const targetId = parseInt(req.params.id);
     if (isNaN(targetId)) return res.status(400).json({ successo: false, messaggio: 'ID non valido' });
-    // Password temporanea casuale (l'admin la comunica all'utente, che poi la cambia)
-    const passwordTemporanea = crypto.randomBytes(9).toString('base64url'); // ~12 caratteri
+    // Random temporary password (the admin passes it on to the user, who then changes it)
+    const passwordTemporanea = crypto.randomBytes(9).toString('base64url'); // ~12 characters
     const hash = await argon2.hash(passwordTemporanea);
     await prisma.utente.update({
       where: { id: targetId },
@@ -38,10 +39,10 @@ router.put('/utenti/:id/reset-password', async (req, res, next) => {
 });
 
 // ============================
-// PALESTRE
+// GYMS
 // ============================
 
-// POST /api/v1/admin/palestre — Crea palestra
+// POST /api/v1/admin/palestre — Create a gym
 router.post('/palestre', async (req, res, next) => {
   try {
     const { nomeCatena, citta, indirizzo, nazione, googlePlaceId } = req.body;
@@ -52,7 +53,7 @@ router.post('/palestre', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PUT /api/v1/admin/palestre/:id — Aggiorna palestra
+// PUT /api/v1/admin/palestre/:id — Update a gym
 router.put('/palestre/:id', async (req, res, next) => {
   try {
     const { nomeCatena, citta, indirizzo, nazione, googlePlaceId } = req.body;
@@ -64,7 +65,7 @@ router.put('/palestre/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/admin/palestre/:id — Elimina palestra
+// DELETE /api/v1/admin/palestre/:id — Delete a gym
 router.delete('/palestre/:id', async (req, res, next) => {
   try {
     await prisma.palestra.delete({ where: { id: parseInt(req.params.id) } });
@@ -73,10 +74,10 @@ router.delete('/palestre/:id', async (req, res, next) => {
 });
 
 // ============================
-// ESERCIZI
+// EXERCISES
 // ============================
 
-// POST /api/v1/admin/esercizi — Crea esercizio
+// POST /api/v1/admin/esercizi — Create an exercise
 router.post('/esercizi', async (req, res, next) => {
   try {
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo,
@@ -104,7 +105,7 @@ router.post('/esercizi', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PUT /api/v1/admin/esercizi/:id — Aggiorna esercizio
+// PUT /api/v1/admin/esercizi/:id — Update an exercise
 router.put('/esercizi/:id', async (req, res, next) => {
   try {
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo,
@@ -133,7 +134,7 @@ router.put('/esercizi/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/admin/esercizi/:id — Elimina esercizio
+// DELETE /api/v1/admin/esercizi/:id — Delete an exercise
 router.delete('/esercizi/:id', async (req, res, next) => {
   try {
     await prisma.esercizio.delete({ where: { id: parseInt(req.params.id) } });
@@ -142,10 +143,10 @@ router.delete('/esercizi/:id', async (req, res, next) => {
 });
 
 // ============================
-// ATTREZZATURE
+// EQUIPMENT
 // ============================
 
-// POST /api/v1/admin/attrezzature — Crea attrezzatura
+// POST /api/v1/admin/attrezzature — Create a piece of equipment
 router.post('/attrezzature', async (req, res, next) => {
   try {
     const { nome, categoria, muscoliBersaglio } = req.body;
@@ -157,10 +158,10 @@ router.post('/attrezzature', async (req, res, next) => {
 });
 
 // ============================
-// SUGGERIMENTI ESERCIZI
+// EXERCISE SUGGESTIONS
 // ============================
 
-// GET /api/v1/admin/suggerimenti — Lista tutti i suggerimenti
+// GET /api/v1/admin/suggerimenti — List every suggestion
 router.get('/suggerimenti', async (req, res, next) => {
   try {
     const { stato } = req.query;
@@ -180,7 +181,7 @@ router.get('/suggerimenti', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/admin/suggerimenti/conteggio — Conteggio suggerimenti pendenti
+// GET /api/v1/admin/suggerimenti/conteggio — Count of pending suggestions
 router.get('/suggerimenti/conteggio', async (req, res, next) => {
   try {
     const conteggio = await prisma.suggerimentoEsercizio.count({
@@ -190,13 +191,13 @@ router.get('/suggerimenti/conteggio', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PATCH /api/v1/admin/suggerimenti/:id/approva — Approva e crea esercizio
+// PATCH /api/v1/admin/suggerimenti/:id/approva — Approve and create the exercise
 router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
   try {
     const suggerimentoId = parseInt(req.params.id);
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo } = req.body;
 
-    // Trova il suggerimento
+    // Find the suggestion
     const suggerimento = await prisma.suggerimentoEsercizio.findUnique({
       where: { id: suggerimentoId },
       include: { utente: { select: { id: true, nome: true } } }
@@ -210,7 +211,7 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
       return res.status(400).json({ successo: false, messaggio: 'Suggerimento già gestito' });
     }
 
-    // Crea l'esercizio reale (usa i campi modificati dall'admin o quelli originali)
+    // Create the real exercise (uses the fields edited by the admin or the original ones)
     const esercizio = await prisma.esercizio.create({
       data: {
         nome: nome || suggerimento.nome,
@@ -223,7 +224,7 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
       include: { attrezzatura: { select: { id: true, nome: true } } }
     });
 
-    // Aggiorna il suggerimento come approvato
+    // Mark the suggestion as approved
     await prisma.suggerimentoEsercizio.update({
       where: { id: suggerimentoId },
       data: {
@@ -233,7 +234,7 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
       }
     });
 
-    // Notifica l'utente che ha suggerito
+    // Notify the user who made the suggestion
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
@@ -253,7 +254,7 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PATCH /api/v1/admin/suggerimenti/:id/rifiuta — Rifiuta suggerimento
+// PATCH /api/v1/admin/suggerimenti/:id/rifiuta — Reject a suggestion
 router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
   try {
     const suggerimentoId = parseInt(req.params.id);
@@ -281,7 +282,7 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
       }
     });
 
-    // Notifica l'utente
+    // Notify the user
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
@@ -299,10 +300,10 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
 });
 
 // ============================
-// BANNER GLOBALE
+// GLOBAL BANNER
 // ============================
 
-// PUT /api/v1/admin/banner — Modifica banner
+// PUT /api/v1/admin/banner — Edit the banner
 router.put('/banner', async (req, res, next) => {
   try {
     const { visibile, testo } = req.body;
@@ -310,7 +311,7 @@ router.put('/banner', async (req, res, next) => {
     const dati = { visibile: !!visibile, testo: testo || '' };
     fs.writeFileSync(bannerPath, JSON.stringify(dati, null, 2), 'utf8');
     
-    // Notifica opzionale per aggiornamento real-time (opzionale)
+    // Optional notification for a real-time update (optional)
     const io = req.app.get('io');
     if (io) {
       io.emit('notifica:banner_aggiornato', dati);
@@ -321,7 +322,7 @@ router.put('/banner', async (req, res, next) => {
 });
 
 // ============================
-// NOVITÀ (storie in-app)
+// WHAT'S NEW (in-app stories)
 // ============================
 
 function normalizzaPunti(punti) {
@@ -330,7 +331,7 @@ function normalizzaPunti(punti) {
   return typeof punti === 'string' ? punti : JSON.stringify(punti);
 }
 
-// GET /api/v1/admin/novita — tutte (anche disattivate)
+// GET /api/v1/admin/novita — all of them (inactive ones too)
 router.get('/novita', async (req, res, next) => {
   try {
     const novita = await prisma.novita.findMany({ orderBy: [{ ordine: 'asc' }, { creatoIl: 'desc' }] });
@@ -338,7 +339,7 @@ router.get('/novita', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/admin/novita — crea
+// POST /api/v1/admin/novita — create
 router.post('/novita', async (req, res, next) => {
   try {
     const { titolo, sottotitolo, punti, icona, immagine, ctaTesto, ctaRotta, coloreInizio, coloreFine, attiva, ordine } = req.body;
@@ -362,7 +363,7 @@ router.post('/novita', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PUT /api/v1/admin/novita/:id — aggiorna
+// PUT /api/v1/admin/novita/:id — update
 router.put('/novita/:id', async (req, res, next) => {
   try {
     const { titolo, sottotitolo, punti, icona, immagine, ctaTesto, ctaRotta, coloreInizio, coloreFine, attiva, ordine } = req.body;
@@ -387,7 +388,7 @@ router.put('/novita/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/admin/novita/:id — elimina
+// DELETE /api/v1/admin/novita/:id — delete
 router.delete('/novita/:id', async (req, res, next) => {
   try {
     await prisma.novita.delete({ where: { id: parseInt(req.params.id) } });

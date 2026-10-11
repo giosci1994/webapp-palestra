@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Routes Bot Telegram (/api/v1/bot/*)
-// Tutte protette da X-Bot-Secret: solo il container bot, sulla
-// rete Docker interna, può chiamarle. Mai esporre via Nginx.
+// GymMaster — Telegram Bot Routes (/api/v1/bot/*)
+// All protected by X-Bot-Secret: only the bot container, on the
+// internal Docker network, can call them. Never expose via Nginx.
 // ============================================
 
 import { Router } from 'express';
@@ -10,20 +10,20 @@ import { collega, messaggio, annulla, schede, scheda, statistiche, guidaCategori
 
 const router = Router();
 
-// Segreto condiviso obbligatorio su tutte le rotte bot
+// Shared secret required on every bot route
 router.use(verificaSegretoBot);
 
-// Collegamento iniziale (chatId non ancora associato)
+// Initial linking (chatId not linked yet)
 router.post('/collega', collega);
 
-// Rotte che richiedono un account già collegato
+// Routes that need an account already linked
 router.post('/messaggio', risolviUtenteTelegram, messaggio);
 router.post('/annulla', risolviUtenteTelegram, annulla);
 router.post('/schede', risolviUtenteTelegram, schede);
 router.post('/scheda', risolviUtenteTelegram, scheda);
 router.post('/statistiche', risolviUtenteTelegram, statistiche);
 
-// Creazione guidata a pulsanti
+// Guided creation with buttons
 router.post('/guida/categorie', risolviUtenteTelegram, guidaCategorie);
 router.post('/guida/gruppi', risolviUtenteTelegram, guidaGruppi);
 router.post('/guida/esercizi', risolviUtenteTelegram, guidaEsercizi);

@@ -1,20 +1,20 @@
 // ============================================
-// GymMaster — Middleware Autorizzazione RBAC
-// Controllo basato sui ruoli (UTENTE, PERSONAL_TRAINER, SUPERADMIN)
+// GymMaster — RBAC authorization middleware
+// Role-based checks (UTENTE, PERSONAL_TRAINER, SUPERADMIN)
 // ============================================
 
 import { ErroreNonAutorizzato } from '../utils/errori.js';
 
 /**
- * Crea un middleware che verifica se l'utente ha uno dei ruoli consentiti.
- * @param  {...string} ruoliConsentiti - Lista di ruoli ammessi (es. 'SUPERADMIN', 'PERSONAL_TRAINER')
+ * Creates a middleware that checks whether the user has one of the allowed roles.
+ * @param  {...string} ruoliConsentiti - List of allowed roles (e.g. 'SUPERADMIN', 'PERSONAL_TRAINER')
  * @returns {Function} Middleware Express
  *
  * @example
- * // Solo SuperAdmin
+ * // SuperAdmin only
  * router.get('/admin', verificaToken, autorizza('SUPERADMIN'), controller);
  *
- * // SuperAdmin e Personal Trainer
+ * // SuperAdmin and Personal Trainer
  * router.get('/schede', verificaToken, autorizza('SUPERADMIN', 'PERSONAL_TRAINER'), controller);
  */
 export function autorizza(...ruoliConsentiti) {

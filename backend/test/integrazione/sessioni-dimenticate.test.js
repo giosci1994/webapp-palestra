@@ -1,5 +1,5 @@
-// Allenamenti dimenticati aperti: chiusi all'ultima serie, da chi tocca
-// "Termina" ore dopo o dal controllo periodico del server.
+// Workouts left open by mistake: closed at the last set, by whoever taps
+// "Termina" (finish) hours later or by the server's periodic check.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -23,7 +23,7 @@ beforeEach(async () => {
 });
 
 const minutiFa = n => new Date(Date.now() - n * MINUTO);
-/** Un allenamento aperto, cominciato `inizio` minuti fa, con le serie registrate a quei minuti fa */
+/** An open workout, started `inizio` minutes ago, with the sets logged that many minutes ago */
 const aperto = (inizio, ...serie) => creaSessione(utente, scheda, {
   inizio: minutiFa(inizio),
   conclusa: false,

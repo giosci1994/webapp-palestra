@@ -1,15 +1,15 @@
 // ============================================
-// GymMaster — Consiglio sulla scheda da fare
+// GymMaster — Advice on which workout plan to do
 // ============================================
 //
-// Fra le schede disponibili sceglie quella che allena meglio i muscoli
-// riposati senza caricare quelli ancora in recupero, e spiega il perché con
-// gli stessi gruppi e le stesse 48 ore della sezione Corpo delle statistiche.
+// Among the available plans it picks the one that best trains the rested
+// muscles without loading those still recovering, and explains why with the
+// same groups and the same 48 hours as the Corpo (body) section of the stats.
 //
-// Prima il consiglio nasceva in dashboard da un elenco fisso di gruppi
-// ("Dorso", "Gambe", "Addome"…) che il catalogo non usa: "Dorso" risultava
-// sempre mai allenato, nessuna scheda lo conteneva e si ripiegava sulla prima
-// della lista, con un testo che non c'entrava nulla con la scheda proposta.
+// The advice used to be built in the dashboard from a fixed list of groups
+// ("Dorso", "Gambe", "Addome"…) that the catalog does not use: "Dorso" always
+// showed as never trained, no plan contained it and it fell back to the first
+// plan in the list, with a text that had nothing to do with the suggested plan.
 
 import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_NON_MUSCOLARI, GRUPPI_PRINCIPALI } from '../utils/gruppiMuscolari.js';
@@ -18,13 +18,13 @@ import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 
 const ORE_RECUPERO = 48;
 const GIORNI_PIANO = 7;
-// Il testo va nel banner della dashboard, che ne mostra due righe: oltre
-// questa lunghezza la seconda frase si perde e con lei il motivo principale
+// The text goes in the dashboard banner, which shows two lines of it: past
+// this length the second sentence gets lost, and the main reason with it
 const MAX_TESTO = 70;
 
-// Quanto pesa ogni gruppo nel consiglio: prima i grandi gruppi, poi le
-// braccia, poi i muscoli piccoli. Senza questa scala una scheda per tibiali e
-// adduttori, mai allenati, passerebbe davanti a quella per il petto.
+// How much each group weighs in the advice: big groups first, then the arms,
+// then the small muscles. Without this scale a plan for tibialis and
+// adductors, never trained, would come before the one for the chest.
 const IMPORTANZA = {
   Petto: 1, Schiena: 1, Spalle: 1, Quadricipiti: 1, Femorali: 1, Glutei: 1,
   Bicipiti: 0.8, Tricipiti: 0.8,
@@ -32,15 +32,15 @@ const IMPORTANZA = {
 };
 const IMPORTANZA_MINORE = 0.3;
 
-// Nomi da accordare al singolare: "il petto riposa", "i glutei riposano"
+// Names that take a singular verb: "il petto riposa", "i glutei riposano"
 const SINGOLARI = new Set(['Petto', 'Schiena', 'Trapezio']);
 const GIORNI_SETTIMANA = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
 
 const importanza = (gruppo) => IMPORTANZA[gruppo] ?? IMPORTANZA_MINORE;
 
 /**
- * Bisogno di allenare un gruppo: -1 se ancora in recupero, poi cresce con i
- * giorni di riposo fino a 1 (fermo da due settimane o mai allenato).
+ * How much a group needs training: -1 if still recovering, then it grows
+ * with the days of rest up to 1 (idle for two weeks or never trained).
  */
 export function bisogno(ultima, adesso) {
   if (!ultima) return 1;
@@ -53,8 +53,8 @@ export function bisogno(ultima, adesso) {
 }
 
 /**
- * Serie in programma per gruppo, pesate come nelle statistiche (secondari a
- * metà), e a parte quelle dirette: solo queste dicono di cosa parla la scheda.
+ * Scheduled sets per group, weighted as in the stats (secondary groups at
+ * half), and the direct ones apart: only these say what the plan is about.
  */
 export function seriePerGruppo(esercizi) {
   const perGruppo = new Map();
@@ -72,7 +72,7 @@ export function seriePerGruppo(esercizi) {
   return { perGruppo, diretti, totale };
 }
 
-/** I gruppi su cui una scheda lavora di più, per descriverla in poche parole. */
+/** The groups a plan works the most, to describe it in a few words. */
 export function gruppiDellaScheda(esercizi, quanti = 3) {
   return [...seriePerGruppo(esercizi).diretti]
     .sort((a, b) => b[1] - a[1] || posizione(a[0]) - posizione(b[0]))
@@ -81,8 +81,8 @@ export function gruppiDellaScheda(esercizi, quanti = 3) {
 }
 
 /**
- * Quanto una scheda serve adesso: media, per serie in programma, del bisogno
- * dei gruppi che allena. Negativa se lavora soprattutto muscoli in recupero.
+ * How useful a plan is right now: the average, per scheduled set, of the
+ * need of the groups it trains. Negative if it mostly works recovering muscles.
  */
 export function valutaScheda(esercizi, ultimaDiretta, adesso) {
   const { perGruppo, diretti, totale } = seriePerGruppo(esercizi);
@@ -95,14 +95,14 @@ export function valutaScheda(esercizi, ultimaDiretta, adesso) {
 }
 
 const elenco = (nomi) => nomi.length < 2 ? nomi.join('') : `${nomi.slice(0, -1).join(', ')} e ${nomi.at(-1)}`;
-// Scelti i gruppi da nominare, si elencano nell'ordine abituale: "Petto e
-// Spalle", come nei titoli delle schede, non "Spalle e Petto"
+// Once the groups to name are chosen, they are listed in the usual order:
+// "Petto e Spalle", as in plan titles, not "Spalle e Petto"
 const posizione = (gruppo) => { const i = GRUPPI_PRINCIPALI.indexOf(gruppo); return i < 0 ? GRUPPI_PRINCIPALI.length : i; };
 const inOrdine = (nomi) => [...nomi].sort((a, b) => posizione(a) - posizione(b));
 const plurale = (nomi) => nomi.length > 1 || !SINGOLARI.has(nomi[0]);
 const verbo = (nomi, singolare, pluralePer) => plurale(nomi) ? pluralePer : singolare;
 
-/** "Petto e Spalle riposano da 5 giorni" — i gruppi riposati che la scheda allena di più. */
+/** "Petto e Spalle riposano da 5 giorni" — the rested groups the plan trains the most. */
 function fraseRiposati(riposati, ultimaDiretta, adesso) {
   const nomi = inOrdine(riposati.map(c => c.gruppo));
   const giorni = nomi.map(g => ultimaDiretta.get(g)).filter(Boolean).map(d => giorniDiCalendario(d, adesso));
@@ -114,7 +114,7 @@ function fraseRiposati(riposati, ultimaDiretta, adesso) {
   return `${elenco(nomi)} ${riposa} da ${almeno}${minimo} giorni`;
 }
 
-/** "domani", "dopodomani" o il giorno della settimana, per un piano entro sette giorni. */
+/** "domani" (tomorrow), "dopodomani" (the day after) or the weekday, for a scheduled day within seven days. */
 function quando(data, oggi) {
   const giorni = Math.round((data - oggi) / 86400000);
   if (giorni === 1) return 'domani';
@@ -123,13 +123,13 @@ function quando(data, oggi) {
 }
 
 /**
- * Il consiglio per la dashboard.
+ * The advice for the dashboard.
  *
  * @returns {Promise<null | {
  *   motivo: 'oggi' | 'riposati' | 'inizio' | 'riposo',
  *   scheda: { id: number, titolo: string } | null,
  *   testo: string
- * }>} null se l'utente non ha schede da proporre.
+ * }>} null if the user has no plans to suggest.
  */
 export async function consiglioAllenamento(utenteId, adesso = new Date()) {
   const oggi = giornoLocale(adesso);
@@ -147,8 +147,8 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
         sessione: { select: { dataInizio: true } }
       }
     }),
-    // Un allenamento segnato come fatto dal calendario, senza sessione
-    // registrata (per esempio fatto offline), conta come la sua scheda
+    // A workout marked as done from the calendar, with no recorded session
+    // (done offline, for example), counts as its plan
     prisma.allenamentoPianificato.findMany({
       where: { utenteId, stato: 'COMPLETATO', sessioneId: null, data: { gte: giornoLocale(inizioStoria), lte: oggi } },
       select: { data: true, scheda: { select: { esercizi: selezioneEsercizi } } }
@@ -159,7 +159,7 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
       orderBy: [{ data: 'asc' }, { id: 'asc' }]
     }),
     prisma.sessioneAllenamento.groupBy({ by: ['schedaId'], where: { utenteId }, _count: true }),
-    // Le stesse schede di "Allenati ora", piu' quelle assegnate dal PT
+    // The same plans as "Allenati ora" (train now), plus those assigned by the personal trainer
     prisma.schedaAllenamento.findMany({
       where: { OR: [{ creatoreId: utenteId }, { visibilita: 'GLOBALE' }] },
       select: { id: true, titolo: true, creatoreId: true, esercizi: selezioneEsercizi }
@@ -169,8 +169,8 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
   const candidate = schede.filter(s => s.esercizi.length > 0);
   if (candidate.length === 0) return null;
 
-  // Ultimo allenamento diretto (gruppo primario) di ogni gruppo, e le serie
-  // delle ultime 48 ore per dire quali muscoli sono stanchi
+  // Last direct workout (primary group) of each group, and the sets of the
+  // last 48 hours to tell which muscles are tired
   const ultimaDiretta = new Map();
   const serieRecenti = new Map();
   const registra = (gruppo, data, peso) => {
@@ -183,7 +183,7 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
     }
   }
   for (const p of pianiFatti) {
-    // Del giorno si sa solo la data: mezzogiorno locale e' un'ora plausibile
+    // Only the date of the day is known: local noon is a plausible time
     const data = new Date(p.data.getTime() + 10 * 3600000);
     if (data > adesso) continue;
     for (const e of p.scheda.esercizi) {
@@ -205,14 +205,14 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
     .sort((a, b) => b.contributo - a.contributo)
     .slice(0, 2);
 
-  // 1. Il calendario viene prima di tutto: l'ha deciso l'utente (o il suo PT)
+  // 1. The calendar comes first: the user (or their personal trainer) decided it
   const pianoDiOggi = piani.find(p => p.stato === 'PIANIFICATO' && p.data.getTime() === oggi.getTime());
   const schedaDiOggi = pianoDiOggi && candidate.find(s => s.id === pianoDiOggi.schedaId);
   if (schedaDiOggi) {
     const v = valutata(schedaDiOggi);
     const riposati = riposatiDi(v);
-    // L'avviso vale per i muscoli che la scheda allena davvero, non per chi
-    // collabora di rimbalzo in un paio di esercizi
+    // The warning is for the muscles the plan really trains, not for those
+    // that just help out in a couple of exercises
     const stanchi = v.contributi.filter(c => c.bisogno < 0 && c.dirette >= 2 && importanza(c.gruppo) >= 0.5)
       .sort((a, b) => b.dirette - a.dirette).slice(0, 2).map(c => c.gruppo);
     let testo = 'In programma oggi.';
@@ -221,7 +221,7 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
     return { motivo: 'oggi', scheda: { id: schedaDiOggi.id, titolo: schedaDiOggi.titolo }, testo };
   }
 
-  // 2. Altrimenti la scheda migliore, preferendo quelle che l'utente usa gia'
+  // 2. Otherwise the best plan, preferring those the user already uses
   const usate = new Set([...sessioniPerScheda.map(s => s.schedaId), ...piani.map(p => p.schedaId)]);
   const familiarita = (s) => usate.has(s.id) ? 1 : s.creatoreId === utenteId ? 0.9 : 0.75;
   const classifica = candidate
@@ -230,7 +230,7 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
     .sort((a, b) => b.voto - a.voto || a.scheda.id - b.scheda.id);
   const migliore = classifica[0];
 
-  // Nessuna scheda serve senza caricare muscoli stanchi
+  // No plan helps without loading tired muscles
   if (migliore.voto <= 0) {
     const stanchi = inRecupero.slice(0, 2);
     return {
@@ -252,7 +252,7 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
   const prossimoPiano = piani.find(p =>
     p.stato === 'PIANIFICATO' && p.schedaId === scheda.id &&
     p.data > oggi && p.data - oggi <= GIORNI_PIANO * 86400000);
-  // Dei muscoli stanchi si nominano solo quelli che la scheda proposta non tocca
+  // Of the tired muscles, name only those the suggested plan does not touch
   const gruppiScheda = new Set(migliore.contributi.map(c => c.gruppo));
   const risparmiati = inRecupero.filter(g => !gruppiScheda.has(g)).slice(0, 2);
   const aggiunta = prossimoPiano ? `In programma ${quando(prossimoPiano.data, oggi)}.`

@@ -1,45 +1,43 @@
 // ============================================
-// GymMaster — Eliminazione Account
-// Cancellazione definitiva dei dati di un utente
+// GymMaster — Account deletion
+// Permanent deletion of a user's data
 // ============================================
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 
 /**
- * Elimina definitivamente un account e i dati collegati.
+ * Permanently deletes an account and its related data.
  *
- * Non basta una singola delete: cinque vincoli di chiave esterna sono in
- * RESTRICT (schede create, sessioni, record personali, messaggi inviati e
- * allenamenti programmati da questo utente) e bloccherebbero l'operazione.
- * Vanno quindi sciolti nell'ordine giusto, dentro un'unica transazione: o
- * l'account sparisce del tutto, o non cambia nulla.
+ * A single delete is not enough: four foreign key constraints are RESTRICT
+ * (plans created, workouts, personal records and messages sent) and would
+ * block the operation. So they have to be untied in the right order, inside a
+ * single transaction: either the account disappears entirely, or nothing
+ * changes.
  *
- * Il principio seguito e' che cancellare un account non deve danneggiare gli
- * altri utenti: cio' che appartiene solo a questa persona viene rimosso, cio'
- * su cui altri hanno costruito la propria storia di allenamento viene
- * conservato ma scollegato da lei.
+ * The principle is that deleting an account must not harm the other users:
+ * what belongs only to this person is removed, while what others have built
+ * their own training history on is kept but unlinked from them.
  *
- * @returns {Promise<object>} conteggi di cosa e' stato rimosso o trasferito
+ * @returns {Promise<object>} counts of what was removed or transferred
  */
 export async function eliminaAccount(utenteId) {
   return prisma.$transaction(async (tx) => {
     const riepilogo = {};
 
-    // 1. Sessioni di allenamento. Le serie registrate spariscono a cascata e
-    //    gli allenamenti in calendario che vi puntavano si limitano a perdere
-    //    il collegamento (SET NULL).
+    // 1. Workouts. The logged sets go away by cascade, and the calendar
+    //    entries that pointed to them just lose the link (SET NULL).
     riepilogo.sessioni = (await tx.sessioneAllenamento.deleteMany({ where: { utenteId } })).count;
 
-    // 2. Record personali e misurazioni: dati strettamente personali
+    // 2. Personal records: strictly personal data
     riepilogo.recordPersonali = (await tx.recordPersonale.deleteMany({ where: { utenteId } })).count;
 
-    // 3. Messaggi inviati. Cancellarli e' il comportamento corretto per una
-    //    richiesta di cancellazione: sono contenuti scritti da questa persona.
+    // 3. Messages sent. Deleting them is the right behavior for a deletion
+    //    request: they are content written by this person.
     riepilogo.messaggi = (await tx.messaggio.deleteMany({ where: { mittenteId: utenteId } })).count;
 
-    // 4. Conversazioni che resterebbero senza interlocutori. Quelle con altri
-    //    partecipanti restano in piedi per loro.
+    // 4. Conversations that would be left with nobody to talk to. Those with
+    //    other participants stay up for them.
     const partecipazioni = await tx.partecipanteChat.findMany({
       where: { utenteId },
       select: { conversazioneId: true }
@@ -59,17 +57,17 @@ export async function eliminaAccount(utenteId) {
       riepilogo.conversazioni = 0;
     }
 
-    // 5. Allenamenti programmati da questa persona nel calendario di ALTRI:
-    //    restano dove sono, semplicemente senza autore. Cancellarli
-    //    svuoterebbe l'agenda di qualcun altro.
+    // 5. Workouts this person scheduled in OTHER users' calendars: they stay
+    //    where they are, just with no author. Deleting them would empty
+    //    someone else's schedule.
     riepilogo.pianificazioniOrfane = (await tx.allenamentoPianificato.updateMany({
       where: { creatoDaId: utenteId, utenteId: { not: utenteId } },
       data: { creatoDaId: null }
     })).count;
 
-    // 6. Schede create. Quelle su cui nessun altro si e' allenato vengono
-    //    eliminate; le altre passano all'amministratore, perche' cancellarle
-    //    cancellerebbe anche lo storico di chi le ha usate.
+    // 6. Plans created. Those nobody else has trained with are deleted; the
+    //    others go to the administrator, because deleting them would also
+    //    delete the history of whoever used them.
     const schede = await tx.schedaAllenamento.findMany({
       where: { creatoreId: utenteId },
       select: { id: true, _count: { select: { sessioni: true } } }
@@ -90,8 +88,8 @@ export async function eliminaAccount(utenteId) {
         select: { id: true }
       });
       if (!amministratore) {
-        // Senza un destinatario non si puo' procedere: meglio annullare tutto
-        // che lasciare l'archivio in uno stato incoerente.
+        // Without a recipient we cannot go on: better to cancel everything
+        // than to leave the data in an inconsistent state.
         throw new Error('Impossibile trasferire le schede in uso: nessun amministratore disponibile');
       }
       riepilogo.schedeTrasferite = (await tx.schedaAllenamento.updateMany({
@@ -100,9 +98,9 @@ export async function eliminaAccount(utenteId) {
       })).count;
     }
 
-    // 7. L'account. Tutto il resto (notifiche, iscrizioni PT, appuntamenti,
-    //    misurazioni, token, collegamento Telegram, suggerimenti…) e' gia' in
-    //    cascata e sparisce con lui.
+    // 7. The account. Everything else (notifications, personal trainer
+    //    memberships, appointments, measurements, tokens, Telegram link,
+    //    suggestions…) already cascades and goes away with it.
     await tx.utente.delete({ where: { id: utenteId } });
 
     logger.info({ utenteId, ...riepilogo }, 'Account eliminato definitivamente');

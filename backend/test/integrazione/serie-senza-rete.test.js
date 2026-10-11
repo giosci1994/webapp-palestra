@@ -1,7 +1,7 @@
-// Serie registrate senza rete: il telefono le tiene in coda e le manda quando
-// torna la connessione, anche dopo ore (frontend/src/utils/codaSerie.js).
-// Ognuna arriva con la sua chiave e l'ora in cui e' stata fatta; "Termina"
-// arriva con l'ora in cui e' stato toccato.
+// Sets logged without a network: the phone queues them and sends them when
+// the connection comes back, even hours later (frontend/src/utils/codaSerie.js).
+// Each one arrives with its key and the time it was done; "Termina" (finish)
+// arrives with the time it was tapped.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -24,7 +24,7 @@ beforeEach(async () => {
 });
 
 const minutiFa = n => new Date(Date.now() - n * MINUTO);
-/** Un allenamento aperto, cominciato `inizio` minuti fa, con serie da 80 kg registrate a quei minuti fa */
+/** An open workout, started `inizio` minutes ago, with 80 kg sets logged that many minutes ago */
 const aperto = (inizio, ...serie) => creaSessione(utente, scheda, {
   inizio: minutiFa(inizio),
   conclusa: false,
@@ -116,8 +116,8 @@ describe('"Termina" toccato senza rete', () => {
 
 describe("serie arrivate dopo che il server ha chiuso l'allenamento", () => {
   it('lo richiudono contandole: durata, volume e record le comprendono', async () => {
-    // Una serie e' arrivata, poi il telefono e' rimasto senza rete: dopo due
-    // ore il server chiude l'allenamento all'ultima serie che conosce
+    // One set arrived, then the phone lost the network: after two hours the
+    // server closes the workout at the last set it knows about
     const sessione = await aperto(300, 290);
     await chiudiSessioniDimenticate(null);
     assert.equal((await sessioneDb(sessione)).durataMinuti, 10);
@@ -132,7 +132,7 @@ describe("serie arrivate dopo che il server ha chiuso l'allenamento", () => {
     assert.equal(richiusa.dataFine.getTime(), fatta.getTime());
     assert.equal(richiusa.durataMinuti, 40);
     assert.equal(richiusa.volumeTotaleKg, 80 * 8 + 90 * 5);
-    // Il record dei 90 kg e' del giorno dell'allenamento, non di quando e' arrivato
+    // The 90 kg record belongs to the day of the workout, not to when it arrived
     const record = await prisma.recordPersonale.findFirst({ where: { utenteId: utente.id, pesoMaxRaggiunto: 90 } });
     assert.equal(record.dataRecord.getTime(), fatta.getTime());
   });

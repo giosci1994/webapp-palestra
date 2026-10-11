@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Routes Novità (storie in-app)
-// Endpoint pubblico per l'app autenticata.
+// GymMaster — "What's New" Routes (in-app stories)
+// For every signed-in user, not only admins.
 // ============================================
 
 import { Router } from 'express';
@@ -10,7 +10,7 @@ import prisma from '../config/database.js';
 const router = Router();
 router.use(verificaToken);
 
-// GET /api/v1/novita — Novità attive, in ordine, per il visore storie
+// GET /api/v1/novita — Active "what's new" items, in order, for the story viewer
 router.get('/', async (req, res, next) => {
   try {
     const novita = await prisma.novita.findMany({

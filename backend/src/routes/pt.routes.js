@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Routes Personal Trainer
+// GymMaster — Personal Trainer Routes
 // /api/v1/pt/*
-// Tutte le rotte riservate al ruolo PT e SUPERADMIN
+// Every route is reserved for the personal trainer and SUPERADMIN roles
 // ============================================
 
 import { Router } from 'express';
@@ -12,7 +12,7 @@ import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.param('clienteId', idNumerico);
 router.param('schedaId', idNumerico);
@@ -20,10 +20,10 @@ router.use(verificaToken);
 router.use(autorizza('PERSONAL_TRAINER', 'SUPERADMIN'));
 
 // ============================
-// DASHBOARD (Statistiche PT)
+// DASHBOARD (personal trainer statistics)
 // ============================
 
-// GET /api/v1/pt/dashboard — Statistiche generali per il PT
+// GET /api/v1/pt/dashboard — General statistics for the personal trainer
 router.get('/dashboard', async (req, res, next) => {
   try {
     const trainerId = req.utente.id;
@@ -33,22 +33,22 @@ router.get('/dashboard', async (req, res, next) => {
     domani.setDate(domani.getDate() + 1);
 
     const [clientiAttivi, richiesteInAttesa, appuntamentiOggi, sessioniClienti] = await Promise.all([
-      // N. clienti attivi
+      // No. of active clients
       prisma.iscrizionePT.count({
         where: { trainerId, stato: 'ATTIVA' }
       }),
-      // N. richieste pendenti
+      // No. of pending requests
       prisma.iscrizionePT.count({
         where: { trainerId, stato: 'IN_ATTESA' }
       }),
-      // N. appuntamenti oggi
+      // No. of appointments today
       prisma.appuntamentoPT.count({
         where: {
           trainerId,
           dataOra: { gte: oggi, lt: domani }
         }
       }),
-      // N. sessioni dei clienti (tutti)
+      // No. of client sessions (all of them)
       prisma.sessioneAllenamento.count({
         where: {
           utente: {
@@ -68,10 +68,10 @@ router.get('/dashboard', async (req, res, next) => {
 });
 
 // ============================
-// CLIENTI
+// CLIENTS
 // ============================
 
-// GET /api/v1/pt/clienti — Lista clienti iscritti attivi
+// GET /api/v1/pt/clienti — List of active enrolled clients
 router.get('/clienti', async (req, res, next) => {
   try {
     const iscrizioni = await prisma.iscrizionePT.findMany({
@@ -102,7 +102,7 @@ router.get('/clienti', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/pt/clienti/:id — Dettaglio completo di un cliente con statistiche
+// GET /api/v1/pt/clienti/:id — Full detail of a client with statistics
 router.get('/clienti/:id', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
@@ -182,7 +182,7 @@ router.get('/clienti/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/pt/clienti/:clienteId/schede/:schedaId — Rimuovi scheda assegnata
+// DELETE /api/v1/pt/clienti/:clienteId/schede/:schedaId — Remove an assigned plan
 router.delete('/clienti/:clienteId/schede/:schedaId', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.clienteId);
@@ -201,7 +201,7 @@ router.delete('/clienti/:clienteId/schede/:schedaId', async (req, res, next) => 
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/pt/clienti/:id — Termina rapporto con un cliente
+// DELETE /api/v1/pt/clienti/:id — End the relationship with a client
 router.delete('/clienti/:id', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
@@ -219,7 +219,7 @@ router.delete('/clienti/:id', async (req, res, next) => {
       data: { stato: 'TERMINATA', dataRisposta: new Date() }
     });
 
-    // Notifica il cliente
+    // Notify the client
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${clienteId}`).emit('notifica:nuova', {
@@ -235,10 +235,10 @@ router.delete('/clienti/:id', async (req, res, next) => {
 });
 
 // ============================
-// RICHIESTE ISCRIZIONE
+// ENROLMENT REQUESTS
 // ============================
 
-// GET /api/v1/pt/richieste — Lista richieste pendenti
+// GET /api/v1/pt/richieste — List of pending requests
 router.get('/richieste', async (req, res, next) => {
   try {
     const richieste = await prisma.iscrizionePT.findMany({
@@ -259,7 +259,7 @@ router.get('/richieste', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PATCH /api/v1/pt/richieste/:id/accetta — Accetta richiesta
+// PATCH /api/v1/pt/richieste/:id/accetta — Accept a request
 router.patch('/richieste/:id/accetta', async (req, res, next) => {
   try {
     const richiestaId = parseInt(req.params.id);
@@ -279,7 +279,7 @@ router.patch('/richieste/:id/accetta', async (req, res, next) => {
       include: { utente: { select: { id: true, nome: true } } }
     });
 
-    // Notifica l'utente
+    // Notify the user
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${richiesta.utenteId}`).emit('notifica:nuova', {
@@ -294,7 +294,7 @@ router.patch('/richieste/:id/accetta', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PATCH /api/v1/pt/richieste/:id/rifiuta — Rifiuta richiesta
+// PATCH /api/v1/pt/richieste/:id/rifiuta — Reject a request
 router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
   try {
     const richiestaId = parseInt(req.params.id);
@@ -312,7 +312,7 @@ router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
       data: { stato: 'RIFIUTATA', dataRisposta: new Date() }
     });
 
-    // Notifica l'utente
+    // Notify the user
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${richiesta.utenteId}`).emit('notifica:nuova', {
@@ -328,10 +328,10 @@ router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
 });
 
 // ============================
-// APPUNTAMENTI
+// APPOINTMENTS
 // ============================
 
-// GET /api/v1/pt/appuntamenti — Lista appuntamenti (filtro opzionale per data)
+// GET /api/v1/pt/appuntamenti — List of appointments (optional date filter)
 router.get('/appuntamenti', async (req, res, next) => {
   try {
     const { da, a, clienteId } = req.query;
@@ -358,13 +358,13 @@ router.get('/appuntamenti', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/pt/appuntamenti — Crea appuntamento
+// POST /api/v1/pt/appuntamenti — Create an appointment
 router.post('/appuntamenti', async (req, res, next) => {
   try {
     const { clienteId, titolo, descrizione, dataOra, durataMinuti, note } = req.body;
     const trainerId = req.utente.id;
 
-    // Verifica che il cliente sia iscritto
+    // Check that the client is enrolled
     const iscrizione = await prisma.iscrizionePT.findFirst({
       where: { utenteId: parseInt(clienteId), trainerId, stato: 'ATTIVA' }
     });
@@ -388,7 +388,7 @@ router.post('/appuntamenti', async (req, res, next) => {
       }
     });
 
-    // Notifica il cliente
+    // Notify the client
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${clienteId}`).emit('notifica:nuova', {
@@ -403,7 +403,7 @@ router.post('/appuntamenti', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PATCH /api/v1/pt/appuntamenti/:id — Modifica appuntamento
+// PATCH /api/v1/pt/appuntamenti/:id — Edit an appointment
 router.patch('/appuntamenti/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -435,7 +435,7 @@ router.patch('/appuntamenti/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/pt/appuntamenti/:id — Elimina appuntamento
+// DELETE /api/v1/pt/appuntamenti/:id — Delete an appointment
 router.delete('/appuntamenti/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -454,10 +454,10 @@ router.delete('/appuntamenti/:id', async (req, res, next) => {
 });
 
 // ============================
-// ESERCIZI (Creazione diretta)
+// EXERCISES (direct creation)
 // ============================
 
-// POST /api/v1/pt/esercizi — Crea esercizio (stessa logica admin)
+// POST /api/v1/pt/esercizi — Create an exercise (same logic as the admin)
 router.post('/esercizi', async (req, res, next) => {
   try {
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId,
@@ -489,10 +489,10 @@ router.post('/esercizi', async (req, res, next) => {
 });
 
 // ============================
-// SCHEDE (Vista completa PT)
+// PLANS (full personal trainer view)
 // ============================
 
-// GET /api/v1/pt/schede — Tutte le schede (proprie + globali)
+// GET /api/v1/pt/schede — All plans (own + global)
 router.get('/schede', async (req, res, next) => {
   try {
     const schede = await prisma.schedaAllenamento.findMany({
@@ -517,7 +517,7 @@ router.get('/schede', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/pt/schede — Crea scheda da zero
+// POST /api/v1/pt/schede — Create a plan from scratch
 router.post('/schede', async (req, res, next) => {
   try {
     const { titolo, descrizione, livello, esercizi } = req.body;
@@ -552,15 +552,15 @@ router.post('/schede', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/pt/clienti/:id/assegna-scheda — Assegna scheda a un cliente
-// (crea una copia della scheda con creatoreId del cliente)
+// POST /api/v1/pt/clienti/:id/assegna-scheda — Assign a plan to a client
+// (creates a copy of the plan with the client as creatoreId)
 router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
     const { schedaId } = req.body;
     const trainerId = req.utente.id;
 
-    // Verifica che sia un suo cliente
+    // Check that this is one of their clients
     const iscrizione = await prisma.iscrizionePT.findFirst({
       where: { utenteId: clienteId, trainerId, stato: 'ATTIVA' }
     });
@@ -569,7 +569,7 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
       return res.status(403).json({ successo: false, messaggio: 'Non è un tuo cliente' });
     }
 
-    // Recupera la scheda originale con esercizi
+    // Fetch the original plan with its exercises
     const schedaOriginale = await prisma.schedaAllenamento.findUnique({
       where: { id: parseInt(schedaId) },
       include: { esercizi: true }
@@ -579,7 +579,7 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
       return res.status(404).json({ successo: false, messaggio: 'Scheda non trovata' });
     }
 
-    // Crea copia per il cliente con tracciamento PT
+    // Create a copy for the client, tracking the personal trainer
     const nuovaScheda = await prisma.schedaAllenamento.create({
       data: {
         creatoreId: clienteId,
@@ -603,7 +603,7 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
       }
     });
 
-    // Notifica il cliente
+    // Notify the client
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${clienteId}`).emit('notifica:nuova', {
@@ -620,10 +620,10 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
 });
 
 // ============================
-// BACHECA ANNUNCI
+// ANNOUNCEMENT BOARD
 // ============================
 
-// GET /api/v1/pt/annunci — Lista annunci del PT
+// GET /api/v1/pt/annunci — List of the personal trainer's announcements
 router.get('/annunci', async (req, res, next) => {
   try {
     const annunci = await prisma.annuncioPT.findMany({
@@ -636,7 +636,7 @@ router.get('/annunci', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/pt/annunci — Crea nuovo annuncio
+// POST /api/v1/pt/annunci — Create a new announcement
 router.post('/annunci', async (req, res, next) => {
   try {
     const { titolo, contenuto, priorita, destinatarioId } = req.body;
@@ -644,7 +644,7 @@ router.post('/annunci', async (req, res, next) => {
       return res.status(400).json({ successo: false, messaggio: 'Titolo e contenuto sono obbligatori' });
     }
 
-    // Se destinatarioId, verifica che sia un suo cliente
+    // With a destinatarioId, check that it is one of their clients
     if (destinatarioId) {
       const iscrizione = await prisma.iscrizionePT.findFirst({
         where: { utenteId: parseInt(destinatarioId), trainerId: req.utente.id, stato: 'ATTIVA' }
@@ -665,7 +665,7 @@ router.post('/annunci', async (req, res, next) => {
       include: { destinatario: { select: { id: true, nome: true } } }
     });
 
-    // Notifica clienti: se destinatario specifico, solo a lui; altrimenti a tutti
+    // Notify clients: only the recipient if there is one; otherwise all of them
     const io = req.app.get('io');
     if (io) {
       if (destinatarioId) {
@@ -695,7 +695,7 @@ router.post('/annunci', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/pt/annunci/:id — Elimina annuncio
+// DELETE /api/v1/pt/annunci/:id — Delete an announcement
 router.delete('/annunci/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);

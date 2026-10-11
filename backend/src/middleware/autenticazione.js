@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Middleware Autenticazione JWT
-// Verifica token e attacca utente alla richiesta
+// GymMaster — JWT authentication middleware
+// Verifies the token and attaches the user to the request
 // ============================================
 
 import jwt from 'jsonwebtoken';
@@ -9,9 +9,9 @@ import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 
 /**
- * Middleware di autenticazione JWT.
- * Estrae il token dall'header Authorization: Bearer <token>
- * Verifica la validità e attacca l'utente decodificato a req.utente
+ * JWT authentication middleware.
+ * Extracts the token from the Authorization: Bearer <token> header
+ * Checks that it is valid and attaches the decoded user to req.utente
  */
 export async function verificaToken(req, res, next) {
   try {
@@ -23,13 +23,13 @@ export async function verificaToken(req, res, next) {
 
     const token = headerAuth.split(' ')[1];
 
-    // Verifica e decodifica il token
+    // Verify and decode the token
     const payload = jwt.verify(token, process.env.JWT_SEGRETO_ACCESS);
 
-    // Verifica che l'utente esista ancora e sia attivo, e che la sua sessione
-    // (la famiglia di refresh token del login) sia ancora aperta: chiusa da un
-    // altro dispositivo, con un logout o per un furto, l'access token smette
-    // subito di valere invece di restare buono fino alla scadenza
+    // Check that the user still exists and is active, and that their session
+    // (the login's refresh token family) is still open: if it was closed from
+    // another device, by a logout or because of a theft, the access token stops
+    // working right away instead of staying valid until it expires
     const utente = await prisma.utente.findUnique({
       where: { id: payload.utenteId },
       select: {
@@ -50,7 +50,7 @@ export async function verificaToken(req, res, next) {
       throw new ErroreNonAutenticato('Utente non trovato');
     }
 
-    // Gli access token di prima delle famiglie non ne hanno: scadono da soli
+    // Access tokens from before families existed have none: they expire on their own
     const { refreshTokens, ...datiUtente } = utente;
     if (payload.famiglia && refreshTokens.length === 0) {
       throw new ErroreNonAutenticato('Sessione chiusa: accedi di nuovo');
@@ -64,7 +64,7 @@ export async function verificaToken(req, res, next) {
       );
     }
 
-    // Attacca l'utente alla richiesta, con la sessione da cui arriva
+    // Attach the user to the request, with the session it comes from
     req.utente = { ...datiUtente, famiglia: payload.famiglia ?? null };
     next();
   } catch (errore) {
@@ -86,8 +86,8 @@ export async function verificaToken(req, res, next) {
 }
 
 /**
- * Middleware opzionale: se il token è presente lo verifica,
- * altrimenti prosegue senza utente autenticato.
+ * Optional middleware: if the token is present it verifies it,
+ * otherwise it goes on without an authenticated user.
  */
 export async function verificaTokenOpzionale(req, res, next) {
   const headerAuth = req.headers.authorization;

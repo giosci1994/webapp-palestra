@@ -1,7 +1,7 @@
-// Dispositivi collegati: ogni login apre una sessione (una famiglia di refresh
-// token) che l'utente vede, puo' chiudere da un altro dispositivo, e che si
-// chiude col logout o cambiando password. Una sessione chiusa smette subito di
-// funzionare, anche col suo access token.
+// Connected devices: every login opens a session (a family of refresh tokens)
+// that the user sees, can close from another device, and that is closed by
+// logging out or changing the password. A closed session stops working at
+// once, even with its access token.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -26,7 +26,7 @@ beforeEach(async () => {
 const refreshTokenDa = risposta => risposta.cookieRicevuti
   .find(c => c.startsWith('refreshToken='))?.split(';')[0].slice('refreshToken='.length);
 
-/** Un login da un dispositivo: il suo access token e il suo refresh token */
+/** A login from a device: its access token and its refresh token */
 async function accedi(userAgent, chi = utente) {
   const risposta = await server.richiesta('POST', '/auth/login', {
     userAgent, corpo: { email: chi.email, password: PASSWORD }
@@ -36,12 +36,12 @@ async function accedi(userAgent, chi = utente) {
 }
 
 const rinnova = token => server.richiesta('POST', '/auth/refresh', { cookie: `refreshToken=${token}` });
-/** Come se il token fosse stato rinnovato 10 minuti fa: sotto i 5 non ruota */
+/** As if the token had been renewed 10 minutes ago: under 5 it does not rotate */
 const invecchia = token => prisma.refreshToken.update({
   where: { token: improntaToken(token) }, data: { creato: new Date(Date.now() - 10 * 60 * 1000) }
 });
 const elenco = da => server.richiesta('GET', '/auth/sessioni', { token: da.accesso });
-/** Il dispositivo funziona ancora? Una rotta qualsiasi con il suo access token */
+/** Does the device still work? Any route with its access token */
 const funziona = async da => (await server.richiesta('GET', '/sessioni', { token: da.accesso })).stato === 200;
 
 describe('dispositivi collegati', () => {
@@ -84,7 +84,7 @@ describe('dispositivi collegati', () => {
     const rinnovo = await rinnova(telefono.refresh);
     assert.equal(rinnovo.stato, 401);
     assert.equal(rinnovo.corpo.messaggio, 'Refresh token non valido');
-    // Non e' scattato l'allarme furto: il computer funziona e rinnova
+    // The theft alarm did not go off: the computer works and renews
     assert.equal(await funziona(computer), true);
     assert.equal((await rinnova(computer.refresh)).stato, 200);
   });
@@ -150,7 +150,7 @@ describe('dispositivi collegati', () => {
     await invecchia(secondo);
     await rinnova(secondo);
 
-    // Il primo token, indietro di due rotazioni
+    // The first token, two rotations behind
     assert.equal((await rinnova(vecchio)).stato, 401);
     assert.equal(await funziona(telefono), false);
   });
@@ -161,7 +161,7 @@ describe('dispositivi collegati', () => {
       token: telefono.accesso, corpo: { password: PASSWORD, conferma: 'ELIMINA' }
     });
     assert.equal(risposta.stato, 200);
-    // Stesso path con cui e' stato impostato, altrimenti il browser lo tiene
+    // Same path it was set with, otherwise the browser keeps it
     const cookie = risposta.cookieRicevuti.find(c => c.startsWith('refreshToken='));
     assert.match(cookie, /^refreshToken=;/);
     assert.match(cookie, /Path=\/api\/v1\/auth/);

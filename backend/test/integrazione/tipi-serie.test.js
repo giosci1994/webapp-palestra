@@ -1,6 +1,6 @@
-// Serie di riscaldamento e drop (utils/tipiSerie.js): si registrano e si
-// vedono, ma il riscaldamento resta fuori da volume, conteggi, record e
-// progressione, e un drop conta solo nel volume.
+// Warm-up sets and drop sets (utils/tipiSerie.js): they are logged and shown,
+// but warm-up stays out of volume, counts, records and progression, and a drop
+// set only counts towards volume.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -22,7 +22,7 @@ beforeEach(async () => {
 });
 
 const chiedi = (metodo, percorso, corpo) => server.richiesta(metodo, percorso, { token: tokenPer(utente), corpo });
-/** Riscaldamento 40×10 e 60×5, poi 80×8 con un drop a 60×6, poi 80×7 */
+/** Warm-up 40×10 and 60×5, then 80×8 with a drop set at 60×6, then 80×7 */
 const serieTipiche = () => [
   { esercizio: panca, peso: 40, rep: 10, tipo: 'RISCALDAMENTO', serieNumero: 1 },
   { esercizio: panca, peso: 60, rep: 5, tipo: 'RISCALDAMENTO', serieNumero: 2 },
@@ -64,7 +64,7 @@ describe('alla chiusura', () => {
   });
 
   it('i record vengono solo dalle serie di lavoro', async () => {
-    // Un riscaldamento piu' pesante del lavoro non capita, ma se capita non e' un record
+    // A warm-up heavier than the work sets does not happen, but if it does it is not a record
     const sessione = await creaSessione(utente, scheda, {
       inizio: new Date(Date.now() - 40 * MINUTO),
       conclusa: false,
@@ -81,7 +81,7 @@ describe('alla chiusura', () => {
 
 describe('storico', () => {
   it('riscaldamento prima, ogni serie con i suoi drop, e il conto delle serie e\' quello di lavoro', async () => {
-    // Registrate in un ordine qualsiasi: lo storico le rimette in fila
+    // Logged in any order: the history puts them back in line
     const tipiche = serieTipiche();
     const ordineArrivo = [tipiche[2], tipiche[0], tipiche[4], tipiche[3], tipiche[1]];
     await creaSessione(utente, scheda, { inizio: giorniFa(1), serie: ordineArrivo });

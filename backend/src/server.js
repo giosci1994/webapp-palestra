@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Server Express Principale
-// Entry point dell'applicazione backend
+// GymMaster — Main Express server
+// Entry point of the backend application
 // ============================================
 
 import 'dotenv/config';
@@ -13,11 +13,11 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// --- Configurazione ---
+// --- Configuration ---
 const PORTA = parseInt(process.env.PORTA_BACKEND) || 3000;
 const AMBIENTE = process.env.AMBIENTE || 'sviluppo';
 
-// Versione applicazione letta da version.json all'avvio (con fallback)
+// App version read from version.json at startup (with a fallback)
 const VERSIONE = (() => {
   try {
     const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -27,11 +27,11 @@ const VERSIONE = (() => {
   }
 })();
 
-// --- App Express, server HTTP e Socket.io (src/app.js) ---
+// --- Express app, HTTP server and Socket.io (src/app.js) ---
 const { serverHttp, io } = creaServer();
 
-// --- Pulizia periodica messaggi scaduti (ogni 6 ore) ---
-const INTERVALLO_PULIZIA = 6 * 60 * 60 * 1000; // 6 ore
+// --- Periodic cleanup of expired messages (every 6 hours) ---
+const INTERVALLO_PULIZIA = 6 * 60 * 60 * 1000; // 6 hours
 setInterval(async () => {
   try {
     const eliminati = await pulisciMessaggiScaduti();
@@ -43,13 +43,13 @@ setInterval(async () => {
   }
 }, INTERVALLO_PULIZIA);
 
-// --- Promemoria allenamenti in programma (controllo ogni ora) ---
-// Si controlla ogni ora invece di programmare un singolo invio giornaliero:
-// dopo un riavvio del processo un timer giornaliero ripartirebbe da zero e il
-// promemoria salterebbe. inviaPromemoriaAllenamenti e' idempotente (non invia
-// due volte nello stesso giorno), quindi ripetere il controllo e' innocuo.
-const INTERVALLO_PROMEMORIA = 60 * 60 * 1000; // 1 ora
-const ORA_MINIMA_PROMEMORIA = 8;              // non prima delle 8 del mattino
+// --- Reminders for scheduled workouts (checked every hour) ---
+// We check every hour instead of scheduling a single daily send: after a
+// process restart a daily timer would start again from zero and the reminder
+// would be skipped. inviaPromemoriaAllenamenti is idempotent (it does not send
+// twice on the same day), so repeating the check is harmless.
+const INTERVALLO_PROMEMORIA = 60 * 60 * 1000; // 1 hour
+const ORA_MINIMA_PROMEMORIA = 8;              // not before 8 in the morning
 setInterval(async () => {
   try {
     if (new Date().getHours() < ORA_MINIMA_PROMEMORIA) return;
@@ -59,9 +59,9 @@ setInterval(async () => {
   }
 }, INTERVALLO_PROMEMORIA);
 
-// --- Allenamenti dimenticati aperti (controllo ogni 30 minuti) ---
-// Fermi da piu' di due ore: si chiudono all'ultima serie, con una notifica
-// (services/conclusioneSessione.service.js).
+// --- Workouts left open by mistake (checked every 30 minutes) ---
+// Idle for more than two hours: they are closed at the last set, with a
+// notification (services/conclusioneSessione.service.js).
 const INTERVALLO_SESSIONI_DIMENTICATE = 30 * 60 * 1000;
 setInterval(async () => {
   try {
@@ -71,7 +71,7 @@ setInterval(async () => {
   }
 }, INTERVALLO_SESSIONI_DIMENTICATE);
 
-// --- Avvio Server ---
+// --- Server startup ---
 serverHttp.listen(PORTA, '0.0.0.0', () => {
   logger.info(`
   ╔══════════════════════════════════════════════╗
@@ -89,12 +89,12 @@ let chiusuraInCorso = false;
 
 for (const segnale of segnaliChiusura) {
   process.on(segnale, async () => {
-    if (chiusuraInCorso) return; // Ignora segnali ripetuti
+    if (chiusuraInCorso) return; // Ignore repeated signals
     chiusuraInCorso = true;
     logger.info({ segnale }, 'Segnale di chiusura ricevuto, arresto in corso...');
 
-    // Rete di sicurezza: forza la chiusura se il drain non termina entro 10s.
-    // unref() evita che il timer da solo tenga vivo il processo.
+    // Safety net: force the shutdown if the drain does not finish within 10s.
+    // unref() keeps the timer alone from keeping the process alive.
     const timeoutForzato = setTimeout(() => {
       logger.warn('Timeout graceful shutdown, forzo la chiusura');
       process.exit(1);
@@ -102,7 +102,7 @@ for (const segnale of segnaliChiusura) {
     timeoutForzato.unref();
 
     try {
-      // Smetti di accettare nuove connessioni e attendi che quelle attive terminino
+      // Stop accepting new connections and wait for the active ones to finish
       await Promise.all([
         new Promise((risolvi) => serverHttp.close(risolvi)),
         new Promise((risolvi) => io.close(risolvi))
@@ -117,7 +117,7 @@ for (const segnale of segnaliChiusura) {
   });
 }
 
-// --- Errori non gestiti ---
+// --- Unhandled errors ---
 process.on('unhandledRejection', (motivo, promessa) => {
   logger.error({ motivo: motivo?.message || motivo }, 'Promise non gestita');
 });

@@ -1,11 +1,12 @@
 // ============================================
-// GymMaster — Applica le storie della versione installata
+// GymMaster — Apply the stories of the installed version
 // ============================================
 //
-// Lo lancia lo script di rilascio (deploy/rilascio.sh) nel container del
-// backend, dopo il riavvio:
+// The release script (deploy/rilascio.sh) runs it in the backend container,
+// after the restart:
 //   docker compose exec -T backend node src/applica-novita.js
-// La versione e' quella di version.json; le storie quelle di prisma/novita.json.
+// The version is the one in version.json; the stories are those in
+// prisma/novita.json.
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';

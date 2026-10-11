@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Controller Pianificazione Allenamenti
-// Calendario degli allenamenti programmati
+// GymMaster — Workout schedule controller
+// Calendar of the scheduled workouts
 // ============================================
 
 import prisma from '../config/database.js';
@@ -9,14 +9,14 @@ import { creaNotifica } from '../services/notifiche.service.js';
 import { gruppiDellaScheda } from '../services/consiglio.service.js';
 import { giornoLocale, orarioLocale } from '../utils/date.js';
 
-// Giorni della settimana come usati in tutta l'app: 0 = lunedì … 6 = domenica
+// Days of the week as used across the app: 0 = Monday … 6 = Sunday
 const GIORNI_VALIDI = [0, 1, 2, 3, 4, 5, 6];
 const MAX_SETTIMANE = 12;
 
 /**
- * Converte "YYYY-MM-DD" in Date a mezzanotte UTC.
- * La colonna è di tipo DATE: fissare l'orario a mezzanotte UTC evita che il
- * fuso orario del server sposti l'allenamento al giorno prima o dopo.
+ * Converts "YYYY-MM-DD" into a Date at midnight UTC.
+ * The column is of type DATE: pinning the time to midnight UTC keeps the
+ * server's time zone from moving the workout to the day before or after.
  */
 function aData(valore, nomeCampo = 'data') {
   if (typeof valore !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valore)) {
@@ -27,22 +27,22 @@ function aData(valore, nomeCampo = 'data') {
   return d;
 }
 
-/** Formatta una Date come "YYYY-MM-DD" (sempre in UTC, come è stata salvata). */
+/** Formats a Date as "YYYY-MM-DD" (always in UTC, as it was saved). */
 function daData(d) {
   return d.toISOString().slice(0, 10);
 }
 
-/** Indice giorno 0=lun … 6=dom a partire da una Date UTC. */
+/** Day index 0=Mon … 6=Sun from a UTC Date. */
 function giornoSettimanaUTC(d) {
   return (d.getUTCDay() + 6) % 7;
 }
 
 /**
- * Stabilisce su quale agenda si sta operando e se il richiedente può farlo.
+ * Works out which calendar is being changed and whether the requester may do it.
  *
- * Regole: ognuno gestisce la propria; un SUPERADMIN gestisce chiunque; un personal
- * trainer gestisce solo i clienti con iscrizione ATTIVA. Senza questo controllo
- * basterebbe passare un utenteId altrui per scrivere nell'agenda di un altro.
+ * Rules: everyone manages their own; a SUPERADMIN manages anyone; a personal
+ * trainer manages only clients with an ATTIVA subscription. Without this check,
+ * passing someone else's utenteId would be enough to write into their calendar.
  */
 async function risolviAgenda(richiedente, utenteIdRichiesto) {
   const bersaglioId = utenteIdRichiesto ? parseInt(utenteIdRichiesto, 10) : richiedente.id;
@@ -62,7 +62,7 @@ async function risolviAgenda(richiedente, utenteIdRichiesto) {
   throw new ErroreNonAutorizzato('Non puoi gestire il calendario di questo utente');
 }
 
-/** La scheda deve essere utilizzabile da chi la pianifica. */
+/** The plan must be usable by the user it is scheduled for. */
 async function verificaScheda(schedaId, utenteBersaglioId) {
   const id = parseInt(schedaId, 10);
   if (Number.isNaN(id)) throw new ErroreValidazione('Campo "schedaId" non valido');
@@ -75,8 +75,8 @@ async function verificaScheda(schedaId, utenteBersaglioId) {
 
   const utilizzabile = scheda.visibilita === 'GLOBALE' || scheda.creatoreId === utenteBersaglioId;
   if (!utilizzabile) {
-    // Una scheda assegnata dal PT ha come creatore il PT: verifichiamo che sia
-    // comunque destinata a questo utente prima di rifiutarla.
+    // A plan assigned by the personal trainer has the trainer as its creator:
+    // check that it is meant for this user anyway before refusing it.
     const assegnata = await prisma.schedaAllenamento.findFirst({
       where: { id, sessioni: { some: { utenteId: utenteBersaglioId } } },
       select: { id: true }
@@ -91,12 +91,12 @@ const INCLUDI_SCHEDA = {
   creatoDa: { select: { id: true, nome: true, ruolo: true } }
 };
 
-/** GET /api/v1/pianificazione?da=&a=&utenteId= — Allenamenti in un intervallo */
+/** GET /api/v1/pianificazione?da=&a=&utenteId= — Workouts in a date range */
 export async function listaPianificazione(req, res, next) {
   try {
     const utenteId = await risolviAgenda(req.utente, req.query.utenteId);
 
-    // Default: il mese corrente, che è ciò che il calendario mostra all'apertura
+    // Default: the current month, which is what the calendar shows when it opens
     const oggi = new Date();
     const primoDelMese = new Date(Date.UTC(oggi.getUTCFullYear(), oggi.getUTCMonth(), 1));
     const ultimoDelMese = new Date(Date.UTC(oggi.getUTCFullYear(), oggi.getUTCMonth() + 1, 0));
@@ -120,18 +120,18 @@ export async function listaPianificazione(req, res, next) {
   }
 }
 
-// Consiglio sull'ora: come nella scheda affluenza, il dato in tempo reale vale
-// solo se fresco (lo scraper passa ogni mezz'ora)
+// Time suggestion: as in the crowd level tab, the live value counts only if
+// it is fresh (the scraper runs every half hour)
 const LIMITE_FRESCHEZZA_LIVE_MS = 90 * 60 * 1000;
 const FASCIA_PREDEFINITA = { da: 7, a: 21 };
 const ORA_ULTIMA = 22;
-const SCARTO_TOLLERATO = 5; // punti percentuali di affollamento
+const SCARTO_TOLLERATO = 5; // percentage points of crowding
 
 /**
- * Quando andare oggi in palestra: l'ora meno affollata fra quelle ancora da
- * venire, dentro la fascia in cui di solito ti alleni (l'ora mediana di inizio
- * degli ultimi allenamenti, due ore prima e dopo). Se la fascia e' gia'
- * passata, la migliore delle prossime quattro ore.
+ * When to go to the gym today: the least crowded hour among those still to
+ * come, inside the window when you usually train (the median start hour of the
+ * latest workouts, two hours before and after). If the window has already
+ * passed, the best of the next four hours.
  */
 async function orarioConsigliato(utenteId, palestraId, adesso) {
   if (!palestraId) return null;
@@ -164,9 +164,9 @@ async function orarioConsigliato(utenteId, palestraId, adesso) {
     scelte = fra(ora, Math.min(ORA_ULTIMA, ora + 4));
     riferimento = ora;
   }
-  // Pochi punti di affollamento non valgono un'ora di attesa: fra le ore
-  // quasi tranquille quanto la migliore vince la piu' vicina a quella solita
-  // (o ad adesso, se la fascia abituale e' gia' passata)
+  // A few points of crowding are not worth an hour of waiting: among the hours
+  // almost as quiet as the best one, the closest to the usual hour wins
+  // (or to now, if the usual window has already passed)
   const minimo = Math.min(...scelte.map(r => r.livelloPercentuale));
   const migliore = scelte
     .filter(r => r.livelloPercentuale <= minimo + SCARTO_TOLLERATO)
@@ -186,11 +186,11 @@ async function orarioConsigliato(utenteId, palestraId, adesso) {
 }
 
 /**
- * GET /api/v1/pianificazione/oggi — Gli allenamenti ancora da fare oggi
+ * GET /api/v1/pianificazione/oggi — The workouts still to do today
  *
- * Alimenta il promemoria che compare aprendo l'app: cosa ti aspetta, a che
- * ora conviene andare e, se l'avevi gia' iniziato, la sessione da riprendere
- * invece di ricominciarla da capo.
+ * Feeds the reminder that shows up when the app opens: what is waiting for you,
+ * the best time to go and, if you had already started it, the workout to
+ * resume instead of starting it over.
  */
 export async function allenamentiDiOggi(req, res, next) {
   try {
@@ -200,7 +200,7 @@ export async function allenamentiDiOggi(req, res, next) {
   }
 }
 
-/** Il contenuto di /oggi, con l'istante come parametro per poterlo provare. */
+/** The content of /oggi, with the current instant as a parameter so it can be tested. */
 export async function riepilogoDiOggi(utenteId, adesso = new Date()) {
   const oggi = giornoLocale(adesso);
 
@@ -232,7 +232,7 @@ export async function riepilogoDiOggi(utenteId, adesso = new Date()) {
   const allenamenti = piani.map(p => {
     const diQuesta = sessioni.filter(s => s.schedaId === p.scheda.id);
     const inCorso = diQuesta.find(s => !s.dataFine && giornoLocale(s.dataInizio).getTime() === oggi.getTime());
-    // Una sessione di pochi minuti e' una prova, non la durata della scheda
+    // A workout of a few minutes is a test, not the plan's duration
     const ultima = diQuesta.find(s => s.dataFine && s.durataMinuti >= 10);
     return {
       id: p.id,
@@ -247,7 +247,7 @@ export async function riepilogoDiOggi(utenteId, adesso = new Date()) {
   return { data: daData(oggi), allenamenti, orario: await orarioConsigliato(utenteId, utente?.palestraId, adesso) };
 }
 
-/** POST /api/v1/pianificazione — Programma un singolo allenamento */
+/** POST /api/v1/pianificazione — Schedules a single workout */
 export async function creaPianificato(req, res, next) {
   try {
     const { schedaId, data, note, utenteId: bersaglio } = req.body;
@@ -262,9 +262,9 @@ export async function creaPianificato(req, res, next) {
       include: INCLUDI_SCHEDA
     });
 
-    // Se a programmare e' stato qualcun altro (tipicamente il PT), l'utente
-    // va avvisato: altrimenti si troverebbe l'allenamento in agenda senza
-    // saperlo. Nessun avviso quando ci si pianifica da soli.
+    // If someone else scheduled it (typically the personal trainer), the user
+    // must be told: otherwise the workout would show up in their calendar
+    // without them knowing. No notification when users schedule for themselves.
     if (utenteId !== req.utente.id) {
       await creaNotifica(req.app.get('io'), utenteId, {
         tipo: 'ALLENAMENTO_PIANIFICATO',
@@ -281,11 +281,11 @@ export async function creaPianificato(req, res, next) {
 }
 
 /**
- * POST /api/v1/pianificazione/settimanale — Distribuisce più schede sulla settimana
+ * POST /api/v1/pianificazione/settimanale — Spreads several plans over the week
  *
- * Il caso d'uso tipico: tre schede diverse su lunedì, mercoledì e venerdì,
- * ripetute per qualche settimana. Genera le occorrenze concrete, saltando le
- * date già passate e quelle già presenti in agenda.
+ * The typical use case: three different plans on Monday, Wednesday and Friday,
+ * repeated for a few weeks. Creates the actual occurrences, skipping dates
+ * already past and those already in the calendar.
  */
 export async function creaPianificazioneSettimanale(req, res, next) {
   try {
@@ -301,7 +301,7 @@ export async function creaPianificazioneSettimanale(req, res, next) {
     }
     const inizio = aData(dataInizio, 'dataInizio');
 
-    // Valida tutte le voci prima di scrivere: o si pianifica tutto o niente
+    // Validate all the entries before writing: either everything is scheduled or nothing
     const vociValide = [];
     for (const voce of voci) {
       const giorno = parseInt(voce.giornoSettimana, 10);
@@ -311,7 +311,7 @@ export async function creaPianificazioneSettimanale(req, res, next) {
       vociValide.push({ schedaId: await verificaScheda(voce.schedaId, utenteId), giornoSettimana: giorno });
     }
 
-    // Lunedì della settimana in cui cade dataInizio
+    // Monday of the week dataInizio falls in
     const lunedi = new Date(inizio);
     lunedi.setUTCDate(lunedi.getUTCDate() - giornoSettimanaUTC(inizio));
 
@@ -320,13 +320,13 @@ export async function creaPianificazioneSettimanale(req, res, next) {
       for (const voce of vociValide) {
         const giorno = new Date(lunedi);
         giorno.setUTCDate(lunedi.getUTCDate() + settimana * 7 + voce.giornoSettimana);
-        // Le date anteriori all'inizio richiesto appartengono al passato
+        // Dates before the requested start belong to the past
         if (giorno < inizio) continue;
         daCreare.push({ utenteId, schedaId: voce.schedaId, data: giorno, creatoDaId: req.utente.id });
       }
     }
 
-    // skipDuplicates lascia intatto ciò che è già in agenda invece di fallire
+    // skipDuplicates leaves what is already in the calendar untouched instead of failing
     const esito = await prisma.allenamentoPianificato.createMany({ data: daCreare, skipDuplicates: true });
 
     if (utenteId !== req.utente.id && esito.count > 0) {
@@ -347,7 +347,7 @@ export async function creaPianificazioneSettimanale(req, res, next) {
   }
 }
 
-/** PATCH /api/v1/pianificazione/:id — Sposta, rimanda o cambia stato */
+/** PATCH /api/v1/pianificazione/:id — Moves, postpones or changes status */
 export async function aggiornaPianificato(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
@@ -362,7 +362,7 @@ export async function aggiornaPianificato(req, res, next) {
 
     const dati = {};
 
-    // Spostamento: data assoluta, oppure scostamento in giorni ("rimanda di 1")
+    // Move: an absolute date, or an offset in days ("postpone by 1")
     if (req.body.data !== undefined) {
       dati.data = aData(req.body.data);
     } else if (req.body.rimandaGiorni !== undefined) {
@@ -388,8 +388,8 @@ export async function aggiornaPianificato(req, res, next) {
       throw new ErroreValidazione('Nessun campo da aggiornare');
     }
 
-    // Spostare su un giorno che ha già la stessa scheda violerebbe il vincolo
-    // di unicità: meglio un messaggio chiaro che un errore 500 di Prisma.
+    // Moving to a day that already has the same plan would break the unique
+    // constraint: a clear message is better than a Prisma 500 error.
     if (dati.data) {
       const collisione = await prisma.allenamentoPianificato.findFirst({
         where: { utenteId: esistente.utenteId, data: dati.data, schedaId: esistente.schedaId, id: { not: id } },
@@ -410,7 +410,7 @@ export async function aggiornaPianificato(req, res, next) {
   }
 }
 
-/** DELETE /api/v1/pianificazione/:id — Toglie l'allenamento dal calendario */
+/** DELETE /api/v1/pianificazione/:id — Removes the workout from the calendar */
 export async function eliminaPianificato(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);

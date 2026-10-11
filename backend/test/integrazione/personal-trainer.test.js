@@ -1,5 +1,5 @@
-// Richiesta di iscrizione a un personal trainer: dati controllati prima del
-// database, messaggio che arriva al PT.
+// Request to sign up with a personal trainer: data checked before the
+// database, message that reaches the personal trainer.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';

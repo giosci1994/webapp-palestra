@@ -1,34 +1,34 @@
 // ============================================
-// GymMaster — Token opachi (refresh, verifica email, reset password)
+// GymMaster — Opaque tokens (refresh, email verification, password reset)
 // ============================================
 //
-// Il client riceve il token; il database ne conserva solo l'impronta. Cosi'
-// una copia del database (un backup, un dump) non contiene token funzionanti.
+// The client gets the token; the database keeps only its hash. So a copy
+// of the database (a backup, a dump) holds no working tokens.
 
 import crypto from 'crypto';
 
-/** Un token nuovo: casuale, esadecimale */
+/** A new token: random, hexadecimal */
 export function nuovoToken(byte = 32) {
   return crypto.randomBytes(byte).toString('hex');
 }
 
 /**
- * L'impronta da salvare e da cercare nel database. SHA-256 basta: il token e'
- * lungo e casuale, una funzione lenta come argon2 non aggiungerebbe nulla.
- * La migrazione 20261010_token_come_impronta calcola la stessa cosa in SQL.
+ * The hash to save and to look up in the database. SHA-256 is enough: the
+ * token is long and random, a slow function like argon2 would add nothing.
+ * The migration 20261010_token_come_impronta computes the same thing in SQL.
  */
 export function improntaToken(token) {
   return crypto.createHash('sha256').update(String(token)).digest('hex');
 }
 
 /**
- * Il refresh token che prende il posto di `token` alla rotazione.
+ * The refresh token that takes the place of `token` on rotation.
  *
- * E' derivato dal precedente con un segreto del server, non estratto a caso:
- * se il telefono ripete il rinnovo entro il periodo di grazia (la risposta si
- * era persa, due schede rinnovano insieme) gli si restituisce lo stesso
- * sostituto ricalcolandolo, perche' nel database c'e' solo la sua impronta.
- * Senza il segreto non si puo' prevedere.
+ * It is derived from the previous one with a server secret, not drawn at
+ * random: if the phone repeats the renewal within the grace period (the
+ * response was lost, two tabs renew at once) it gets the same replacement
+ * back by computing it again, because the database only holds its hash.
+ * Without the secret it cannot be predicted.
  */
 export function tokenSuccessivo(token) {
   const segreto = process.env.JWT_SEGRETO_REFRESH;

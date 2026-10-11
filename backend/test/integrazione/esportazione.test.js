@@ -1,5 +1,5 @@
-// GET /utenti/esportazione: tutti i dati dell'utente, nessun segreto, degli
-// altri utenti solo il nome.
+// GET /utenti/esportazione: all of the user's data, no secrets, and only the
+// name of other users.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -9,7 +9,7 @@ import {
 } from '../supporto/dati.js';
 import { giornoLocale } from '../../src/utils/date.js';
 
-// Valori che non devono mai comparire nel file
+// Values that must never appear in the file
 const SEGRETI = ['hash-segreto', 'reset-segreto', 'verifica-segreta', 'refresh-segreto', 'codice-segreto', 'credenziale-passkey', 'chiave-pubblica-passkey'];
 
 let server;
@@ -21,7 +21,7 @@ let panca;
 before(async () => { server = await avviaServer(); });
 after(() => server.chiudi());
 
-/** Un utente con un po' di tutto, un altro utente con cui chatta e un PT */
+/** A user with a bit of everything, another user they chat with, and a personal trainer */
 beforeEach(async () => {
   await svuotaDatabase();
   utente = await creaUtente({
@@ -87,7 +87,7 @@ beforeEach(async () => {
     data: { trainerId: trainer.id, destinatarioId: utente.id, titolo: 'Nuova scheda', contenuto: 'Da lunedi' }
   });
 
-  // Dati di Marco che nel file di Giulia non devono comparire
+  // Marco's data, which must not appear in Giulia's file
   const schedaAltro = await creaScheda(altro, [panca], { titolo: 'Scheda di Marco' });
   await creaSessione(altro, schedaAltro, { serie: [{ esercizio: panca, peso: 100, rep: 5 }] });
   await prisma.misurazioneCorporea.create({ data: { utenteId: altro.id, peso: 90 } });
@@ -173,7 +173,7 @@ describe('esportazione dei dati', () => {
     assert.deepEqual(dati.comePersonalTrainer.clienti.map(c => [c.cliente, c.notePT]), [['Giulia', 'nota privata del PT']]);
     assert.deepEqual(dati.comePersonalTrainer.appuntamenti.map(a => a.cliente), ['Giulia']);
     assert.deepEqual(dati.comePersonalTrainer.annunci.map(a => a.destinatario), ['Giulia']);
-    // Le schede e gli allenamenti di Giulia restano suoi
+    // Giulia's plans and workouts stay hers
     assert.deepEqual(dati.schede, []);
     assert.deepEqual(dati.allenamenti, []);
   });

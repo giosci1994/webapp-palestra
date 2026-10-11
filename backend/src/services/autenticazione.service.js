@@ -1,15 +1,15 @@
 // ============================================
-// GymMaster — Service Autenticazione
-// Logica di business per login, registrazione, token
+// GymMaster — Authentication service
+// Business logic for login, sign-up and tokens
 // ============================================
 //
-// I token opachi (refresh, verifica email, reset password) arrivano al client
-// in chiaro e nel database restano solo come impronta (utils/token.js).
+// Opaque tokens (refresh, email verification, password reset) reach the client
+// in plain text, while the database keeps only their fingerprint (utils/token.js).
 //
-// Ogni login apre una famiglia di refresh token: i token nati da quel login,
-// rotazione dopo rotazione. Per l'utente e' "un dispositivo collegato"; il suo
-// identificativo viaggia anche nell'access token, cosi' chiudere una sessione
-// ferma subito anche le richieste di quel dispositivo (middleware/autenticazione.js).
+// Every login opens a family of refresh tokens: the tokens born from that
+// login, rotation after rotation. For the user it is "a connected device"; its
+// id also travels in the access token, so closing a session immediately stops
+// that device's requests too (middleware/autenticazione.js).
 
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
@@ -21,7 +21,7 @@ import { emailConfigurata, inviaEmailVerifica, inviaEmailReset } from './email.s
 import { nuovoToken, improntaToken, tokenSuccessivo } from '../utils/token.js';
 import { attesaPer, registraErrore, azzeraTentativi } from '../utils/tentativiAccesso.js';
 
-// Configurazione Argon2id
+// Argon2id configuration
 const ARGON2_CONFIG = {
   type: argon2.argon2id,
   memoryCost: 65536,  // 64 MB
@@ -29,19 +29,19 @@ const ARGON2_CONFIG = {
   parallelism: 4
 };
 
-// Un refresh token rinnovato da meno di cosi' non ruota: si rilascia solo un
-// access token nuovo. Serve a rinnovaToken: i browser Chromium salvano i
-// cookie su disco ogni 30 secondi circa, e con rotazioni ad almeno 5 minuti
-// l'una dall'altra il cookie salvato puo' restare indietro al massimo di una.
+// A refresh token renewed less than this long ago does not rotate: only a new
+// access token is issued. Used by rinnovaToken: Chromium browsers save cookies
+// to disk about every 30 seconds, and with rotations at least 5 minutes apart
+// the saved cookie can fall behind by one rotation at most.
 const ROTAZIONE_MINIMA_MS = 5 * 60 * 1000;
 
 /**
- * Registra un nuovo utente nel sistema.
- * L'utente viene creato con stato ATTIVO (accesso immediato, nessun attrito).
- * Il ruolo Personal Trainer resta soggetto ad approvazione admin (ruoloRichiesto).
+ * Registers a new user in the system.
+ * The user is created with status ATTIVO (immediate access, no friction).
+ * The personal trainer role still needs admin approval (ruoloRichiesto).
  */
 export async function registraUtente({ email, password, nome, palestraId }) {
-  // Verifica se l'email esiste già
+  // Check whether the email already exists
   const utenteEsistente = await prisma.utente.findUnique({
     where: { email }
   });
@@ -50,15 +50,15 @@ export async function registraUtente({ email, password, nome, palestraId }) {
     throw new ErroreConflitto('Un account con questa email esiste già');
   }
 
-  // Hash della password con Argon2id
+  // Hash the password with Argon2id
   const passwordHash = await argon2.hash(password, ARGON2_CONFIG);
 
-  // Verifica email: attiva solo se l'invio email (Resend) è configurato
+  // Email verification: on only if email sending (Resend) is configured
   const verificaAttiva = emailConfigurata();
   const tokenVerifica = verificaAttiva ? nuovoToken() : null;
   const scadenzaVerifica = verificaAttiva ? new Date(Date.now() + 24 * 60 * 60 * 1000) : null;
 
-  // Crea l'utente
+  // Create the user
   const nuovoUtente = await prisma.utente.create({
     data: {
       email,
@@ -67,7 +67,7 @@ export async function registraUtente({ email, password, nome, palestraId }) {
       palestraId: palestraId || null,
       ruolo: 'UTENTE',
       stato: 'ATTIVO',
-      emailVerificata: !verificaAttiva, // se la verifica è attiva, parte da non-verificata
+      emailVerificata: !verificaAttiva, // if verification is on, it starts as not verified
       tokenVerificaEmail: tokenVerifica && improntaToken(tokenVerifica),
       tokenVerificaScadenza: scadenzaVerifica
     },
@@ -82,7 +82,7 @@ export async function registraUtente({ email, password, nome, palestraId }) {
     }
   });
 
-  // Invia l'email di verifica (un fallimento non blocca la registrazione: si può reinviare)
+  // Send the verification email (a failure does not block sign-up: it can be resent)
   if (verificaAttiva) {
     try {
       await inviaEmailVerifica(nuovoUtente, tokenVerifica);
@@ -97,7 +97,7 @@ export async function registraUtente({ email, password, nome, palestraId }) {
 }
 
 /**
- * Verifica un token email: marca l'email come verificata se il token è valido e non scaduto.
+ * Checks an email token: marks the email as verified if the token is valid and not expired.
  */
 export async function verificaEmailToken(token) {
   if (!token) throw new ErroreValidazione('Token mancante');
@@ -119,7 +119,7 @@ export async function verificaEmailToken(token) {
 }
 
 /**
- * Reinvia l'email di verifica. Risposta sempre generica (non rivela se l'email esiste).
+ * Resends the verification email. The answer is always generic (it does not reveal whether the email exists).
  */
 export async function reinviaVerifica(email) {
   if (!emailConfigurata() || !email) return;
@@ -127,7 +127,7 @@ export async function reinviaVerifica(email) {
     where: { email },
     select: { id: true, email: true, nome: true, emailVerificata: true }
   });
-  if (!utente || utente.emailVerificata) return; // niente da fare (non rivelare l'esistenza)
+  if (!utente || utente.emailVerificata) return; // nothing to do (do not reveal that it exists)
   const token = nuovoToken();
   await prisma.utente.update({
     where: { id: utente.id },
@@ -141,8 +141,8 @@ export async function reinviaVerifica(email) {
 }
 
 /**
- * Richiede il reset della password: genera un token e invia l'email con il link.
- * Risposta sempre generica (non rivela se l'email esiste).
+ * Requests a password reset: generates a token and sends the email with the link.
+ * The answer is always generic (it does not reveal whether the email exists).
  */
 export async function richiediResetPassword(email) {
   if (!emailConfigurata() || !email) return;
@@ -150,11 +150,11 @@ export async function richiediResetPassword(email) {
     where: { email },
     select: { id: true, email: true, nome: true }
   });
-  if (!utente) return; // non rivelare l'esistenza dell'account
+  if (!utente) return; // do not reveal that the account exists
   const token = nuovoToken();
   await prisma.utente.update({
     where: { id: utente.id },
-    data: { tokenResetPassword: improntaToken(token), tokenResetScadenza: new Date(Date.now() + 60 * 60 * 1000) } // 1 ora
+    data: { tokenResetPassword: improntaToken(token), tokenResetScadenza: new Date(Date.now() + 60 * 60 * 1000) } // 1 hour
   });
   try {
     await inviaEmailReset(utente, token);
@@ -164,7 +164,7 @@ export async function richiediResetPassword(email) {
 }
 
 /**
- * Reimposta la password tramite token valido e non scaduto.
+ * Resets the password with a valid, unexpired token.
  */
 export async function reimpostaPasswordConToken(token, nuovaPassword) {
   if (!token) throw new ErroreValidazione('Token mancante');
@@ -184,14 +184,14 @@ export async function reimpostaPasswordConToken(token, nuovaPassword) {
     where: { id: utente.id },
     data: { passwordHash, tokenResetPassword: null, tokenResetScadenza: null }
   });
-  // Invalida le sessioni esistenti per sicurezza, e i tentativi sbagliati di chi
-  // non ricordava la password non lo tengono piu' fuori
+  // Invalidate the existing sessions for safety, and the failed attempts of
+  // someone who forgot the password no longer keep them locked out
   await prisma.refreshToken.deleteMany({ where: { utenteId: utente.id } }).catch(() => {});
   azzeraTentativi(utente.email);
   logger.info({ utenteId: utente.id }, 'Password reimpostata via email');
 }
 
-// I campi dell'utente che servono ad aprire una sessione
+// The user fields needed to open a session
 export const CAMPI_ACCESSO = {
   id: true,
   email: true,
@@ -205,27 +205,27 @@ export const CAMPI_ACCESSO = {
 };
 
 /**
- * Effettua il login e restituisce access token + refresh token.
- * @param {{ dispositivo?: string|null }} [contesto] - da dove arriva il login
+ * Logs in and returns access token + refresh token.
+ * @param {{ dispositivo?: string|null }} [contesto] - where the login comes from
  */
 export async function loginUtente({ email, password, ricordaDispositivo = false }, { dispositivo = null } = {}) {
-  // Troppi errori di fila su questa email: si aspetta, anche con la password giusta
+  // Too many failures in a row on this email: wait, even with the right password
   controllaTentativi(email);
 
-  // Cerca l'utente
+  // Find the user
   const utente = await prisma.utente.findUnique({
     where: { email },
     select: { ...CAMPI_ACCESSO, passwordHash: true }
   });
 
   if (!utente) {
-    // Conta anche le email inesistenti: contarle solo per gli iscritti lo rivelerebbe
+    // Count unknown emails too: counting only members' emails would reveal them
     registraErrore(email);
-    // Messaggio generico per sicurezza (non rivela se l'email esiste)
+    // Generic message for safety (does not reveal whether the email exists)
     throw new ErroreNonAutenticato('Credenziali non valide');
   }
 
-  // Verifica la password
+  // Check the password
   const passwordValida = await argon2.verify(utente.passwordHash, password);
 
   if (!passwordValida) {
@@ -240,7 +240,7 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
   return sessione;
 }
 
-/** 429 se l'email e' bloccata per troppi errori (utils/tentativiAccesso.js) */
+/** 429 if the email is locked after too many failures (utils/tentativiAccesso.js) */
 export function controllaTentativi(email) {
   const attesa = attesaPer(email);
   if (attesa > 0) {
@@ -252,13 +252,13 @@ export function controllaTentativi(email) {
 }
 
 /**
- * Apre una sessione per un utente gia' riconosciuto (password o passkey):
- * controlla che possa entrare, poi crea la famiglia di refresh token e
- * l'access token.
- * @param {object} utente - con i campi di CAMPI_ACCESSO
+ * Opens a session for a user already recognized (password or passkey):
+ * checks that they may sign in, then creates the refresh token family and
+ * the access token.
+ * @param {object} utente - with the fields of CAMPI_ACCESSO
  */
 export async function apriSessione(utente, { ricordaDispositivo = false, dispositivo = null } = {}) {
-  // Verifica lo stato dell'account
+  // Check the account status
   if (utente.stato === 'BANNATO') {
     throw new ErroreNonAutenticato('Il tuo account è stato sospeso');
   }
@@ -267,12 +267,12 @@ export async function apriSessione(utente, { ricordaDispositivo = false, disposi
     throw new ErroreNonAutenticato('Il tuo account è in attesa di approvazione da parte dell\'amministratore');
   }
 
-  // Email non verificata (solo se la verifica è attiva): blocca l'accesso
+  // Email not verified (only if verification is on): block access
   if (utente.emailVerificata === false) {
     throw new ErroreNonAutenticato('Verifica la tua email prima di accedere. Controlla la posta (anche lo spam).');
   }
 
-  // Genera i token — durata estesa se "ricorda dispositivo" attivo
+  // Generate the tokens — longer lifetime if "remember device" is on
   const durataGiorni = ricordaDispositivo ? 30 : (parseInt(process.env.JWT_SCADENZA_REFRESH) || 7);
   const famiglia = crypto.randomUUID();
   const refreshToken = nuovoToken(40);
@@ -282,7 +282,7 @@ export async function apriSessione(utente, { ricordaDispositivo = false, disposi
   return {
     accessToken,
     refreshToken,
-    durataGiorni, // Propagato al controller per impostare maxAge cookie
+    durataGiorni, // Passed on to the controller to set the cookie maxAge
     utente: {
       id: utente.id,
       email: utente.email,
@@ -296,21 +296,22 @@ export async function apriSessione(utente, { ricordaDispositivo = false, disposi
 }
 
 /**
- * Rinnova l'access token usando un refresh token valido.
+ * Renews the access token using a valid refresh token.
  *
- * Il refresh token ruota a ogni rinnovo (salvo ROTAZIONE_MINIMA_MS): il
- * sostituto e' derivato dal token presentato (tokenSuccessivo). Un token gia'
- * sostituito puo' tornare per due ragioni:
- * - il dispositivo e' rimasto indietro di una rotazione: la risposta si e'
- *   persa, due schede hanno rinnovato insieme, oppure il browser e' stato
- *   chiuso prima di salvare su disco il cookie nuovo. Il sostituto non e' mai
- *   stato usato: gli si ridà, ricalcolandolo, anche giorni dopo;
- * - qualcun altro usa la stessa sessione: il sostituto e' gia' stato usato a
- *   sua volta, e un dispositivo non resta indietro di due rotazioni. Si
- *   chiudono tutte le sessioni dell'utente.
+ * The refresh token rotates at every renewal (except within
+ * ROTAZIONE_MINIMA_MS): the replacement is derived from the presented token
+ * (tokenSuccessivo). A token that was already replaced can come back for two
+ * reasons:
+ * - the device fell behind by one rotation: the response got lost, two tabs
+ *   renewed at the same time, or the browser was closed before saving the
+ *   new cookie to disk. The replacement was never used: it is given back,
+ *   recomputed, even days later;
+ * - someone else is using the same session: the replacement was already used
+ *   in turn, and a device does not fall behind by two rotations. All the
+ *   user's sessions are closed.
  */
 export async function rinnovaToken(tokenRefresh) {
-  // Cerca il refresh token nel database
+  // Find the refresh token in the database
   const tokenSalvato = await prisma.refreshToken.findUnique({
     where: { token: improntaToken(tokenRefresh) },
     include: {
@@ -334,7 +335,7 @@ export async function rinnovaToken(tokenRefresh) {
   const successivo = tokenSuccessivo(tokenRefresh);
 
   if (tokenSalvato.revocato) {
-    // Indietro di una rotazione: il sostituto, mai usato, e' ancora attivo
+    // One rotation behind: the replacement, never used, is still active
     const sostituto = await prisma.refreshToken.findUnique({ where: { token: improntaToken(successivo) } });
     if (sostituto && !sostituto.revocato && sostituto.scadenza > new Date()) {
       if (tokenSalvato.utente.stato !== 'ATTIVO') throw new ErroreNonAutenticato('Account non attivo');
@@ -345,7 +346,7 @@ export async function rinnovaToken(tokenRefresh) {
       };
     }
 
-    // Indietro di due: la sessione la usa anche qualcun altro, si revoca tutto
+    // Two behind: someone else is using the session too, revoke everything
     await prisma.refreshToken.updateMany({
       where: { utenteId: tokenSalvato.utenteId },
       data: { revocato: true }
@@ -362,11 +363,11 @@ export async function rinnovaToken(tokenRefresh) {
     throw new ErroreNonAutenticato('Account non attivo');
   }
 
-  // Propaga durata originale del token
+  // Carry over the token's original lifetime
   const durataGiorni = tokenSalvato.durataGiorni || (parseInt(process.env.JWT_SCADENZA_REFRESH) || 7);
   const { famiglia, dispositivo, iniziataIl } = tokenSalvato;
 
-  // Rinnovato da poco: niente rotazione, il client tiene il suo token
+  // Renewed recently: no rotation, the client keeps its token
   if (Date.now() - tokenSalvato.creato.getTime() < ROTAZIONE_MINIMA_MS) {
     return {
       accessToken: generaAccessToken(tokenSalvato.utente, famiglia),
@@ -375,7 +376,7 @@ export async function rinnovaToken(tokenRefresh) {
     };
   }
 
-  // Rotazione: il token presentato e' sostituito dal suo successivo
+  // Rotation: the presented token is replaced by its successor
   await prisma.refreshToken.update({
     where: { id: tokenSalvato.id },
     data: { revocato: true }
@@ -384,8 +385,8 @@ export async function rinnovaToken(tokenRefresh) {
   try {
     await creaRefreshToken({ token: successivo, utenteId: tokenSalvato.utenteId, durataGiorni, famiglia, dispositivo, iniziataIl });
   } catch (errore) {
-    // Due rinnovi simultanei con lo stesso token: l'altro ha gia' creato il
-    // sostituto, che e' lo stesso
+    // Two simultaneous renewals with the same token: the other one already
+    // created the replacement, which is the same
     if (errore.code !== 'P2002') throw errore;
   }
 
@@ -397,9 +398,8 @@ export async function rinnovaToken(tokenRefresh) {
 }
 
 /**
- * Logout: chiude la sessione di questo dispositivo. La famiglia sparisce del
- * tutto, cosi' anche un eventuale token rubato da quella sessione smette di
- * funzionare.
+ * Logout: closes this device's session. The family disappears entirely, so
+ * any token stolen from that session also stops working.
  */
 export async function logoutUtente(tokenRefresh) {
   if (!tokenRefresh) return;
@@ -416,8 +416,8 @@ export async function logoutUtente(tokenRefresh) {
 }
 
 /**
- * Le sessioni aperte dell'utente, una per dispositivo, quella corrente per prima.
- * @param {string|null} famigliaCorrente - dall'access token della richiesta
+ * The user's open sessions, one per device, with the current one first.
+ * @param {string|null} famigliaCorrente - from the request's access token
  */
 export async function elencaSessioni(utenteId, famigliaCorrente) {
   const attivi = await prisma.refreshToken.findMany({
@@ -426,8 +426,8 @@ export async function elencaSessioni(utenteId, famigliaCorrente) {
     select: { famiglia: true, dispositivo: true, iniziataIl: true, creato: true, scadenza: true }
   });
 
-  // Due rinnovi simultanei possono lasciare due token attivi nella stessa
-  // famiglia: si tiene il piu' recente
+  // Two simultaneous renewals can leave two active tokens in the same
+  // family: keep the most recent one
   const viste = new Set();
   return attivi
     .filter(t => !viste.has(t.famiglia) && viste.add(t.famiglia))
@@ -442,7 +442,7 @@ export async function elencaSessioni(utenteId, famigliaCorrente) {
     .sort((a, b) => b.corrente - a.corrente);
 }
 
-/** Chiude la sessione di un altro dispositivo dell'utente */
+/** Closes the session of another of the user's devices */
 export async function chiudiSessione(utenteId, famiglia) {
   const { count } = await prisma.refreshToken.deleteMany({ where: { utenteId, famiglia: String(famiglia) } });
   if (count === 0) throw new ErroreNonTrovato('Sessione non trovata');
@@ -450,9 +450,9 @@ export async function chiudiSessione(utenteId, famiglia) {
 }
 
 /**
- * Chiude tutte le sessioni dell'utente tranne quella corrente. Senza una
- * sessione corrente (un access token di prima delle famiglie) le chiude tutte.
- * @returns {Promise<number>} quante righe sono state rimosse
+ * Closes all of the user's sessions except the current one. Without a
+ * current session (an access token from before families) it closes them all.
+ * @returns {Promise<number>} how many rows were removed
  */
 export async function chiudiAltreSessioni(utenteId, famigliaCorrente) {
   const { count } = await prisma.refreshToken.deleteMany({
@@ -462,7 +462,7 @@ export async function chiudiAltreSessioni(utenteId, famigliaCorrente) {
   return count;
 }
 
-// --- Funzioni Helper ---
+// --- Helper functions ---
 
 function generaAccessToken(utente, famiglia) {
   return jwt.sign(
@@ -477,7 +477,7 @@ function generaAccessToken(utente, famiglia) {
   );
 }
 
-/** Salva l'impronta di un refresh token e fa pulizia dei vecchi dell'utente */
+/** Saves a refresh token's fingerprint and cleans up the user's old ones */
 async function creaRefreshToken({ token, utenteId, durataGiorni, famiglia, dispositivo, iniziataIl }) {
   const scadenza = new Date();
   scadenza.setDate(scadenza.getDate() + durataGiorni);
@@ -494,10 +494,10 @@ async function creaRefreshToken({ token, utenteId, durataGiorni, famiglia, dispo
     }
   });
 
-  // Pulizia dei token dell'utente: quelli scaduti, e quelli sostituiti delle
-  // sessioni ormai chiuse. Nelle sessioni aperte i token sostituiti restano
-  // fino alla scadenza: servono a riconoscere chi e' rimasto indietro di una
-  // rotazione e chi di due (rinnovaToken).
+  // Clean up the user's tokens: the expired ones, and the replaced ones of
+  // sessions already closed. In open sessions the replaced tokens stay until
+  // they expire: they tell apart who fell behind by one rotation and who by
+  // two (rinnovaToken).
   const sessioniAperte = await prisma.refreshToken.findMany({
     where: { utenteId, revocato: false },
     distinct: ['famiglia'],

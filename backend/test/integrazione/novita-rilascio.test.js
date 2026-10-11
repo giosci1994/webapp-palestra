@@ -1,6 +1,6 @@
-// Al rilascio di una versione le sue storie entrano nella tabella novita, una
-// volta sola: ripetere il rilascio non le duplica, e le versioni passate non
-// tornano anche se dal pannello admin sono state cancellate.
+// When a version is released its stories enter the novita table, once only:
+// repeating the release does not duplicate them, and past versions do not come
+// back even if they were deleted from the admin panel.
 import { describe, it, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
