@@ -7,6 +7,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { useAuth } from '../contesti/AuthContesto.jsx';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
+import { localeCorrente } from '../i18n/index.js';
 import { accoda, inviaOra, togliDallaCoda } from '../utils/codaSerie.js';
 import { useCodaSerie, useVoceInCoda } from '../hooks/useCodaSerie.js';
 import { entro } from '../utils/push.js';
@@ -21,16 +24,16 @@ import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js'
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
-import { formattaPeso, formattaData, nomeEsercizio} from '../utils/formattatori.js';
+import { formattaPeso, formattaData, formattaNumero, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/** The load proposal by outcome: label and colors of the card */
+/** The load proposal by outcome: label (a translation key) and colors of the card */
 const STILE_PROPOSTA = {
-  sali: { etichetta: '📈 Proposta per oggi · si sale', colore: 'var(--successo)', bordo: 'var(--successo)', sfondo: 'var(--successo-dim)' },
-  resta: { etichetta: '🎯 Proposta per oggi', colore: 'var(--accent)', bordo: 'var(--accent-glow)', sfondo: 'var(--accent-dim)' },
-  scarico: { etichetta: '🔄 Proposta per oggi · scarico', colore: 'var(--avviso)', bordo: 'var(--avviso)', sfondo: 'var(--bg-terziario)' }
+  sali: { etichetta: 'workoutLive.proposta.sali', colore: 'var(--successo)', bordo: 'var(--successo)', sfondo: 'var(--successo-dim)' },
+  resta: { etichetta: 'workoutLive.proposta.resta', colore: 'var(--accent)', bordo: 'var(--accent-glow)', sfondo: 'var(--accent-dim)' },
+  scarico: { etichetta: 'workoutLive.proposta.scarico', colore: 'var(--avviso)', bordo: 'var(--avviso)', sfondo: 'var(--bg-terziario)' }
 };
-const kg = n => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
+const kg = n => n.toLocaleString(localeCorrente(), { maximumFractionDigits: 2 });
 
 /** How long "Termina" (finish) waits for the queue to send, before showing the summary offline */
 const ATTESA_CHIUSURA_MS = 8000;
@@ -40,6 +43,7 @@ const CODA_FERMA_MS = 3000;
 const perLaCoda = s => ({ id: s.id, schedaId: s.schedaId, dataInizio: s.dataInizio });
 
 export default function WorkoutLive() {
+  const { t } = useLingua();
   const { id } = useParams();
   const location = useLocation();
   const naviga = useNavigate();
@@ -281,8 +285,8 @@ export default function WorkoutLive() {
   const prossimoIdx = prossimoEsercizioNonCompletato(esercizioIdx + 1);
 
   // Time calculation
-  const oreMinuti = oraAttuale.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-  const dataOdierna = oraAttuale.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
+  const oreMinuti = oraAttuale.toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' });
+  const dataOdierna = oraAttuale.toLocaleDateString(localeCorrente(), { weekday: 'short', day: 'numeric', month: 'short' });
   
   const millisecondiTrascorsi = Math.max(0, oraAttuale.getTime() - tempoInizio);
   const oreTrascorsi = Math.floor(millisecondiTrascorsi / 3600000);
@@ -438,8 +442,8 @@ export default function WorkoutLive() {
 
     // Rest: the one of the exercise just finished, even if we have already moved on
     const prossimo = passaAvanti
-      ? `${nomeEsercizio(esercizi[prossimoIdx].esercizio)} · serie 1`
-      : `${nomeEsercizio(esercizioAttuale.esercizio)} · serie ${serieCorrente + 1}`;
+      ? t('workoutLive.recupero.notifica', { nome: nomeEsercizio(esercizi[prossimoIdx].esercizio), numero: 1 })
+      : t('workoutLive.recupero.notifica', { nome: nomeEsercizio(esercizioAttuale.esercizio), numero: serieCorrente + 1 });
     if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo);
     else fermaRecupero();
   };
@@ -588,29 +592,29 @@ export default function WorkoutLive() {
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                     className="glass-card p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">🎉</div>
-          <h1 className="text-2xl font-bold mb-2">Allenamento completato!</h1>
+          <h1 className="text-2xl font-bold mb-2">{t('workoutLive.riepilogo.titolo')}</h1>
           {chiusura.inCoda && (
             <p className="text-xs text-[var(--testo-secondario)] px-3 py-2 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
-              📴 Sei senza rete: l'allenamento è salvato sul telefono e lo invio appena torna la connessione. I record li trovi poi nelle Statistiche.
+              {t('workoutLive.riepilogo.senzaRete')}
             </p>
           )}
           <div className="grid grid-cols-2 gap-4 my-6">
             <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
               <p className="text-2xl font-bold testo-gradient">{serieCompletate.filter(diLavoro).length}</p>
-              <p className="text-xs text-[var(--testo-terziario)]">Serie completate</p>
+              <p className="text-xs text-[var(--testo-terziario)]">{t('workoutLive.riepilogo.serieCompletate')}</p>
             </div>
             <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
               <p className="text-2xl font-bold testo-gradient">
                 {formattaPeso(volumeDi(serieCompletate))} kg
               </p>
-              <p className="text-xs text-[var(--testo-terziario)]">Volume totale</p>
+              <p className="text-xs text-[var(--testo-terziario)]">{t('workoutLive.riepilogo.volumeTotale')}</p>
             </div>
           </div>
 
           {/* New records */}
           {nuoviRecord.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-bold text-[var(--successo)] mb-2">🏆 Nuovi Record!</h3>
+              <h3 className="text-lg font-bold text-[var(--successo)] mb-2">{t('workoutLive.riepilogo.nuoviRecord')}</h3>
               {nuoviRecord.map(r => (
                 <div key={r.id} className="flex items-center justify-between p-2 rounded bg-[var(--successo-dim)]">
                   <span className="text-sm">{nomeEsercizio(r.esercizio)}</span>
@@ -621,18 +625,18 @@ export default function WorkoutLive() {
           )}
 
           <button onClick={() => naviga('/dashboard')} className="btn-primario w-full">
-            Torna alla Dashboard
+            {t('workoutLive.riepilogo.tornaDashboard')}
           </button>
           {finitoAllUltimaSerie ? (
             <p className="text-xs text-[var(--testo-terziario)] mt-3">
-              Era rimasto aperto: l'ho fatto finire all'ultima serie, alle {finitoAllUltimaSerie.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.
+              {t('workoutLive.riepilogo.rimastoAperto', { ora: finitoAllUltimaSerie.toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
             </p>
           ) : (
             <>
               <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
-                {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+                {riprendendo ? t('workoutLive.unAttimo') : t('workoutLive.riepilogo.riprendi')}
               </button>
-              <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro {RIAPERTURA_MAX_MINUTI} minuti, anche dallo Storico.</p>
+              <p className="text-[11px] text-[var(--testo-terziario)] mt-2">{t('workoutLive.riepilogo.riprendiEntro', { minuti: RIAPERTURA_MAX_MINUTI })}</p>
             </>
           )}
         </motion.div>
@@ -644,8 +648,8 @@ export default function WorkoutLive() {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="glass-card p-8 text-center">
-          <p className="text-[var(--testo-secondario)]">Nessun esercizio nella scheda</p>
-          <button onClick={() => naviga('/schede')} className="btn-primario mt-4">Torna alle schede</button>
+          <p className="text-[var(--testo-secondario)]">{t('workoutLive.nessunEsercizio')}</p>
+          <button onClick={() => naviga('/schede')} className="btn-primario mt-4">{t('workoutLive.tornaAlleSchede')}</button>
         </div>
       </div>
     );
@@ -666,21 +670,21 @@ export default function WorkoutLive() {
             onClick={() => setMostraSelettoreEsercizi(true)}
             className="flex items-center gap-1 text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors bg-[var(--accent-dim)] px-2 py-1 rounded-[var(--raggio-sm)]"
           >
-            Esercizio {esercizioIdx + 1}/{esercizi.length} ▾
+            {t('workoutLive.barra.esercizioNumero', { numero: esercizioIdx + 1, totale: esercizi.length })}
           </button>
         </div>
         <div className="flex items-center gap-2">
-          {wakeLock.attivo && <span className="text-xs text-[var(--successo)]">🔒 Schermo attivo</span>}
+          {wakeLock.attivo && <span className="text-xs text-[var(--successo)]">{t('workoutLive.barra.schermoAttivo')}</span>}
           <button onClick={completaAllenamento} disabled={chiudendo}
                   className="text-sm font-medium text-[var(--pericolo)] px-3 py-1.5 rounded-[var(--raggio-md)] hover:bg-[var(--pericolo-dim)] disabled:opacity-60">
-            {chiudendo ? 'Un attimo...' : 'Termina'}
+            {chiudendo ? t('workoutLive.unAttimo') : t('workoutLive.barra.termina')}
           </button>
         </div>
       </div>
 
       {codaFerma && (
         <p className="px-4 py-2 text-xs text-center text-[var(--testo-secondario)] bg-[var(--bg-terziario)] border-b border-[var(--bordo)]">
-          📴 Senza rete: {coda.quante === 1 ? '1 serie salvata' : `${coda.quante} serie salvate`} sul telefono, le invio appena torna la connessione
+          {t('workoutLive.barra.codaFerma', { count: coda.quante })}
         </p>
       )}
 
@@ -690,15 +694,15 @@ export default function WorkoutLive() {
           <div className="max-w-lg mx-auto rounded-[var(--raggio-md)] border border-[var(--accent)]/40 bg-[var(--bg-secondario)] shadow-lg overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Recupero</p>
-                <p className="text-xs text-[var(--testo-secondario)] truncate">Prossimo: {nomeEsercizio(esercizioAttuale.esercizio)}</p>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{t('workoutLive.recupero.titolo')}</p>
+                <p className="text-xs text-[var(--testo-secondario)] truncate">{t('workoutLive.recupero.prossimo', { nome: nomeEsercizio(esercizioAttuale.esercizio) })}</p>
               </div>
-              <p className="text-3xl font-extrabold tabular-nums leading-none testo-gradient" role="timer" aria-label={`Recupero: ${formattaTempo(timer.secondiRimasti)}`}>
+              <p className="text-3xl font-extrabold tabular-nums leading-none testo-gradient" role="timer" aria-label={t('workoutLive.recupero.ariaTimer', { tempo: formattaTempo(timer.secondiRimasti) })}>
                 {formattaTempo(timer.secondiRimasti)}
               </p>
               <button onClick={fermaRecupero}
                       className="text-xs font-medium text-[var(--accent)] px-3 py-1.5 rounded-full border border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors shrink-0">
-                Salta
+                {t('workoutLive.recupero.salta')}
               </button>
             </div>
             <div className="h-1 bg-[var(--bg-terziario)]">
@@ -722,7 +726,7 @@ export default function WorkoutLive() {
           {/* Right: Workout stopwatch */}
           <div className="flex flex-col items-end">
             <span className="text-2xl font-bold text-[var(--accent)] tabular-nums leading-none">{cronometro}</span>
-            <span className="text-[10px] text-[var(--accent)] opacity-80 uppercase tracking-wider mt-1">Tempo Allenamento</span>
+            <span className="text-[10px] text-[var(--accent)] opacity-80 uppercase tracking-wider mt-1">{t('workoutLive.tempoAllenamento')}</span>
           </div>
         </div>
 
@@ -731,17 +735,17 @@ export default function WorkoutLive() {
                     className="text-center py-2">
           <h2 className="text-xl md:text-2xl font-bold">{nomeEsercizio(esercizioAttuale.esercizio)}</h2>
           <p className="text-sm text-[var(--testo-terziario)] mt-1">
-            {esercizioAttuale.esercizio.gruppoMuscoloPrimario}
+            {nomeGruppo(esercizioAttuale.esercizio.gruppoMuscoloPrimario)}
             {isCardio
               ? (() => {
                   const p = [];
                   if (esercizioAttuale.durataMinuti) p.push(`${esercizioAttuale.durataMinuti} min`);
                   if (esercizioAttuale.velocitaKmh != null) p.push(`${esercizioAttuale.velocitaKmh} km/h`);
-                  if (esercizioAttuale.inclinazione != null) p.push(`incl ${esercizioAttuale.inclinazione}%`);
-                  if (esercizioAttuale.livelloResistenza != null) p.push(`liv ${esercizioAttuale.livelloResistenza}`);
+                  if (esercizioAttuale.inclinazione != null) p.push(t('workoutLive.esercizio.inclinazione', { valore: esercizioAttuale.inclinazione }));
+                  if (esercizioAttuale.livelloResistenza != null) p.push(t('workoutLive.esercizio.livello', { valore: esercizioAttuale.livelloResistenza }));
                   return p.length ? ' · ' + p.join(' · ') : '';
                 })()
-              : ` · ${esercizioAttuale.serieTarget} × ${esercizioAttuale.repTarget} · ${esercizioAttuale.recuperoSecondi}s rec.`}
+              : ` · ${t('workoutLive.esercizio.riepilogoSerie', { serie: esercizioAttuale.serieTarget, rep: esercizioAttuale.repTarget, secondi: esercizioAttuale.recuperoSecondi })}`}
           </p>
         </motion.div>
 
@@ -764,7 +768,7 @@ export default function WorkoutLive() {
                 className="workout-video-toggle"
               >
                 <span className="workout-video-toggle-icona">🎬</span>
-                <span>{mostraVideo ? 'Nascondi video' : 'Vedi come si esegue'}</span>
+                <span>{mostraVideo ? t('workoutLive.video.nascondi') : t('workoutLive.video.mostra')}</span>
                 <span className="workout-video-toggle-freccia">{mostraVideo ? '▲' : '▼'}</span>
               </button>
               <AnimatePresence>
@@ -802,11 +806,13 @@ export default function WorkoutLive() {
                      s.tipo === 'RISCALDAMENTO' ? 'bg-[var(--bg-terziario)]' : 'bg-[var(--successo-dim)]'
                    } ${s.tipo === 'DROP' ? 'ml-6' : ''}`}>
                 <span className={`text-sm font-medium ${s.tipo === 'RISCALDAMENTO' ? 'text-[var(--testo-secondario)]' : 'text-[var(--successo)]'}`}>
-                  {s.tipo === 'RISCALDAMENTO' ? '🔥 Riscaldamento' : s.tipo === 'DROP' ? '↳ Drop' : `Serie ${s.serieNumero ?? i + 1} ✓`}
+                  {s.tipo === 'RISCALDAMENTO'
+                    ? t('workoutLive.serieFatte.riscaldamento')
+                    : s.tipo === 'DROP' ? t('workoutLive.drop.etichetta') : t('workoutLive.serieFatte.serie', { numero: s.serieNumero ?? i + 1 })}
                 </span>
                 <span className="text-sm">
                   {s.durataMinuti ? (
-                    `${s.durataMinuti} min ${s.livelloResistenza ? `(Liv. ${s.livelloResistenza})` : ''}`
+                    `${s.durataMinuti} min ${s.livelloResistenza ? t('workoutLive.serieFatte.livello', { livello: s.livelloResistenza }) : ''}`
                   ) : (
                     `${formattaPeso(s.pesoEffettivo)} kg × ${s.repEffettive}`
                   )}
@@ -825,7 +831,7 @@ export default function WorkoutLive() {
               exit={{ opacity: 0, scale: 0.9 }}
               className="glass-card p-6 text-center"
             >
-              <p className="text-xs text-[var(--testo-terziario)] mb-2">RECUPERO</p>
+              <p className="text-xs text-[var(--testo-terziario)] mb-2">{t('workoutLive.recupero.titoloMaiuscolo')}</p>
               <p className="text-[120px] font-extrabold testo-gradient mb-4 leading-none tabular-nums tracking-tighter">
                 {formattaTempo(timer.secondiRimasti)}
               </p>
@@ -838,21 +844,22 @@ export default function WorkoutLive() {
               </div>
               <button onClick={fermaRecupero}
                       className="mt-4 text-sm text-[var(--accent)] font-medium px-4 py-1.5 rounded-full border border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors">
-                Salta recupero →
+                {t('workoutLive.recupero.saltaRecupero')}
               </button>
               {/* With the screen locked the timer stops: say so, and where to fix it */}
               {push.caricato && push.supportate && push.serverAttivo && !push.iscritto && push.permesso !== 'denied' && (
                 <p className="mt-3 text-[11px] text-[var(--testo-terziario)]">
-                  A schermo bloccato non suona: <Link to="/profilo?tab=notifiche" className="text-[var(--accent)] underline">attiva le notifiche</Link> per l'avviso di fine recupero.
+                  <Testo t="workoutLive.recupero.schermoBloccato"
+                         componenti={{ link: <Link to="/profilo?tab=notifiche" className="text-[var(--accent)] underline" /> }} />
                 </p>
               )}
               <div className="mt-4 pt-3 border-t border-[var(--bordo)]">
                 <p className="text-xs text-[var(--testo-secondario)] font-semibold uppercase tracking-wider">
                   {serieCorrente <= esercizioAttuale.serieTarget 
-                    ? `Prossima: Serie ${serieCorrente} di ${esercizioAttuale.serieTarget}`
+                    ? t('workoutLive.recupero.prossimaSerie', { numero: serieCorrente, totale: esercizioAttuale.serieTarget })
                     : (prossimoIdx !== -1
-                        ? `Prossimo Esercizio: ${nomeEsercizio(esercizi[prossimoIdx].esercizio)}`
-                        : `Prossima Azione: Fine Allenamento`)}
+                        ? t('workoutLive.recupero.prossimoEsercizio', { nome: nomeEsercizio(esercizi[prossimoIdx].esercizio) })
+                        : t('workoutLive.recupero.fineAllenamento'))}
                 </p>
               </div>
             </motion.div>
@@ -863,7 +870,7 @@ export default function WorkoutLive() {
         {(!timerAttivo || timer.secondiRimasti === 0 || recuperoInCima) && serieCorrente <= esercizioAttuale.serieTarget && (
           <div className="flex flex-col gap-3">
             <p className="text-sm font-semibold text-center text-[var(--testo-secondario)]">
-              Serie {serieCorrente} / {esercizioAttuale.serieTarget}
+              {t('workoutLive.serieCorrente', { numero: serieCorrente, totale: esercizioAttuale.serieTarget })}
             </p>
 
             {/* Today's proposal: up, same or deload, and why */}
@@ -876,7 +883,7 @@ export default function WorkoutLive() {
               >
                 <span className="min-w-0">
                   <span className="block text-[11px] font-semibold" style={{ color: STILE_PROPOSTA[proposta.esito].colore }}>
-                    {STILE_PROPOSTA[proposta.esito].etichetta}
+                    {t(STILE_PROPOSTA[proposta.esito].etichetta)}
                   </span>
                   <span className="block text-base font-bold tabular-nums">
                     {kg(proposta.peso)} kg × {proposta.ripetizioni.min === proposta.ripetizioni.max
@@ -885,7 +892,7 @@ export default function WorkoutLive() {
                   </span>
                   <span className="block text-[11px] leading-snug text-[var(--testo-secondario)] mt-0.5">{proposta.motivo}</span>
                 </span>
-                <span className="text-xs font-bold text-[var(--accent)] shrink-0">Usa</span>
+                <span className="text-xs font-bold text-[var(--accent)] shrink-0">{t('workoutLive.usa')}</span>
               </button>
             )}
 
@@ -898,15 +905,17 @@ export default function WorkoutLive() {
               >
                 <span className="min-w-0">
                   <span className="block text-[11px] text-[var(--testo-terziario)]">
-                    Ultima volta · {formattaData(caricoPrecedente.data)}
+                    {t('workoutLive.riferimento.ultimaVolta', { data: formattaData(caricoPrecedente.data) })}
                   </span>
                   <span className="block text-base font-bold tabular-nums">
                     {riferimentoCardio
-                      ? `${riferimento.durataMinuti} min${riferimento.livelloResistenza ? ` · liv. ${riferimento.livelloResistenza}` : ''}`
-                      : `${riferimento.pesoEffettivo > 0 ? `${formattaPeso(riferimento.pesoEffettivo)} kg` : 'Corpo libero'} × ${riferimento.repEffettive}`}
+                      ? (riferimento.livelloResistenza
+                          ? t('workoutLive.riferimento.minutiLivello', { minuti: riferimento.durataMinuti, livello: riferimento.livelloResistenza })
+                          : t('workoutLive.riferimento.minuti', { minuti: riferimento.durataMinuti }))
+                      : `${riferimento.pesoEffettivo > 0 ? `${formattaPeso(riferimento.pesoEffettivo)} kg` : t('workoutLive.riferimento.corpoLibero')} × ${riferimento.repEffettive}`}
                   </span>
                 </span>
-                <span className="text-xs font-bold text-[var(--accent)] shrink-0">Usa</span>
+                <span className="text-xs font-bold text-[var(--accent)] shrink-0">{t('workoutLive.usa')}</span>
               </button>
             )}
 
@@ -914,7 +923,7 @@ export default function WorkoutLive() {
             {rampa.length > 0 && (
               <div className="px-3 py-2.5 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)]">
                 <p className="text-[11px] text-[var(--testo-terziario)] mb-2">
-                  🔥 Riscaldamento verso {kg(pesoDiLavoro)} kg · tocca un passo quando l'hai fatto
+                  {t('workoutLive.rampa', { peso: kg(pesoDiLavoro) })}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {rampa.map(passo => (
@@ -932,13 +941,13 @@ export default function WorkoutLive() {
               {isCardio ? (
                 <>
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Durata (minuti)</label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">{t('workoutLive.campi.durata')}</label>
                     <input type="number" value={form.minuti} onChange={e => setForm(p => ({...p, minuti: e.target.value}))}
                            className="campo-input text-center text-3xl font-bold py-5" placeholder="0"
                            inputMode="numeric" min="0" />
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Resistenza / Liv.</label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">{t('workoutLive.campi.resistenza')}</label>
                     <input type="number" value={form.resistenza} onChange={e => setForm(p => ({...p, resistenza: e.target.value}))}
                            className="campo-input text-center text-3xl font-bold py-5" placeholder="0"
                            inputMode="decimal" step="0.5" min="0" />
@@ -947,13 +956,13 @@ export default function WorkoutLive() {
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Peso (kg)</label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">{t('workoutLive.campi.peso')}</label>
                     <input type="number" value={form.peso} onChange={e => setForm(p => ({...p, peso: e.target.value}))}
                            className="campo-input text-center text-3xl font-bold py-5" placeholder={proposta ? String(proposta.peso) : riferimento && !riferimentoCardio ? String(riferimento.pesoEffettivo) : '0'}
                            inputMode="decimal" step="0.5" min="0" />
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">Ripetizioni</label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1 text-center">{t('workoutLive.campi.ripetizioni')}</label>
                     <input type="number" value={form.rep} onChange={e => setForm(p => ({...p, rep: e.target.value}))}
                            className="campo-input text-center text-3xl font-bold py-5" placeholder={riferimento && !riferimentoCardio ? String(riferimento.repEffettive) : '0'}
                            inputMode="numeric" min="0" />
@@ -964,9 +973,10 @@ export default function WorkoutLive() {
 
             {!isCardio && dischi && (
               <p className="text-xs text-center text-[var(--testo-secondario)] -mt-1">
-                🏋️ Per lato: <strong className="text-[var(--testo-primario)]">{descriviDischi(dischi.perLato)}</strong>
-                <span className="text-[var(--testo-terziario)]"> · {bilanciere.nome} {bilanciere.peso} kg</span>
-                {dischi.mancano > 0 && <span className="text-[var(--avviso)]"> · mancano {String(dischi.mancano).replace('.', ',')} kg</span>}
+                <Testo t="workoutLive.dischi.perLato" valori={{ dischi: descriviDischi(dischi.perLato) }}
+                       componenti={{ b: <strong className="text-[var(--testo-primario)]" /> }} />
+                <span className="text-[var(--testo-terziario)]"> · {t(bilanciere.nome)} {bilanciere.peso} kg</span>
+                {dischi.mancano > 0 && <span className="text-[var(--avviso)]"> · {t('workoutLive.dischi.mancano', { kg: formattaNumero(dischi.mancano) })}</span>}
               </p>
             )}
 
@@ -975,25 +985,25 @@ export default function WorkoutLive() {
               <div className="flex flex-col gap-2">
                 {drop.map((d, i) => (
                   <div key={i} className="grid grid-cols-[3.5rem_1fr_1fr_2rem] gap-2 items-center">
-                    <span className="text-xs font-semibold text-[var(--testo-secondario)]">↳ Drop</span>
+                    <span className="text-xs font-semibold text-[var(--testo-secondario)]">{t('workoutLive.drop.etichetta')}</span>
                     <input type="number" value={d.peso} onChange={e => cambiaDrop(i, 'peso', e.target.value)}
                            className="campo-input text-center text-lg font-bold py-2" placeholder="kg"
-                           inputMode="decimal" step="0.5" min="0" aria-label={`Peso del drop ${i + 1}`} />
+                           inputMode="decimal" step="0.5" min="0" aria-label={t('workoutLive.drop.ariaPeso', { numero: i + 1 })} />
                     <input type="number" value={d.rep} onChange={e => cambiaDrop(i, 'rep', e.target.value)}
-                           className="campo-input text-center text-lg font-bold py-2" placeholder="rip."
-                           inputMode="numeric" min="0" aria-label={`Ripetizioni del drop ${i + 1}`} />
-                    <button type="button" onClick={() => togliDrop(i)} aria-label={`Togli il drop ${i + 1}`}
+                           className="campo-input text-center text-lg font-bold py-2" placeholder={t('workoutLive.drop.ripetizioniBreve')}
+                           inputMode="numeric" min="0" aria-label={t('workoutLive.drop.ariaRipetizioni', { numero: i + 1 })} />
+                    <button type="button" onClick={() => togliDrop(i)} aria-label={t('workoutLive.drop.ariaTogli', { numero: i + 1 })}
                             className="h-9 flex items-center justify-center rounded-[var(--raggio-sm)] text-[var(--testo-terziario)] hover:text-[var(--pericolo)]">
                       ✕
                     </button>
                   </div>
                 ))}
                 {dropIncompleto && (
-                  <p className="text-[11px] text-[var(--avviso)]">Scrivi peso e ripetizioni del drop, o toglilo</p>
+                  <p className="text-[11px] text-[var(--avviso)]">{t('workoutLive.drop.incompleto')}</p>
                 )}
                 <button type="button" onClick={aggiungiDrop}
                         className="self-start text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">
-                  ↘ Aggiungi un drop set
+                  {t('workoutLive.drop.aggiungi')}
                 </button>
               </div>
             )}
@@ -1001,8 +1011,8 @@ export default function WorkoutLive() {
             {/* RPE slider */}
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs text-[var(--testo-terziario)]">RPE (sforzo percepito)</label>
-                <span className="text-xs font-medium text-[var(--accent)]">{form.rpe} — {RPE_LABELS[form.rpe]}</span>
+                <label className="text-xs text-[var(--testo-terziario)]">{t('workoutLive.campi.rpe')}</label>
+                <span className="text-xs font-medium text-[var(--accent)]">{form.rpe} — {t(RPE_LABELS[form.rpe])}</span>
               </div>
               <input type="range" min="1" max="10" value={form.rpe}
                      onChange={e => setForm(p => ({...p, rpe: parseInt(e.target.value)}))}
@@ -1017,25 +1027,25 @@ export default function WorkoutLive() {
                           ? 'opacity-80 bg-[var(--pericolo-dim)] text-[var(--pericolo)] border border-[var(--pericolo)]/50 cursor-not-allowed'
                           : 'successo'
                       }`}>
-                ✓ Serie Completata{drop.length > 0 ? ` + ${drop.length === 1 ? 'drop' : `${drop.length} drop`}` : ''}
+                {drop.length > 0 ? t('workoutLive.azioni.serieCompletataConDrop', { count: drop.length }) : t('workoutLive.azioni.serieCompletata')}
               </button>
 
               {/* Before the first working set: the one just done was a warm-up */}
               {!isCardio && !lavoroIniziato && (
                 <button onClick={riscaldamentoDalForm} disabled={inviando || !form.peso || !form.rep}
                         className="text-sm font-medium text-[var(--testo-secondario)] py-1.5 hover:text-[var(--testo-primario)] transition-colors disabled:opacity-50">
-                  🔥 Registra come riscaldamento (non conta fra le serie)
+                  {t('workoutLive.azioni.riscaldamento')}
                 </button>
               )}
 
               <button onClick={saltaSerie} disabled={inviando}
                       className="btn-enorme disabled:opacity-60" style={{ background: 'var(--bg-terziario)', color: 'var(--testo-secondario)' }}>
-                ⏭ Salta Serie
+                {t('workoutLive.azioni.saltaSerie')}
               </button>
 
               <button onClick={() => setMostraSelettoreEsercizi(true)}
                       className="btn-enorme mt-2" style={{ background: 'var(--bg-primario)', border: '1px solid var(--bordo)' }}>
-                🔄 Cambia Esercizio
+                {t('workoutLive.azioni.cambiaEsercizio')}
               </button>
             </div>
           </div>
@@ -1061,7 +1071,7 @@ export default function WorkoutLive() {
                     <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--attenzione)]/30">
                       <span className="text-sm">⏭️</span>
                       <span className="text-xs font-semibold" style={{ color: 'var(--attenzione, #F59E0B)' }}>
-                        {eserciziSaltati.length} eserciz{eserciziSaltati.length === 1 ? 'io' : 'i'} da fare
+                        {t('workoutLive.eserciziDaFare', { count: eserciziSaltati.length })}
                       </span>
                     </div>
                     <div className="px-3 py-2 flex flex-col gap-1">
@@ -1072,7 +1082,7 @@ export default function WorkoutLive() {
                           className="flex items-center justify-between text-xs py-1 hover:text-[var(--accent)] transition-colors"
                         >
                           <span className="text-[var(--testo-secondario)]">{nomeEsercizio(es.esercizio)}</span>
-                          <span style={{ color: 'var(--attenzione, #F59E0B)' }}>Vai →</span>
+                          <span style={{ color: 'var(--attenzione, #F59E0B)' }}>{t('workoutLive.azioni.vai')}</span>
                         </button>
                       ))}
                     </div>
@@ -1081,7 +1091,7 @@ export default function WorkoutLive() {
               </>
             ) : (
               <button onClick={completaAllenamento} disabled={chiudendo} className="btn-enorme successo disabled:opacity-60">
-                {chiudendo ? 'Un attimo...' : '🏆 Completa Allenamento'}
+                {chiudendo ? t('workoutLive.unAttimo') : t('workoutLive.azioni.completaAllenamento')}
               </button>
             )}
           </div>
@@ -1106,7 +1116,7 @@ export default function WorkoutLive() {
               className="glass-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[85vh] flex flex-col overflow-hidden"
             >
               <div className="p-4 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
-                <h3 className="font-bold text-lg">Seleziona Esercizio</h3>
+                <h3 className="font-bold text-lg">{t('workoutLive.selettore.titolo')}</h3>
                 <button onClick={() => setMostraSelettoreEsercizi(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors">✕</button>
               </div>
               <div className="p-4 overflow-y-auto flex flex-col gap-2" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
@@ -1143,10 +1153,10 @@ export default function WorkoutLive() {
                         </p>
                         <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
                           {tutteSeriFatte
-                            ? (cardioItem ? 'Completato' : `${seriFatte}/${es.serieTarget} serie — completato`)
+                            ? (cardioItem ? t('workoutLive.selettore.completato') : t('workoutLive.selettore.serieComplete', { fatte: seriFatte, count: es.serieTarget ?? 0 }))
                             : seriFatte > 0
-                              ? (cardioItem ? 'In corso' : `${seriFatte}/${es.serieTarget} serie fatte`)
-                              : (cardioItem ? (es.durataMinuti ? `${es.durataMinuti} min` : 'Cardio') : `${es.serieTarget}x${es.repTarget}`)
+                              ? (cardioItem ? t('workoutLive.selettore.inCorso') : t('workoutLive.selettore.serieFatte', { fatte: seriFatte, count: es.serieTarget ?? 0 }))
+                              : (cardioItem ? (es.durataMinuti ? `${es.durataMinuti} min` : t('workoutLive.selettore.cardio')) : `${es.serieTarget}x${es.repTarget}`)
                           }
                         </p>
                       </div>
@@ -1160,7 +1170,7 @@ export default function WorkoutLive() {
                   onClick={apriRicerca}
                   className="flex items-center justify-center gap-2 p-3 mt-2 rounded-xl border border-dashed border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors"
                 >
-                  ➕ Aggiungi Esercizio Extra
+                  {t('workoutLive.selettore.aggiungiExtra')}
                 </button>
               </div>
             </motion.div>
@@ -1186,14 +1196,14 @@ export default function WorkoutLive() {
               className="glass-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl h-[85vh] flex flex-col overflow-hidden"
             >
               <div className="p-4 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
-                <h3 className="font-bold text-lg">Aggiungi Esercizio</h3>
+                <h3 className="font-bold text-lg">{t('workoutLive.ricerca.titolo')}</h3>
                 <button onClick={() => setMostraRicercaEsercizi(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors">✕</button>
               </div>
               
               <div className="p-4 border-b border-[var(--bordo)]">
                 <input
                   type="text"
-                  placeholder="Cerca esercizio..."
+                  placeholder={t('workoutLive.ricerca.cerca')}
                   value={ricercaTesto}
                   onChange={(e) => setRicercaTesto(e.target.value)}
                   className="w-full bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-xl px-4 py-3 text-sm focus:border-[var(--accent)] outline-none"
@@ -1209,22 +1219,22 @@ export default function WorkoutLive() {
                     className="flex items-center justify-between p-3 rounded-xl border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors text-left"
                   >
                     <div>
-                      <p className="font-semibold text-sm">{preferiti.has(es.id) && <span title="Preferito">⭐ </span>}{nomeEsercizio(es)}</p>
-                      <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{es.gruppoMuscoloPrimario} · {es.attrezzatura?.nome || 'Varie'}</p>
+                      <p className="font-semibold text-sm">{preferiti.has(es.id) && <span title={t('workoutLive.ricerca.preferito')}>⭐ </span>}{nomeEsercizio(es)}</p>
+                      <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{nomeGruppo(es.gruppoMuscoloPrimario)} · {es.attrezzatura?.nome ? nomeAttrezzatura(es.attrezzatura.nome) : t('workoutLive.ricerca.varie')}</p>
                     </div>
                     <span className="text-[var(--accent)] font-bold">➕</span>
                   </button>
                 ))}
 {restanti > 0 && (
                   <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
-                    Mostra altri ({restanti.toLocaleString('it-IT')})
+                    {t('workoutLive.ricerca.mostraAltri', { numero: formattaNumero(restanti) })}
                   </button>
                 )}
                 {catalogoEsercizi.length > 0 && eserciziFiltrati.length === 0 && (
-                  <p className="text-center text-[var(--testo-terziario)] text-sm py-4">Nessun esercizio trovato</p>
+                  <p className="text-center text-[var(--testo-terziario)] text-sm py-4">{t('workoutLive.ricerca.nessunoTrovato')}</p>
                 )}
                 {catalogoEsercizi.length === 0 && (
-                  <p className="text-center text-[var(--testo-terziario)] text-sm py-4">Caricamento esercizi...</p>
+                  <p className="text-center text-[var(--testo-terziario)] text-sm py-4">{t('workoutLive.ricerca.caricamento')}</p>
                 )}
               </div>
             </motion.div>

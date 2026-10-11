@@ -7,7 +7,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { LIVELLI } from '../utils/costanti.js';
+import { nomeGruppo } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play } from 'lucide-react';
 
@@ -17,6 +19,7 @@ import { Play } from 'lucide-react';
 
 // ─── MOBILE: grid of big squares with a large play button in the middle ───
 function GrigliaSchede({ lista, onApri }) {
+  const { t } = useLingua();
   return (
     <div className="grid grid-cols-2 gap-4 md:hidden">
       {lista.map((scheda, i) => (
@@ -56,10 +59,10 @@ function GrigliaSchede({ lista, onApri }) {
               scheda.livello === 'INTERMEDIO' ? 'avviso' :
               scheda.livello === 'AVANZATO' ? 'pericolo' : 'accent'
             } text-[9px] px-2 py-0.5`}>
-              {LIVELLI[scheda.livello]?.label || scheda.livello}
+              {LIVELLI[scheda.livello] ? t(LIVELLI[scheda.livello].label) : scheda.livello}
             </span>
             <span className="text-[11px] font-semibold text-[var(--testo-secondario)]">
-              {scheda.esercizi?.length || 0} Es.
+              {t('allenamento.eserciziBreve', { count: scheda.esercizi?.length || 0 })}
             </span>
           </div>
         </motion.div>
@@ -70,6 +73,7 @@ function GrigliaSchede({ lista, onApri }) {
 
 // ─── DESKTOP: premium horizontal list view ───
 function ListaSchede({ lista, onApri }) {
+  const { t } = useLingua();
   return (
     <div className="hidden md:flex flex-col gap-3">
       {lista.map((scheda, i) => {
@@ -92,7 +96,7 @@ function ListaSchede({ lista, onApri }) {
               <div className="flex items-center gap-3 mb-1">
                 <h3 className="font-bold text-lg truncate">{scheda.titolo}</h3>
                 {scheda.visibilita === 'GLOBALE' && (
-                  <span className="badge accent shrink-0 text-[10px]">Globale</span>
+                  <span className="badge accent shrink-0 text-[10px]">{t('allenamento.globale')}</span>
                 )}
               </div>
               {scheda.descrizione && (
@@ -100,19 +104,19 @@ function ListaSchede({ lista, onApri }) {
               )}
               <div className="flex items-center gap-3 flex-wrap">
                 <span className={`badge ${LIVELLI[scheda.livello]?.colore || 'accent'}`}>
-                  {LIVELLI[scheda.livello]?.label || scheda.livello}
+                  {LIVELLI[scheda.livello] ? t(LIVELLI[scheda.livello].label) : scheda.livello}
                 </span>
                 <span className="text-xs text-[var(--testo-terziario)]">
-                  {scheda.esercizi?.length || 0} esercizi
+                  {t('comune.esercizi', { count: scheda.esercizi?.length || 0 })}
                 </span>
                 <span className="text-xs text-[var(--testo-terziario)]">
-                  · {scheda._count?.sessioni || 0} sessioni
+                  · {t('allenamento.sessioni', { count: scheda._count?.sessioni || 0 })}
                 </span>
                 {gruppi.length > 0 && (
                   <div className="flex gap-1 ml-1">
                     {gruppi.map(g => (
                       <span key={g} className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">
-                        {g}
+                        {nomeGruppo(g)}
                       </span>
                     ))}
                   </div>
@@ -139,6 +143,7 @@ function ListaSchede({ lista, onApri }) {
 }
 
 export default function Allenamento() {
+  const { t } = useLingua();
   const { utente } = useAuth();
   const naviga = useNavigate();
   const [schede, setSchede] = useState([]);
@@ -198,8 +203,8 @@ export default function Allenamento() {
   return (
     <div className="py-2 pb-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-extrabold mb-1">Allenati Ora</h1>
-        <p className="text-[var(--testo-secondario)]">Scegli una scheda e inizia il workout</p>
+        <h1 className="text-3xl font-extrabold mb-1">{t('allenamento.titolo')}</h1>
+        <p className="text-[var(--testo-secondario)]">{t('allenamento.sottotitolo')}</p>
       </div>
 
       {caricamento ? (
@@ -209,12 +214,12 @@ export default function Allenamento() {
       ) : schede.length === 0 ? (
         <div className="glass-card p-8 text-center mt-10">
           <div className="text-5xl mb-4">🏋️‍♂️</div>
-          <h2 className="text-xl font-bold mb-2">Nessuna Scheda</h2>
+          <h2 className="text-xl font-bold mb-2">{t('allenamento.nessunaScheda.titolo')}</h2>
           <p className="text-[var(--testo-secondario)] mb-4">
-            Non hai ancora schede. Vai nella sezione Gestione Schede per crearne una.
+            {t('allenamento.nessunaScheda.testo')}
           </p>
           <button onClick={() => naviga('/schede')} className="btn-primario">
-            Vai a Gestione Schede
+            {t('allenamento.nessunaScheda.vai')}
           </button>
         </div>
       ) : (
@@ -222,7 +227,7 @@ export default function Allenamento() {
           {mieSchede.length > 0 && (
             <section>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span>👤</span> Le Tue Schede
+                <span>👤</span> {t('allenamento.tueSchede')}
               </h2>
               <GrigliaSchede lista={mieSchede} onApri={setSchedaSelezionata} />
               <ListaSchede lista={mieSchede} onApri={setSchedaSelezionata} />
@@ -232,7 +237,7 @@ export default function Allenamento() {
           {schedeGlobali.length > 0 && (
             <section>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <span>🌍</span> Schede Globali
+                <span>🌍</span> {t('allenamento.schedeGlobali')}
               </h2>
               <GrigliaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} />
               <ListaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} />
@@ -268,7 +273,7 @@ export default function Allenamento() {
                   </div>
                   <h3 className="text-2xl font-bold mb-2">{schedaAperta.titolo}</h3>
                   <p className="text-[var(--testo-secondario)] text-sm mb-6">
-                    Questa scheda contiene {schedaAperta.esercizi?.length || 0} esercizi. Sei pronto per iniziare?
+                    {t('allenamento.conferma.testo', { count: schedaAperta.esercizi?.length || 0 })}
                   </p>
                   
                   <div className="flex flex-col gap-3">
@@ -277,14 +282,14 @@ export default function Allenamento() {
                       disabled={avviando}
                       className="btn-enorme w-full"
                     >
-                      {avviando ? 'Avvio in corso...' : 'Inizia Allenamento'}
+                      {avviando ? t('allenamento.conferma.avvio') : t('allenamento.conferma.inizia')}
                     </button>
                     <button 
                       onClick={chiudiRiquadro}
                       disabled={avviando}
                       className="w-full py-3 rounded-[var(--raggio-md)] font-semibold text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--bg-terziario)] transition-all"
                     >
-                      Annulla
+                      {t('comune.annulla')}
                     </button>
                   </div>
                 </div>

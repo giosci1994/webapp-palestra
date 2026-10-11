@@ -1,0 +1,27 @@
+{
+  "titolo": "Allenamento già fatto",
+  "descrizione": "Per le sedute svolte senza connessione o registrate con l'orologio.",
+  "scheda": "Scheda seguita",
+  "sceglieScheda": "Scegli una scheda…",
+  "giorno": "Giorno",
+  "oraInizio": "Ora d'inizio",
+  "durata": "Durata (min)",
+  "riscaldamento": "Riscaldamento (min)",
+  "facoltativo": "facoltativo",
+  "note": "Note",
+  "notePlaceholder": "es. registrato con l'orologio",
+  "annotatoCarichi": "Ho annotato i carichi, voglio inserirli",
+  "sceglieSchedaPrima": "Scegli prima la scheda.",
+  "caricoEsercizi": "Carico gli esercizi…",
+  "numeroSerie": "{numero}ª",
+  "ripetizioniBreve": "rip.",
+  "schedaSenzaEsercizi": "Questa scheda non ha esercizi.",
+  "salvo": "Salvo…",
+  "registra": "Registra",
+  "errori": {
+    "sceglieScheda": "Scegli la scheda che hai seguito",
+    "dataOraNonValide": "Data od ora non valide",
+    "nelFuturo": "Quella data è nel futuro",
+    "salvataggio": "Salvataggio non riuscito"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "inCorso": "Allenamento in corso",
+  "inProgramma": "Oggi in programma",
+  "ultimaVolta": "l'ultima volta {minuti} min",
+  "altriOggi": "Oggi anche: {titoli}",
+  "riprendi": "Riprendi allenamento",
+  "iniziaScheda": "Inizia scheda",
+  "piuTardi": "Più tardi",
+  "saltaOggi": "Salta oggi",
+  "salto": "Salto…",
+  "rimandaADomani": "Rimanda a domani",
+  "sposto": "Sposto…",
+  "errori": {
+    "spostamento": "Non sono riuscito a spostarlo",
+    "salto": "Non sono riuscito a segnarlo come saltato"
+  },
+  "quando": {
+    "adessoMigliore": "Adesso è l’ora migliore",
+    "vaiVerso": "Vai verso le {ora}",
+    "adesso": "Adesso",
+    "nellaFascia": "Fra le ore in cui ti alleni di solito ({da}–{a})",
+    "ora": "ora",
+    "adessoMeno": "Se sei già in palestra, adesso c’è ancora meno gente ({livello}%).",
+    "strisciaAria": "Affluenza prevista oggi dalle {da} alle {a}",
+    "strisciaAriaConsigliata": "Affluenza prevista oggi dalle {da} alle {a}: consigliate le {ora}"
+  },
+  "affollamento": {
+    "adessoPoca": "In questo momento poca gente · {livello}%",
+    "adessoMedia": "In questo momento mediamente affollata · {livello}%",
+    "adessoMolta": "In questo momento molto affollata · {livello}%",
+    "abitualePoca": "Di solito a quest’ora poca gente · {livello}%",
+    "abitualeMedia": "Di solito a quest’ora mediamente affollata · {livello}%",
+    "abitualeMolta": "Di solito a quest’ora molto affollata · {livello}%",
+    "consigliatoPoca": "Di solito poca gente · {livello}%",
+    "consigliatoMedia": "Di solito mediamente affollata · {livello}%",
+    "consigliatoMolta": "Di solito molto affollata · {livello}%"
+  }
+}

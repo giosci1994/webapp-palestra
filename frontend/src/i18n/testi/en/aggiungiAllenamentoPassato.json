@@ -1,0 +1,27 @@
+{
+  "titolo": "Past workout",
+  "descrizione": "For sessions done without a connection or tracked with a watch.",
+  "scheda": "Plan followed",
+  "sceglieScheda": "Choose a plan…",
+  "giorno": "Date",
+  "oraInizio": "Start time",
+  "durata": "Duration (min)",
+  "riscaldamento": "Warm-up (min)",
+  "facoltativo": "optional",
+  "note": "Notes",
+  "notePlaceholder": "e.g. tracked with my watch",
+  "annotatoCarichi": "I wrote down my loads, I want to enter them",
+  "sceglieSchedaPrima": "Choose the plan first.",
+  "caricoEsercizi": "Loading exercises…",
+  "numeroSerie": "Set {numero}",
+  "ripetizioniBreve": "reps",
+  "schedaSenzaEsercizi": "This plan has no exercises.",
+  "salvo": "Saving…",
+  "registra": "Log",
+  "errori": {
+    "sceglieScheda": "Choose the plan you followed",
+    "dataOraNonValide": "Invalid date or time",
+    "nelFuturo": "That date is in the future",
+    "salvataggio": "Could not save"
+  }
+}

@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
+import { useLingua } from '../../hooks/useLingua.js';
 import { nomeEsercizio, aStringaData } from '../../utils/formattatori.js';
 import { motion } from 'framer-motion';
 import { X, Save, Dumbbell } from 'lucide-react';
@@ -16,6 +17,7 @@ function repIniziali(repTarget) {
 }
 
 export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato }) {
+  const { t } = useLingua();
   const oggi = new Date();
   const ieri = new Date(oggi.getTime() - 86400000);
 
@@ -74,13 +76,13 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
 
   const salva = async () => {
     setErrore('');
-    if (!schedaId) { setErrore('Scegli la scheda che hai seguito'); return; }
+    if (!schedaId) { setErrore(t('aggiungiAllenamentoPassato.errori.sceglieScheda')); return; }
 
     // Local date and time are converted to an absolute instant: so the time
     // saved is the one when you trained, regardless of the server.
     const istante = new Date(`${data}T${ora}`);
-    if (Number.isNaN(istante.getTime())) { setErrore('Data od ora non valide'); return; }
-    if (istante.getTime() > Date.now()) { setErrore('Quella data è nel futuro'); return; }
+    if (Number.isNaN(istante.getTime())) { setErrore(t('aggiungiAllenamentoPassato.errori.dataOraNonValide')); return; }
+    if (istante.getTime() > Date.now()) { setErrore(t('aggiungiAllenamentoPassato.errori.nelFuturo')); return; }
 
     try {
       setSalvando(true);
@@ -94,7 +96,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
       });
       onSalvato?.(risposta);
     } catch (err) {
-      setErrore(err?.message || 'Salvataggio non riuscito');
+      setErrore(err?.message || t('aggiungiAllenamentoPassato.errori.salvataggio'));
     } finally {
       setSalvando(false);
     }
@@ -116,61 +118,61 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
         <div className="p-card-inner border-b border-[var(--bordo-light)] flex items-start justify-between gap-3 sticky top-0 z-10" style={{ background: 'var(--bg-secondario, #14141c)' }}>
           <div>
             <h3 className="font-bold text-lg flex items-center gap-2">
-              <Dumbbell size={20} className="text-[var(--accent)]" /> Allenamento già fatto
+              <Dumbbell size={20} className="text-[var(--accent)]" /> {t('aggiungiAllenamentoPassato.titolo')}
             </h3>
             <p className="text-xs text-[var(--testo-secondario)] mt-1">
-              Per le sedute svolte senza connessione o registrate con l'orologio.
+              {t('aggiungiAllenamentoPassato.descrizione')}
             </p>
           </div>
-          <button onClick={onChiudi} aria-label="Chiudi" className="p-1.5 rounded text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] transition-colors shrink-0">
+          <button onClick={onChiudi} aria-label={t('comune.chiudi')} className="p-1.5 rounded text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] transition-colors shrink-0">
             <X size={20} />
           </button>
         </div>
 
         <div className="p-card-inner flex flex-col gap-4">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Scheda seguita</span>
+            <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">{t('aggiungiAllenamentoPassato.scheda')}</span>
             <select value={schedaId} onChange={e => { setSchedaId(e.target.value); setValori({}); }} className="campo-input">
-              <option value="">Scegli una scheda…</option>
+              <option value="">{t('aggiungiAllenamentoPassato.sceglieScheda')}</option>
               {schede.map(s => <option key={s.id} value={s.id}>{s.titolo}</option>)}
             </select>
           </label>
 
           <div className="grid grid-cols-2 gap-3">
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Giorno</span>
+              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">{t('aggiungiAllenamentoPassato.giorno')}</span>
               <input type="date" value={data} max={aStringaData(oggi)} onChange={e => setData(e.target.value)} className="campo-input" />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Ora d'inizio</span>
+              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">{t('aggiungiAllenamentoPassato.oraInizio')}</span>
               <input type="time" value={ora} onChange={e => setOra(e.target.value)} className="campo-input" />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Durata (min)</span>
+              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">{t('aggiungiAllenamentoPassato.durata')}</span>
               <input type="number" min="1" max="600" value={durata} onChange={e => setDurata(e.target.value)} className="campo-input" />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Riscaldamento (min)</span>
-              <input type="number" min="0" max="120" value={riscaldamento} onChange={e => setRiscaldamento(e.target.value)} placeholder="facoltativo" className="campo-input" />
+              <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">{t('aggiungiAllenamentoPassato.riscaldamento')}</span>
+              <input type="number" min="0" max="120" value={riscaldamento} onChange={e => setRiscaldamento(e.target.value)} placeholder={t('aggiungiAllenamentoPassato.facoltativo')} className="campo-input" />
             </label>
           </div>
 
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">Note</span>
-            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="es. registrato con l'orologio" className="campo-input" />
+            <span className="text-xs font-bold text-[var(--testo-terziario)] uppercase tracking-wide">{t('aggiungiAllenamentoPassato.note')}</span>
+            <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder={t('aggiungiAllenamentoPassato.notePlaceholder')} className="campo-input" />
           </label>
 
           {/* The loads are optional: with just the watch summary you log the
               date and duration, without having to make up numbers. */}
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={dettaglioSerie} onChange={e => setDettaglioSerie(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
-            <span>Ho annotato i carichi, voglio inserirli</span>
+            <span>{t('aggiungiAllenamentoPassato.annotatoCarichi')}</span>
           </label>
 
           {dettaglioSerie && (
             <div className="flex flex-col gap-3">
-              {!schedaId && <p className="text-xs text-[var(--testo-terziario)]">Scegli prima la scheda.</p>}
-              {caricandoScheda && <p className="text-xs text-[var(--testo-terziario)]">Carico gli esercizi…</p>}
+              {!schedaId && <p className="text-xs text-[var(--testo-terziario)]">{t('aggiungiAllenamentoPassato.sceglieSchedaPrima')}</p>}
+              {caricandoScheda && <p className="text-xs text-[var(--testo-terziario)]">{t('aggiungiAllenamentoPassato.caricoEsercizi')}</p>}
               {esercizi.map(voce => (
                 <div key={voce.id} className="rounded-[var(--raggio-md)] border border-[var(--bordo-light)] p-3">
                   <p className="font-semibold text-sm mb-2 truncate">{nomeEsercizio(voce.esercizio)}</p>
@@ -179,7 +181,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
                       const chiave = `${voce.esercizio.id}-${n}`;
                       return (
                         <div key={n} className="flex items-center gap-2">
-                          <span className="text-xs text-[var(--testo-terziario)] w-10 shrink-0">{n}ª</span>
+                          <span className="text-xs text-[var(--testo-terziario)] w-10 shrink-0">{t('aggiungiAllenamentoPassato.numeroSerie', { numero: n })}</span>
                           <input
                             type="number" min="0" step="0.5" inputMode="decimal"
                             value={valori[chiave]?.peso || ''}
@@ -191,7 +193,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
                             type="number" min="0" inputMode="numeric"
                             value={valori[chiave]?.rep || ''}
                             onChange={e => aggiornaValore(chiave, 'rep', e.target.value)}
-                            placeholder={repIniziali(voce.repTarget) || 'rip.'}
+                            placeholder={repIniziali(voce.repTarget) || t('aggiungiAllenamentoPassato.ripetizioniBreve')}
                             className="campo-input flex-1 min-w-0 text-sm"
                           />
                         </div>
@@ -201,7 +203,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
                 </div>
               ))}
               {schedaId && !caricandoScheda && esercizi.length === 0 && (
-                <p className="text-xs text-[var(--testo-terziario)]">Questa scheda non ha esercizi.</p>
+                <p className="text-xs text-[var(--testo-terziario)]">{t('aggiungiAllenamentoPassato.schedaSenzaEsercizi')}</p>
               )}
             </div>
           )}
@@ -210,14 +212,14 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
 
           <div className="flex gap-3 pt-1">
             <button onClick={onChiudi} className="flex-1 py-2.5 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium">
-              Annulla
+              {t('comune.annulla')}
             </button>
             <button
               onClick={salva}
               disabled={salvando || !schedaId}
               className="flex-1 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <Save size={16} /> {salvando ? 'Salvo…' : 'Registra'}
+              <Save size={16} /> {salvando ? t('aggiungiAllenamentoPassato.salvo') : t('aggiungiAllenamentoPassato.registra')}
             </button>
           </div>
         </div>

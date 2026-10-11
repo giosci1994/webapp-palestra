@@ -17,6 +17,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarClock, Clock, Play, RotateCcw } from 'lucide-react';
 import { api } from '../../config/api.js';
+import { useLingua } from '../../hooks/useLingua.js';
+import { nomeGruppo } from '../../utils/formattatori.js';
 import { promemoriaDaMostrare, rimandaPromemoria } from '../../utils/promemoriaRimandato.js';
 
 // After how long in the background coming back counts as a new opening
@@ -26,8 +28,28 @@ const PRIMA_ORA = 6;
 const ULTIMA_ORA = 23;
 
 const hh = (ora) => `${String(ora).padStart(2, '0')}:00`;
-const affollamento = (livello) =>
-  livello <= 30 ? 'poca gente' : livello <= 60 ? 'mediamente affollata' : 'molto affollata';
+
+// How crowded the gym is, as the translation keys of the three levels
+// (not busy, moderately busy, very busy) for each way of introducing it
+const AFFOLLAMENTO = {
+  adesso: [
+    'promemoriaAllenamento.affollamento.adessoPoca',
+    'promemoriaAllenamento.affollamento.adessoMedia',
+    'promemoriaAllenamento.affollamento.adessoMolta'
+  ],
+  abituale: [
+    'promemoriaAllenamento.affollamento.abitualePoca',
+    'promemoriaAllenamento.affollamento.abitualeMedia',
+    'promemoriaAllenamento.affollamento.abitualeMolta'
+  ],
+  consigliato: [
+    'promemoriaAllenamento.affollamento.consigliatoPoca',
+    'promemoriaAllenamento.affollamento.consigliatoMedia',
+    'promemoriaAllenamento.affollamento.consigliatoMolta'
+  ]
+};
+const chiaveAffollamento = (tipo, livello) =>
+  AFFOLLAMENTO[tipo][livello <= 30 ? 0 : livello <= 60 ? 1 : 2];
 
 /**
  * @param {object} p
@@ -35,6 +57,7 @@ const affollamento = (livello) =>
  *   (full-screen workout in progress, "what's new" stories open)
  */
 export default function PromemoriaAllenamento({ inAttesa }) {
+  const { t } = useLingua();
   const naviga = useNavigate();
   // "Armed" when the app opens: at the first free moment it asks the server
   // what is planned today, then disarms, whether there is something to show or not
@@ -112,8 +135,8 @@ export default function PromemoriaAllenamento({ inAttesa }) {
       setSalvando(null);
     }
   };
-  const rimandaADomani = () => cambiaGiornata('domani', { rimandaGiorni: 1 }, 'Non sono riuscito a spostarlo');
-  const saltaOggi = () => cambiaGiornata('salta', { stato: 'SALTATO' }, 'Non sono riuscito a segnarlo come saltato');
+  const rimandaADomani = () => cambiaGiornata('domani', { rimandaGiorni: 1 }, t('promemoriaAllenamento.errori.spostamento'));
+  const saltaOggi = () => cambiaGiornata('salta', { stato: 'SALTATO' }, t('promemoriaAllenamento.errori.salto'));
 
   return (
     <AnimatePresence>
@@ -137,24 +160,24 @@ export default function PromemoriaAllenamento({ inAttesa }) {
           >
             <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--accent)]">
               <CalendarClock size={16} />
-              {inCorso ? 'Allenamento in corso' : 'Oggi in programma'}
+              {inCorso ? t('promemoriaAllenamento.inCorso') : t('promemoriaAllenamento.inProgramma')}
             </p>
 
             <h2 id="promemoria-titolo" className="text-xl font-bold mt-2 leading-snug">{principale.scheda.titolo}</h2>
 
             <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
               {principale.gruppi.map(g => (
-                <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">{g}</span>
+                <span key={g} className="text-xs px-2.5 py-1 rounded-full bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">{nomeGruppo(g)}</span>
               ))}
               <span className="text-xs text-[var(--testo-terziario)] ml-1">
-                {principale.esercizi} esercizi
-                {principale.ultimaVolta && ` · l'ultima volta ${principale.ultimaVolta.durataMinuti} min`}
+                {t('comune.esercizi', { count: principale.esercizi })}
+                {principale.ultimaVolta && ` · ${t('promemoriaAllenamento.ultimaVolta', { minuti: principale.ultimaVolta.durataMinuti })}`}
               </span>
             </div>
 
             {altri.length > 0 && (
               <p className="text-xs text-[var(--testo-secondario)] mt-3">
-                Oggi anche: {altri.map(a => a.scheda.titolo).join(', ')}
+                {t('promemoriaAllenamento.altriOggi', { titoli: altri.map(a => a.scheda.titolo).join(', ') })}
               </p>
             )}
 
@@ -165,22 +188,22 @@ export default function PromemoriaAllenamento({ inAttesa }) {
             <div className="flex flex-col gap-2.5 mt-6">
               <button ref={tastoPrincipale} type="button" onClick={inizia} className="btn-primario w-full">
                 {inCorso ? <RotateCcw size={18} /> : <Play size={18} fill="currentColor" />}
-                {inCorso ? 'Riprendi allenamento' : 'Inizia scheda'}
+                {inCorso ? t('promemoriaAllenamento.riprendi') : t('promemoriaAllenamento.iniziaScheda')}
               </button>
               <div className="flex gap-2.5">
                 <button type="button" onClick={chiudi} className="btn-secondario flex-1 !px-3">
-                  Più tardi
+                  {t('promemoriaAllenamento.piuTardi')}
                 </button>
                 {!inCorso && (
                   <button type="button" onClick={saltaOggi} disabled={Boolean(salvando)} className="btn-secondario flex-1 !px-3 disabled:opacity-50">
-                    {salvando === 'salta' ? 'Salto…' : 'Salta oggi'}
+                    {salvando === 'salta' ? t('promemoriaAllenamento.salto') : t('promemoriaAllenamento.saltaOggi')}
                   </button>
                 )}
               </div>
               {!inCorso && (
                 <button type="button" onClick={rimandaADomani} disabled={Boolean(salvando)}
                         className="self-center py-1.5 px-3 text-sm font-medium text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] disabled:opacity-50">
-                  {salvando === 'domani' ? 'Sposto…' : 'Rimanda a domani'}
+                  {salvando === 'domani' ? t('promemoriaAllenamento.sposto') : t('promemoriaAllenamento.rimandaADomani')}
                 </button>
               )}
             </div>
@@ -193,6 +216,7 @@ export default function PromemoriaAllenamento({ inAttesa }) {
 
 /** The suggested hour, with the day's crowd levels to show why. */
 function QuandoAndare({ orario }) {
+  const { t } = useLingua();
   const { consigliato, adesso, fascia, abitudine, ore } = orario;
   const oraAttuale = adesso?.ora ?? null;
   const eAdesso = consigliato && consigliato.ora === oraAttuale;
@@ -208,14 +232,14 @@ function QuandoAndare({ orario }) {
   if (eAdesso) {
     // The best of the hours left, not necessarily empty: the detail says how
     // crowded it really is
-    titolo = 'Adesso è l’ora migliore';
-    dettaglio = `${adesso.live ? 'In questo momento' : 'Di solito a quest’ora'} ${affollamento(adesso.livello)} · ${adesso.livello}%`;
+    titolo = t('promemoriaAllenamento.quando.adessoMigliore');
+    dettaglio = t(chiaveAffollamento(adesso.live ? 'adesso' : 'abituale', adesso.livello), { livello: adesso.livello });
   } else if (consigliato) {
-    titolo = `Vai verso le ${hh(consigliato.ora)}`;
-    dettaglio = `Di solito ${affollamento(consigliato.livello)} · ${consigliato.livello}%`;
+    titolo = t('promemoriaAllenamento.quando.vaiVerso', { ora: hh(consigliato.ora) });
+    dettaglio = t(chiaveAffollamento('consigliato', consigliato.livello), { livello: consigliato.livello });
   } else if (adesso) {
-    titolo = 'Adesso';
-    dettaglio = `${adesso.live ? 'In questo momento' : 'Di solito a quest’ora'} ${affollamento(adesso.livello)} · ${adesso.livello}%`;
+    titolo = t('promemoriaAllenamento.quando.adesso');
+    dettaglio = t(chiaveAffollamento(adesso.live ? 'adesso' : 'abituale', adesso.livello), { livello: adesso.livello });
   } else {
     return null;
   }
@@ -229,7 +253,7 @@ function QuandoAndare({ orario }) {
           <p className="text-sm text-[var(--testo-secondario)]">{dettaglio}</p>
           {nellaFascia && !eAdesso && (
             <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
-              Fra le ore in cui ti alleni di solito ({fascia.da}–{fascia.a})
+              {t('promemoriaAllenamento.quando.nellaFascia', { da: fascia.da, a: fascia.a })}
             </p>
           )}
         </div>
@@ -237,7 +261,9 @@ function QuandoAndare({ orario }) {
 
       {striscia.length > 0 && (
         <div className="mt-4" role="img"
-             aria-label={`Affluenza prevista oggi dalle ${PRIMA_ORA} alle ${ULTIMA_ORA}${consigliato ? `: consigliate le ${hh(consigliato.ora)}` : ''}`}>
+             aria-label={consigliato
+               ? t('promemoriaAllenamento.quando.strisciaAriaConsigliata', { da: PRIMA_ORA, a: ULTIMA_ORA, ora: hh(consigliato.ora) })
+               : t('promemoriaAllenamento.quando.strisciaAria', { da: PRIMA_ORA, a: ULTIMA_ORA })}>
           <div className="flex items-end gap-[3px] h-12">
             {striscia.map(o => {
               const passata = oraAttuale != null && o.ora < oraAttuale;
@@ -259,7 +285,7 @@ function QuandoAndare({ orario }) {
           <div className="flex gap-[3px] mt-1.5 text-[10px] text-[var(--testo-terziario)]">
             {striscia.map(o => (
               <div key={o.ora} className="flex-1 text-center">
-                {o.ora === oraAttuale ? 'ora' : o.ora % 6 === 0 ? String(o.ora).padStart(2, '0') : ''}
+                {o.ora === oraAttuale ? t('promemoriaAllenamento.quando.ora') : o.ora % 6 === 0 ? String(o.ora).padStart(2, '0') : ''}
               </div>
             ))}
           </div>
@@ -268,7 +294,7 @@ function QuandoAndare({ orario }) {
 
       {adessoMeglio && (
         <p className="text-xs text-[var(--testo-secondario)] mt-3">
-          Se sei già in palestra, adesso c’è ancora meno gente ({adesso.livello}%).
+          {t('promemoriaAllenamento.quando.adessoMeno', { livello: adesso.livello })}
         </p>
       )}
     </div>

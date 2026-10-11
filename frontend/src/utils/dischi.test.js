@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { bilanciereDi, dischiPerLato, descriviDischi } from './dischi.js';
+import { scegli, traduci } from '../i18n/index.js';
+
+beforeEach(() => scegli('it'));
 
 describe('bilanciereDi', () => {
   const con = nome => ({ attrezzatura: { nome } });
@@ -8,6 +11,13 @@ describe('bilanciereDi', () => {
     expect(bilanciereDi(con('Bilanciere Olimpico')).peso).toBe(20);
     expect(bilanciereDi(con('Bilanciere EZ')).peso).toBe(10);
     expect(bilanciereDi(con('Trap Bar (Hex Bar)')).peso).toBe(25);
+  });
+
+  it('il nome della barra e\' una chiave di traduzione', () => {
+    expect(traduci(bilanciereDi(con('Bilanciere Olimpico')).nome)).toBe('bilanciere olimpico');
+    expect(traduci(bilanciereDi(con('Bilanciere Olimpico')).nome, {}, 'en')).toBe('Olympic barbell');
+    expect(traduci(bilanciereDi(con('Bilanciere EZ')).nome)).toBe('bilanciere EZ');
+    expect(traduci(bilanciereDi(con('Trap Bar (Hex Bar)')).nome, {}, 'en')).toBe('trap bar');
   });
 
   it('niente bilanciere per manubri, macchine o esercizi senza attrezzatura', () => {
@@ -51,5 +61,11 @@ describe('descriviDischi', () => {
   it('raggruppa i dischi uguali e usa la virgola', () => {
     expect(descriviDischi([25, 25, 10, 2.5])).toBe('2 × 25 + 10 + 2,5');
     expect(descriviDischi([1.25])).toBe('1,25');
+  });
+
+  it('in inglese usa il punto decimale', () => {
+    scegli('en');
+    expect(descriviDischi([25, 25, 10, 2.5])).toBe('2 × 25 + 10 + 2.5');
+    expect(descriviDischi([1.25])).toBe('1.25');
   });
 });

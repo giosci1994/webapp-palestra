@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { leggiForbice, incrementoPer, propostaCarico, FALLIMENTI_PRIMA_DELLO_SCARICO } from './progressione.js';
+import { scegli } from '../i18n/index.js';
+
+beforeEach(() => scegli('it'));
 
 /** A session with the sets [weight, reps] */
 const seduta = (...serie) => ({ data: '2026-10-01', serie: serie.map(([pesoEffettivo, repEffettive]) => ({ pesoEffettivo, repEffettive })) });
@@ -94,6 +97,19 @@ describe('propostaCarico', () => {
 
   it('il gradino dipende dall\'attrezzo', () => {
     expect(proposta([seduta([20, 12], [20, 12], [20, 12])], { incremento: 2 }).peso).toBe(22);
+  });
+
+  it('in inglese il motivo e il numero seguono la lingua', () => {
+    scegli('en');
+    const difficile = seduta([62.5, 7], [62.5, 6], [62.5, 6]);
+    expect(proposta([seduta([60, 12], [60, 12], [60, 12])]).motivo)
+      .toBe('Every set at the top of the range (last time 12-12-12 reps at 60 kg): go up 2.5 kg');
+    expect(proposta([seduta([60, 12], [60, 11], [60, 9])]).motivo)
+      .toBe('Same weight, one more rep (last time 12-11-9 reps at 60 kg): once every set reaches 12, go up');
+    expect(proposta([seduta([60, 9], [60, 7], [60, 6])]).motivo)
+      .toBe('Same weight (last time 9-7-6 reps at 60 kg): aim for at least 8 reps on every set');
+    expect(proposta([difficile, difficile, difficile]).motivo)
+      .toBe('3 times in a row under 8 reps at 62.5 kg: deload by 10% and build back up');
   });
 
   it('niente proposta la prima volta, a corpo libero o senza forbice', () => {

@@ -1,0 +1,117 @@
+{
+  "unAttimo": "One moment...",
+  "usa": "Use",
+  "proposta": {
+    "sali": "📈 Today's suggestion · go up",
+    "resta": "🎯 Today's suggestion",
+    "scarico": "🔄 Today's suggestion · deload"
+  },
+  "riepilogo": {
+    "titolo": "Workout complete!",
+    "senzaRete": "📴 You're offline: the workout is saved on your phone and I'll send it as soon as you're back online. You'll find your records in Stats afterwards.",
+    "serieCompletate": "Sets completed",
+    "volumeTotale": "Total volume",
+    "nuoviRecord": "🏆 New records!",
+    "tornaDashboard": "Back to Dashboard",
+    "rimastoAperto": "It had been left open: I ended it at your last set, at {ora}.",
+    "riprendi": "↩️ I closed it by mistake, resume",
+    "riprendiEntro": "You can resume the workout within {minuti} minutes, also from History."
+  },
+  "serieCorrente": "Set {numero} / {totale}",
+  "nessunEsercizio": "No exercises in this plan",
+  "tornaAlleSchede": "Back to plans",
+  "barra": {
+    "esercizioNumero": "Exercise {numero}/{totale} ▾",
+    "schermoAttivo": "🔒 Screen on",
+    "termina": "Finish",
+    "codaFerma_one": "📴 Offline: {count} set saved on your phone, I'll send it as soon as you're back online",
+    "codaFerma_other": "📴 Offline: {count} sets saved on your phone, I'll send them as soon as you're back online"
+  },
+  "recupero": {
+    "titolo": "Rest",
+    "titoloMaiuscolo": "REST",
+    "prossimo": "Next: {nome}",
+    "ariaTimer": "Rest: {tempo}",
+    "salta": "Skip",
+    "saltaRecupero": "Skip rest →",
+    "schermoBloccato": "It won't ring with the screen locked: <link>turn on notifications</link> to get an alert when your rest ends.",
+    "prossimaSerie": "Next: Set {numero} of {totale}",
+    "prossimoEsercizio": "Next exercise: {nome}",
+    "fineAllenamento": "Next: Finish workout",
+    "notifica": "{nome} · set {numero}"
+  },
+  "tempoAllenamento": "Workout time",
+  "esercizio": {
+    "inclinazione": "incl {valore}%",
+    "livello": "lvl {valore}",
+    "riepilogoSerie": "{serie} × {rep} · {secondi}s rest"
+  },
+  "video": {
+    "mostra": "See how it's done",
+    "nascondi": "Hide video"
+  },
+  "serieFatte": {
+    "riscaldamento": "🔥 Warm-up",
+    "serie": "Set {numero} ✓",
+    "livello": "(Lvl {livello})"
+  },
+  "drop": {
+    "etichetta": "↳ Drop",
+    "ripetizioniBreve": "reps",
+    "ariaPeso": "Weight of drop {numero}",
+    "ariaRipetizioni": "Reps of drop {numero}",
+    "ariaTogli": "Remove drop {numero}",
+    "incompleto": "Enter the weight and reps of the drop, or remove it",
+    "aggiungi": "↘ Add a drop set"
+  },
+  "riferimento": {
+    "ultimaVolta": "Last time · {data}",
+    "minuti": "{minuti} min",
+    "minutiLivello": "{minuti} min · lvl {livello}",
+    "corpoLibero": "Bodyweight"
+  },
+  "rampa": "🔥 Warm-up to {peso} kg · tap a step when you've done it",
+  "campi": {
+    "durata": "Duration (minutes)",
+    "resistenza": "Resistance / Lvl",
+    "peso": "Weight (kg)",
+    "ripetizioni": "Reps",
+    "rpe": "RPE (perceived effort)"
+  },
+  "dischi": {
+    "perLato": "🏋️ Per side: <b>{dischi}</b>",
+    "mancano": "{kg} kg short"
+  },
+  "azioni": {
+    "serieCompletata": "✓ Set complete",
+    "serieCompletataConDrop_one": "✓ Set complete + drop",
+    "serieCompletataConDrop_other": "✓ Set complete + {count} drops",
+    "riscaldamento": "🔥 Log as warm-up (doesn't count as a set)",
+    "saltaSerie": "⏭ Skip set",
+    "cambiaEsercizio": "🔄 Change exercise",
+    "vai": "Go →",
+    "completaAllenamento": "🏆 Finish workout"
+  },
+  "eserciziDaFare_one": "{count} exercise to do",
+  "eserciziDaFare_other": "{count} exercises to do",
+  "selettore": {
+    "titolo": "Select exercise",
+    "completato": "Completed",
+    "serieComplete_one": "{fatte}/{count} set — completed",
+    "serieComplete_other": "{fatte}/{count} sets — completed",
+    "inCorso": "In progress",
+    "serieFatte_one": "{fatte}/{count} set done",
+    "serieFatte_other": "{fatte}/{count} sets done",
+    "cardio": "Cardio",
+    "aggiungiExtra": "➕ Add extra exercise"
+  },
+  "ricerca": {
+    "titolo": "Add exercise",
+    "cerca": "Search exercises...",
+    "preferito": "Favorite",
+    "varie": "Misc",
+    "mostraAltri": "Show more ({numero})",
+    "nessunoTrovato": "No exercises found",
+    "caricamento": "Loading exercises..."
+  }
+}
