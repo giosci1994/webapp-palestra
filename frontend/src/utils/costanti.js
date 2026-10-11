@@ -55,10 +55,11 @@ export function gradinoAllenamento(serie, massimo) {
  * amber/green, deltaE 8.9) and contrast >= 3:1. "Trascurato" (neglected) is a
  * cool blue: a second warm color next to the amber would be confused with it.
  */
+// etichetta and dettaglio are translation keys: show them with t()
 export const STATI_RECUPERO = {
-  recupero: { etichetta: 'In recupero', dettaglio: '< 48 ore', colore: '#ca8402' },
-  pronto: { etichetta: 'Pronto', dettaglio: '2-14 giorni', colore: '#02a573' },
-  trascurato: { etichetta: 'Trascurato', dettaglio: '> 14 giorni', colore: '#5066a3' },
+  recupero: { etichetta: 'costanti.recupero.recupero', dettaglio: 'costanti.recupero.recuperoDettaglio', colore: '#ca8402' },
+  pronto: { etichetta: 'costanti.recupero.pronto', dettaglio: 'costanti.recupero.prontoDettaglio', colore: '#02a573' },
+  trascurato: { etichetta: 'costanti.recupero.trascurato', dettaglio: 'costanti.recupero.trascuratoDettaglio', colore: '#5066a3' },
 };
 
 /**
@@ -77,33 +78,24 @@ export function statoRecupero(ultimaData, ultimaDataDiretta, adesso) {
   return 'trascurato';
 }
 
-/** Level mapping */
+/** Plan levels; label is a translation key: show it with t() */
 export const LIVELLI = {
-  BASE: { label: 'Base', colore: 'successo' },
-  INTERMEDIO: { label: 'Intermedio', colore: 'avviso' },
-  AVANZATO: { label: 'Avanzato', colore: 'pericolo' }
+  BASE: { label: 'costanti.livelli.BASE', colore: 'successo' },
+  INTERMEDIO: { label: 'costanti.livelli.INTERMEDIO', colore: 'avviso' },
+  AVANZATO: { label: 'costanti.livelli.AVANZATO', colore: 'pericolo' }
 };
 
-/** Role mapping */
+/** Roles; label is a translation key: show it with t() */
 export const RUOLI = {
-  UTENTE: { label: 'Utente', colore: 'accent' },
-  PERSONAL_TRAINER: { label: 'Personal Trainer', colore: 'avviso' },
-  SUPERADMIN: { label: 'Super Admin', colore: 'pericolo' }
+  UTENTE: { label: 'costanti.ruoli.UTENTE', colore: 'accent' },
+  PERSONAL_TRAINER: { label: 'costanti.ruoli.PERSONAL_TRAINER', colore: 'avviso' },
+  SUPERADMIN: { label: 'costanti.ruoli.SUPERADMIN', colore: 'pericolo' }
 };
 
-/** RPE scale labels */
-export const RPE_LABELS = {
-  1: 'Riscaldamento',
-  2: 'Molto leggero',
-  3: 'Leggero',
-  4: 'Moderato',
-  5: 'Medio',
-  6: 'Un po\' faticoso',
-  7: 'Faticoso',
-  8: 'Molto faticoso',
-  9: 'Quasi al massimo',
-  10: 'Massimale'
-};
+/** RPE scale labels: translation keys, show them with t() */
+export const RPE_LABELS = Object.fromEntries(
+  Array.from({ length: 10 }, (_, i) => [i + 1, `costanti.rpe.${i + 1}`])
+);
 
 /**
  * Beyond this duration a workout was almost certainly left open by mistake

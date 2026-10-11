@@ -1,11 +1,15 @@
-import { describe, it, expect, afterEach, vi } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import {
   formattaData, aStringaData, aStringaOra, lunediDi, formattaDataRelativa, formattaNumero,
-  formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale
+  formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale,
+  nomeGruppo, nomeAttrezzatura
 } from './formattatori.js';
+import { scegli } from '../i18n/index.js';
 
 // The tests run in the Europe/Rome time zone (vitest.config.js): 08:05 UTC on
 // 10 October, in daylight saving time, is 10:05 in Italy.
+// They run in Italian unless a test switches to English.
+beforeEach(() => scegli('it'));
 
 describe('formattaData', () => {
   it('senza data mostra un trattino', () => {
@@ -108,6 +112,41 @@ describe('nomi degli esercizi', () => {
   it("l'originale inglese compare solo accanto a una traduzione", () => {
     expect(nomeEsercizioOriginale(importato)).toBe('Barbell Bench Press');
     expect(nomeEsercizioOriginale(curato)).toBeNull();
+  });
+
+  it('in English: the catalog name, or the English one in brackets of a curated exercise', () => {
+    scegli('en');
+    expect(nomeEsercizio(importato)).toBe('Barbell Bench Press');
+    expect(nomeEsercizio({ nome: 'Lat Machine (Lat Pulldown)', nomeIt: null })).toBe('Lat Pulldown');
+    expect(nomeEsercizio(curato)).toBe('Panca piana');
+    expect(nomeEsercizioOriginale(importato)).toBeNull();
+  });
+});
+
+describe('muscle groups and equipment', () => {
+  it('are stored in Italian and shown in the current language', () => {
+    expect(nomeGruppo('Petto')).toBe('Petto');
+    expect(nomeAttrezzatura('Panca Piana')).toBe('Panca Piana');
+    scegli('en');
+    expect(nomeGruppo('Petto')).toBe('Chest');
+    expect(nomeGruppo("Flessori dell'Anca")).toBe('Hip flexors');
+    expect(nomeAttrezzatura('Panca Piana')).toBe('Flat bench');
+  });
+
+  it('a name without a translation shows as it is', () => {
+    scegli('en');
+    expect(nomeGruppo('Gruppo nuovo')).toBe('Gruppo nuovo');
+    expect(nomeAttrezzatura(null)).toBe('');
+  });
+});
+
+describe('dates and numbers in English', () => {
+  it('follow the English way of writing them', () => {
+    scegli('en');
+    expect(formattaData('2026-10-10T08:05:00Z')).toMatch(/10 Oct 2026|Oct 10, 2026/);
+    expect(formattaNumero(1520)).toBe('1,520');
+    expect(formattaNumero(12.5)).toBe('12.5');
+    expect(formattaDataRelativa(new Date(Date.now() - 5 * 60 * 1000))).toBe('5 min ago');
   });
 });
 

@@ -1,0 +1,32 @@
+{
+  "recupero": {
+    "recupero": "Recovering",
+    "recuperoDettaglio": "< 48 hours",
+    "pronto": "Ready",
+    "prontoDettaglio": "2-14 days",
+    "trascurato": "Neglected",
+    "trascuratoDettaglio": "> 14 days"
+  },
+  "livelli": {
+    "BASE": "Beginner",
+    "INTERMEDIO": "Intermediate",
+    "AVANZATO": "Advanced"
+  },
+  "ruoli": {
+    "UTENTE": "Member",
+    "PERSONAL_TRAINER": "Personal Trainer",
+    "SUPERADMIN": "Super Admin"
+  },
+  "rpe": {
+    "1": "Warm-up",
+    "2": "Very light",
+    "3": "Light",
+    "4": "Moderate",
+    "5": "Medium",
+    "6": "Somewhat hard",
+    "7": "Hard",
+    "8": "Very hard",
+    "9": "Almost max",
+    "10": "Max effort"
+  }
+}

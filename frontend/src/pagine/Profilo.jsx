@@ -18,6 +18,7 @@ import {
   Pencil, Download, Smartphone, Monitor, KeyRound, Bell
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
+import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
 
 const OBIETTIVI = ['Massa Muscolare', 'Definizione', 'Resistenza', 'Salute Generale', 'Perdita Peso'];
 const GENERI = [{ v: 'M', l: 'Maschile' }, { v: 'F', l: 'Femminile' }, { v: 'Altro', l: 'Altro' }];
@@ -489,6 +490,8 @@ export default function Profilo() {
                   </div>
                 </div>
               </div>
+
+              <SceltaLingua />
 
               {/* Professional account: become a Personal Trainer (standard users only) */}
               {utente?.ruolo === 'UTENTE' && (

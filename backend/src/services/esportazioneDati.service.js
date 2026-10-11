@@ -29,7 +29,7 @@ export const VERSIONE_FORMATO = 1;
 export const CAMPI_PROFILO = [
   'id', 'email', 'nome', 'ruolo', 'stato', 'dataRegistrazione', 'emailVerificata', 'ultimoAccesso',
   'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm', 'genere', 'bio', 'obiettivoFitness',
-  'preferenzeVisibilita', 'profiloCompletato', 'gamificationAttiva', 'puntiEsperienza',
+  'preferenzeVisibilita', 'lingua', 'profiloCompletato', 'gamificationAttiva', 'puntiEsperienza',
   'ruoloRichiesto', 'accettazioneToS', 'accettazionePrivacy', 'consensoCookie', 'chatRetentionGiorni',
   'specializzazioni', 'anniEsperienza', 'certificazioni', 'contattoPubblico', 'tariffaIndicativa',
   'dataResetStatistiche', 'dataResetGamification'

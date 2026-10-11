@@ -44,9 +44,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'GymMaster — Traccia i tuoi allenamenti',
+        name: 'GymMaster — Track your workouts',
         short_name: 'GymMaster',
-        description: 'PWA per tracking allenamenti in palestra con timer, statistiche e AI coach',
+        description: 'Gym workout tracker with rest timer, progress stats and an AI coach',
         theme_color: '#0A0A0F',
         background_color: '#0A0A0F',
         display: 'standalone',

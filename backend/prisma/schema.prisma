@@ -124,6 +124,7 @@ model Utente {
   bio                  String?                                 // Short description
   obiettivoFitness     String?   @map("obiettivo_fitness")     // "Massa", "Definizione", etc.
   preferenzeVisibilita String?   @map("preferenze_visibilita") // JSON: {"palestra":true,...}
+  lingua               String?                                 // App language chosen in Profile ("en", "it"); null follows the phone
 
   // Onboarding & compliance
   profiloCompletato    Boolean   @default(false) @map("profilo_completato")

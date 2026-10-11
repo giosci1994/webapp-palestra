@@ -10,6 +10,8 @@ import { useRottaPersistente, ottieniUltimaRotta } from './hooks/useRottaPersist
 import CookieBanner from './componenti/comuni/CookieBanner.jsx';
 import { useAutoAggiornamento } from './hooks/useAutoAggiornamento.js';
 import { RefreshCw } from 'lucide-react';
+import { useLingua } from './hooks/useLingua.js';
+import Testo from './i18n/Testo.jsx';
 
 // Public pages
 import Login from './pagine/Login.jsx';
@@ -63,6 +65,7 @@ function TrackerRotta() {
 // --- Update available banner ---
 function BannerAggiornamento() {
   const { aggiornamentoDisponibile, nuovaVersione, forzaAggiornamento } = useAutoAggiornamento();
+  const { t } = useLingua();
 
   if (!aggiornamentoDisponibile) return null;
 
@@ -71,10 +74,10 @@ function BannerAggiornamento() {
       <div className="aggiornamento-banner-contenuto">
         <RefreshCw className="aggiornamento-banner-icona" size={18} />
         <span className="aggiornamento-banner-testo">
-          Nuova versione <strong>{nuovaVersione}</strong> disponibile
+          <Testo t="app.nuovaVersione" valori={{ versione: nuovaVersione }} componenti={{ b: <strong /> }} />
         </span>
         <button onClick={forzaAggiornamento} className="aggiornamento-banner-btn">
-          Aggiorna ora
+          {t('app.aggiornaOra')}
         </button>
       </div>
     </div>

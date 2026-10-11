@@ -7,6 +7,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import { api, apiChiamata, impostaToken, cancellaToken, refreshSessione, impostaGestoreSessioneScaduta } from '../config/api.js';
 import { disiscriviDispositivo } from '../utils/push.js';
 import { startAuthentication } from '@simplewebauthn/browser';
+import { scegli } from '../i18n/index.js';
 
 const AuthContesto = createContext(null);
 
@@ -14,6 +15,13 @@ export function AuthProvider({ children }) {
   const [utente, setUtente] = useState(null);
   const [caricamento, setCaricamento] = useState(true);
   const [errore, setErrore] = useState(null);
+
+  // The language saved on the account wins over this phone's: the app
+  // switches to it at sign-in and when the profile loads. null = the phone's.
+  const linguaAccount = utente && 'lingua' in utente ? utente.lingua : undefined;
+  useEffect(() => {
+    if (linguaAccount !== undefined) scegli(linguaAccount);
+  }, [linguaAccount]);
 
   // The session dies in ONE place only: when a real protected call gets a
   // 401 and the refresh fails (api.js). So a transient blip or a race on the

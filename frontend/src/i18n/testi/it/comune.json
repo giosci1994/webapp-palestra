@@ -1,0 +1,32 @@
+{
+  "salva": "Salva",
+  "annulla": "Annulla",
+  "chiudi": "Chiudi",
+  "elimina": "Elimina",
+  "modifica": "Modifica",
+  "conferma": "Conferma",
+  "indietro": "Indietro",
+  "avanti": "Avanti",
+  "fatto": "Fatto",
+  "caricamento": "Caricamento…",
+  "salvataggio": "Salvataggio…",
+  "riprova": "Riprova",
+  "cerca": "Cerca",
+  "si": "Sì",
+  "no": "No",
+  "oppure": "oppure",
+  "tutti": "Tutti",
+  "nessuno": "Nessuno",
+  "errore": "Qualcosa è andato storto",
+  "erroreCaricamento": "Non sono riuscito a caricare i dati",
+  "tempo": {
+    "adesso": "ora",
+    "minutiFa": "{count} min fa",
+    "oreFa": "{count}h fa",
+    "giorniFa": "{count}g fa"
+  },
+  "esercizi_one": "{count} esercizio",
+  "esercizi_other": "{count} esercizi",
+  "serie_one": "{count} serie",
+  "serie_other": "{count} serie"
+}

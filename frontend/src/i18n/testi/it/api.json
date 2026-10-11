@@ -1,0 +1,9 @@
+{
+  "sessioneScaduta": "Sessione scaduta. Accedi di nuovo per continuare.",
+  "troppeRichieste": "Troppe richieste o IP temporaneamente bloccato dai sistemi di sicurezza.",
+  "accessoNegato": "Accesso negato. Il traffico potrebbe essere stato bloccato dal firewall.",
+  "erroreServerCodice": "Errore del server ({codice}). Riprova più tardi.",
+  "rispostaNonValida": "Risposta dal server non valida (formato non supportato).",
+  "erroreServer": "Errore del server",
+  "downloadFallito": "Download non riuscito (errore {codice})"
+}

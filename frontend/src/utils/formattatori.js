@@ -1,10 +1,12 @@
 // ============================================
 // GymMaster — Formatters
-// Dates, numbers, durations
+// Dates, numbers, durations and names, in the app's current language
 // ============================================
 
+import { linguaCorrente, localeCorrente, traduci } from '../i18n/index.js';
+
 /**
- * Formats an ISO date in Italian format.
+ * Formats an ISO date the way the current language writes it.
  * @param {string} data - ISO date string
  * @param {boolean} conOra - Also show the time
  */
@@ -16,7 +18,7 @@ export function formattaData(data, conOra = false) {
     year: 'numeric',
     ...(conOra && { hour: '2-digit', minute: '2-digit' })
   };
-  return new Date(data).toLocaleDateString('it-IT', opzioni);
+  return new Date(data).toLocaleDateString(localeCorrente(), opzioni);
 }
 
 /** "YYYY-MM-DD" from a local date, without going through UTC (which would shift the day). */
@@ -38,7 +40,7 @@ export function aStringaOra(d) {
 }
 
 /**
- * Formats a date in relative form (e.g. "2 ore fa", 2 hours ago).
+ * Formats a date in relative form ("2h ago"), then as a date after a week.
  */
 export function formattaDataRelativa(data) {
   if (!data) return '—';
@@ -48,20 +50,21 @@ export function formattaDataRelativa(data) {
   const ore = Math.floor(diff / 3600000);
   const giorni = Math.floor(diff / 86400000);
 
-  if (minuti < 1) return 'ora';
-  if (minuti < 60) return `${minuti} min fa`;
-  if (ore < 24) return `${ore}h fa`;
-  if (giorni < 7) return `${giorni}g fa`;
+  if (minuti < 1) return traduci('comune.tempo.adesso');
+  if (minuti < 60) return traduci('comune.tempo.minutiFa', { count: minuti });
+  if (ore < 24) return traduci('comune.tempo.oreFa', { count: ore });
+  if (giorni < 7) return traduci('comune.tempo.giorniFa', { count: giorni });
   return formattaData(data);
 }
 
 /**
- * Formats a number the Italian way (it-IT): decimal comma, and a thousands
- * separator from five digits up (1520, but 15.200).
+ * Formats a number the way the current language writes it: in Italian a
+ * decimal comma, and a thousands separator from five digits up (1520, but
+ * 15.200); in English 1,520 and 12.5.
  */
 export function formattaNumero(n) {
   if (n == null) return '0';
-  return n.toLocaleString('it-IT');
+  return n.toLocaleString(localeCorrente());
 }
 
 /**
@@ -84,15 +87,21 @@ export function formattaDurata(minuti) {
 }
 
 /**
- * Name of the exercise to show.
+ * Name of the exercise to show, in the current language.
  *
  * The imported catalog has English names and `nomeIt` with the translation;
- * the hand-curated one already has the Italian name in `nome` and an empty `nomeIt`.
- * Here the Italian one is always chosen when there is one.
+ * the hand-curated one has the Italian name in `nome`, often with the English
+ * one in brackets ("Lat Machine (Lat Pulldown)"), and an empty `nomeIt`.
+ * - In Italian: the Italian name whenever there is one.
+ * - In English: the catalog's English name; for a curated exercise the name
+ *   in brackets, if there is one, otherwise its name as it is.
  */
 export function nomeEsercizio(esercizio) {
   if (!esercizio) return '';
-  return esercizio.nomeIt || esercizio.nome || '';
+  if (linguaCorrente() === 'it') return esercizio.nomeIt || esercizio.nome || '';
+  if (esercizio.nomeIt) return esercizio.nome || '';
+  const traParentesi = esercizio.nome?.match(/\(([^)]+)\)\s*$/);
+  return traParentesi ? traParentesi[1].trim() : esercizio.nome || '';
 }
 
 /**
@@ -106,10 +115,27 @@ export function eCardioNelloStorico({ esercizio, serie }) {
 }
 
 /**
- * Original English name, to show as a secondary line.
- * Returns null when it matches the main name, so as not to repeat it.
+ * Original English name, to show as a secondary line under an Italian one.
+ * Null when it would repeat the main name: in English, or with no translation.
  */
 export function nomeEsercizioOriginale(esercizio) {
-  if (!esercizio?.nomeIt) return null;
+  if (!esercizio?.nomeIt || linguaCorrente() !== 'it') return null;
   return esercizio.nome || null;
 }
+
+/** A text from a translation file, or the value itself when it has none */
+const traduciNome = (namespace, valore) => {
+  if (!valore) return valore ?? '';
+  const chiave = `${namespace}.${valore}`;
+  const testo = traduci(chiave);
+  return testo === chiave ? valore : testo;
+};
+
+/**
+ * Name of a muscle group in the current language. Groups are stored in
+ * Italian ("Petto", "Gran Dorsale"); one without a translation shows as it is.
+ */
+export const nomeGruppo = gruppo => traduciNome('gruppi', gruppo);
+
+/** Name of a piece of equipment in the current language (stored in Italian) */
+export const nomeAttrezzatura = nome => traduciNome('attrezzi', nome);
