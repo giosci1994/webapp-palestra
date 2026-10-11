@@ -6,6 +6,10 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { api } from '../config/api.js';
+import { useAuth } from '../contesti/AuthContesto.jsx';
+import { accoda, inviaOra, togliDallaCoda } from '../utils/codaSerie.js';
+import { useCodaSerie, useVoceInCoda } from '../hooks/useCodaSerie.js';
+import { entro } from '../utils/push.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
@@ -27,6 +31,13 @@ const STILE_PROPOSTA = {
 };
 const kg = n => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
 
+/** Quanto aspetta "Termina" che la coda parta, prima di mostrare il riepilogo senza rete */
+const ATTESA_CHIUSURA_MS = 8000;
+/** Una serie parte di solito in un attimo: l'avviso solo per quelle ferme da qualche secondo */
+const CODA_FERMA_MS = 3000;
+/** Cosa serve alla coda di un allenamento (anche per ricrearlo, se sul server sparisce) */
+const perLaCoda = s => ({ id: s.id, schedaId: s.schedaId, dataInizio: s.dataInizio });
+
 export default function WorkoutLive() {
   const { id } = useParams();
   const location = useLocation();
@@ -36,6 +47,11 @@ export default function WorkoutLive() {
   // Con le push attive, la fine del recupero arriva anche a schermo bloccato
   const push = usePushNotifiche();
   const avvisoRecuperoRef = useRef(false);
+  // Serie, salti e "Termina" passano dalla coda sul telefono (utils/codaSerie.js):
+  // partono subito se c'e' rete, se no appena torna
+  const { utente } = useAuth();
+  const utenteId = utente?.id;
+  const coda = useCodaSerie(utenteId);
 
   // --- Persistenza progressi in localStorage ---
   // Chiave unica per sessione: sopravvive a tab kill / cambio app
@@ -59,8 +75,11 @@ export default function WorkoutLive() {
   const [serieCompletate, setSerieCompletate] = useState(ss ? ss.serieCompletate : []);
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
   const [riprendendo, setRiprendendo] = useState(false);
-  // Chiuso ore dopo l'ultima serie: il server lo fa finire li' (e non si riprende)
-  const [finitoAllUltimaSerie, setFinitoAllUltimaSerie] = useState(null);
+  const [chiudendo, setChiudendo] = useState(false);
+  // "Termina" messo in coda: finche' e' li' l'allenamento e' chiuso solo sul
+  // telefono; partito, la risposta del server porta record e fine
+  const [idChiusura, setIdChiusura] = useState(null);
+  const chiusura = useVoceInCoda(utenteId, idChiusura);
   const [mostraSelettoreEsercizi, setMostraSelettoreEsercizi] = useState(false);
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
@@ -81,15 +100,33 @@ export default function WorkoutLive() {
   // recupero vedi cosa ti aspetta e puoi spostarti al macchinario.
   const [recuperoInCima, setRecuperoInCima] = useState(false);
   const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
-  const [nuoviRecord, setNuoviRecord] = useState([]);
+  const nuoviRecord = chiusura.risposta?.recordPersonali || [];
+  // Chiuso ore dopo l'ultima serie: il server lo fa finire li' (e non si riprende)
+  const finitoAllUltimaSerie = chiusura.risposta?.dimenticata ? new Date(chiusura.risposta.dati.dataFine) : null;
   const [mostraVideo, setMostraVideo] = useState(false);
   const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
   // Ultima volta che hai fatto ciascun esercizio, in qualsiasi scheda
   const [ultimiCarichi, setUltimiCarichi] = useState({});
-  // Una serie alla volta: un doppio tocco registrava la stessa serie due volte
+  // Un doppio tocco registrava la stessa serie due volte: dopo una serie i
+  // pulsanti riposano un attimo
   const inviandoRef = useRef(false);
   const [inviando, setInviando] = useState(false);
+  const riposaUnAttimo = () => {
+    inviandoRef.current = true;
+    setInviando(true);
+    setTimeout(() => {
+      inviandoRef.current = false;
+      setInviando(false);
+    }, 600);
+  };
+
+  /** Mette in coda una serie (fatta o saltata) e prova subito a mandarla */
+  const registraSerie = (dati) => {
+    const voce = accoda(utenteId, { tipo: 'serie', sessione: perLaCoda(sessione), dati });
+    inviaOra(utenteId).catch(err => console.error('Invio della serie:', err));
+    return voce;
+  };
 
   const salvaProgressi = useCallback((stato) => {
     try {
@@ -251,6 +288,10 @@ export default function WorkoutLive() {
   const secondiTrascorsi = Math.floor((millisecondiTrascorsi % 60000) / 1000);
   const cronometro = `${oreTrascorsi > 0 ? oreTrascorsi + ':' : ''}${oreTrascorsi > 0 ? minutiTrascorsi.toString().padStart(2, '0') : minutiTrascorsi}:${secondiTrascorsi.toString().padStart(2, '0')}`;
 
+  // Serie salvate sul telefono e non ancora arrivate: si dice solo quando
+  // aspettano da qualche secondo (con la rete partono subito)
+  const codaFerma = coda.quante > 0 && oraAttuale.getTime() - Date.parse(coda.dalle) > CODA_FERMA_MS;
+
   // Serie completate per l'esercizio attuale
   const serieEsercizio = serieCompletate.filter(
     s => s.esercizioId === esercizioAttuale?.esercizioId
@@ -293,7 +334,7 @@ export default function WorkoutLive() {
     }
   };
 
-  const completaSerie = async () => {
+  const completaSerie = () => {
     if (inviandoRef.current) return;
     if (isCardio) {
       if (!form.minuti) return;
@@ -314,67 +355,51 @@ export default function WorkoutLive() {
       })
     };
 
-    inviandoRef.current = true;
-    setInviando(true);
-    try {
-      const risposta = await api.post(`/sessioni/${sessione.id}/serie`, datiSerie);
-      const nuoveCompletate = [...serieCompletate, risposta.dati];
-      // Finito l'esercizio si passa subito al prossimo non completato.
-      // prossimoIdx esclude gia' l'esercizio attuale, e questa serie non cambia
-      // lo stato degli altri: il valore calcolato nel render e' quello giusto.
-      const passaAvanti = serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1;
-      if (passaAvanti) {
-        const nuovoForm = formPerNuovoEsercizio(form);
-        salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: prossimoIdx, serieCorrente: 1, form: nuovoForm });
-        setSerieCompletate(nuoveCompletate);
-        apriEsercizio(prossimoIdx);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1 });
-        setSerieCompletate(nuoveCompletate);
-        setSerieCorrente(serieCorrente + 1);
-      }
-
-      // Recupero: quello dell'esercizio appena finito, anche se si e' gia' passati avanti
-      const prossimo = passaAvanti
-        ? `${nomeEsercizio(esercizi[prossimoIdx].esercizio)} · serie 1`
-        : `${nomeEsercizio(esercizioAttuale.esercizio)} · serie ${serieCorrente + 1}`;
-      if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo);
-      else fermaRecupero();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      inviandoRef.current = false;
-      setInviando(false);
+    riposaUnAttimo();
+    const voce = registraSerie(datiSerie);
+    const nuoveCompletate = [...serieCompletate, { ...datiSerie, idClient: voce.id }];
+    // Finito l'esercizio si passa subito al prossimo non completato.
+    // prossimoIdx esclude gia' l'esercizio attuale, e questa serie non cambia
+    // lo stato degli altri: il valore calcolato nel render e' quello giusto.
+    const passaAvanti = serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1;
+    if (passaAvanti) {
+      const nuovoForm = formPerNuovoEsercizio(form);
+      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: prossimoIdx, serieCorrente: 1, form: nuovoForm });
+      setSerieCompletate(nuoveCompletate);
+      apriEsercizio(prossimoIdx);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1 });
+      setSerieCompletate(nuoveCompletate);
+      setSerieCorrente(serieCorrente + 1);
     }
+
+    // Recupero: quello dell'esercizio appena finito, anche se si e' gia' passati avanti
+    const prossimo = passaAvanti
+      ? `${nomeEsercizio(esercizi[prossimoIdx].esercizio)} · serie 1`
+      : `${nomeEsercizio(esercizioAttuale.esercizio)} · serie ${serieCorrente + 1}`;
+    if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo);
+    else fermaRecupero();
   };
 
-  const saltaSerie = async () => {
+  const saltaSerie = () => {
     if (inviandoRef.current) return;
-    inviandoRef.current = true;
-    setInviando(true);
-    try {
-      await api.post(`/sessioni/${sessione.id}/serie`, {
-        esercizioId: esercizioAttuale.esercizioId,
-        serieNumero: serieCorrente,
-        pesoEffettivo: 0,
-        repEffettive: 0,
-        completato: false,
-        motivoSaltoEsercizio: 'Saltata'
-      });
-      if (serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1) {
-        salvaProgressi({ ...statoAttuale(), esercizioIdx: prossimoIdx, serieCorrente: 1, form: formPerNuovoEsercizio(form) });
-        cambiaEsercizio(prossimoIdx);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else {
-        salvaProgressi({ ...statoAttuale(), serieCorrente: serieCorrente + 1 });
-        setSerieCorrente(serieCorrente + 1);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      inviandoRef.current = false;
-      setInviando(false);
+    riposaUnAttimo();
+    registraSerie({
+      esercizioId: esercizioAttuale.esercizioId,
+      serieNumero: serieCorrente,
+      pesoEffettivo: 0,
+      repEffettive: 0,
+      completato: false,
+      motivoSaltoEsercizio: 'Saltata'
+    });
+    if (serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1) {
+      salvaProgressi({ ...statoAttuale(), esercizioIdx: prossimoIdx, serieCorrente: 1, form: formPerNuovoEsercizio(form) });
+      cambiaEsercizio(prossimoIdx);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      salvaProgressi({ ...statoAttuale(), serieCorrente: serieCorrente + 1 });
+      setSerieCorrente(serieCorrente + 1);
     }
   };
 
@@ -439,32 +464,44 @@ export default function WorkoutLive() {
     if (timerAttivo) setRecuperoInCima(true);
   };
 
+  // "Termina" va in coda dopo le serie: parte con loro, o quando torna la rete.
+  // Il riepilogo aspetta un poco l'invio (per i record), poi si mostra comunque
   const completaAllenamento = async () => {
+    if (chiudendo) return;
+    setChiudendo(true);
+    const voce = accoda(utenteId, { tipo: 'completa', sessione: perLaCoda(sessione), dati: { noteFinali: '' } });
     try {
-      const risposta = await api.patch(`/sessioni/${sessione.id}/completa`, {
-        noteFinali: ''
-      });
-      annullaAvvisoRecupero();
-      setNuoviRecord(risposta.recordPersonali || []);
-      setFinitoAllUltimaSerie(risposta.dimenticata ? new Date(risposta.dati.dataFine) : null);
-      setMostraRiepilogo(true);
-      pulisciProgressi(); // Pulisci localStorage al completamento
-      wakeLock.disattiva();
-    } catch (err) {
-      alert(err.message);
+      await entro(inviaOra(utenteId), ATTESA_CHIUSURA_MS, 'Rete lenta');
+    } catch {
+      // Senza rete, o con una rete che non risponde: resta in coda e parte dopo
     }
+    annullaAvvisoRecupero();
+    setIdChiusura(voce.id);
+    setMostraRiepilogo(true);
+    setChiudendo(false);
+    pulisciProgressi(); // Pulisci localStorage al completamento
+    wakeLock.disattiva();
+  };
+
+  const tornaAllAllenamento = () => {
+    setIdChiusura(null);
+    setMostraRiepilogo(false);
+    salvaProgressi(statoAttuale());
+    wakeLock.attiva();
   };
 
   // "Ho chiuso per sbaglio": la sessione torna in corso e si riparte da dove
   // eri, con le serie gia' fatte (sono ancora tutte qui, in memoria)
   const riprendiAllenamento = async () => {
+    // Chiuso senza rete: "Termina" e' ancora sul telefono, basta toglierlo
+    if (togliDallaCoda(utenteId, [idChiusura])) {
+      tornaAllAllenamento();
+      return;
+    }
     setRiprendendo(true);
     try {
       await api.patch(`/sessioni/${sessione.id}/riapri`);
-      setNuoviRecord([]);
-      setMostraRiepilogo(false);
-      salvaProgressi(statoAttuale());
-      wakeLock.attiva();
+      tornaAllAllenamento();
     } catch (err) {
       alert(err.message);
     } finally {
@@ -488,6 +525,11 @@ export default function WorkoutLive() {
                     className="glass-card p-8 max-w-md w-full text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h1 className="text-2xl font-bold mb-2">Allenamento completato!</h1>
+          {chiusura.inCoda && (
+            <p className="text-xs text-[var(--testo-secondario)] px-3 py-2 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
+              📴 Sei senza rete: l'allenamento è salvato sul telefono e lo invio appena torna la connessione. I record li trovi poi nelle Statistiche.
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-4 my-6">
             <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
               <p className="text-2xl font-bold testo-gradient">{serieCompletate.length}</p>
@@ -565,12 +607,18 @@ export default function WorkoutLive() {
         </div>
         <div className="flex items-center gap-2">
           {wakeLock.attivo && <span className="text-xs text-[var(--successo)]">🔒 Schermo attivo</span>}
-          <button onClick={completaAllenamento}
-                  className="text-sm font-medium text-[var(--pericolo)] px-3 py-1.5 rounded-[var(--raggio-md)] hover:bg-[var(--pericolo-dim)]">
-            Termina
+          <button onClick={completaAllenamento} disabled={chiudendo}
+                  className="text-sm font-medium text-[var(--pericolo)] px-3 py-1.5 rounded-[var(--raggio-md)] hover:bg-[var(--pericolo-dim)] disabled:opacity-60">
+            {chiudendo ? 'Un attimo...' : 'Termina'}
           </button>
         </div>
       </div>
+
+      {codaFerma && (
+        <p className="px-4 py-2 text-xs text-center text-[var(--testo-secondario)] bg-[var(--bg-terziario)] border-b border-[var(--bordo)]">
+          📴 Senza rete: {coda.quante === 1 ? '1 serie salvata' : `${coda.quante} serie salvate`} sul telefono, le invio appena torna la connessione
+        </p>
+      )}
 
       {/* Recupero dopo l'ultima serie: resta in vista mentre prepari il prossimo esercizio */}
       {timerAttivo && recuperoInCima && timer.secondiRimasti > 0 && (
@@ -909,8 +957,8 @@ export default function WorkoutLive() {
                 )}
               </>
             ) : (
-              <button onClick={completaAllenamento} className="btn-enorme successo">
-                🏆 Completa Allenamento
+              <button onClick={completaAllenamento} disabled={chiudendo} className="btn-enorme successo disabled:opacity-60">
+                {chiudendo ? 'Un attimo...' : '🏆 Completa Allenamento'}
               </button>
             )}
           </div>

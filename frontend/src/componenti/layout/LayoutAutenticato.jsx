@@ -12,11 +12,14 @@ import BarraNavigazione from './BarraNavigazione.jsx';
 import NovitaStorie from '../specifici/NovitaStorie.jsx';
 import PromemoriaAllenamento from '../specifici/PromemoriaAllenamento.jsx';
 import RecuperoErrori from '../comuni/RecuperoErrori.jsx';
+import { useInvioCoda } from '../../hooks/useCodaSerie.js';
 
 export default function LayoutAutenticato() {
   const { autenticato, caricamento, utente } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  // Le serie registrate senza rete partono appena si puo', da qualsiasi pagina
+  useInvioCoda(utente?.id);
   // Finche' le novita' non hanno deciso se aprirsi (o sono aperte), il
   // promemoria dell'allenamento aspetta: due finestre insieme non si leggono
   const [storieOccupate, setStorieOccupate] = useState(true);

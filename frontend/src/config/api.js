@@ -40,9 +40,10 @@ export async function refreshSessione() {
  * - Refresh token automatico se 401
  * - Parsing JSON automatico
  * - Gestione errori strutturata
+ * - `signal` facoltativo per interrompere la richiesta (es. AbortSignal.timeout)
  */
 export async function apiChiamata(percorso, opzioni = {}) {
-  const { body, metodo = 'GET', headers = {}, skipAuth = false } = opzioni;
+  const { body, metodo = 'GET', headers = {}, skipAuth = false, signal } = opzioni;
 
   const config = {
     method: metodo,
@@ -50,7 +51,8 @@ export async function apiChiamata(percorso, opzioni = {}) {
       'Content-Type': 'application/json',
       ...headers
     },
-    credentials: 'include' // Per cookie refresh token
+    credentials: 'include', // Per cookie refresh token
+    signal
   };
 
   // Se non abbiamo un token e non è una chiamata skipAuth,

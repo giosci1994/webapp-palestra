@@ -11,8 +11,8 @@ Rules:
 ## Come lavoriamo
 
 - Rispondi sempre in italiano: l'utente e' Giovanni, il proprietario del progetto.
-- Un commit per funzionalita'. Prima di fare push e aprire la pull request chiedi conferma. Le PR hanno base `master`, mai un altro branch: GitHub non sposta la base quando la PR sotto viene unita.
-- Il merge lo fa l'utente. La produzione si aggiorna quando l'utente pubblica una release su GitHub (vedi "Rilascio"): da una sessione di lavoro non si installa niente.
+- Un commit per funzionalita'. Finito il lavoro, con i test verdi, fai push e apri la pull request senza chiedere conferma. Le PR hanno base `master`, mai un altro branch: GitHub non sposta la base quando la PR sotto viene unita.
+- Il merge lo fa l'utente, dopo aver guardato i test della PR. La produzione si aggiorna quando l'utente pubblica una release su GitHub (vedi "Rilascio"): da una sessione di lavoro non si installa niente.
 - Il repository e' pubblico: niente segreti, chiavi, dati degli utenti o indirizzi interni in commit, PR e file.
 
 ## Test
