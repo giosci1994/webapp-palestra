@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Controller Bot Telegram
-// Endpoint interni chiamati dal container bot (X-Bot-Secret).
+// GymMaster — Telegram bot controller
+// Internal endpoints called by the bot container (X-Bot-Secret).
 // ============================================
 
 import * as botService from '../services/bot.service.js';
@@ -14,7 +14,7 @@ export async function collega(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/bot/messaggio { chatId, testo } — richiede account collegato */
+/** POST /api/v1/bot/messaggio { chatId, testo } — requires a linked account */
 export async function messaggio(req, res, next) {
   try {
     const { testo } = req.body;
@@ -23,7 +23,7 @@ export async function messaggio(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/bot/annulla { chatId } — annulla la bozza corrente */
+/** POST /api/v1/bot/annulla { chatId } — cancels the current draft */
 export async function annulla(req, res, next) {
   try {
     await botService.annullaBozza(req.utenteTelegram.id);
@@ -31,7 +31,7 @@ export async function annulla(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/bot/schede { chatId } — lista schede dell'utente */
+/** POST /api/v1/bot/schede { chatId } — list of the user's plans */
 export async function schede(req, res, next) {
   try {
     const dati = await botService.listaSchedeUtente(req.utenteTelegram.id);
@@ -39,7 +39,7 @@ export async function schede(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/bot/scheda { chatId, schedaId } — dettaglio scheda */
+/** POST /api/v1/bot/scheda { chatId, schedaId } — plan details */
 export async function scheda(req, res, next) {
   try {
     const { schedaId } = req.body;
@@ -48,7 +48,7 @@ export async function scheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/bot/statistiche { chatId } — riepilogo statistiche */
+/** POST /api/v1/bot/statistiche { chatId } — statistics summary */
 export async function statistiche(req, res, next) {
   try {
     const dati = await botService.statisticheTesto(req.utenteTelegram.id);
@@ -56,7 +56,7 @@ export async function statistiche(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-// ─── Creazione guidata a pulsanti ───
+// ─── Guided creation with buttons ───
 
 export async function guidaCategorie(req, res, next) {
   try { res.json({ successo: true, dati: { regioni: await botService.categorieEsercizi() } }); }

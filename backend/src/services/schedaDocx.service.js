@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Esportazione Schede in .docx
-// Documento Word apribile offline (Word, Google Docs, LibreOffice)
+// GymMaster — Workout plan export to .docx
+// A Word document that opens offline (Word, Google Docs, LibreOffice)
 // ============================================
 
 import {
@@ -8,8 +8,8 @@ import {
   Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType
 } from 'docx';
 
-// Palette e misure ricalcate sul modello fornito dall'utente: blu navy per
-// intestazioni e titoli di sessione, grigi neutri per il corpo.
+// Palette and sizes copied from the template the user provided: navy blue
+// for headers and session titles, neutral grays for the body.
 const C = {
   titolo: '0F2038',
   sottotitolo: '666666',
@@ -24,8 +24,8 @@ const C = {
 
 const FONT = 'Arial';
 
-// Quattro colonne di pari larghezza. Vanno dichiarate sia sulla tabella sia su
-// ogni cella, in DXA: con le percentuali Google Docs sbaglia il layout.
+// Four columns of equal width. They must be declared both on the table and on
+// every cell, in DXA: with percentages Google Docs gets the layout wrong.
 const LARGHEZZA_COLONNA = 2484;
 const COLONNE = [LARGHEZZA_COLONNA, LARGHEZZA_COLONNA, LARGHEZZA_COLONNA, LARGHEZZA_COLONNA];
 
@@ -45,7 +45,7 @@ function cella(testo, { grassetto = false, sfondo = 'FFFFFF', colore = C.cellaNo
   });
 }
 
-/** "4 x 8-10", oppure la descrizione della voce cardio, che non ha serie. */
+/** "4 x 8-10", or the description of the cardio entry, which has no sets. */
 function serieEReps(voce) {
   const cardio = [];
   if (voce.durataMinuti) cardio.push(`${voce.durataMinuti} min`);
@@ -57,17 +57,17 @@ function serieEReps(voce) {
   return voce.repTarget || '—';
 }
 
-/** Recupero nella notazione del modello: 90" invece di 90s. */
+/** Rest in the template's notation: 90" instead of 90s. */
 function recupero(voce) {
   return voce.recuperoSecondi ? `${voce.recuperoSecondi}"` : '—';
 }
 
 /**
- * Colonna "Note Tecniche".
+ * The "Note Tecniche" (technical notes) column.
  *
- * In ordine di precedenza: la nota scritta per questo esercizio in questa
- * scheda, poi la descrizione generica dell'esercizio, infine gruppo muscolare
- * e attrezzatura. Piu' i parametri cardio dove servono.
+ * In order of precedence: the note written for this exercise in this plan,
+ * then the exercise's generic description, finally muscle group and
+ * equipment. Plus the cardio parameters where needed.
  */
 function note(voce) {
   const parti = [];
@@ -80,8 +80,8 @@ function note(voce) {
   if (voce.livelloResistenza) cardio.push(`resistenza ${voce.livelloResistenza}`);
   if (cardio.length > 0) parti.push(cardio.join(', '));
 
-  // La nota scritta per questa scheda ha la precedenza: e' l'indicazione
-  // specifica, mentre la descrizione dell'esercizio e' generica.
+  // The note written for this plan takes precedence: it is the specific
+  // instruction, while the exercise's description is generic.
   const nota = voce.note?.trim();
   const descrizione = voce.esercizio?.descrizione?.trim();
   if (nota) {
@@ -152,8 +152,9 @@ function paragrafoSessione(testo) {
 }
 
 /**
- * Ricava le linee guida dalla descrizione: se contiene piu' righe o e' divisa
- * da punti e virgola diventa un elenco puntato, altrimenti resta un paragrafo.
+ * Builds the guidelines from the description: if it has several lines, or
+ * items separated by a "." or ";" followed by two or more spaces, it becomes a
+ * bulleted list; otherwise it stays a paragraph.
  */
 function lineeGuida(testo) {
   if (!testo?.trim()) return [];
@@ -173,7 +174,7 @@ function lineeGuida(testo) {
   }));
 }
 
-/** Righe vuote per segnare i carichi a mano: il documento si usa in palestra. */
+/** Blank lines to write down loads by hand: the document is used at the gym. */
 function spazioNote() {
   const righe = [paragrafoSezione('Note')];
   for (let i = 0; i < 4; i++) {
@@ -187,13 +188,13 @@ function spazioNote() {
 }
 
 /**
- * Genera il documento di una o piu' schede.
+ * Generates the document for one or more workout plans.
  *
- * Con piu' schede ciascuna diventa una sessione numerata, che e' il modo in cui
- * un programma settimanale viene normalmente scritto: non una scheda ripetuta
- * ogni giorno, ma sedute diverse distribuite sulla settimana.
+ * With several plans each one becomes a numbered session, which is how a
+ * weekly program is normally written: not one plan repeated every day, but
+ * different sessions spread over the week.
  *
- * @param {object[]} schede - Schede con `esercizi[].esercizio` inclusi
+ * @param {object[]} schede - Plans with `esercizi[].esercizio` included
  * @param {{titolo?: string, sottotitolo?: string}} [opzioni]
  * @returns {Promise<Buffer>}
  */
@@ -212,9 +213,9 @@ export async function generaDocxSchede(schede, opzioni = {}) {
 
   const corpo = [paragrafoTitolo(titolo), paragrafoSottotitolo(sottotitolo)];
 
-  // Le descrizioni delle schede diventano le linee guida in testa al documento.
-  // Le sedute di uno stesso programma condividono spesso le stesse indicazioni:
-  // ripeterle una volta per scheda renderebbe il documento illeggibile.
+  // The plans' descriptions become the guidelines at the top of the document.
+  // The sessions of one program often share the same instructions: repeating
+  // them once per plan would make the document unreadable.
   const descrizioni = [...new Set(schede.map(s => s.descrizione?.trim()).filter(Boolean))];
   if (descrizioni.length > 0) {
     corpo.push(paragrafoSezione('Linee Guida'));
@@ -268,10 +269,10 @@ export async function generaDocxSchede(schede, opzioni = {}) {
   return Packer.toBuffer(documento);
 }
 
-/** Nome file sicuro: solo caratteri innocui, cosi' nessun titolo puo' alterare l'header HTTP. */
+/** Safe file name: only harmless characters, so no title can tamper with the HTTP header. */
 export function nomeFileDocumento(titolo) {
   const base = (titolo || 'scheda')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // toglie gli accenti
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // strips the accents
     .replace(/[^a-zA-Z0-9 _-]/g, '')
     .trim().replace(/\s+/g, '-')
     .slice(0, 60) || 'scheda';

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Allenamento
-// Visualizzazione ottimizzata per l'avvio rapido delle schede
+// GymMaster — Workout page
+// View optimized for starting a plan quickly
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -11,11 +11,11 @@ import { LIVELLI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play } from 'lucide-react';
 
-// Le due viste delle schede stanno fuori da Allenamento: dichiarate dentro,
-// a ogni render della pagina sarebbero componenti nuovi, ricreati da capo
-// (con l'animazione d'ingresso che riparte).
+// The two plan views live outside Allenamento: declared inside it, they would
+// be new components on every render of the page, recreated from scratch
+// (with the entrance animation starting over).
 
-// ─── MOBILE: Griglia quadratoni con play centrale grande ───
+// ─── MOBILE: grid of big squares with a large play button in the middle ───
 function GrigliaSchede({ lista, onApri }) {
   return (
     <div className="grid grid-cols-2 gap-4 md:hidden">
@@ -30,16 +30,16 @@ function GrigliaSchede({ lista, onApri }) {
           className="aspect-square glass-card p-4 flex flex-col justify-between cursor-pointer hover:border-[var(--accent-hover)] transition-all duration-300 relative overflow-hidden group"
           style={{ background: 'var(--vetro)' }}
         >
-          {/* Sfondo sfumato decorativo */}
+          {/* Decorative gradient background */}
           <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500" style={{ background: 'var(--accent)' }}></div>
           <div className="absolute -bottom-10 -left-10 w-20 h-20 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" style={{ background: 'var(--accent-alt)' }}></div>
 
-          {/* Titolo in alto */}
+          {/* Title at the top */}
           <h3 className="font-bold text-sm leading-tight line-clamp-2 text-center text-[var(--testo-primario)] z-10 font-sans">
             {scheda.titolo}
           </h3>
 
-          {/* Pulsante Play centrale grande */}
+          {/* Large Play button in the middle */}
           <div className="flex-1 flex items-center justify-center z-10">
             <div className="w-12 h-12 rounded-full flex items-center justify-center text-white transition-all duration-300 shadow-[var(--ombra-accent)] group-hover:scale-110 group-hover:shadow-[0_8px_20px_var(--accent-glow)]"
                  style={{
@@ -49,7 +49,7 @@ function GrigliaSchede({ lista, onApri }) {
             </div>
           </div>
 
-          {/* Info in basso */}
+          {/* Info at the bottom */}
           <div className="flex items-center justify-between w-full z-10">
             <span className={`badge ${
               scheda.livello === 'BASE' ? 'successo' :
@@ -68,7 +68,7 @@ function GrigliaSchede({ lista, onApri }) {
   );
 }
 
-// ─── DESKTOP: Vista lista orizzontale premium ───
+// ─── DESKTOP: premium horizontal list view ───
 function ListaSchede({ lista, onApri }) {
   return (
     <div className="hidden md:flex flex-col gap-3">
@@ -84,10 +84,10 @@ function ListaSchede({ lista, onApri }) {
             className="glass-card flex items-center gap-5 p-card-inner cursor-pointer group hover:border-[var(--bordo-hover)] transition-all relative overflow-hidden"
             style={{ borderLeft: '3px solid var(--accent)' }}
           >
-            {/* Glow decorativo on hover */}
+            {/* Decorative glow on hover */}
             <div className="absolute -top-16 -right-16 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-15 transition-opacity duration-500" style={{ background: 'var(--accent)' }}></div>
 
-            {/* Info principali */}
+            {/* Main info */}
             <div className="flex-1 min-w-0 relative z-10">
               <div className="flex items-center gap-3 mb-1">
                 <h3 className="font-bold text-lg truncate">{scheda.titolo}</h3>
@@ -120,7 +120,7 @@ function ListaSchede({ lista, onApri }) {
               </div>
             </div>
 
-            {/* Pulsante Avvia */}
+            {/* Start button */}
             <div className="shrink-0 relative z-10">
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg transition-all group-hover:scale-110 group-hover:shadow-lg"
                    style={{
@@ -146,14 +146,14 @@ export default function Allenamento() {
   const [schedaSelezionata, setSchedaSelezionata] = useState(null);
   const [avviando, setAvviando] = useState(false);
 
-  // /allenamento?scheda=ID arriva dal promemoria, dalla pianificazione e dal
-  // consiglio in dashboard: la scheda si apre gia' pronta da far partire.
-  // Il parametro resta la fonte finche' il riquadro e' aperto, cosi' funziona
-  // anche quando questa pagina e' gia' quella visualizzata.
+  // /allenamento?scheda=ID comes from the reminder, the calendar and the
+  // suggestion on the dashboard: the plan opens ready to start.
+  // The parameter stays the source of truth while the dialog is open, so it
+  // also works when this page is already the one on screen.
   const [parametri, setParametri] = useSearchParams();
   const richiesta = Number(parametri.get('scheda')) || null;
   const richiestaInLista = richiesta ? schede.find(s => s.id === richiesta) : null;
-  // Le schede assegnate dal PT non compaiono negli elenchi di questa pagina
+  // Plans assigned by the personal trainer do not appear in this page's lists
   const [richiestaFuoriLista, setRichiestaFuoriLista] = useState(null);
 
   useEffect(() => {
@@ -241,7 +241,7 @@ export default function Allenamento() {
         </div>
       )}
 
-      {/* Popup Conferma Avvio */}
+      {/* Start confirmation popup */}
       <AnimatePresence>
         {schedaAperta && (
           <>
@@ -259,7 +259,7 @@ export default function Allenamento() {
                 onClick={(e) => e.stopPropagation()}
                 className="glass-card w-full max-w-sm p-card-inner overflow-hidden relative"
               >
-                {/* Effetto decorativo */}
+                {/* Decorative effect */}
                 <div className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-3xl opacity-20" style={{ background: 'var(--accent)' }}></div>
 
                 <div className="text-center relative z-10">

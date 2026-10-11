@@ -1,11 +1,11 @@
 // ============================================
-// GymMaster — Schemi Validazione Autenticazione
-// Schemi Zod per login, registrazione, refresh
+// GymMaster — Authentication validation schemas
+// Zod schemas for login, registration, refresh
 // ============================================
 
 import { z } from 'zod';
 
-/** Schema per la registrazione di un nuovo utente */
+/** Schema for registering a new user */
 export const schemaRegistrazione = z.object({
   email: z
     .string({ required_error: 'Email obbligatoria' })
@@ -34,7 +34,7 @@ export const schemaRegistrazione = z.object({
     .nullable()
 });
 
-/** Schema per il login */
+/** Schema for the login */
 export const schemaLogin = z.object({
   email: z
     .string({ required_error: 'Email obbligatoria' })
@@ -44,12 +44,12 @@ export const schemaLogin = z.object({
   password: z
     .string({ required_error: 'Password obbligatoria' })
     .min(1, 'Password obbligatoria'),
-  // Va elencato: valida() sostituisce il corpo con quello validato, e zod
-  // scarta i campi che lo schema non conosce
+  // It must be listed: valida() replaces the body with the validated one, and
+  // zod drops the fields the schema does not know
   ricordaDispositivo: z.boolean().optional()
 });
 
-/** Schema per il refresh del token */
+/** Schema for the token refresh */
 export const schemaRefresh = z.object({
   refreshToken: z
     .string({ required_error: 'Refresh token obbligatorio' })

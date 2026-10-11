@@ -1,8 +1,8 @@
-# Le immagini di produzione, avviate in CI (.github/workflows/test.yml):
-# non basta che si costruiscano. Il backend parte come in produzione:
-# applica le migrazioni a un database vuoto, esegue il seed e risponde su
-# /api/v1/salute. Bot e scraper hanno bisogno di Telegram e di internet:
-# si costruiscono e si controlla che il codice si carichi.
+# The production images, started in CI (.github/workflows/test.yml):
+# it is not enough for them to build. The backend starts as in production:
+# it applies the migrations to an empty database, runs the seed and responds
+# on /api/v1/salute. Bot and scraper need Telegram and the internet:
+# they are built and their code is checked to load.
 name: gymmaster-immagini
 
 services:

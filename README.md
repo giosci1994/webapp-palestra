@@ -1,192 +1,195 @@
 # 🏋️ GymMaster
 
 <p align="center">
-  <a href="https://github.com/giosci1994/webapp-palestra/actions/workflows/test.yml"><img src="https://github.com/giosci1994/webapp-palestra/actions/workflows/test.yml/badge.svg" alt="Test" /></a>
-  <a href="https://github.com/giosci1994/webapp-palestra/releases/latest"><img src="https://img.shields.io/github/v/release/giosci1994/webapp-palestra" alt="Ultima versione" /></a>
-  <img src="https://img.shields.io/badge/licenza-GPLv3-blue.svg" alt="Licenza GPLv3" />
+  <a href="https://github.com/giosci1994/webapp-palestra/actions/workflows/test.yml"><img src="https://github.com/giosci1994/webapp-palestra/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
+  <a href="https://github.com/giosci1994/webapp-palestra/releases/latest"><img src="https://img.shields.io/github/v/release/giosci1994/webapp-palestra" alt="Latest release" /></a>
+  <img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License GPLv3" />
   <a href="https://buymeacoffee.com/giosci1994u"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
 
-GymMaster è una web app per la palestra, da installare sul proprio server con Docker. Ci si allena dal telefono (anche senza rete), si seguono progressi e record, e la palestra intera ci sta dentro: personal trainer, chat, affluenza in tempo reale, bot Telegram.
+GymMaster is a gym web app you host on your own server with Docker. Members log their workouts from the phone, even offline, and follow their progress and records. The whole gym fits in it: personal trainers, chat, live crowd levels, a Telegram bot and an AI assistant.
 
-È una PWA in italiano: si aggiunge alla schermata Home come un'app, manda notifiche anche ad app chiusa e si aggiorna da sola quando esce una versione nuova.
+It is a PWA: it goes on the home screen like an app, sends notifications even when closed and updates itself when a new version comes out.
 
-> **In English:** GymMaster is a self-hosted gym web app (Italian UI). Members log workouts from their phone, even offline, with load progression, warm-up ramps and drop sets; stats, personal records and body composition; personal trainers manage clients and plans; real-time chat, live gym crowd levels, a Telegram bot and an AI assistant. React PWA, Node.js/Express, PostgreSQL, Redis, Docker Compose. Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.io/webapp-palestra/).
+> **Language:** the interface is in Italian today. English, picked from the phone's language, is on the way.
 
-## 📸 Schermate
+Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.io/webapp-palestra/).
 
-| Accesso e profilo | Dashboard e schede | Allenamento e bot |
+## 📸 Screenshots
+
+| Sign-in and profile | Dashboard and plans | Workout and bot |
 |:---:|:---:|:---:|
-| <img src="docs/pics/Login.jpg" width="250" alt="Accesso" /><br><em>Accesso</em> | <img src="docs/pics/Home.jpg" width="250" alt="Dashboard" /><br><em>Dashboard</em> | <img src="docs/pics/Inizio_allenamento.jpg" width="250" alt="Inizio allenamento" /><br><em>Inizio allenamento</em> |
-| <img src="docs/pics/Registrazione.jpg" width="250" alt="Registrazione" /><br><em>Registrazione</em> | <img src="docs/pics/Home-BotAI.jpg" width="250" alt="Assistente AI" /><br><em>Assistente AI</em> | <img src="docs/pics/Allenamento.jpg" width="250" alt="Allenamento" /><br><em>Allenamento in corso</em> |
-| <img src="docs/pics/Profilo.jpg" width="250" alt="Profilo" /><br><em>Profilo</em> | <img src="docs/pics/Statistiche.jpg" width="250" alt="Statistiche" /><br><em>Statistiche</em> | <img src="docs/pics/Allenamento_con_video.jpg" width="250" alt="Video dell'esercizio" /><br><em>Video dell'esercizio</em> |
-| <img src="docs/pics/News_notifiche.jpg" width="250" alt="Novità e notifiche" /><br><em>Novità e notifiche</em> | <img src="docs/pics/Gestione_schede.jpg" width="250" alt="Gestione schede" /><br><em>Gestione schede</em> | <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Bot Telegram" /><br><em>Bot Telegram</em> |
+| <img src="docs/pics/Login.jpg" width="250" alt="Sign-in" /><br><em>Sign-in</em> | <img src="docs/pics/Home.jpg" width="250" alt="Dashboard" /><br><em>Dashboard</em> | <img src="docs/pics/Inizio_allenamento.jpg" width="250" alt="Starting a workout" /><br><em>Starting a workout</em> |
+| <img src="docs/pics/Registrazione.jpg" width="250" alt="Sign-up" /><br><em>Sign-up</em> | <img src="docs/pics/Home-BotAI.jpg" width="250" alt="AI assistant" /><br><em>AI assistant</em> | <img src="docs/pics/Allenamento.jpg" width="250" alt="Workout in progress" /><br><em>Workout in progress</em> |
+| <img src="docs/pics/Profilo.jpg" width="250" alt="Profile" /><br><em>Profile</em> | <img src="docs/pics/Statistiche.jpg" width="250" alt="Statistics" /><br><em>Statistics</em> | <img src="docs/pics/Allenamento_con_video.jpg" width="250" alt="Exercise video" /><br><em>Exercise video</em> |
+| <img src="docs/pics/News_notifiche.jpg" width="250" alt="What's new and notifications" /><br><em>What's new and notifications</em> | <img src="docs/pics/Gestione_schede.jpg" width="250" alt="Managing plans" /><br><em>Managing plans</em> | <img src="docs/pics/Bot_telegram.jpg" width="250" alt="Telegram bot" /><br><em>Telegram bot</em> |
 
-## ✨ Cosa fa
+## ✨ Features
 
-**Allenamento**
-- Schermata pensata per il telefono in palestra: timer di recupero (la notifica arriva anche a schermo bloccato), schermo sempre acceso, video dell'esercizio.
-- **Proposta del carico**: dalle ultime volte l'app propone quanto caricare oggi e spiega perché (doppia progressione, con scarico dopo tre volte di fila sotto la forbice).
-- **Riscaldamento e drop set**: la rampa di riscaldamento verso il peso di oggi, a un tocco per passo; i drop si aggiungono alla serie. Il riscaldamento non conta in volume, serie e record.
-- **Anche senza rete**: serie e fine allenamento restano sul telefono e partono da sole quando torna la connessione, una volta sola e con l'ora giusta.
-- "L'ultima volta" per ogni serie, calcolo dei dischi per lato, esercizi aggiunti al volo.
-- Riprendi un allenamento chiuso per sbaglio, correggi uno concluso, registra uno fatto senza app, salvane uno come scheda. Quelli lasciati aperti si chiudono da soli all'ultima serie.
+**Training**
+- A workout screen made for the phone at the gym: rest timer (the alert arrives with the screen locked too), screen always on, exercise videos.
+- **Load suggestion**: from your last sessions the app suggests today's weight and says why (double progression, with a deload after three sessions in a row below the rep range). [More](docs/features/last-time-and-load-suggestion.md)
+- **Warm-up and drop sets**: the warm-up ramp to today's weight, one tap per step; drops are added to the set. Warm-ups stay out of volume, set counts and records.
+- **Offline**: sets and the end of the workout stay on the phone and leave on their own when the network comes back, once, with the right time. [More](docs/offline-and-sessions.md)
+- "Last time" for every set, plates per side, exercises added on the fly.
+- Resume a workout closed by mistake, fix a finished one, log one done without the app, save one as a plan. Workouts left open close themselves at their last set. [More](docs/features/workout-history.md)
 
-**Schede e pianificazione**
-- Schede personali e globali, con note tecniche per esercizio; si clonano e si scaricano in Word (.docx).
-- Calendario delle schede programmate, promemoria e notifiche nella campanella.
-- Catalogo di oltre 3.300 esercizi con nome italiano (e l'originale inglese), ricerca tollerante agli errori e preferiti.
+**Plans and schedule**
+- Personal and shared plans, with technique notes per exercise; clone them or download them as Word (.docx).
+- A calendar of planned workouts, with a reminder when you open the app and notifications.
+- A catalogue of more than 3,200 exercises with English and Italian names, typo-tolerant search and favourites. [More](docs/exercise-catalogue.md)
 
-**Progressi**
-- Statistiche: muscoli allenati e in recupero, andamento di ogni esercizio, massimali stimati, record personali, attività dell'anno, frequenza settimanale.
-- Composizione corporea nel tempo (peso, grasso, muscolo, acqua, BMR…), anche inserita dal personal trainer.
-- Gamification: XP, livelli, badge e classifiche (si può spegnere).
+**Progress**
+- Statistics: muscles trained and recovering, the trend of each exercise, estimated maxes, personal records, the year's activity, weekly frequency.
+- Body composition over time (weight, fat, muscle, water, BMR…), entered by you or your trainer.
+- Gamification: XP, levels, badges and leaderboards (can be turned off).
 
-**La palestra**
-- **Personal trainer**: clienti e richieste, appuntamenti, schede assegnate, annunci, misurazioni.
-- **Chat** in tempo reale fra utenti e con il proprio PT.
-- **Affluenza**: quanto è piena la palestra adesso e gli orari migliori (dati di Google Maps).
-- **Bot Telegram**: schede, statistiche, creazione guidata di una scheda e notifiche dei messaggi.
-- **Assistente AI** (Google Gemini) che conosce i tuoi allenamenti.
+**The gym**
+- **Personal trainers**: clients and requests, appointments, assigned plans, announcements, measurements.
+- **Real-time chat** between members and with your trainer. [More](docs/features/chat.md)
+- **Crowd levels**: how full the gym is now and the best times to go (Google Maps data).
+- **Telegram bot**: plans, statistics, guided plan creation and message notifications.
+- **AI assistant** (Google Gemini) that knows your workouts. [More](docs/features/ai-assistant.md)
 
-**Account e privacy**
-- Accesso con password o **passkey** (impronta, volto, PIN), elenco dei dispositivi collegati.
-- Verifica dell'email e recupero della password (con [Resend](https://resend.com)).
-- Esporta tutti i tuoi dati o elimina l'account; privacy, termini e cookie.
-- Pannello admin: utenti, palestre, esercizi, suggerimenti degli utenti, novità e banner.
+**Account and privacy**
+- Sign in with a password or a **passkey** (fingerprint, face, PIN), and a list of linked devices. [More](docs/features/authentication.md)
+- Email verification and password recovery (with [Resend](https://resend.com)).
+- Export all your data or delete your account; privacy policy, terms and cookies. [More](docs/features/profile.md)
+- Admin panel: users, gyms, exercises, members' suggestions, news and banners.
 
-## 🧱 Come è fatta
+## 🧱 How it is built
 
 ```text
-                  ┌─────────────── Docker Compose ───────────────┐
- telefono / PC ──▶│ nginx :6969 ──▶ frontend/dist (PWA React)     │
-                  │      │                                        │
-                  │      └─ /api, /socket.io ──▶ backend :3000 ─┬─▶ PostgreSQL 17
-                  │                                 ▲           └─▶ Redis 7
-                  │ bot (Telegram) ─────────────────┘                │
-                  │ scraper (affluenza, ogni 30 min) ──▶ PostgreSQL  │
-                  └──────────────────────────────────────────────────┘
+phone / PC ──▶ nginx :6969 ──┬──▶ frontend/dist (React PWA)
+                             └──▶ /api, /socket.io ──▶ backend :3000 ──┬──▶ PostgreSQL 17
+                                                                       └──▶ Redis 7
+Telegram ──▶ bot ──▶ backend
+scraper (crowd levels, every 30 min) ──▶ PostgreSQL
 ```
 
-| Parte | Tecnologia |
+Every service runs in Docker Compose.
+
+| Part | Technology |
 |---|---|
-| Frontend | React 19, Vite 8, Tailwind CSS 4, Framer Motion, Recharts; PWA con Web Push |
+| Frontend | React 19, Vite 8, Tailwind CSS 4, Framer Motion, Recharts; PWA with Web Push |
 | Backend | Node.js 22, Express 4, Prisma 6, Socket.io 4 |
-| Dati | PostgreSQL 17, Redis 7 |
-| Sicurezza | Argon2id, passkey (WebAuthn), JWT con rinnovo a rotazione, Helmet, limiti di richieste |
+| Data | PostgreSQL 17, Redis 7 |
+| Security | Argon2id, passkeys (WebAuthn), JWT with rotating refresh tokens, Helmet, rate limits |
 | Bot | grammY (Telegram) |
 | Scraper | Playwright |
-| Infrastruttura | Docker Compose, Nginx |
+| Infrastructure | Docker Compose, Nginx |
 
-### Struttura del repository
+### Repository layout
 
 ```text
 webapp-palestra/
-├── frontend/         App React (pagine, componenti, hook, utils con i loro test)
-├── backend/          API Express + Socket.io, test (node:test)
-│   └── prisma/       Schema, migrazioni, seed, catalogo esercizi e storie delle novità
-├── bot/              Bot Telegram: inoltra al backend
-├── scraper/          Affluenza delle palestre da Google Maps
-├── nginx/            Serve il frontend e passa /api e /socket.io al backend
-├── deploy/           Rilascio automatico sul server, con le sue prove
-├── docs/             Documentazione delle funzioni, immagini, sito del progetto
-├── .github/          CI (test, immagini Docker, rilascio) e template
+├── frontend/         React app (pages, components, hooks, utils with their tests)
+├── backend/          Express + Socket.io API, tests (node:test)
+│   └── prisma/       Schema, migrations, seed, exercise catalogue and "what's new" stories
+├── bot/              Telegram bot: forwards to the backend
+├── scraper/          Gym crowd levels from Google Maps
+├── nginx/            Serves the frontend and passes /api and /socket.io to the backend
+├── deploy/           Automatic releases on the server, with their tests
+├── docs/             Feature docs, screenshots, project site
+├── .github/          CI (tests, production images) and templates
 ├── docker-compose.yml
-├── version.json      Versione dell'app e novità per gli utenti
-└── .env.esempio      Tutte le variabili d'ambiente, commentate
+├── version.json      App version and user-facing changelog
+└── .env.example      Every environment variable, with comments
 ```
 
-## 🚀 Installazione
+Code names (variables, files, API routes, database tables) are in Italian, the language the project started in. Comments and docs are in English.
 
-Servono [Docker](https://docs.docker.com/get-docker/) con Compose e Node.js 22 (per costruire il frontend).
+## 🚀 Installation
+
+You need [Docker](https://docs.docker.com/get-docker/) with Compose, and Node.js 22 to build the frontend.
 
 ```bash
 git clone https://github.com/giosci1994/webapp-palestra.git
 cd webapp-palestra
 
-# 1. Variabili d'ambiente: cambia almeno password, segreti JWT, APP_URL e ORIGINI_CONSENTITE
-cp .env.esempio .env
+# 1. Environment: change at least the passwords, the JWT secrets, APP_URL and ORIGINI_CONSENTITE
+cp .env.example .env
 
-# 2. Il frontend: nginx serve la cartella frontend/dist
+# 2. The frontend: nginx serves the frontend/dist folder
 (cd frontend && npm ci && npm run build)
 
-# 3. Database, backend e nginx
+# 3. Database, backend and nginx
 docker compose up -d --build db redis backend nginx
 ```
 
-Al primo avvio il backend applica le migrazioni e riempie il database: l'amministratore (`SUPERADMIN_EMAIL` e `SUPERADMIN_PASSWORD` del `.env`), le attrezzature, il catalogo degli esercizi, alcune palestre e le schede di esempio. L'app risponde su **http://localhost:6969**.
+At the first start the backend applies the migrations and fills the database: the administrator (`SUPERADMIN_EMAIL` and `SUPERADMIN_PASSWORD` from `.env`), the equipment, the exercise catalogue, a few gyms and the sample plans. The app answers on **http://localhost:6969**.
 
-Il bot e lo scraper sono facoltativi. Il bot vuole `TELEGRAM_BOT_TOKEN` e `BOT_SECRET`. Lo scraper legge l'affluenza delle palestre che hanno un Google Place ID: per cercarli una volta per tutte le palestre che non lo hanno, c'è `scraper/trova-place-ids.js`. Quando sono configurati:
+The bot and the scraper are optional. The bot needs `TELEGRAM_BOT_TOKEN` and `BOT_SECRET`. The scraper reads the crowd levels of the gyms that have a Google Place ID; `scraper/trova-place-ids.js` looks them up once for the gyms that have none. When they are configured:
 
 ```bash
 docker compose up -d --build bot scraper
-docker compose run --rm --entrypoint node scraper trova-place-ids.js   # una volta, per i Place ID
+docker compose run --rm --entrypoint node scraper trova-place-ids.js   # once, for the Place IDs
 ```
 
-Per usarla da fuori casa serve HTTPS su un dominio, per esempio con un tunnel Cloudflare o un reverse proxy davanti a nginx. Le passkey funzionano solo sul dominio di `APP_URL`.
+To use it away from home you need HTTPS on a domain, for example with a Cloudflare tunnel or a reverse proxy in front of nginx. Passkeys only work on the domain of `APP_URL`.
 
-Funzioni che restano spente finché non ne imposti la chiave nel `.env`: assistente AI (`GEMINI_API_KEY`), email (`RESEND_API_KEY`), notifiche push (`VAPID_CHIAVE_PUBBLICA` e `VAPID_CHIAVE_PRIVATA`). Ogni variabile è spiegata in [`.env.esempio`](.env.esempio).
+These features stay off until you set their key in `.env`: AI assistant (`GEMINI_API_KEY`), email (`RESEND_API_KEY`), push notifications (`VAPID_CHIAVE_PUBBLICA` and `VAPID_CHIAVE_PRIVATA`). Every variable is explained in [`.env.example`](.env.example).
 
-## 💻 Sviluppo
+## 💻 Development
 
-Postgres e Redis in Docker, backend e frontend sul tuo computer con il ricaricamento automatico:
+Postgres and Redis in Docker, backend and frontend on your computer with live reload:
 
 ```bash
 docker run -d --name gymmaster-dev-db -p 5432:5432 \
   -e POSTGRES_USER=gymmaster -e POSTGRES_PASSWORD=gymmaster -e POSTGRES_DB=gymmaster postgres:17-alpine
 docker run -d --name gymmaster-dev-redis -p 6379:6379 redis:7-alpine
 
-# Backend: un backend/.env con DATABASE_URL=postgresql://gymmaster:gymmaster@localhost:5432/gymmaster,
-# REDIS_URL=redis://localhost:6379, i due segreti JWT e ORIGINI_CONSENTITE=http://localhost:5173
+# Backend: a backend/.env with DATABASE_URL=postgresql://gymmaster:gymmaster@localhost:5432/gymmaster,
+# REDIS_URL=redis://localhost:6379, the two JWT secrets and ORIGINI_CONSENTITE=http://localhost:5173
 cd backend && npm ci
 npx prisma migrate deploy && npx prisma db seed
 npm run dev                     # http://localhost:3000
 
-# Frontend, in un altro terminale
-cd frontend && npm ci && npm run dev   # http://localhost:5173, /api va al backend
+# Frontend, in another terminal
+cd frontend && npm ci && npm run dev   # http://localhost:5173, /api goes to the backend
 ```
 
-Una modifica a `backend/prisma/schema.prisma` va con la sua migrazione (`npx prisma migrate dev --name ...`). Le regole del progetto sono in [`CLAUDE.md`](CLAUDE.md) e [`CONTRIBUTING.md`](CONTRIBUTING.md).
+A change to `backend/prisma/schema.prisma` comes with its migration (`npx prisma migrate dev --name ...`). The project rules are in [`CLAUDE.md`](CLAUDE.md) and [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-## 🧪 Test
+## 🧪 Tests
 
 ```bash
-# Backend: unitari e d'integrazione. Serve Docker: avviano un Postgres e un
-# Redis usa-e-getta e non toccano mai il database vero
+# Backend: unit and integration tests. They need Docker: they start a throwaway
+# Postgres and Redis and never touch the real database
 cd backend && npm test
-cd backend && npm run test:unitari      # solo unitari, senza Docker
+cd backend && npm run test:unitari      # unit tests only, no Docker
 
-# Frontend: test (Vitest) e ESLint, a zero errori e zero avvisi
+# Frontend: tests (Vitest) and ESLint, at zero errors and zero warnings
 cd frontend && npm test && npm run lint
 
-# Lo script di rilascio, con docker, curl e npm finti
+# The release script, with fake docker, curl and npm
 bash deploy/test/rilascio.test.sh
 ```
 
-Ogni pull request li esegue su GitHub Actions ([`.github/workflows/test.yml`](.github/workflows/test.yml)), insieme alla costruzione delle immagini Docker e all'avvio del backend su un database vuoto.
+Every pull request runs them on GitHub Actions ([`.github/workflows/test.yml`](.github/workflows/test.yml)), together with the production image builds and a backend start on an empty database.
 
-## 📦 Rilasci
+## 📦 Releases
 
-La versione dell'app sta in [`version.json`](version.json), con le novità scritte per gli utenti. Quando su GitHub esce una release (tag `v` + la versione, da `master`), il server la installa da solo con [`deploy/rilascio.sh`](deploy/rilascio.sh): copia del database, migrazioni, frontend, controlli e messaggio su Telegram; se qualcosa va storto torna alla versione di prima. Tutti i dettagli in [`deploy/README.md`](deploy/README.md).
+The app version is in [`version.json`](version.json), with the changes written for users. When a release comes out on GitHub (tag `v` + the version, from `master`), the server installs it on its own with [`deploy/rilascio.sh`](deploy/rilascio.sh): database copy, migrations, frontend, checks and a Telegram message; if something goes wrong it goes back to the previous version. All the details are in [`deploy/README.md`](deploy/README.md).
 
-## 📚 Documentazione
+## 📚 Documentation
 
-- [`docs/funzioni/`](docs/funzioni/): autenticazione, chat, assistente AI, profilo, storico degli allenamenti e altre funzioni
-- [`docs/persistenza-sessione-mobile.md`](docs/persistenza-sessione-mobile.md): sessione sul telefono e allenamento senza rete
-- [`docs/importazione-esercizi.md`](docs/importazione-esercizi.md): come è stato costruito il catalogo degli esercizi
-- [`docs/spaziature.md`](docs/spaziature.md) e [`docs/struttura_dashboard_v2.md`](docs/struttura_dashboard_v2.md): regole di layout dell'interfaccia
-- [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma): il modello dei dati, commentato
+- [`docs/features/`](docs/features/): [authentication](docs/features/authentication.md), [chat](docs/features/chat.md), [AI assistant](docs/features/ai-assistant.md), [profile](docs/features/profile.md), [workout history](docs/features/workout-history.md), [last time and load suggestion](docs/features/last-time-and-load-suggestion.md)
+- [`docs/offline-and-sessions.md`](docs/offline-and-sessions.md): staying signed in on the phone and training offline
+- [`docs/exercise-catalogue.md`](docs/exercise-catalogue.md): where the exercise catalogue comes from and how to update it
+- [`docs/ui-spacing.md`](docs/ui-spacing.md): spacing and safe-area rules of the interface
+- [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma): the data model, with comments
 
-## 🤝 Contribuire
+## 🤝 Contributing
 
-Issue e pull request sono benvenute: leggi [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Issues and pull requests are welcome: read [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-## ☕ Supporto
+## ☕ Support
 
-Se GymMaster ti è utile, puoi offrirmi un caffè.
+If GymMaster is useful to you, you can buy me a coffee.
 
 <a href="https://buymeacoffee.com/giosci1994u"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="45" alt="Buy Me a Coffee" /></a>
 
-## 📄 Licenza
+## 📄 License
 
-Software libero sotto licenza [GNU General Public License v3.0](LICENSE).
+Free software under the [GNU General Public License v3.0](LICENSE).

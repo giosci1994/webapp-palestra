@@ -1,25 +1,25 @@
 // ============================================
-// GymMaster — Tentativi di accesso per account
+// GymMaster — Login attempts per account
 // ============================================
 //
-// Il limitatore per indirizzo (20 richieste ogni 15 minuti) non ferma chi
-// prova password su un account da molti indirizzi. Qui si contano gli errori
-// per email: al TENTATIVI_LIBERI-esimo quell'email si blocca per un minuto, e
-// ogni errore successivo raddoppia l'attesa, fino a BLOCCO_MASSIMO. Un
-// accesso riuscito azzera il conto, e dopo DIMENTICA_DOPO senza errori l'email
-// viene dimenticata.
+// The per-address limiter (20 requests every 15 minutes) does not stop someone
+// who tries passwords on one account from many addresses. Here errors are
+// counted per email: at the TENTATIVI_LIBERI-th, that email is locked for a
+// minute, and each further error doubles the wait, up to BLOCCO_MASSIMO_MS. A
+// successful login resets the count, and after DIMENTICA_DOPO_MS without errors
+// the email is forgotten.
 //
-// Vale anche per email che non esistono: un blocco solo sugli account veri
-// rivelerebbe chi e' iscritto.
+// It also applies to emails that do not exist: a lock only on real accounts
+// would reveal who is a member.
 //
-// Lo stato e' in memoria: un riavvio lo azzera, ed e' un prezzo accettabile per
-// un blocco che dura minuti. `adesso` si puo' passare per i test.
+// The state is in memory: a restart clears it, and that is an acceptable price
+// for a lock that lasts minutes. `adesso` can be passed in for the tests.
 
 export const TENTATIVI_LIBERI = 5;
 export const BLOCCO_INIZIALE_MS = 60 * 1000;
 export const BLOCCO_MASSIMO_MS = 15 * 60 * 1000;
 export const DIMENTICA_DOPO_MS = 60 * 60 * 1000;
-// Oltre questa soglia si dimenticano le email ferme da piu' tempo
+// Past this threshold, the emails idle for the longest are forgotten
 const MAX_EMAIL = 10000;
 
 /** email -> { errori, bloccatoFino, ultimoErrore } */
@@ -36,13 +36,13 @@ function voce(email, adesso) {
   return v || null;
 }
 
-/** Millisecondi di attesa prima del prossimo tentativo su questa email; 0 se libera */
+/** Milliseconds to wait before the next attempt on this email; 0 if free */
 export function attesaPer(email, adesso = Date.now()) {
   const v = voce(email, adesso);
   return v ? Math.max(0, v.bloccatoFino - adesso) : 0;
 }
 
-/** Un tentativo sbagliato: dal TENTATIVI_LIBERI-esimo scatta (o si allunga) il blocco */
+/** A wrong attempt: from the TENTATIVI_LIBERI-th on, the lock starts (or gets longer) */
 export function registraErrore(email, adesso = Date.now()) {
   const v = voce(email, adesso) || { errori: 0, bloccatoFino: 0, ultimoErrore: adesso };
   v.errori += 1;
@@ -51,13 +51,13 @@ export function registraErrore(email, adesso = Date.now()) {
     const raddoppi = v.errori - TENTATIVI_LIBERI;
     v.bloccatoFino = adesso + Math.min(BLOCCO_INIZIALE_MS * 2 ** raddoppi, BLOCCO_MASSIMO_MS);
   }
-  // Ordine d'inserimento = la prima e' quella ferma da piu' tempo
+  // Insertion order = the first one is the one idle for the longest
   registro.delete(chiave(email));
   registro.set(chiave(email), v);
   if (registro.size > MAX_EMAIL) registro.delete(registro.keys().next().value);
 }
 
-/** Accesso riuscito: si riparte da zero */
+/** Successful login: start again from zero */
 export function azzeraTentativi(email) {
   registro.delete(chiave(email));
 }

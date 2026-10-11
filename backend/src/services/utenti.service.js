@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Service Utenti
-// Logica di business per gestione utenti
+// GymMaster — Users service
+// Business logic for user management
 // ============================================
 
 import prisma from '../config/database.js';
@@ -10,7 +10,7 @@ import logger from '../utils/logger.js';
 import { chiudiAltreSessioni } from './autenticazione.service.js';
 
 /**
- * Recupera la lista di tutti gli utenti (solo SuperAdmin).
+ * Gets the list of all users (SuperAdmin only).
  */
 export async function ottieniTuttiGliUtenti({ pagina = 1, limite = 20, stato, ruolo }) {
   const dove = {};
@@ -54,7 +54,7 @@ export async function ottieniTuttiGliUtenti({ pagina = 1, limite = 20, stato, ru
 }
 
 /**
- * Approva un utente (cambia stato da IN_ATTESA ad ATTIVO).
+ * Approves a user, or lifts a ban: from IN_ATTESA or BANNATO to ATTIVO.
  */
 export async function approvaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
@@ -75,7 +75,7 @@ export async function approvaUtente(utenteId) {
 }
 
 /**
- * Banna un utente.
+ * Bans a user.
  */
 export async function bannaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
@@ -91,7 +91,7 @@ export async function bannaUtente(utenteId) {
     select: { id: true, email: true, nome: true, stato: true }
   });
 
-  // Revoca tutti i refresh token
+  // Revoke all refresh tokens
   await prisma.refreshToken.updateMany({
     where: { utenteId },
     data: { revocato: true }
@@ -102,7 +102,7 @@ export async function bannaUtente(utenteId) {
 }
 
 /**
- * Cambia il ruolo di un utente (solo SuperAdmin).
+ * Changes a user's role (SuperAdmin only).
  */
 export async function cambiaRuolo(utenteId, nuovoRuolo) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
@@ -119,7 +119,7 @@ export async function cambiaRuolo(utenteId, nuovoRuolo) {
 }
 
 /**
- * Recupera il profilo dell'utente autenticato.
+ * Gets the authenticated user's profile.
  */
 export async function ottieniProfilo(utenteId) {
   const utente = await prisma.utente.findUnique({
@@ -153,10 +153,10 @@ export async function ottieniProfilo(utenteId) {
 }
 
 /**
- * Aggiorna i dati del profilo utente.
+ * Updates the user's profile data.
  */
 export async function aggiornaProfilo(utenteId, dati) {
-  // Campi consentiti per l'aggiornamento
+  // Fields allowed in the update
   const campiConsentiti = [
     'nome', 'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm',
     'genere', 'bio', 'obiettivoFitness', 'preferenzeVisibilita',
@@ -181,12 +181,12 @@ export async function aggiornaProfilo(utenteId, dati) {
     }
   }
 
-  // Validazione bio (max 200 caratteri)
+  // Bio validation (max 200 characters)
   if (datiAggiornamento.bio && datiAggiornamento.bio.length > 200) {
     throw new ErroreValidazione('La bio non può superare i 200 caratteri');
   }
 
-  // Validazione immagine (max ~300KB base64)
+  // Image validation (max ~300KB base64)
   if (datiAggiornamento.immagineProfilo && datiAggiornamento.immagineProfilo.length > 400000) {
     throw new ErroreValidazione('Immagine troppo grande. Massimo 300KB.');
   }
@@ -221,12 +221,9 @@ export async function aggiornaProfilo(utenteId, dati) {
 }
 
 /**
- * Cambia la password dell'utente.
- */
-/**
- * Cambia la password e scollega gli altri dispositivi: se qualcuno era entrato
- * con la vecchia, resta fuori. La sessione da cui arriva il cambio resta aperta.
- * @param {string|null} famigliaCorrente - la sessione della richiesta
+ * Changes the password and signs out the other devices: if someone got in
+ * with the old one, they stay out. The session the change comes from stays open.
+ * @param {string|null} famigliaCorrente - the request's session
  */
 export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, famigliaCorrente = null) {
   if (!vecchiaPassword || !nuovaPassword) {
@@ -244,13 +241,13 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, f
 
   if (!utente) throw new ErroreNonTrovato('Utente non trovato');
 
-  // Verifica la vecchia password
+  // Check the old password
   const passwordValida = await argon2.verify(utente.passwordHash, vecchiaPassword);
   if (!passwordValida) {
     throw new ErroreValidazione('La password attuale non è corretta');
   }
 
-  // Hash della nuova password
+  // Hash the new password
   const nuovoHash = await argon2.hash(nuovaPassword, {
     type: argon2.argon2id,
     memoryCost: 65536,
@@ -269,7 +266,7 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, f
 }
 
 /**
- * Elimina definitivamente un utente e tutti i suoi dati correlati (solo SuperAdmin).
+ * Permanently deletes a user and all their related data (SuperAdmin only).
  */
 export async function eliminaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
@@ -279,7 +276,7 @@ export async function eliminaUtente(utenteId) {
     throw new ErroreNonAutorizzato('Impossibile eliminare un SuperAdmin. Declassalo prima a UTENTE.');
   }
 
-  // Elimina tutto con una transazione per evitare errori di vincolo (Foreign Keys)
+  // Delete everything in one transaction to avoid constraint errors (foreign keys)
   await prisma.$transaction([
     prisma.logSerie.deleteMany({ where: { sessione: { utenteId } } }),
     prisma.sessioneAllenamento.deleteMany({ where: { utenteId } }),

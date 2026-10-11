@@ -1,6 +1,6 @@
 // ============================================
 // GymMaster — Dashboard
-// Hub principale: Attività e Statistiche
+// Main hub: Activity and Statistics
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -35,32 +35,32 @@ export default function Dashboard() {
   const [editBanner, setEditBanner] = useState(false);
   const [tempBannerTesto, setTempBannerTesto] = useState('');
   
-  // Consiglio sulla scheda da fare, calcolato dal server sui muscoli riposati
+  // Suggestion on which plan to do, computed by the server from rested muscles
   const [consiglio, setConsiglio] = useState(null);
   const [avviando, setAvviando] = useState(false);
 
-  // PT info per utente iscritto
+  // Personal trainer info for a member
   const [mioPTDash, setMioPTDash] = useState(null);
   const [senzaPT, setSenzaPT] = useState(false);
   const [ptDashboard, setPtDashboard] = useState(null);
 
-  // Calendario: oltre alle sessioni svolte mostra gli allenamenti in programma,
-  // che prima non comparivano affatto.
+  // Calendar: besides the completed workouts it shows the scheduled ones,
+  // which used to not appear at all.
   const [dataCalendario, setDataCalendario] = useState(new Date());
   const [pianificati, setPianificati] = useState([]);
   const telefonoDash = useTelefono();
   const [modoCalendarioScelto, setModoCalendarioScelto] = useState(null);
   const modoCalendario = modoCalendarioScelto ?? (telefonoDash ? 'settimana' : 'mese');
 
-  // Messaggi non letti: la slide dei messaggi compare solo se ce ne sono
+  // Unread messages: the messages slide appears only if there are some
   const [messaggiNonLetti, setMessaggiNonLetti] = useState(0);
 
-  // Affluenza palestra
+  // Gym crowd level
   const [affluenza, setAffluenza] = useState(null);
   const [affluenzaCaricamento, setAffluenzaCaricamento] = useState(false);
 
-  // Ricarica quando cambia il periodo mostrato: il calendario deve restare
-  // aggiornato anche scorrendo avanti e indietro fra i mesi.
+  // Reload when the period shown changes: the calendar must stay up to date
+  // even when scrolling back and forth between months.
   useEffect(() => {
     let da, a;
     if (modoCalendario === 'mese') {
@@ -79,7 +79,7 @@ export default function Dashboard() {
 
   const palestraId = utente?.palestraId || utente?.palestra?.id;
 
-  // Carica dati affluenza palestra
+  // Load the gym crowd level data
   const caricaAffluenza = useCallback((idPalestra) => {
     if (!idPalestra) return;
     setAffluenzaCaricamento(true);
@@ -89,26 +89,26 @@ export default function Dashboard() {
       .finally(() => setAffluenzaCaricamento(false));
   }, []);
 
-  // Al primo caricamento con lo spinner; eliminata un'attivita', i dati si
-  // aggiornano sul posto
+  // On first load with the spinner; once an activity is deleted, the data
+  // updates in place
   const caricaDati = useCallback(() => Promise.all([
     api.get('/sessioni?limite=30'),
     api.get('/banner').catch(() => ({ dati: { visibile: false, testo: '' } })),
     api.get('/statistiche/consiglio').catch(() => ({ dati: null }))
   ])
     .then(([resSess, resBanner, resConsiglio]) => {
-      // Conteggio messaggi non letti (non bloccante)
+      // Unread message count (non-blocking)
       api.get('/chat/non-letti')
         .then(r => setMessaggiNonLetti(r.dati?.totale || 0))
         .catch(() => setMessaggiNonLetti(0));
 
-      // Carica info PT (non bloccante)
+      // Load the personal trainer info (non-blocking)
       api.get('/utenti/mio-pt').then(r => {
         if (r.dati?.stato === 'ATTIVA') setMioPTDash(r.dati);
-        setSenzaPT(!r.dati); // nessun rapporto PT (né attivo né in attesa)
+        setSenzaPT(!r.dati); // no personal trainer relationship (neither active nor pending)
       }).catch(() => {});
 
-      // Carica affluenza se utente ha palestra
+      // Load the crowd level if the user has a gym
       caricaAffluenza(palestraId);
 
       setSessioniRecenti(resSess.dati || []);
@@ -135,7 +135,7 @@ export default function Dashboard() {
     }
   };
 
-  // Polling affluenza ogni 5 minuti
+  // Poll the crowd level every 5 minutes
   useEffect(() => {
     if (!palestraId) return;
     const intervallo = setInterval(() => caricaAffluenza(palestraId), 5 * 60 * 1000);
@@ -171,18 +171,15 @@ export default function Dashboard() {
     try {
       await api.delete(`/sessioni/${id}`);
       setSessioniRecenti(prev => prev.filter(s => s.id !== id));
-      // Ricarichiamo i dati per aggiornare il calendario e le statistiche
+      // We reload the data to update the calendar and the statistics
       caricaDati();
     } catch (err) {
       alert(err.response?.data?.errore || "Errore durante l'eliminazione");
     }
   };
 
-  // Helper per il calendario (mese corrente)
-
-
-  // Pallini del calendario: rosso per gli allenamenti gia' svolti, colore di
-  // stato per quelli in programma.
+  // Calendar dots: red for workouts already done, a status color for the
+  // scheduled ones.
   const marcatoriCalendario = (() => {
     const per = {};
     const aggiungi = (giorno, colore) => {
@@ -232,9 +229,9 @@ export default function Dashboard() {
     );
   }
 
-  // Inviti contestuali della dashboard, raccolti in un unico banner scorrevole.
-  // Ogni voce entra nell'elenco solo quando ha davvero senso mostrarla: se non
-  // ne resta nessuna, CaroselloAzioni non rende nulla.
+  // Contextual prompts of the dashboard, gathered in a single sliding banner.
+  // Each entry joins the list only when it really makes sense to show it: if
+  // none is left, CaroselloAzioni renders nothing.
   const slideAzioni = [
     ...(senzaPT && !isAdmin && utente?.ruolo !== 'PERSONAL_TRAINER' ? [{
       id: 'trova-pt',
@@ -252,9 +249,9 @@ export default function Dashboard() {
       etichetta: 'Apri la chat',
       a: '/chat'
     }] : []),
-    // "Inizia scheda" passa da Allenati ora, con la scheda gia' aperta: da li'
-    // si parte con un tocco, e un tocco accidentale sul banner non crea una
-    // sessione vuota
+    // "Inizia scheda" (start plan) goes through "Allenati ora", with the plan
+    // already open: from there it starts with one tap, and an accidental tap on
+    // the banner does not create an empty workout
     ...(consiglio ? [{
       id: 'consiglio-ai',
       Icona: consiglio.motivo === 'oggi' ? CalendarClock : Bot,
@@ -268,7 +265,7 @@ export default function Dashboard() {
 
   return (
     <div className="py-4 md:py-8 pb-12">
-      {/* Header Saluto */}
+      {/* Greeting header */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-20 relative">
         <div className="absolute -top-20 -left-20 w-64 h-64 bg-[var(--accent)] rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 relative z-10">
@@ -276,7 +273,7 @@ export default function Dashboard() {
         </h1>
       </motion.div>
 
-      {/* Banner Comunicazioni */}
+      {/* Announcements banner */}
       <AnimatePresence>
         {(banner.visibile || isAdmin) && (
           <motion.div 
@@ -312,7 +309,7 @@ export default function Dashboard() {
                   )}
                 </div>
                 
-                {/* Controlli Admin */}
+                {/* Admin controls */}
                 {isAdmin && (
                   <div className="flex gap-2 shrink-0">
                     {editBanner ? (
@@ -337,7 +334,7 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Inviti contestuali raccolti in un unico banner scorrevole */}
+      {/* Contextual prompts gathered in a single sliding banner */}
       <CaroselloAzioni slide={slideAzioni} />
 
       {/* Tabs */}
@@ -356,7 +353,7 @@ export default function Dashboard() {
                   tabAttivo === tab ? 'text-[var(--testo-primario)]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]'
                 }`}
               >
-                {/* Sfondo attivo animato */}
+                {/* Animated active background */}
                 {tabAttivo === tab && (
                   <motion.div layoutId="dashboardTabBg" className="absolute inset-0 bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-[14px] shadow-sm z-0" transition={{ type: "spring", stiffness: 300, damping: 25 }} />
                 )}
@@ -371,7 +368,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Contenuto Tabs */}
+      {/* Tabs content */}
       <AnimatePresence mode="wait">
         {tabAttivo === 'attività' && (
           <motion.div 
@@ -382,17 +379,17 @@ export default function Dashboard() {
             transition={{ duration: 0.2 }}
             className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8"
           >
-            {/* Colonna Principale */}
+            {/* Main column */}
             <div className="flex flex-col gap-8">
               
-              {/* Allenati e gestisci schede */}
+              {/* Train and manage plans */}
               <SezioneCollassabile chiave="allenati" titolo="Allenati e gestisci schede" Icona={Activity}>
                 <div className="flex flex-col">
                   {[
                     { etichetta: 'Gestione Schede', icona: ClipboardList, link: '/schede' },
-                    // Unico accesso alla pianificazione da telefono: la barra di
-                    // navigazione mobile ha cinque voci fisse e la sidebar con la
-                    // voce "Pianificazione" compare solo da md in su.
+                    // The only way to the calendar from a phone: the mobile navigation
+                    // bar has five fixed entries, and the sidebar with the
+                    // "Pianificazione" entry only appears from md up.
                     { etichetta: 'Pianifica Allenamenti', icona: CalendarClock, link: '/pianificazione' },
                     { etichetta: 'Catalogo Esercizi', icona: Library, link: '/catalogo' },
                     { etichetta: 'Storico Allenamenti', icona: History, link: '/storico' },
@@ -409,7 +406,7 @@ export default function Dashboard() {
                 </div>
               </SezioneCollassabile>
 
-              {/* Ultime attività (Allenamenti Recenti) */}
+              {/* Latest activity (Recent Workouts) */}
               <SezioneCollassabile chiave="ultime-attivita" titolo="Ultime attività" Icona={History}>
                 
                 <div className="text-center text-[var(--testo-terziario)] flex items-center justify-center">
@@ -450,13 +447,13 @@ export default function Dashboard() {
 
             </div>
 
-            {/* Colonna laterale */}
+            {/* Side column */}
             <div className="flex flex-col gap-8">
               
-              {/* Migliori orari per allenarsi (dalle rilevazioni di affluenza) */}
+              {/* Best times to train (from the crowd level readings) */}
               <MiglioriOrari palestraId={utente?.palestraId || utente?.palestra?.id} />
 
-              {/* Calendario: allenamenti svolti e in programma */}
+              {/* Calendar: completed and scheduled workouts */}
               <SezioneCollassabile chiave="calendario" titolo="Calendario" Icona={CalendarDays}>
                 <div className="p-card-inner">
                   <Calendario
@@ -480,7 +477,7 @@ export default function Dashboard() {
                 </div>
               </SezioneCollassabile>
 
-              {/* Widget Affluenza Palestra */}
+              {/* Gym crowd level widget */}
               {(utente?.palestraId || utente?.palestra?.id) && (
                 <div className="glass-card flex flex-col overflow-hidden">
                   <div className="p-card-inner pb-4 flex items-center gap-3">
@@ -509,7 +506,7 @@ export default function Dashboard() {
                       </div>
                     ) : affluenza?.graficoGiornata?.length > 0 ? (
                       <>
-                        {/* Grafico affluenza — stile "orari di punta" */}
+                        {/* Crowd level chart — "popular times" style */}
                         {(() => {
                           const ore = Array.from({ length: 24 }, (_, ora) => {
                             const dato = affluenza.graficoGiornata.find(d => d.ora === ora);
@@ -519,7 +516,7 @@ export default function Dashboard() {
                           const coloreBarra = (liv) => liv <= 0 ? null : liv <= 30 ? ['#22c55e', '#15803d'] : liv <= 60 ? ['#f59e0b', '#b45309'] : ['#ef4444', '#b91c1c'];
                           return (
                             <div className="mb-2">
-                              {/* segnaposto ora corrente */}
+                              {/* current hour marker */}
                               <div className="flex gap-[3px] h-3 mb-1">
                                 {ore.map(({ ora, isOra }) => (
                                   <div key={ora} className="flex-1 flex items-end justify-center">
@@ -527,7 +524,7 @@ export default function Dashboard() {
                                   </div>
                                 ))}
                               </div>
-                              {/* barre con traccia di sfondo */}
+                              {/* bars with a background track */}
                               <div className="flex items-end gap-[3px] h-24">
                                 {ore.map(({ ora, livello, isOra }) => {
                                   const c = coloreBarra(livello);
@@ -547,7 +544,7 @@ export default function Dashboard() {
                                   );
                                 })}
                               </div>
-                              {/* asse ore */}
+                              {/* hours axis */}
                               <div className="flex gap-[3px] mt-2 text-[10px] text-[var(--testo-terziario)]">
                                 {ore.map(({ ora }) => (
                                   <div key={ora} className="flex-1 text-center">{ora % 6 === 0 ? String(ora).padStart(2, '0') : ''}</div>
@@ -556,7 +553,7 @@ export default function Dashboard() {
                             </div>
                           );
                         })()}
-                        {/* Live descrizione — prominente */}
+                        {/* Live description — prominent */}
                         {affluenza.liveDescrizione && (
                           <div className={`mt-3 p-3 rounded-xl flex items-center gap-3 border ${
                             affluenza.livelloColore === 'verde' ? 'bg-green-500/10 border-green-500/30' :
@@ -581,7 +578,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                         )}
-                        {/* Timestamp aggiornamento */}
+                        {/* Update timestamp */}
                         {affluenza.aggiornatoIl && (
                           <p className="text-[9px] text-[var(--testo-terziario)] mt-2 text-right">
                             Aggiornato: {new Date(affluenza.aggiornatoIl).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
@@ -624,10 +621,10 @@ export default function Dashboard() {
             transition={{ duration: 0.2 }}
             className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8"
           >
-            {/* Colonna Principale PT */}
+            {/* Personal trainer main column */}
             <div className="flex flex-col gap-8">
 
-              {/* 1. Profilo PT */}
+              {/* 1. Personal trainer profile */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <Users size={20} className="text-[var(--accent)]" />
@@ -653,7 +650,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* 2. Bacheca Annunci */}
+              {/* 2. Announcements board */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <Megaphone size={20} className="text-amber-400" />
@@ -683,7 +680,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* 3. Schede Assegnate */}
+              {/* 3. Assigned plans */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <ClipboardList size={20} className="text-[var(--accent)]" />
@@ -713,10 +710,10 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Colonna Laterale PT */}
+            {/* Personal trainer side column */}
             <div className="flex flex-col gap-8">
 
-              {/* 4. Calendario Appuntamenti */}
+              {/* 4. Appointments calendar */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <Calendar size={20} className="text-green-400" />
@@ -749,7 +746,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* 5. Riepilogo Statistiche */}
+              {/* 5. Statistics summary */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <BarChart3 size={20} className="text-purple-400" />

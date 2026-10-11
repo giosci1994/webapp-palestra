@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Registra un allenamento già svolto
-// Per le sedute fatte senza connessione o tracciate con l'orologio
+// GymMaster — Log a workout already done
+// For sessions done offline or tracked with the watch
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 import { X, Save, Dumbbell } from 'lucide-react';
 import { api } from '../../config/api.js';
 
-/** Primo numero di un target tipo "8-12", usato come segnaposto. */
+/** First number of a target like "8-12", used as a placeholder. */
 function repIniziali(repTarget) {
   const m = String(repTarget || '').match(/\d+/);
   return m ? m[0] : '';
@@ -27,8 +27,8 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
   const [note, setNote] = useState('');
 
   const [dettaglioSerie, setDettaglioSerie] = useState(false);
-  // Gli esercizi caricati, con la scheda a cui appartengono: finche' non e'
-  // quella scelta, si stanno caricando
+  // The loaded exercises, with the plan they belong to: until it is the
+  // chosen one, they are still loading
   const [caricati, setCaricati] = useState({ schedaId: '', esercizi: [] });
   const esercizi = caricati.schedaId === schedaId ? caricati.esercizi : [];
   const caricandoScheda = Boolean(schedaId) && caricati.schedaId !== schedaId;
@@ -37,8 +37,8 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState('');
 
-  // Alla scelta della scheda si caricano gli esercizi con i target, cosi' la
-  // griglia dei carichi e' gia' pronta e resta solo da inserire i pesi.
+  // When the plan is chosen its exercises are loaded with their targets, so
+  // the loads grid is already set up and only the weights are left to enter.
   useEffect(() => {
     if (!schedaId) return;
     let annullato = false;
@@ -59,7 +59,7 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
       const totaleSerie = voce.serieTarget || 3;
       for (let n = 1; n <= totaleSerie; n++) {
         const v = valori[`${voce.esercizio.id}-${n}`];
-        // Una serie senza peso ne' ripetizioni non e' stata svolta: si omette
+        // A set with no weight and no reps was not done: it is left out
         if (!v || (!v.peso && !v.rep)) continue;
         out.push({
           esercizioId: voce.esercizio.id,
@@ -76,8 +76,8 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
     setErrore('');
     if (!schedaId) { setErrore('Scegli la scheda che hai seguito'); return; }
 
-    // Data e ora locali vengono convertite in un istante assoluto: cosi' l'ora
-    // salvata e' quella in cui ti sei allenato, indipendentemente dal server.
+    // Local date and time are converted to an absolute instant: so the time
+    // saved is the one when you trained, regardless of the server.
     const istante = new Date(`${data}T${ora}`);
     if (Number.isNaN(istante.getTime())) { setErrore('Data od ora non valide'); return; }
     if (istante.getTime() > Date.now()) { setErrore('Quella data è nel futuro'); return; }
@@ -160,8 +160,8 @@ export default function AggiungiAllenamentoPassato({ schede, onChiudi, onSalvato
             <input type="text" value={note} onChange={e => setNote(e.target.value)} placeholder="es. registrato con l'orologio" className="campo-input" />
           </label>
 
-          {/* I carichi sono facoltativi: con il solo riepilogo dell'orologio si
-              registrano data e durata, senza dover inventare numeri. */}
+          {/* The loads are optional: with just the watch summary you log the
+              date and duration, without having to make up numbers. */}
           <label className="flex items-center gap-2 text-sm cursor-pointer">
             <input type="checkbox" checked={dettaglioSerie} onChange={e => setDettaglioSerie(e.target.checked)} className="w-4 h-4 accent-[var(--accent)]" />
             <span>Ho annotato i carichi, voglio inserirli</span>

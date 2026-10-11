@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Servizio Telegram (notifiche push dal backend)
-// Invia messaggi Telegram agli utenti collegati, usando il bot token.
+// GymMaster — Telegram service (push notifications from the backend)
+// Sends Telegram messages to linked users, using the bot token.
 // ============================================
 
 import prisma from '../config/database.js';
@@ -12,14 +12,14 @@ export function telegramAttivo() {
   return TOKEN.trim().length > 0;
 }
 
-// Escape minimale per parse_mode HTML di Telegram
+// Minimal escaping for Telegram's HTML parse_mode
 export function escapeHtml(s = '') {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 /**
- * Invia una notifica Telegram a un utente, se collegato.
- * Silenzioso se Telegram non è configurato o l'utente non è collegato.
+ * Sends a Telegram notification to a user, if linked.
+ * Silent if Telegram is not configured or the user is not linked.
  */
 export async function inviaNotificaTelegram(utenteId, testo) {
   if (!telegramAttivo()) return;

@@ -1,9 +1,9 @@
 // ============================================
-// GymMaster — Test: l'app in ascolto
+// GymMaster — Test: the listening app
 // ============================================
 //
-// L'app vera (src/app.js) su una porta libera di localhost, e richiesta() per
-// parlarle via HTTP come fa il frontend.
+// The real app (src/app.js) on a free localhost port, and richiesta() to talk
+// to it over HTTP as the frontend does.
 
 import { prisma } from './database.js';
 import { creaServer } from '../../src/app.js';
@@ -12,10 +12,10 @@ import redis from '../../src/config/redis.js';
 let ultimoIp = 0;
 
 /**
- * Un indirizzo nuovo a ogni richiesta, passato come CF-Connecting-IP (come
- * dietro Cloudflare): il limite dei tentativi di accesso conta per indirizzo e
- * un test non deve consumare quelli di un altro. Chi prova proprio il limite
- * passa lo stesso ip a ogni richiesta.
+ * A new address for every request, passed as CF-Connecting-IP (as behind
+ * Cloudflare): the sign-in attempt limit counts per address, and one test must
+ * not use up another's attempts. A test of the limit itself passes the same ip
+ * on every request.
  */
 function nuovoIp() {
   ultimoIp++;
@@ -29,7 +29,7 @@ export async function avviaServer() {
 
   /**
    * @param {string} metodo
-   * @param {string} percorso - dopo /api/v1, per esempio '/sessioni/3'
+   * @param {string} percorso - after /api/v1, for example '/sessioni/3'
    * @param {{ token?: string, corpo?: any, cookie?: string, ip?: string, userAgent?: string }} [opzioni]
    * @returns {Promise<{ stato: number, corpo: any, testo: string, intestazioni: Headers, cookieRicevuti: string[] }>}
    */
@@ -56,7 +56,7 @@ export async function avviaServer() {
   }
 
   async function chiudi() {
-    // io.close() chiude anche il server HTTP
+    // io.close() also closes the HTTP server
     await new Promise(risolvi => io.close(risolvi));
     await prisma.$disconnect();
     redis.disconnect();

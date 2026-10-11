@@ -1,9 +1,9 @@
 // ============================================
-// GymMaster — Test: dati di prova
+// GymMaster — Test: test data
 // ============================================
 //
-// Scrivono direttamente nel database quello che serve a un test, con valori
-// di default sensati: ogni test indica solo cio' che conta per lui.
+// They write what a test needs straight into the database, with sensible
+// default values: each test states only what matters to it.
 
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
@@ -15,12 +15,12 @@ const unico = () => ++progressivo;
 export const MINUTO = 60 * 1000;
 export const GIORNO = 24 * 60 * MINUTO;
 
-/** L'istante di n giorni fa */
+/** The instant n days ago */
 export const giorniFa = n => new Date(Date.now() - n * GIORNO);
 
 /**
- * Un utente attivo. La password diventa un hash vero solo se un test fa il
- * login: argon2 costa decine di millisecondi.
+ * An active user. The password becomes a real hash only if a test logs in:
+ * argon2 costs tens of milliseconds.
  */
 export async function creaUtente({ password, ...dati } = {}) {
   const n = unico();
@@ -35,7 +35,7 @@ export async function creaUtente({ password, ...dati } = {}) {
   });
 }
 
-/** Un access token valido per l'utente, uguale a quello del login */
+/** A valid access token for the user, the same as the one from login */
 export function tokenPer(utente) {
   return jwt.sign(
     { utenteId: utente.id, email: utente.email, ruolo: utente.ruolo },
@@ -50,7 +50,7 @@ export function creaEsercizio(dati = {}) {
   });
 }
 
-/** Una scheda personale con gli esercizi dati, in quell'ordine */
+/** A personal plan with the given exercises, in that order */
 export function creaScheda(creatore, esercizi = [], dati = {}) {
   return prisma.schedaAllenamento.create({
     data: {
@@ -67,10 +67,10 @@ export function creaScheda(creatore, esercizi = [], dati = {}) {
 }
 
 /**
- * Una sessione, conclusa salvo { conclusa: false }, con le serie
- * [{ esercizio, peso, rep, ...altri campi di log_serie }] numerate per
- * esercizio nell'ordine dato.
- * Le serie create tornano in logSerie, nello stesso ordine.
+ * A workout, finished unless { conclusa: false }, with the sets
+ * [{ esercizio, peso, rep, ...other log_serie fields }] numbered per
+ * exercise in the given order.
+ * The created sets come back in logSerie, in the same order.
  */
 export function creaSessione(utente, scheda, { inizio = giorniFa(1), durataMinuti = 60, conclusa = true, serie = [] } = {}) {
   const numeri = new Map();

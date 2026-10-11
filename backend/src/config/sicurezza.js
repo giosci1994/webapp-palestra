@@ -1,14 +1,14 @@
 // ============================================
-// GymMaster — Configurazione Sicurezza
-// Helmet, CORS, Rate Limiting centralizzati
+// GymMaster — Security configuration
+// Helmet and CORS in one place (rate limits are in middleware/limitatore.js)
 // ============================================
 
 import helmet from 'helmet';
 import cors from 'cors';
 
 /**
- * Configurazione Helmet per header di sicurezza.
- * CSP restrittivo, HSTS attivo, no-sniff, referrer policy.
+ * Helmet configuration for the security headers.
+ * Strict CSP, HSTS on, no-sniff, referrer policy.
  */
 export function configuraHelmet() {
   return helmet({
@@ -25,9 +25,9 @@ export function configuraHelmet() {
         baseUri: ["'self'"]
       }
     },
-    crossOriginEmbedderPolicy: false, // Necessario per risorse esterne (font)
+    crossOriginEmbedderPolicy: false, // Needed for external resources (fonts)
     hsts: {
-      maxAge: 31536000, // 1 anno
+      maxAge: 31536000, // 1 year
       includeSubDomains: true,
       preload: true
     }
@@ -35,8 +35,8 @@ export function configuraHelmet() {
 }
 
 /**
- * Configurazione CORS.
- * Accetta solo le origini specificate in ORIGINI_CONSENTITE.
+ * CORS configuration.
+ * Accepts only the origins listed in ORIGINI_CONSENTITE.
  */
 export function configuraCORS() {
   const originiConsentite = (process.env.ORIGINI_CONSENTITE || 'http://localhost:6969')
@@ -45,7 +45,7 @@ export function configuraCORS() {
 
   return cors({
     origin: function (origin, callback) {
-      // Consenti richieste senza origin (es. app mobile, curl, same-origin)
+      // Allow requests without an origin (e.g. mobile app, curl, same-origin)
       if (!origin) return callback(null, true);
 
       if (originiConsentite.includes(origin)) {
@@ -54,9 +54,9 @@ export function configuraCORS() {
         callback(new Error(`Origine non consentita dal CORS: ${origin}`));
       }
     },
-    credentials: true, // Necessario per cookie HttpOnly
+    credentials: true, // Needed for HttpOnly cookies
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    maxAge: 86400 // Cache preflight per 24 ore
+    maxAge: 86400 // Cache the preflight for 24 hours
   });
 }

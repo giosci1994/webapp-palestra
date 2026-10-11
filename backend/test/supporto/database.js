@@ -2,9 +2,9 @@
 // GymMaster — Test: database
 // ============================================
 //
-// Il client Prisma dell'app, con una rete di sicurezza: i test d'integrazione
-// svuotano il database, quindi qui si rifiuta qualunque database il cui nome
-// non finisca in _test. Quello usa-e-getta lo avvia test/esegui.js.
+// The app's Prisma client, with a safety net: the integration tests empty the
+// database, so any database whose name does not end in _test is refused here.
+// test/esegui.js starts the throwaway one.
 
 import prisma from '../../src/config/database.js';
 
@@ -15,7 +15,7 @@ if (!nome.endsWith('_test')) {
 
 export { prisma };
 
-/** Svuota tutte le tabelle e fa ripartire gli id da 1 */
+/** Empties every table and restarts the ids from 1 */
 export async function svuotaDatabase() {
   const tabelle = await prisma.$queryRaw`
     SELECT tablename FROM pg_tables

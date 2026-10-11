@@ -9,7 +9,7 @@ export default function AdminPalestre() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ nomeCatena: '', citta: '', indirizzo: '', nazione: 'Italia', googlePlaceId: '' });
 
-  // Al primo caricamento con lo spinner; dopo una modifica l'elenco si aggiorna sul posto
+  // On first load with the spinner; after an edit the list updates in place
   const caricaPalestre = useCallback(() => api.get('/palestre')
     .then(r => setPalestre(r.dati || []))
     .catch(err => console.error(err))

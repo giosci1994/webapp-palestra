@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Contesto Autenticazione
-// Provider React per stato auth globale
+// GymMaster — Authentication context
+// React provider for the global auth state
 // ============================================
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -15,9 +15,9 @@ export function AuthProvider({ children }) {
   const [caricamento, setCaricamento] = useState(true);
   const [errore, setErrore] = useState(null);
 
-  // La sessione muore in UN solo punto: quando una vera chiamata protetta
-  // riceve 401 e il refresh fallisce (api.js). Così un blip transitorio o
-  // una race sul refresh NON sloggano l'utente (es. durante un allenamento).
+  // The session dies in ONE place only: when a real protected call gets a
+  // 401 and the refresh fails (api.js). So a transient blip or a race on the
+  // refresh does NOT log the user out (e.g. during a workout).
   useEffect(() => {
     impostaGestoreSessioneScaduta(() => {
       cancellaToken();
@@ -26,37 +26,38 @@ export function AuthProvider({ children }) {
     return () => impostaGestoreSessioneScaduta(null);
   }, []);
 
-  // --- Refresh proattivo del token (ogni 10 minuti) ---
-  // L'access token ha TTL di 15 minuti. Rinnovandolo ogni 10,
-  // evitiamo che scada mentre l'utente è nell'app. Best-effort: se fallisce
-  // non sloggo (ci penserà la prossima chiamata protetta).
+  // --- Proactive token refresh (every 10 minutes) ---
+  // The access token has a 15-minute TTL. Renewing it every 10 keeps it
+  // from expiring while the user is in the app. Best-effort: if it fails
+  // I don't log out (the next protected call will take care of it).
   useEffect(() => {
     if (!utente) return;
     const intervallo = setInterval(() => { refreshSessione(); }, 10 * 60 * 1000);
     return () => clearInterval(intervallo);
   }, [utente]);
 
-  // --- Refresh immediato quando l'utente torna nell'app ---
-  // Su mobile il browser scarica la pagina dalla memoria dopo inattività.
-  // Quando l'utente torna, il token in RAM è perso. Questo listener
-  // forza un refresh immediato per ripristinare l'autenticazione.
-  // NOTA: non dipende più da `utente` — se la tab viene scaricata,
-  // lo state React è perso ma il cookie HttpOnly sopravvive.
+  // --- Immediate refresh when the user comes back to the app ---
+  // On mobile the browser drops the page from memory after inactivity.
+  // When the user comes back, the token in RAM is lost. This listener
+  // forces an immediate refresh to restore authentication.
+  // If the tab was discarded, the React state is lost but the HttpOnly
+  // cookie survives: the refresh works without `utente`, which is only read
+  // to reload the profile when it is missing.
   useEffect(() => {
     const gestisciVisibilita = async () => {
       if (document.visibilityState !== 'visible') return;
-      // Best-effort: rinnova il token (dedup condiviso con api.js).
+      // Best-effort: renews the token (dedup shared with api.js).
       const token = await refreshSessione();
-      // Se la tab era stata scaricata (state perso) ma il refresh è andato,
-      // ripristina il profilo. In caso di fallimento NON sloggo qui: una
-      // vera chiamata protetta gestirà l'eventuale scadenza (niente logout
-      // prematuro che interromperebbe un allenamento in corso).
+      // If the tab had been discarded (state lost) but the refresh worked,
+      // restore the profile. On failure I do NOT log out here: a real
+      // protected call will handle any expiry (no premature logout that
+      // would interrupt a workout in progress).
       if (token && !utente) {
         try {
           const profilo = await apiChiamata('/utenti/profilo');
           setUtente(profilo.dati);
         } catch {
-          /* la prossima chiamata protetta deciderà */
+          /* the next protected call will decide */
         }
       }
     };
@@ -65,8 +66,8 @@ export function AuthProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', gestisciVisibilita);
   }, [utente]);
 
-  // Verifica sessione all'avvio: il refresh condiviso ottiene un nuovo access
-  // token dal cookie HttpOnly, poi si legge il profilo
+  // Session check at startup: the shared refresh gets a new access token
+  // from the HttpOnly cookie, then the profile is read
   useEffect(() => {
     refreshSessione()
       .then(async token => {
@@ -75,7 +76,7 @@ export function AuthProvider({ children }) {
         setUtente(profilo.dati);
       })
       .catch(() => {
-        // Nessuna sessione attiva — l'utente dovrà fare login
+        // No active session — the user will have to log in
         cancellaToken();
       })
       .finally(() => setCaricamento(false));
@@ -100,8 +101,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Accesso con una passkey: il server manda una sfida, il dispositivo la firma
-   * (impronta, volto o PIN), il server verifica la firma e apre la sessione.
+   * Login with a passkey: the server sends a challenge, the device signs it
+   * (fingerprint, face or PIN), the server checks the signature and opens the session.
    */
   const loginConPasskey = useCallback(async (ricordaDispositivo = false) => {
     setErrore(null);
@@ -140,11 +141,11 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      // Il dispositivo smette di ricevere le push di chi esce
+      // The device stops receiving the push notifications of whoever logs out
       await disiscriviDispositivo(api).catch(() => {});
       await apiChiamata('/auth/logout', { metodo: 'POST' });
     } catch {
-      // Ignora errori di logout
+      // Ignore logout errors
     } finally {
       cancellaToken();
       setUtente(null);

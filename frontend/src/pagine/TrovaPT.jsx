@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Trova un Personal Trainer
-// Pagina di scoperta: elenco PT con ricerca, link al profilo pubblico.
+// GymMaster — Find a Personal Trainer
+// Discovery page: list of personal trainers with search, link to the public profile.
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -32,7 +32,7 @@ export default function TrovaPT() {
         <p className="text-sm text-[var(--testo-secondario)] mt-1">Scegli un professionista e segui schede su misura per i tuoi obiettivi.</p>
       </div>
 
-      {/* Ricerca */}
+      {/* Search */}
       <div className="relative">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--testo-terziario)] pointer-events-none" />
         <input value={q} onChange={e => setQ(e.target.value)} placeholder="Cerca per nome..." className="campo-input w-full !pl-11" />

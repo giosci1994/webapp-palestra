@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Storie delle novita' di un rilascio
+// GymMaster — "What's new" stories of a release
 // ============================================
 //
-// Le storie stanno in prisma/novita.json, ognuna con la versione che la porta.
-// Al rilascio di quella versione si aggiungono alla tabella novita
-// (services/novitaRilascio.service.js), una volta sola: le storie delle
-// versioni passate non si toccano piu', anche se dal pannello admin vengono
-// cambiate o cancellate.
+// The stories live in prisma/novita.json, each with the version that brings it.
+// When that version is released they are added to the novita table
+// (services/novitaRilascio.service.js), only once: the stories of past
+// versions are never touched again, even if they are changed or deleted
+// from the admin panel.
 
 const VERSIONE = /^\d+\.\d+\.\d+$/;
 const COLORE = /^#[0-9a-fA-F]{6}$/;
@@ -15,8 +15,8 @@ const testo = (valore, massimo) => typeof valore === 'string' && valore.trim().l
 const facoltativo = (valore, massimo) => valore == null || testo(valore, massimo);
 
 /**
- * I problemi del file delle storie, uno per riga; vuoto se e' tutto a posto.
- * @param {unknown} storie il contenuto di prisma/novita.json
+ * The problems of the stories file, one per line; empty if everything is fine.
+ * @param {unknown} storie the content of prisma/novita.json
  * @returns {string[]}
  */
 export function problemiStorie(storie) {
@@ -49,9 +49,9 @@ export function problemiStorie(storie) {
 }
 
 /**
- * Le righe da aggiungere alla tabella novita per una versione, nell'ordine del
- * file: la prima storia del file e' la prima che si vede (a parita' di
- * `ordine` l'app mostra prima la piu' recente, quindi gli orari scalano).
+ * The rows to add to the novita table for a version, in the order of the
+ * file: the first story in the file is the first one shown (with the same
+ * `ordine` the app shows the most recent first, so the timestamps step back).
  * @param {object[]} storie
  * @param {string} versione
  * @param {Date} adesso

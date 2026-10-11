@@ -1,5 +1,5 @@
-// Avvio, chiusura e correzione degli allenamenti (PATCH /sessioni/:id),
-// attraverso le rotte vere e un database vero.
+// Starting, closing and correcting workouts (PATCH /sessioni/:id), through
+// the real routes and a real database.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -26,7 +26,7 @@ beforeEach(async () => {
 const correggi = (sessione, corpo, chi = utente) =>
   server.richiesta('PATCH', `/sessioni/${sessione.id}`, { token: tokenPer(chi), corpo });
 
-/** I record dell'utente per un esercizio, dal piu' basso */
+/** The user's records for an exercise, lowest first */
 const recordDi = (chi, esercizio) => prisma.recordPersonale.findMany({
   where: { utenteId: chi.id, esercizioId: esercizio.id },
   orderBy: { pesoMaxRaggiunto: 'asc' }
@@ -83,7 +83,7 @@ describe('correzione di un allenamento: serie e record personali', () => {
     assert.equal(risposta.stato, 200);
     assert.equal(risposta.corpo.dati.volumeTotaleKg, 400);
 
-    // Il nuovo record e' datato all'allenamento in cui e' stato sollevato
+    // The new record is dated to the workout in which it was lifted
     assert.deepEqual(
       risposta.corpo.recordPersonali.map(r => [r.pesoMaxRaggiunto, r.dataRecord]),
       [[80, sbagliata.dataInizio.toISOString()]]
@@ -108,7 +108,7 @@ describe('correzione di un allenamento: serie e record personali', () => {
     const sessione = await creaSessione(utente, scheda, {
       serie: [
         { esercizio: panca, peso: 60, rep: 10 },
-        { esercizio: panca, peso: 60, rep: 10 }, // doppione
+        { esercizio: panca, peso: 60, rep: 10 }, // duplicate
         { esercizio: panca, peso: 65, rep: 8 }
       ]
     });
@@ -252,7 +252,7 @@ describe('riprendere un allenamento chiuso per sbaglio', () => {
     server.richiesta('PATCH', `/sessioni/${sessione.id}/riapri`, { token: tokenPer(chi) });
   const completa = (sessione, chi = utente) =>
     server.richiesta('PATCH', `/sessioni/${sessione.id}/completa`, { token: tokenPer(chi), corpo: {} });
-  /** Un allenamento cominciato 40 minuti fa e appena chiuso */
+  /** A workout started 40 minutes ago and just closed */
   const appenaChiuso = async (dati = {}) => {
     const sessione = await creaSessione(utente, scheda, {
       inizio: new Date(Date.now() - 40 * MINUTO), conclusa: false, serie: [{ esercizio: panca, peso: 80, rep: 8 }], ...dati
@@ -277,7 +277,7 @@ describe('riprendere un allenamento chiuso per sbaglio', () => {
     assert.equal(chiusa.stato, 200);
     assert.equal(chiusa.corpo.dati.volumeTotaleKg, 80 * 8 + 90 * 5);
     assert.ok(chiusa.corpo.dati.durataMinuti >= 40);
-    // Il record dei 90 kg arriva con la seconda chiusura, quello degli 80 resta uno solo
+    // The 90 kg record comes with the second closing, the 80 kg one stays a single record
     assert.deepEqual((await recordDi(utente, panca)).map(r => r.pesoMaxRaggiunto), [80, 90]);
   });
 
@@ -344,7 +344,7 @@ describe('salvare un allenamento come scheda', () => {
     const rematore = await creaEsercizio({ nome: 'Rematore' });
     const seguita = await creaScheda(utente, [panca, squat], { titolo: 'Push A', livello: 'INTERMEDIO' });
     await prisma.esercizioScheda.updateMany({ where: { schedaId: seguita.id, esercizioId: panca.id }, data: { recuperoSecondi: 180, note: 'Fermo al petto' } });
-    // In palestra: lo squat saltato, il rematore aggiunto, una serie di panca in piu'
+    // At the gym: squat skipped, row added, one extra bench set
     const sessione = await creaSessione(utente, seguita, {
       inizio: new Date('2026-10-09T10:00:00Z'),
       serie: [
@@ -389,7 +389,7 @@ describe('salvare un allenamento come scheda', () => {
     assert.equal(risposta.corpo.messaggio, 'Nessuna serie completata da salvare');
 
     assert.equal(await prisma.schedaAllenamento.count({ where: { creatoreId: { not: utente.id } } }), 0);
-    assert.equal(await prisma.schedaAllenamento.count(), 1); // solo quella di partenza
+    assert.equal(await prisma.schedaAllenamento.count(), 1); // only the original one
   });
 
   it('titolo troppo lungo o non testo 400, id non valido 400, sessione inesistente 404', async () => {

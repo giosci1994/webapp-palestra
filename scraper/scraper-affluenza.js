@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Scraper Affluenza Google Maps
-// Eseguito ogni 30 minuti via cron
-// Scrapa Popular Times + Live Busyness
+// GymMaster — Google Maps crowd level scraper
+// Run every 30 minutes via cron
+// Scrapes Popular Times + Live Busyness
 // ============================================
 
 import { chromium } from 'playwright';
@@ -15,29 +15,19 @@ const CONFIG = {
   DELAY_MAX: 15000,
   TIMEOUT_PAGINA: 30000,
   MAX_TENTATIVI: 2,
-  // Tetto massimo per l'intero run. Deve restare sotto l'intervallo del cron
-  // (30 min) cosi' due run non possono mai sovrapporsi.
+  // Upper limit for the whole run. It must stay below the cron interval
+  // (30 min) so two runs can never overlap.
   TIMEOUT_GLOBALE: Number(process.env.TIMEOUT_GLOBALE_MS) || 20 * 60 * 1000,
 };
 
-// Riferimento al browser accessibile dalla chiusura finale: se lo scraping
-// fallisce a meta', il processo Chromium va chiuso comunque.
+// Browser reference reachable from the final cleanup: if scraping fails
+// halfway, the Chromium process must be closed anyway.
 let browserGlobale = null;
 
 const delay = (min, max) => new Promise(r => setTimeout(r, min + Math.random() * (max - min)));
 
 
-/**
- * Supera il muro di consenso di Google.
- *
- * Due accortezze rispetto alla versione precedente:
- *  - Google rende PIU' COPIE dello stesso pulsante (varianti desktop/mobile) e
- *    solo una e' visibile. Il vecchio codice faceva `.first()`, che spesso
- *    pescava quella nascosta: il click non avveniva, la pagina restava su
- *    consent.google.com e lo scraping tornava sempre a mani vuote.
- *  - Si preferisce "Rifiuta tutto": sblocca la pagina esattamente come
- *    "Accetta tutto" ma senza installare i cookie di profilazione.
- */
+/** Clicks the first visible button with one of these names; true if it clicked. */
 async function cliccaPrimoVisibile(page, nomi) {
   for (const nome of nomi) {
     const loc = page.getByRole('button', { name: nome, exact: false });
@@ -52,11 +42,22 @@ async function cliccaPrimoVisibile(page, nomi) {
   return false;
 }
 
+/**
+ * Gets past Google's consent wall.
+ *
+ * Two precautions compared to the previous version:
+ *  - Google renders SEVERAL COPIES of the same button (desktop/mobile variants)
+ *    and only one is visible. The old code did `.first()`, which often picked
+ *    the hidden one: the click never happened, the page stayed on
+ *    consent.google.com and scraping always came back empty-handed.
+ *  - "Rifiuta tutto" (reject all) is preferred: it unlocks the page exactly
+ *    like "Accetta tutto" (accept all) but without installing profiling cookies.
+ */
 async function superaConsensoGoogle(page) {
   if (!page.url().includes('consent.google.com')) return false;
 
-  // Prima il rifiuto (nessun cookie di tracciamento), poi l'accettazione solo
-  // come ultima spiaggia se Google cambiasse le etichette.
+  // Reject first (no tracking cookies), then accept only as a last resort
+  // if Google changed the labels.
   const rifiuta = ['Rifiuta tutto', 'Reject all', 'Afvis alle', 'Alle ablehnen', 'Tout refuser'];
   const accetta = ['Accetta tutto', 'Accept all', 'Acceptér alle', 'Alle akzeptieren'];
 
@@ -70,7 +71,7 @@ async function superaConsensoGoogle(page) {
   return fatto;
 }
 
-// Selettore della sezione "Orari di punta" nelle lingue che ci servono.
+// Selector for the "Orari di punta" (popular times) section in the languages we need.
 const SEL_ORARI_PUNTA = [
   '[aria-label^="Orari di punta"]',
   '[aria-label^="Popular times"]',
@@ -88,22 +89,22 @@ const GIORNI_INDICE = {
 };
 
 /**
- * Apre la scheda del locale e attende la sezione "Orari di punta".
+ * Opens the place's page and waits for the "Orari di punta" section.
  *
- * Due casi da gestire: la ricerca a volte atterra direttamente sulla scheda,
- * a volte su una lista di risultati da cui va aperto il primo.
+ * Two cases to handle: the search sometimes lands directly on the place page,
+ * sometimes on a list of results from which the first one must be opened.
  *
- * NOTA: quando Google limita il traffico automatico dall'IP chiamante, la
- * scheda viene servita regolarmente ma SENZA la sezione Orari di punta. In quel
- * caso nessun accorgimento lato client la fa comparire (provati scroll del
- * pannello e ricarica): l'unica risposta sensata e' rinunciare e riprovare al
- * giro successivo, che e' quello che fa il chiamante.
+ * NOTE: when Google throttles automated traffic from the calling IP, the
+ * place page is served normally but WITHOUT the Orari di punta section. In
+ * that case no client-side trick makes it appear (scrolling the panel and
+ * reloading were tried): the only sensible answer is to give up and retry on
+ * the next round, which is what the caller does.
  */
 async function apriSchedaLocale(page) {
   for (let tentativo = 1; tentativo <= 2; tentativo++) {
     if (await page.locator(SEL_ORARI_PUNTA).count()) return true;
 
-    // Lista risultati -> apri la prima scheda
+    // Results list -> open the first place page
     const primo = page.locator('a[href*="/maps/place/"]').first();
     if (await primo.count() && await primo.isVisible().catch(() => false)) {
       await primo.click().catch(() => {});
@@ -123,13 +124,13 @@ async function apriSchedaLocale(page) {
 }
 
 /**
- * Scrapa Popular Times e Live Busyness cercando per nome+indirizzo
+ * Scrapes Popular Times and Live Busyness by searching for name+address
  */
 async function scrapaAffluenza(page, palestra) {
   const risultato = { storici: [], live: null };
 
   try {
-    // Cerca per nome + indirizzo (funziona meglio di place_id URL)
+    // Search by name + address (works better than a place_id URL)
     const query = `${palestra.nomeCatena} ${palestra.indirizzo} ${palestra.citta}`;
     const url = `https://www.google.com/maps/search/${encodeURIComponent(query)}`;
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: CONFIG.TIMEOUT_PAGINA });
@@ -144,12 +145,12 @@ async function scrapaAffluenza(page, palestra) {
     await delay(1500, 2500);
 
     // === POPULAR TIMES ===
-    // Le 168 barre (7 giorni × 24 ore) sono tutte nel DOM, sovrapposte: i
-    // pulsanti avanti/indietro cambiano solo quale gruppo e' in evidenza, non i
-    // dati. Il giorno NON e' piu' scritto nell'etichetta della barra
-    // ("Pieno al 8% alle ore 04:00."), quindi va dedotto dalla posizione del
-    // gruppo. L'ancora e' il gruppo che porta il marcatore "IN TEMPO REALE":
-    // quello e' il giorno corrente. Da li' i gruppi proseguono in ordine.
+    // The 168 bars (7 days × 24 hours) are all in the DOM, stacked: the
+    // forward/back buttons only change which group is highlighted, not the
+    // data. The day is NO longer written in the bar's label
+    // ("Pieno al 8% alle ore 04:00."), so it must be inferred from the group's
+    // position. The anchor is the group carrying the "IN TEMPO REALE" (live)
+    // marker: that is the current day. From there the groups follow in order.
     const estratto = await page.evaluate((sel) => {
       const cont = document.querySelector(sel);
       if (!cont) return { errore: 'contenitore assente' };
@@ -162,7 +163,7 @@ async function scrapaAffluenza(page, palestra) {
       const gruppi = [...strip.children];
       const indiceLive = gruppi.findIndex(g => /IN TEMPO REALE|LIVE|LIGE NU/i.test(g.innerText || ''));
 
-      // Etichetta "Ogni <giorno>" = giorno del gruppo attualmente selezionato
+      // Label "Ogni <giorno>" (every <day>) = day of the currently selected group
       const testoEtichetta = (cont.innerText || '').match(/(?:Ogni|Every|Hver)\s+([^\s\n]+)/i)?.[1] || null;
 
       const perGruppo = gruppi.map(g =>
@@ -180,11 +181,11 @@ async function scrapaAffluenza(page, palestra) {
       return risultato;
     }
 
-    // Ancoraggio giorno → gruppo
+    // Anchoring day → group
     const ancora = estratto.indiceLive >= 0 ? estratto.indiceLive : 0;
     let giornoAncora = GIORNI_INDICE[(estratto.testoEtichetta || '').toLowerCase()];
     if (giornoAncora === undefined) {
-      // Fallback: il gruppo col marcatore live e' oggi (lun=0 … dom=6)
+      // Fallback: the group with the live marker is today (Mon=0 … Sun=6)
       giornoAncora = (new Date().getDay() + 6) % 7;
     }
 
@@ -236,7 +237,7 @@ async function main() {
   console.log(`📅 ${oraInizio.toLocaleString('it-IT')}`);
   console.log(`${'═'.repeat(50)}\n`);
 
-  // Solo palestre con Place ID E utenti registrati
+  // Only gyms with a Place ID AND registered users
   const palestre = await prisma.palestra.findMany({
     where: {
       googlePlaceId: { not: null },
@@ -274,8 +275,8 @@ async function main() {
   });
   const page = await context.newPage();
 
-  // Supera una volta sola il muro di consenso: il cookie di scelta resta valido
-  // per tutta la sessione del browser e vale per tutte le palestre successive.
+  // Get past the consent wall only once: the choice cookie stays valid for
+  // the whole browser session and applies to all the following gyms.
   console.log('🍪 Consenso cookie Google (rifiuto tracciamento)...');
   await page.goto('https://www.google.com/maps', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await delay(2000, 3000);
@@ -308,10 +309,10 @@ async function main() {
               ora: storico.ora
             }
           },
-          // Azzera i campi live: valgono solo per l'ora in corso e verrebbero
-          // altrimenti trascinati per sempre sulle celle vecchie, facendo
-          // apparire in dashboard un "in tempo reale" di settimane prima.
-          // L'upsert live subito sotto li riscrive per la sola cella corrente.
+          // Clear the live fields: they only apply to the current hour and
+          // would otherwise be carried forever on the old cells, making the
+          // dashboard show an "in tempo reale" (live) value from weeks before.
+          // The live upsert right below rewrites them for the current cell only.
           update: {
             livelloPercentuale: storico.livelloPercentuale,
             liveLivello: null,
@@ -380,9 +381,9 @@ async function main() {
   console.log(`${'═'.repeat(50)}\n`);
 }
 
-// Rete di sicurezza: se un run resta appeso (pagina che non carica mai, Playwright
-// che non risponde) il processo viene terminato comunque. Senza questo un singolo
-// run bloccato impedisce per sempre tutti i run successivi.
+// Safety net: if a run hangs (a page that never loads, Playwright not
+// responding) the process is terminated anyway. Without this a single stuck
+// run blocks all the following runs forever.
 const watchdog = setTimeout(() => {
   console.error(`\n\u23f0 Timeout globale superato (${Math.round(CONFIG.TIMEOUT_GLOBALE / 60000)} min) \u2014 chiusura forzata.`);
   browserGlobale?.close().catch(() => {});
@@ -397,8 +398,8 @@ main()
   })
   .finally(async () => {
     clearTimeout(watchdog);
-    // Ordine importante: prima il browser, altrimenti i processi figli di
-    // Chromium restano vivi e tengono aperto l'event loop all'infinito.
+    // Order matters: the browser first, otherwise Chromium's child processes
+    // stay alive and keep the event loop open forever.
     if (browserGlobale) await browserGlobale.close().catch(() => {});
     await prisma.$disconnect().catch(() => {});
     process.exit(process.exitCode ?? 0);

@@ -1,4 +1,4 @@
-// Statistiche: la griglia dell'attivita' dell'ultimo anno.
+// Statistics: the activity grid of the last year.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -25,7 +25,7 @@ const attivita = async (chi = utente) => {
   return risposta.corpo.dati;
 };
 const serie = n => Array.from({ length: n }, () => ({ esercizio: panca, peso: 60, rep: 10 }));
-/** Mezzogiorno UTC di n giorni fa: lo stesso giorno anche in Danimarca */
+/** Noon UTC n days ago: the same day in Denmark too */
 const mezzogiorno = n => { const d = giorniFa(n); d.setUTCHours(12, 0, 0, 0); return d; };
 const giornoDi = d => d.toISOString().slice(0, 10);
 

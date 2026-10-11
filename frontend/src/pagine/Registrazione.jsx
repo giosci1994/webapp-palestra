@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Pagina Registrazione
+// GymMaster — Sign-up page
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -21,7 +21,7 @@ export default function Registrazione() {
   const { registrazione, login } = useAuth();
   const naviga = useNavigate();
 
-  // Carica lista palestre per il select
+  // Load the gym list for the select
   useEffect(() => {
     api.get('/palestre').then(r => setPalestre(r.dati || [])).catch(() => {});
   }, []);
@@ -40,19 +40,19 @@ export default function Registrazione() {
         ...form,
         palestraId: form.palestraId ? parseInt(form.palestraId) : null
       });
-      // Se serve la verifica email, mostra la schermata "controlla la posta"
+      // If email verification is needed, show the "check your inbox" screen
       if (risp?.dati?.richiedeVerificaEmail) {
         setModoVerifica(true);
         setSuccesso(true);
         return;
       }
-      // Altrimenti account già attivo: auto-login immediato per evitare attrito
+      // Otherwise the account is already active: immediate auto-login to avoid friction
       try {
         const u = await login(form.email, form.password);
         naviga(u?.profiloCompletato === false ? '/onboarding' : '/dashboard', { replace: true });
         return;
       } catch {
-        // Se l'auto-login non riesce, mostra conferma e invita ad accedere
+        // If the auto-login fails, show a confirmation and invite the user to sign in
         setSuccesso(true);
       }
     } catch (err) {

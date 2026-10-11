@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Routes Schede Allenamento
-// CRUD schede + esercizi dentro le schede
+// GymMaster — Workout Plan Routes
+// CRUD for plans + exercises inside plans
 // ============================================
 
 import { Router } from 'express';
@@ -9,16 +9,16 @@ import * as controller from '../controllers/schede.controller.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.param('esercizioSchedaId', idNumerico);
 
-// Tutte le rotte richiedono autenticazione
+// Every route requires authentication
 router.use(verificaToken);
 
-// --- Schede ---
+// --- Plans ---
 router.get('/', controller.listaSchede);
-// Prima di '/:id': altrimenti Express tratterebbe "docx" come un id
+// Before '/:id': otherwise Express would treat "docx" as an id
 router.get('/docx', controller.esportaSchedeDocxMultiplo);
 router.get('/:id/docx', controller.esportaSchedaDocx);
 router.get('/:id', controller.dettaglioScheda);
@@ -27,7 +27,7 @@ router.post('/:id/clona', controller.clonaScheda);
 router.put('/:id', controller.aggiornaScheda);
 router.delete('/:id', controller.eliminaScheda);
 
-// --- Esercizi dentro una scheda ---
+// --- Exercises inside a plan ---
 router.post('/:id/esercizi', controller.aggiungiEsercizio);
 router.put('/:id/esercizi/:esercizioSchedaId', controller.aggiornaEsercizioScheda);
 router.delete('/:id/esercizi/:esercizioSchedaId', controller.rimuoviEsercizio);

@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Configurazione Vite
+// GymMaster — Vite configuration
 // Build tool + PWA + Tailwind
 // ============================================
 
@@ -15,10 +15,10 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const versionData = JSON.parse(readFileSync(resolve(__dirname, '..', 'version.json'), 'utf-8'));
 
 /**
- * Pubblica /version.json con ogni build: l'app lo scarica ogni 2 minuti e,
- * se la versione e' diversa da quella con cui e' stata costruita, si
- * aggiorna da sola (hooks/useAutoAggiornamento.js). Basta la versione: il
- * changelog lo legge il server.
+ * Publishes /version.json with every build: the app downloads it every 2
+ * minutes and, if the version differs from the one it was built with, it
+ * updates itself (hooks/useAutoAggiornamento.js). The version is enough: the
+ * changelog is read by the server.
  */
 const pubblicaVersione = {
   name: 'gymmaster-version-json',
@@ -68,10 +68,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
-        // Non precachare index.html — Nginx lo serve con no-cache
-        // Questo evita che il SW serva la vecchia versione
+        // Do not precache index.html — Nginx serves it with no-cache
+        // This keeps the SW from serving the old version
         navigateFallback: null,
-        // Le notifiche push (public/sw-push.js): il service worker generato le importa
+        // Push notifications (public/sw-push.js): the generated service worker imports them
         importScripts: ['/sw-push.js'],
         skipWaiting: true,
         clientsClaim: true,

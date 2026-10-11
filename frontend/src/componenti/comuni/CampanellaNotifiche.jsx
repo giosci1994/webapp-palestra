@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Campanella Notifiche
-// Contatore non lette + pannello con l'elenco
+// GymMaster — Notification bell
+// Unread counter + panel with the list
 // ============================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -25,12 +25,12 @@ export default function CampanellaNotifiche({ compatta = false }) {
       setNonLette(res.dati?.nonLette || 0);
     })
     .catch(() => {
-      // Silenzioso: la campanella non deve disturbare se l'API non risponde
+      // Silent: the bell must not get in the way if the API does not answer
     }), []);
 
   useEffect(() => { carica(); }, [carica]);
 
-  // Arrivo in tempo reale: aggiorna elenco e contatore senza ricaricare
+  // Real-time arrival: updates the list and the counter without reloading
   useEffect(() => {
     const pulisci = on('notifica:nuova', (notifica) => {
       setNotifiche(prec => [notifica, ...prec].slice(0, 20));
@@ -39,7 +39,7 @@ export default function CampanellaNotifiche({ compatta = false }) {
     return pulisci;
   }, [on]);
 
-  // Chiusura al clic fuori e con Esc
+  // Closes on a click outside and with Esc
   useEffect(() => {
     if (!aperto) return;
     const fuori = (e) => { if (contenitore.current && !contenitore.current.contains(e.target)) setAperto(false); };
@@ -56,7 +56,7 @@ export default function CampanellaNotifiche({ compatta = false }) {
       setNonLette(v => Math.max(0, v - 1));
       api.patch(`/notifiche/${n.id}/letta`).catch(() => {});
     }
-    // Solo percorsi interni: una notifica non deve poter portare fuori dall'app
+    // Internal paths only: a notification must not be able to lead outside the app
     if (n.percorso && n.percorso.startsWith('/')) naviga(n.percorso);
   };
 

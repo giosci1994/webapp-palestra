@@ -1,11 +1,11 @@
 // ============================================
-// GymMaster — Schemi Validazione Chat
-// Schemi Zod per messaggi, richieste contatto
+// GymMaster — Chat validation schemas
+// Zod schemas for messages, contact requests
 // ============================================
 
 import { z } from 'zod';
 
-/** Schema per l'invio di una richiesta di contatto */
+/** Schema for sending a contact request */
 export const schemaRichiestaContatto = z.object({
   destinatarioId: z
     .number({ required_error: 'ID destinatario obbligatorio' })
@@ -13,7 +13,7 @@ export const schemaRichiestaContatto = z.object({
     .positive('ID destinatario non valido')
 });
 
-/** Schema per la risposta a una richiesta di contatto */
+/** Schema for the answer to a contact request */
 export const schemaRispostaContatto = z.object({
   stato: z.enum(['ACCETTATA', 'RIFIUTATA', 'BLOCCATA'], {
     required_error: 'Stato risposta obbligatorio',
@@ -21,7 +21,7 @@ export const schemaRispostaContatto = z.object({
   })
 });
 
-/** Schema per l'invio di un messaggio */
+/** Schema for sending a message */
 export const schemaMessaggio = z.object({
   conversazioneId: z
     .number({ required_error: 'ID conversazione obbligatorio' })
@@ -34,7 +34,7 @@ export const schemaMessaggio = z.object({
     .trim()
 });
 
-/** Schema per aggiornamento preferenze chat */
+/** Schema for updating the chat preferences */
 export const schemaPreferenzeChat = z.object({
   chatRetentionGiorni: z
     .number()

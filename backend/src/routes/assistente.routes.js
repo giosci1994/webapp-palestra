@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Routes Assistente AI
+// GymMaster — AI Assistant Routes
 // /api/v1/assistente/*
 // ============================================
 
@@ -10,16 +10,16 @@ import { limitatoreAI } from '../middleware/limitatore.js';
 
 const router = Router();
 
-// Tutte le rotte richiedono autenticazione
+// Every route requires authentication
 router.use(verificaToken);
 
-// Rate limiting specifico per AI (5 req/min per utente)
+// AI-specific rate limiting (5 req/min per user)
 router.use(limitatoreAI);
 
-// POST /api/v1/assistente/chiedi — Invia domanda all'assistente
+// POST /api/v1/assistente/chiedi — Send a question to the assistant
 router.post('/chiedi', chiedi);
 
-// GET /api/v1/assistente/conversazioni — Storico conversazioni AI
+// GET /api/v1/assistente/conversazioni — AI conversation history
 router.get('/conversazioni', storicoConversazioni);
 
 export default router;

@@ -1,5 +1,5 @@
-// Login, rinnovo del refresh token e accesso alle rotte protette, attraverso
-// le rotte vere e un database vero.
+// Login, refresh token renewal and access to protected routes, through the
+// real routes and a real database.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -20,7 +20,7 @@ const login = (email, corpo = {}) =>
   server.richiesta('POST', '/auth/login', { corpo: { email, password: PASSWORD, ...corpo } });
 const rinnova = token => server.richiesta('POST', '/auth/refresh', { cookie: `refreshToken=${token}` });
 
-/** Il cookie del refresh token, cosi' come lo imposta la risposta */
+/** The refresh token cookie, exactly as the response sets it */
 const cookieRefresh = risposta => risposta.cookieRicevuti.find(c => c.startsWith('refreshToken='));
 const refreshTokenDa = risposta => cookieRefresh(risposta)?.split(';')[0].slice('refreshToken='.length);
 
@@ -91,7 +91,7 @@ describe('login', () => {
 
   it('dopo 20 tentativi dallo stesso indirizzo si ferma per 15 minuti, gli altri indirizzi no', async () => {
     const ip = '192.0.2.7';
-    // Un'email diversa a ogni tentativo: qui conta l'indirizzo, non l'account
+    // A different email on each attempt: here the address counts, not the account
     let n = 0;
     const tentativo = indirizzo => server.richiesta('POST', '/auth/login', {
       ip: indirizzo, corpo: { email: `nessuno${++n}@test.local`, password: 'Sbagliata123' }
@@ -109,7 +109,7 @@ describe('login', () => {
 });
 
 describe('rinnovo del refresh token', () => {
-  /** Come se il token fosse stato rinnovato `minuti` fa: sotto i 5 non ruota */
+  /** As if the token had been renewed `minuti` ago: under 5 it does not rotate */
   const invecchia = (token, minuti = 10) => prisma.refreshToken.update({
     where: { token: improntaToken(token) }, data: { creato: new Date(Date.now() - minuti * 60 * 1000) }
   });
@@ -144,7 +144,7 @@ describe('rinnovo del refresh token', () => {
   });
 
   it("chi e' rimasto indietro di una rotazione riceve di nuovo il sostituto, senza crearne altri", async () => {
-    // La risposta si e' persa, o due schede hanno rinnovato insieme
+    // The response got lost, or two tabs renewed at the same time
     const utente = await creaUtente({ password: PASSWORD });
     const vecchio = refreshTokenDa(await login(utente.email));
     await invecchia(vecchio);
@@ -157,16 +157,16 @@ describe('rinnovo del refresh token', () => {
   });
 
   it("l'app chiusa prima che il browser salvi il cookie nuovo non scollega (il caso del 10 ottobre)", async () => {
-    // Apertura: rinnovo e rotazione; l'aggiornamento dell'app ricarica la pagina
-    // e rinnova di nuovo 4 secondi dopo; l'app viene chiusa e sul disco resta il
-    // cookie di prima. Alla riapertura, minuti o giorni dopo, torna il vecchio.
+    // Opening: renewal and rotation; the app update reloads the page and
+    // renews again 4 seconds later; the app is closed and the previous cookie
+    // stays on disk. On reopening, minutes or days later, the old one is back.
     const utente = await creaUtente({ password: PASSWORD });
     const suDisco = refreshTokenDa(await login(utente.email));
     await invecchia(suDisco);
     const inMemoria = refreshTokenDa(await rinnova(suDisco));
     assert.equal(refreshTokenDa(await rinnova(inMemoria)), inMemoria, 'il secondo rinnovo non ruota');
 
-    // Nel frattempo un altro dispositivo accede e fa pulizia dei token vecchi
+    // Meanwhile another device signs in and cleans up the old tokens
     await login(utente.email);
 
     const riapertura = await rinnova(suDisco);
@@ -318,7 +318,7 @@ describe('token di verifica email e di reset password', () => {
     const sessione = refreshTokenDa(await login(utente.email));
     for (let i = 0; i < 5; i++) await login(utente.email, { password: 'Sbagliata123' });
 
-    // Chi conosce solo l'impronta (per esempio da un backup) non puo' usarla
+    // Someone who only knows the fingerprint (from a backup, for example) cannot use it
     const conImpronta = await server.richiesta('POST', '/auth/reimposta-password', {
       corpo: { token: improntaToken('token-reset'), password: 'NuovaPassword1' }
     });
@@ -339,7 +339,7 @@ describe('conversione dei token gia\' emessi (migrazione 20261010_token_come_imp
   ).split('\n').filter(riga => riga.startsWith('UPDATE '));
 
   it('chi era collegato resta collegato, e i link gia\' spediti funzionano ancora', async () => {
-    // Come sono oggi in produzione: token in chiaro nel database
+    // As they were before this migration: plain-text tokens in the database
     const utente = await creaUtente({
       emailVerificata: false, tokenVerificaEmail: 'verifica-in-chiaro', tokenVerificaScadenza: new Date(Date.now() + GIORNO)
     });

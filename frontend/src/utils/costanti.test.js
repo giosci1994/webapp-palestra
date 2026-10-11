@@ -16,7 +16,7 @@ describe('statoRecupero', () => {
   });
 
   it("il lavoro da muscolo secondario non lo mette in recupero, ma basta a non trascurarlo", () => {
-    // Ieri solo da secondario, da principiale un mese fa
+    // Yesterday only as a secondary muscle, as a primary one a month ago
     expect(statoRecupero(oreFa(24), oreFa(30 * 24), adesso)).toBe('pronto');
     expect(statoRecupero(oreFa(24), null, adesso)).toBe('pronto');
   });

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Routes Statistiche
-// Dati aggregati per grafici e report utente
+// GymMaster — Statistics Routes
+// Aggregated data for the user's charts and reports
 // ============================================
 
 import { Router } from 'express';
@@ -13,14 +13,14 @@ import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.param('esercizioId', idNumerico);
 router.use(verificaToken);
 
 const SETTIMANA = 7 * 86400000;
 
-/** Inizio (lunedi' 00:00 UTC) della settimana di una data, in millisecondi. */
+/** Start (Monday 00:00 UTC) of the week of a date, in milliseconds. */
 function lunediUTC(d) {
   const x = new Date(d);
   x.setUTCHours(0, 0, 0, 0);
@@ -28,14 +28,14 @@ function lunediUTC(d) {
   return x.getTime();
 }
 
-// GET /api/v1/statistiche/riepilogo — Riepilogo generale utente
+// GET /api/v1/statistiche/riepilogo — General user summary
 router.get('/riepilogo', async (req, res, next) => {
   try {
     const utenteId = req.utente.id;
     const utenteDb = await prisma.utente.findUnique({ where: { id: utenteId }, select: { dataResetStatistiche: true } });
     const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
 
-    // Sessioni totali e volume
+    // Total sessions and volume
     const sessioni = await prisma.sessioneAllenamento.findMany({
       where: { utenteId, dataFine: { not: null }, dataInizio: { gte: resetDate } },
       select: { durataMinuti: true, volumeTotaleKg: true, dataInizio: true }
@@ -45,12 +45,12 @@ router.get('/riepilogo', async (req, res, next) => {
     const totaleDurata = sessioni.reduce((s, x) => s + (x.durataMinuti || 0), 0);
     const totaleVolume = sessioni.reduce((s, x) => s + (x.volumeTotaleKg || 0), 0);
 
-    // Record personali
+    // Personal records
     const totaleRecord = await prisma.recordPersonale.count({ 
       where: { utenteId, dataRecord: { gte: resetDate } } 
     });
 
-    // Streak (giorni consecutivi con almeno una sessione)
+    // Streak (consecutive days with at least one session)
     const giorniAllenamento = [...new Set(
       sessioni.map(s => s.dataInizio.toISOString().split('T')[0])
     )].sort().reverse();
@@ -66,13 +66,13 @@ router.get('/riepilogo', async (req, res, next) => {
       } else break;
     }
 
-    // Schede create
+    // Plans created
     const schedeCreate = await prisma.schedaAllenamento.count({ where: { creatoreId: utenteId } });
 
-    // Settimane (lun-dom) con almeno un allenamento. Chi si allena tre volte a
-    // settimana ha quasi sempre la serie di giorni a 0 o 1: quella di
-    // settimane dice davvero se sei costante. La settimana in corso non
-    // interrompe la serie finche' non e' finita.
+    // Weeks (Mon-Sun) with at least one workout. Someone who trains three
+    // times a week almost always has a day streak of 0 or 1: the week streak
+    // really tells whether you are consistent. The current week does not
+    // break the streak until it is over.
     const settimaneAttive = new Set(sessioni.map(s => lunediUTC(s.dataInizio)));
     const questaSettimana = lunediUTC(new Date());
     let settimaneDiFila = 0;
@@ -80,7 +80,7 @@ router.get('/riepilogo', async (req, res, next) => {
          settimaneAttive.has(w); w -= SETTIMANA) {
       settimaneDiFila++;
     }
-    // Ultime 12 settimane, dalla piu' vecchia a quella in corso
+    // Last 12 weeks, from the oldest to the current one
     const ultimeSettimane = Array.from({ length: 12 }, (_, i) => settimaneAttive.has(questaSettimana - (11 - i) * SETTIMANA));
 
     res.json({
@@ -99,7 +99,7 @@ router.get('/riepilogo', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/sessioni — Storico sessioni per grafico timeline
+// GET /api/v1/statistiche/sessioni — Session history for the timeline chart
 router.get('/sessioni', async (req, res, next) => {
   try {
     const { giorni = 30 } = req.query;
@@ -126,7 +126,7 @@ router.get('/sessioni', async (req, res, next) => {
       orderBy: { dataInizio: 'asc' }
     });
 
-    // Aggrega per giorno
+    // Aggregate by day
     const perGiorno = {};
     sessioni.forEach(s => {
       const giorno = s.dataInizio.toISOString().split('T')[0];
@@ -142,16 +142,16 @@ router.get('/sessioni', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/consiglio — La scheda da fare adesso, con il perché
-// (sostituisce /gruppi-muscolari, da cui la dashboard ricavava il consiglio
-// con un vocabolario di gruppi diverso da quello del catalogo)
+// GET /api/v1/statistiche/consiglio — The plan to do now, with the reason why
+// (replaces /gruppi-muscolari, from which the dashboard derived the advice
+// with a vocabulary of groups different from the catalogue's)
 router.get('/consiglio', async (req, res, next) => {
   try {
     res.json({ successo: true, dati: await consiglioAllenamento(req.utente.id) });
   } catch (errore) { next(errore); }
 });
 
-/** true se la serie `a` e' migliore di `b`: prima il peso, poi le ripetizioni, poi i minuti. */
+/** true if set `a` is better than `b`: first the weight, then the reps, then the minutes. */
 function serieMigliore(a, b) {
   if (!b) return true;
   const pa = [a.pesoEffettivo || 0, a.repEffettive || 0, a.durataMinuti || 0];
@@ -167,10 +167,10 @@ const inSintesi = (s) => ({
   minuti: s.durataMinuti
 });
 
-// Oltre le 12 ripetizioni la stima del massimale non e' affidabile
+// Above 12 reps the estimate of the max is not reliable
 const RIPETIZIONI_MAX_STIMA = 12;
 
-/** Massimale stimato con la formula di Epley, al mezzo chilo; null dove non ha senso. */
+/** Max estimated with the Epley formula, to the nearest half kilo; null where it makes no sense. */
 function stimaMassimale(peso, rip) {
   if (!(peso > 0) || rip < 2 || rip > RIPETIZIONI_MAX_STIMA) return null;
   return Math.round(peso * (1 + rip / 30) * 2) / 2;
@@ -178,14 +178,15 @@ function stimaMassimale(peso, rip) {
 
 const unDecimale = (n) => Math.round(n * 10) / 10;
 
-// GET /api/v1/statistiche/muscoli?giorni=30 — Gruppi muscolari nel periodo, esercizi e carichi
+// GET /api/v1/statistiche/muscoli?giorni=30 — Muscle groups in the period, exercises and loads
 //
-// Per gruppo: serie nel periodo (primario 1, secondario 0,5: vedi
-// utils/gruppiMuscolari.js), serie a settimana e ultima volta allenato, anche
-// indirettamente (ultimaData) e direttamente (ultimaDataDiretta). Per esercizio, su tutto lo storico: carico dell'ultima volta,
-// massimale (serie da 1 ripetizione) e massimale stimato dalle serie di lavoro.
-// Il periodo cambia colori e conteggi, non i dettagli degli esercizi: un
-// massimale di maggio resta visibile anche guardando gli ultimi 30 giorni.
+// Per group: sets in the period (primary 1, secondary 0.5: see
+// utils/gruppiMuscolari.js), sets per week and the last time trained, both
+// indirectly (ultimaData) and directly (ultimaDataDiretta). Per exercise, over
+// the whole history: the load of the last time, the max (1-rep sets) and the
+// max estimated from the working sets.
+// The period changes colours and counts, not the exercise details: a max
+// from May stays visible even when looking at the last 30 days.
 router.get('/muscoli', async (req, res, next) => {
   try {
     const giorni = Math.min(Math.max(parseInt(req.query.giorni) || 30, 1), 3650);
@@ -193,7 +194,7 @@ router.get('/muscoli', async (req, res, next) => {
     const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
     const inizioPeriodo = new Date(Date.now() - giorni * 86400000);
 
-    // Le serie di lavoro: riscaldamento e drop non sono serie per il muscolo
+    // The working sets: warm-up and drop sets are not sets for the muscle
     const serie = await prisma.logSerie.findMany({
       where: { completato: true, ...SOLO_LAVORO, sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } } },
       select: {
@@ -232,7 +233,7 @@ router.get('/muscoli', async (req, res, next) => {
       } else if (s.sessioneId === v.ultimaSessione.id && serieMigliore(s, v.serieUltima)) {
         v.serieUltima = s;
       }
-      // A parita' di valore vince il piu' recente: racconta la forza di adesso
+      // On equal values the most recent wins: it tells today's strength
       const piuRecente = (prec) => data > prec.data;
       if (s.repEffettive === 1 && s.pesoEffettivo > 0 &&
           (!v.massimale || s.pesoEffettivo > v.massimale.peso || (s.pesoEffettivo === v.massimale.peso && piuRecente(v.massimale)))) {
@@ -254,7 +255,7 @@ router.get('/muscoli', async (req, res, next) => {
         }
       }
     }
-    // I gruppi principali ci sono sempre, anche mai allenati: un buco si vede
+    // The main groups are always there, even if never trained: a gap shows
     for (const nome of GRUPPI_PRINCIPALI) gruppo(nome);
 
     const settimane = giorni / 7;
@@ -287,7 +288,7 @@ router.get('/muscoli', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/record — Record personali con storico
+// GET /api/v1/statistiche/record — Personal records with history
 router.get('/record', async (req, res, next) => {
   try {
     const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
@@ -303,7 +304,7 @@ router.get('/record', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/statistiche/record/:id — Elimina un record personale
+// DELETE /api/v1/statistiche/record/:id — Delete a personal record
 router.delete('/record/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -317,12 +318,12 @@ router.delete('/record/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/progressione/:esercizioId — Andamento dell'esercizio nel tempo
+// GET /api/v1/statistiche/progressione/:esercizioId — The exercise's trend over time
 //
-// Un punto per giorno: la serie migliore (peso, a parita' le ripetizioni), il
-// massimale stimato migliore della giornata e l'eventuale massimale vero
-// (serie da 1 ripetizione). Per il corpo libero conta chi ha fatto piu'
-// ripetizioni, per il cardio i minuti.
+// One point per day: the best set (weight, then reps on a tie), the best
+// estimated max of the day and the true max, if any (1-rep set). For
+// bodyweight exercises the set with the most reps counts, for cardio the
+// minutes.
 router.get('/progressione/:esercizioId', async (req, res, next) => {
   try {
     const esercizioId = parseInt(req.params.esercizioId);
@@ -373,7 +374,7 @@ router.get('/progressione/:esercizioId', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/frequenza — Allenamenti fatti e programmati, ultime 12 settimane
+// GET /api/v1/statistiche/frequenza — Workouts done and scheduled, last 12 weeks
 router.get('/frequenza', async (req, res, next) => {
   try {
     const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
@@ -391,7 +392,7 @@ router.get('/frequenza', async (req, res, next) => {
         },
         select: { dataInizio: true }
       }),
-      // Tutti quelli messi in calendario, anche saltati: erano comunque programmati
+      // Everything put on the calendar, skipped ones too: they were scheduled anyway
       prisma.allenamentoPianificato.findMany({
         where: { utenteId: req.utente.id, data: { gte: inizio, lt: fine } },
         select: { data: true }
@@ -417,14 +418,14 @@ router.get('/frequenza', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/statistiche/attivita-annuale — Allenamenti e serie completate per
-// giorno di calendario locale, nelle ultime 53 settimane (la griglia stile GitHub)
+// GET /api/v1/statistiche/attivita-annuale — Workouts and completed sets per
+// local calendar day, over the last 53 weeks (the GitHub-style grid)
 const GIORNI_ATTIVITA = 53 * 7;
 router.get('/attivita-annuale', async (req, res, next) => {
   try {
     const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
     const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
-    // Un giorno in piu': il primo giorno locale comincia la sera prima in UTC
+    // One extra day: the first local day starts the evening before in UTC
     const inizio = new Date(Date.now() - (GIORNI_ATTIVITA + 1) * 86400000);
 
     const sessioni = await prisma.sessioneAllenamento.findMany({

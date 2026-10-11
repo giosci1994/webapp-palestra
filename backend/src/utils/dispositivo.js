@@ -1,10 +1,10 @@
 // ============================================
-// GymMaster — Nome leggibile di un dispositivo
+// GymMaster — Readable name of a device
 // ============================================
 //
-// Dallo User-Agent del login un nome da mostrare nell'elenco dei dispositivi
-// collegati: "Chrome · Android", "Safari · iPhone". Basta per riconoscere i
-// propri dispositivi; non serve a nient'altro, quindi niente librerie.
+// From the login User-Agent, a name to show in the list of linked devices:
+// "Chrome · Android", "Safari · iPhone". It is enough to recognise your own
+// devices; it is needed for nothing else, so no libraries.
 
 const BROWSER = [
   [/Edg(A|iOS)?\//, 'Edge'],
@@ -27,7 +27,7 @@ const SISTEMA = [
 
 const primo = (elenco, testo) => elenco.find(([schema]) => schema.test(testo))?.[1];
 
-/** @returns {string|null} null se lo User-Agent non dice niente di utile */
+/** @returns {string|null} null when the User-Agent says nothing useful */
 export function descriviDispositivo(userAgent) {
   if (!userAgent) return null;
   const browser = primo(BROWSER, userAgent);

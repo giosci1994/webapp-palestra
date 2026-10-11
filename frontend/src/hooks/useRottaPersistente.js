@@ -1,24 +1,24 @@
 // ============================================
-// GymMaster — Hook Persistenza Rotta
-// Salva la rotta corrente in localStorage
-// per ripristinarla dopo un reload/tab kill
+// GymMaster — Route persistence hook
+// Saves the current route in localStorage
+// to restore it after a reload/tab kill
 // ============================================
-// NOTA: usa localStorage (non sessionStorage) perché su mobile
-// il browser scarica le tab dalla RAM, distruggendo sessionStorage.
-// localStorage sopravvive a tab kill, chiusura browser e cambio app.
+// NOTE: uses localStorage (not sessionStorage) because on mobile
+// the browser evicts tabs from RAM, wiping sessionStorage.
+// localStorage survives tab kills, browser closes and app switches.
 
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 const CHIAVE_ROTTA = 'gymmaster_ultima_rotta';
 
-// Rotte che NON vanno salvate (pagine pubbliche)
+// Routes that must NOT be saved (public pages)
 const ROTTE_ESCLUSE = ['/login', '/registrazione'];
 
 /**
- * Hook che traccia la rotta corrente e la salva in localStorage.
- * Usato in App.jsx per mantenere la posizione dell'utente
- * quando il browser ricarica la pagina o scarica la tab dopo inattività.
+ * Hook that tracks the current route and saves it in localStorage.
+ * Used in App.jsx to keep the user's place
+ * when the browser reloads the page or evicts the tab after inactivity.
  */
 export function useRottaPersistente() {
   const location = useLocation();
@@ -31,8 +31,8 @@ export function useRottaPersistente() {
 }
 
 /**
- * Recupera l'ultima rotta salvata da localStorage.
- * Restituisce null se nessuna rotta è stata salvata.
+ * Gets the last saved route from localStorage.
+ * Returns null if no route has been saved.
  */
 export function ottieniUltimaRotta() {
   return localStorage.getItem(CHIAVE_ROTTA);

@@ -1,13 +1,13 @@
 // ============================================
-// GymMaster — Hook coda delle serie senza rete
+// GymMaster — Hook for the offline set queue
 // ============================================
 
 import { useCallback, useEffect, useSyncExternalStore } from 'react';
 import { ascoltaCoda, leggiCoda, inviaOra, rispostaPer } from '../utils/codaSerie.js';
 
 /**
- * Le voci dell'utente che aspettano di partire verso il server
- * (utils/codaSerie.js): quante sono e l'ora della piu' vecchia (ISO, o null).
+ * The user's entries waiting to be sent to the server
+ * (utils/codaSerie.js): how many there are and the time of the oldest (ISO, or null).
  */
 export function useCodaSerie(utenteId) {
   const leggiQuante = useCallback(() => (utenteId ? leggiCoda(utenteId).length : 0), [utenteId]);
@@ -18,8 +18,8 @@ export function useCodaSerie(utenteId) {
 }
 
 /**
- * Una voce messa in coda: se e' ancora li', e la risposta del server se e'
- * partita da questa pagina (per esempio i record di "Termina").
+ * A queued entry: whether it is still there, and the server's response if it
+ * was sent from this page (for example the records from "Termina").
  */
 export function useVoceInCoda(utenteId, idVoce) {
   const leggiInCoda = useCallback(
@@ -33,9 +33,10 @@ export function useVoceInCoda(utenteId, idVoce) {
 }
 
 /**
- * Manda la coda dell'utente quando si puo': all'apertura dell'app, quando
- * torna la rete, quando si torna nell'app e ogni mezzo minuto finche' resta
- * qualcosa (la rete puo' esserci ma non rispondere, e "online" non arriva).
+ * Sends the user's queue whenever possible: when the app opens, when the
+ * network comes back, when the user returns to the app, and every half minute
+ * while something is left (the network may be there but not answer, and
+ * "online" never fires).
  */
 export function useInvioCoda(utenteId) {
   useEffect(() => {

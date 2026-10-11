@@ -1,14 +1,14 @@
 // ============================================
-// GymMaster — Hook Timer Recupero
-// Countdown con notifica audio
+// GymMaster — Rest timer hook
+// Countdown with an audio alert
 // ============================================
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 
 /**
- * Il segnale di fine recupero: tre bip generati con la Web Audio API. Prima
- * si suonava /sounds/timer-fine.mp3, un file che non e' mai esistito: il
- * recupero finiva in silenzio, con la sola vibrazione.
+ * The end-of-rest signal: three beeps generated with the Web Audio API. It
+ * used to play /sounds/timer-fine.mp3, a file that never existed: the rest
+ * ended in silence, with only the vibration.
  */
 function suonaFine(contesto) {
   if (!contesto) return;
@@ -25,12 +25,12 @@ function suonaFine(contesto) {
       oscillatore.start(t);
       oscillatore.stop(t + 0.2);
     }
-  } catch { /* audio non disponibile: resta la vibrazione */ }
+  } catch { /* audio not available: the vibration remains */ }
 }
 
 /**
- * Hook per il timer di recupero tra le serie.
- * Supporta countdown, pausa e notifica audio al termine.
+ * Hook for the rest timer between sets.
+ * Supports countdown, pause and an audio alert at the end.
  *
  * @returns {{ secondiRimasti, inCorso, avvia, pausa, resetta, percentuale }}
  */
@@ -48,13 +48,13 @@ export function useTimer() {
   const avvia = useCallback((secondi) => {
     if (intervalloRef.current) clearInterval(intervalloRef.current);
 
-    // L'audio si prepara qui, all'avvio, che arriva sempre da un tocco
-    // ("Serie completata"): senza un gesto dell'utente i browser non lo
-    // lasciano partire, e a fine recupero il gesto non c'e'
+    // The audio is prepared here, at start, which always comes from a tap
+    // ("Serie completata"): without a user gesture browsers do not let it
+    // start, and at the end of the rest there is no gesture
     try {
       audioRef.current ??= new (window.AudioContext || window.webkitAudioContext)();
       if (audioRef.current.state === 'suspended') audioRef.current.resume().catch(() => {});
-    } catch { /* audio non disponibile */ }
+    } catch { /* audio not available */ }
 
     setSecondiRimasti(secondi);
     setInCorso(true);
@@ -65,9 +65,9 @@ export function useTimer() {
           clearInterval(intervalloRef.current);
           intervalloRef.current = null;
           setInCorso(false);
-          // Notifica audio
+          // Audio alert
           suonaFine(audioRef.current);
-          // Vibrazione (se supportata)
+          // Vibration (if supported)
           if (navigator.vibrate) {
             navigator.vibrate([200, 100, 200]);
           }
@@ -108,7 +108,7 @@ export function useTimer() {
 }
 
 /**
- * Formatta secondi in MM:SS
+ * Formats seconds as MM:SS
  */
 export function formattaTempo(secondi) {
   const min = Math.floor(secondi / 60);

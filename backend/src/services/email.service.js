@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Servizio Email (Resend via HTTP)
-// Invio email transazionali. Dormiente se RESEND_API_KEY non è configurata.
+// GymMaster — Email service (Resend over HTTP)
+// Sends transactional emails. Dormant if RESEND_API_KEY is not set.
 // ============================================
 
 import logger from '../utils/logger.js';
@@ -9,12 +9,12 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const EMAIL_MITTENTE = process.env.EMAIL_MITTENTE || 'GymMaster <onboarding@resend.dev>';
 const APP_URL = (process.env.APP_URL || `https://gymmaster.${process.env.DOMINIO || 'casadm.uk'}`).replace(/\/$/, '');
 
-/** True se l'invio email è configurato (chiave Resend presente). */
+/** True if email sending is configured (Resend key present). */
 export function emailConfigurata() {
   return RESEND_API_KEY.trim().length > 0;
 }
 
-/** Invia un'email tramite Resend. Ritorna { inviata: boolean }. */
+/** Sends an email through Resend. Returns { inviata: boolean }. */
 export async function inviaEmail({ a, oggetto, html }) {
   if (!emailConfigurata()) {
     logger.warn({ a, oggetto }, 'Email non inviata: RESEND_API_KEY non configurata');
@@ -37,7 +37,7 @@ export async function inviaEmail({ a, oggetto, html }) {
   return { inviata: true };
 }
 
-/** Costruisce e invia l'email di verifica indirizzo. */
+/** Builds and sends the address verification email. */
 export async function inviaEmailVerifica(utente, token) {
   const link = `${APP_URL}/verifica-email?token=${token}`;
   const html = `
@@ -58,7 +58,7 @@ export async function inviaEmailVerifica(utente, token) {
   return inviaEmail({ a: utente.email, oggetto: 'Verifica il tuo indirizzo email — GymMaster', html });
 }
 
-/** Costruisce e invia l'email di reset password. */
+/** Builds and sends the password reset email. */
 export async function inviaEmailReset(utente, token) {
   const link = `${APP_URL}/reimposta-password?token=${token}`;
   const html = `

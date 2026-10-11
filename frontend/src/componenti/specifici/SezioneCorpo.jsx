@@ -1,13 +1,13 @@
 // ============================================
-// GymMaster — Sezione "Corpo" delle statistiche
-// Per ogni gruppo muscolare: esercizi fatti, carico usato e massimale
+// GymMaster — "Corpo" (body) section of the statistics
+// For each muscle group: exercises done, load used and max
 // ============================================
 //
-// Si parte dalla sagoma: toccando un muscolo compare solo il suo gruppo.
-// Colori e conteggi seguono il periodo scelto in cima alla pagina; i dettagli
-// degli esercizi no, cosi' un massimale di maggio resta visibile anche
-// guardando gli ultimi 30 giorni. I dati arrivano da /statistiche/muscoli,
-// che raggruppa primari e secondari (vedi backend/src/utils/gruppiMuscolari.js).
+// It starts from the outline: tapping a muscle shows only its group.
+// Colors and counts follow the period chosen at the top of the page; the
+// exercise details don't, so a max from May stays visible even when looking
+// at the last 30 days. The data comes from /statistiche/muscoli, which groups
+// primary and secondary muscles (see backend/src/utils/gruppiMuscolari.js).
 
 import { useState, useMemo, useRef } from 'react';
 import { PersonStanding, Trophy, X, TrendingUp } from 'lucide-react';
@@ -17,7 +17,7 @@ import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 import MappaCorpo from './MappaCorpo.jsx';
 import ProgressioneEsercizio from './ProgressioneEsercizio.jsx';
 
-// Gruppo → zone della sagoma. Ogni zona appartiene a un solo gruppo.
+// Group → zones of the outline. Each zone belongs to one group only.
 const ZONE_PER_GRUPPO = {
   'Petto': ['chest'],
   'Schiena': ['upper-back', 'lower-back'],
@@ -43,14 +43,14 @@ const PERIODO_BREVE = { 7: '7 giorni', 30: '30 giorni', 90: '3 mesi', 365: '12 m
 
 const numero = (n) => n.toLocaleString('it-IT', { maximumFractionDigits: 1 });
 
-// Cosa colora la sagoma: le serie del periodo o lo stato di recupero.
-// La scelta resta fra una visita e l'altra.
+// What colors the outline: the sets in the period or the recovery state.
+// The choice stays from one visit to the next.
 const CHIAVE_VISTA = 'gymmaster:corpo:vista';
 function leggiVista() {
   try { return localStorage.getItem(CHIAVE_VISTA) === 'recupero' ? 'recupero' : 'serie'; } catch { return 'serie'; }
 }
 
-/** "23 set", con l'anno solo se non e' quello in corso. */
+/** "23 set" (23 Sep), with the year only if it is not the current one. */
 function dataBreve(data) {
   const d = new Date(data);
   const opzioni = { day: 'numeric', month: 'short' };
@@ -58,7 +58,7 @@ function dataBreve(data) {
   return d.toLocaleDateString('it-IT', opzioni);
 }
 
-/** Una serie in forma leggibile: carico e ripetizioni, o durata per il cardio. */
+/** A set in readable form: load and reps, or duration for cardio. */
 function descriviSerie(s) {
   if (!s) return '—';
   if (s.minuti) return `${s.minuti} min`;
@@ -93,7 +93,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
             </p>
           </div>
         ) : e.stimato && (
-          // Senza un test vero, la stima dalle serie di lavoro: sempre dichiarata come tale
+          // Without a real test, the estimate from the working sets: always labeled as such
           <div className="min-w-0" title={`Formula di Epley sulla serie da ${formattaPeso(e.stimato.daPeso)} kg × ${e.stimato.daRip} del ${dataBreve(e.stimato.data)}`}>
             <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Massimale</p>
             <p className="text-base font-bold leading-tight mt-0.5">≈ {formattaPeso(e.stimato.peso)} kg</p>
@@ -102,7 +102,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
         )}
       </div>
 
-      {/* Andamento: solo quando c'e' qualcosa da confrontare */}
+      {/* Trend: only when there is something to compare */}
       {e.sessioni > 1 && (
         <>
           <button
@@ -121,7 +121,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
 }
 
 function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
-  // Prima quelli fatti nel periodo, poi gli altri dal piu' recente
+  // First the ones done in the period, then the others from the most recent
   const ordina = (lista) => lista
     .map(id => esercizi[id]).filter(Boolean)
     .sort((a, b) => (b.seriePeriodo > 0) - (a.seriePeriodo > 0) || b.seriePeriodo - a.seriePeriodo || new Date(b.ultimo.data) - new Date(a.ultimo.data));
@@ -174,16 +174,16 @@ function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
 
 /**
  * @param {object} p
- * @param {object} p.dati - risposta di /statistiche/muscoli
- * @param {number} p.periodo - giorni del periodo scelto
- * @param {number} p.adesso - istante del caricamento dei dati (ms), per il recupero
+ * @param {object} p.dati - response of /statistiche/muscoli
+ * @param {number} p.periodo - days in the chosen period
+ * @param {number} p.adesso - instant the data was loaded (ms), for recovery
  */
 export default function SezioneCorpo({ dati, periodo, adesso }) {
-  const [selezione, setSelezione] = useState(null);     // nome del gruppo
+  const [selezione, setSelezione] = useState(null);     // group name
   const [vista, setVista] = useState(leggiVista);
   const cambiaVista = (v) => {
     setVista(v);
-    try { localStorage.setItem(CHIAVE_VISTA, v); } catch { /* storage non disponibile */ }
+    try { localStorage.setItem(CHIAVE_VISTA, v); } catch { /* storage not available */ }
   };
   const dettaglio = useRef(null);
 
@@ -192,7 +192,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
   const periodoTesto = NOMI_PERIODO[periodo] || `negli ultimi ${periodo} giorni`;
   const perNome = useMemo(() => Object.fromEntries(gruppi.map(g => [g.nome, g])), [gruppi]);
 
-  // Scala: il gruppo sulla sagoma con piu' serie nel periodo e' il gradino piu' alto
+  // Scale: the group on the outline with the most sets in the period is the top step
   const massimo = Math.max(0, ...Object.keys(ZONE_PER_GRUPPO).map(n => perNome[n]?.seriePeriodo || 0));
   const coloreGruppo = (g) => {
     if (vista === 'recupero') return STATI_RECUPERO[statoRecupero(g?.ultimaData, g?.ultimaDataDiretta, adesso)]?.colore || null;
@@ -221,7 +221,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
     return { colori, etichette };
   }, [perNome, massimo, periodoTesto, vista, adesso]);
 
-  // Gruppi allenati almeno una volta che non hanno una zona sulla sagoma
+  // Groups trained at least once that have no zone on the outline
   const fuoriSagoma = gruppi.filter(g => !ZONE_PER_GRUPPO[g.nome] && g.ultimaData);
   const evidenziati = useMemo(() => new Set(ZONE_PER_GRUPPO[selezione] || []), [selezione]);
   const scelto = selezione ? perNome[selezione] : null;
@@ -239,7 +239,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
       chiave="statistiche-corpo"
       titolo="Corpo"
       Icona={PersonStanding}
-      // Nell'intestazione cio' da cui dipendono i colori: il periodo, o oggi per il recupero
+      // In the header, what the colors depend on: the period, or today for recovery
       azione={<span className="text-xs text-[var(--testo-terziario)]">{vista === 'recupero' ? 'a oggi' : (PERIODO_BREVE[periodo] || `${periodo} giorni`)}</span>}
     >
       <div className="p-card-inner pt-4 flex flex-col gap-4">
@@ -251,7 +251,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
           </p>
         ) : (
           <>
-            {/* Serie del periodo o recupero: due significati, mai insieme */}
+            {/* Sets in the period or recovery: two meanings, never together */}
             <div className="flex justify-center">
               <div className="inline-flex bg-[var(--bg-terziario)] p-1 rounded-xl border border-[var(--bordo-light)]" role="group" aria-label="Cosa mostrano i colori">
                 {[['serie', 'Serie'], ['recupero', 'Recupero']].map(([id, testo]) => (
@@ -270,7 +270,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
 
             <MappaCorpo colori={colori} etichette={etichette} evidenziati={evidenziati} onTocca={zona => scegli(GRUPPO_DI_ZONA[zona])} />
 
-            {/* Legenda: gli estremi in serie reali, non "poco/tanto"; per il recupero gli stati */}
+            {/* Legend: the extremes in real sets, not "little/a lot"; for recovery, the states */}
             {vista === 'recupero' ? (
               <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-[var(--testo-secondario)]">
                 {Object.values(STATI_RECUPERO).map(s => (
@@ -294,7 +294,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
               </p>
             )}
 
-            {/* Gruppi senza una zona sulla sagoma: altrimenti irraggiungibili */}
+            {/* Groups with no zone on the outline: otherwise unreachable */}
             {fuoriSagoma.length > 0 && (
               <div className="flex items-center justify-center gap-2 flex-wrap">
                 <span className="text-[11px] text-[var(--testo-terziario)]">Fuori dalla sagoma:</span>
@@ -312,7 +312,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
               </div>
             )}
 
-            {/* Dettaglio della selezione */}
+            {/* Details of the selection */}
             <div ref={dettaglio} aria-live="polite" className="scroll-mt-4">
               {!selezione ? (
                 <p className="text-xs text-center text-[var(--testo-terziario)]">
@@ -343,7 +343,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
               )}
             </div>
 
-            {/* Da dove viene il massimale: senza questa riga non si capirebbe perche' manca */}
+            {/* Where the max comes from: without this line you would not understand why it is missing */}
             <p className="text-[11px] text-[var(--testo-terziario)] flex items-start gap-1.5">
               <Trophy size={12} className="shrink-0 mt-0.5" />
               <span>

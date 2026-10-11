@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 # ============================================
-# GymMaster — Rilascio automatico
+# GymMaster — Automatic release
 # ============================================
 #
-# Gira sul server ogni 2 minuti (crontab, vedi deploy/README.md): se su GitHub
-# c'e' una release piu' nuova della versione installata, la installa e avvisa
-# su Telegram. Se qualcosa va storto torna alla versione di prima.
+# Runs on the server every 2 minutes (crontab, see deploy/README.md): if GitHub
+# has a release newer than the installed version, it installs it and reports
+# on Telegram. If something goes wrong it goes back to the previous version.
 #
-#   deploy/rilascio.sh                    controlla e, se serve, installa (cron)
-#   deploy/rilascio.sh --controlla        dice solo cosa farebbe
-#   deploy/rilascio.sh --installa v1.2.3  installa quella release, anche per
-#                                         riprovarne una fallita
-#   deploy/rilascio.sh --prova-telegram   manda un messaggio di prova
+#   deploy/rilascio.sh                    checks and, if needed, installs (cron)
+#   deploy/rilascio.sh --controlla        only says what it would do
+#   deploy/rilascio.sh --installa v1.2.3  installs that release, also to
+#                                         retry a failed one
+#   deploy/rilascio.sh --prova-telegram   sends a test message
 #
-# La cartella dello script (..) e' quella di produzione: ha il .env e da li'
-# parte docker compose. Variabili per cambiare i percorsi (le usano i test):
-# RILASCIO_STATO, RILASCIO_BACKUP, RILASCIO_URL, RILASCIO_REPO.
+# The script's folder (..) is the production one: it has the .env and
+# docker compose runs from there. Variables to change the paths (the tests use
+# them): RILASCIO_STATO, RILASCIO_BACKUP, RILASCIO_URL, RILASCIO_REPO.
 
 set -uo pipefail
 
-# Tutto dentro main: bash legge lo script mentre lo esegue, e il checkout di
-# una versione nuova lo puo' sostituire a meta'
+# Everything inside main: bash reads the script while running it, and the
+# checkout of a new version can replace it halfway through
 main() {
   export PATH="$PATH:/usr/local/bin:/usr/bin:/bin"
   CARTELLA="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -32,7 +32,7 @@ main() {
   LOG="$STATO/rilascio.log"
   mkdir -p "$STATO"
 
-  # Un solo rilascio alla volta: se il precedente e' ancora in corso si esce
+  # One release at a time: if the previous one is still running, exit
   exec 9>"$STATO/blocco"
   if ! flock -n 9; then
     [ -t 1 ] && echo "Un rilascio e' gia' in corso (vedi $LOG)"
@@ -49,14 +49,14 @@ main() {
   esac
 }
 
-# --- Cosa installare ---
+# --- What to install ---
 
 automatico() {
   local release attuale
   release="$(ultima_release)" || return 0
   attuale="$(versione_installata)"
   da_installare "$release" "$attuale" || return 0
-  # Con il terminale si vede tutto; da cron va nel log
+  # From a terminal everything is shown; from cron it goes to the log
   if [ -t 1 ]; then a_video; else ruota_log; exec >>"$LOG" 2>&1; fi
   installa "$release"
 }
@@ -80,7 +80,7 @@ controlla() {
   fi
 }
 
-# Il tag dell'ultima release pubblicata (non bozze ne' pre-release)
+# The tag of the latest published release (not drafts or pre-releases)
 ultima_release() {
   local tag
   tag="$(curl -fsS --max-time 20 -H 'Accept: application/vnd.github+json' \
@@ -90,8 +90,8 @@ ultima_release() {
 
 versione_installata() { jq -r '.versione' version.json; }
 
-# Si installa una release solo se e' piu' nuova di quella installata (mai
-# tornare indietro da soli) e se non e' gia' fallita
+# A release is installed only if it is newer than the installed one (never
+# go back on our own) and if it has not already failed
 da_installare() {
   local versione="${1#v}" attuale="$2"
   [[ "$versione" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || return 1
@@ -100,7 +100,7 @@ da_installare() {
   [ "$1" != "$(cat "$STATO/fallita" 2>/dev/null)" ]
 }
 
-# --- Installazione ---
+# --- Installation ---
 
 installa() {
   local tag="$1" versione="${1#v}" precedente da inizio cambiati durata
@@ -114,7 +114,7 @@ installa() {
   if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
     rifiuta "$tag" "ci sono modifiche non salvate nella cartella di produzione ($CARTELLA)"; return 1
   fi
-  # Un problema di rete non e' un rilascio fallito: si riprova al giro dopo
+  # A network problem is not a failed release: retry on the next round
   if ! git fetch --quiet --force --tags origin; then
     log "git fetch non riuscito: riprovo al prossimo giro"; return 1
   fi
@@ -158,7 +158,7 @@ $(novita_della_versione)"
     return 1
   fi
   if [ "$TOCCATO" = 0 ]; then
-    # Il sito non e' stato toccato: si rimettono solo le immagini di prima
+    # The site was not touched: only the previous images are put back
     log "!!! Fallito: $motivo. Il sito non e' stato toccato: rimetto le immagini della $da"
     prepara "$cambiati" || log "Immagini di prima non ricostruite: le ricostruira' il prossimo rilascio"
     telegram "❌ GymMaster $versione non installata: $motivo. Il sito non è stato toccato, resta la $da. Dettagli: $LOG sul server. Per riprovare: deploy/rilascio.sh --installa $tag"
@@ -174,11 +174,11 @@ $(novita_della_versione)"
   return 1
 }
 
-# true se fra i file cambiati ce n'e' uno che corrisponde all'espressione
+# true if one of the changed files matches the expression
 cambiato() { printf '%s\n' "$1" | grep -qE "$2"; }
 
-# Prepara tutto quello che si puo' senza toccare il sito: immagini e frontend.
-# $1: i file cambiati rispetto a quello che gira (bot e scraper solo se servono)
+# Prepares everything possible without touching the site: images and frontend.
+# $1: the files changed from what is running (bot and scraper only if needed)
 prepara() {
   local cambiati="$1" servizio
   passo "build del backend" docker compose build backend || return 1
@@ -188,16 +188,16 @@ prepara() {
   if [ ! -d frontend/node_modules ] || cambiato "$cambiati" '^frontend/package(-lock)?\.json$'; then
     passo "dipendenze del frontend" npm ci --prefix frontend --no-audit --no-fund || return 1
   fi
-  # shellcheck disable=SC2016 # $1 lo espande la bash interna
+  # shellcheck disable=SC2016 # $1 is expanded by the inner bash
   passo "build del frontend" bash -c 'cd frontend && npx vite build --outDir "$1" --emptyOutDir' _ "$STATO/dist" || return 1
   if cambiato "$cambiati" '^nginx/'; then
-    # Il nginx che gira vede ancora il file vecchio: si prova il nuovo a parte
+    # The running nginx still sees the old file: the new one is tested separately
     passo "controllo della configurazione di nginx" docker run --rm --network web-apppalestra_gymmaster-rete \
       -v "$CARTELLA/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:alpine nginx -t || return 1
   fi
 }
 
-# Il passaggio: da qui il sito cambia. Il backend applica le migrazioni all'avvio
+# The switch: from here on the site changes. The backend applies the migrations at startup
 passa() {
   local cambiati="$1" servizio
   TOCCATO=1
@@ -211,13 +211,13 @@ passa() {
     passo "avvio di nginx" docker compose up -d --no-deps --force-recreate nginx || return 1
     aspetta_sano gymmaster-nginx 120 || return 1
   fi
-  # Se cambia il compose si allinea il resto: compose ricrea solo cio' che e' cambiato
+  # If the compose file changes the rest is aligned: compose recreates only what changed
   if cambiato "$cambiati" '^docker-compose\.yml$'; then
     passo "allineamento dei servizi" docker compose up -d || return 1
   fi
 }
 
-# Sito e server rispondono con la versione attesa
+# Site and server respond with the expected version
 verifica() {
   local attesa="$1" server sito
   FASE="verifica della versione"
@@ -227,7 +227,7 @@ verifica() {
   [ "$server" = "$attesa" ] && [ "$sito" = "$attesa" ]
 }
 
-# Le storie della versione (prisma/novita.json) entrano nelle novita'
+# The version's stories (prisma/novita.json) enter the "what's new"
 storie() {
   passo "storie delle novità" docker compose exec -T backend node src/applica-novita.js
 }
@@ -241,8 +241,8 @@ copia_database() {
     return 1
   fi
   log "Copia del database: $file ($(du -h "$file" | cut -f1))"
-  # Si tengono le ultime 10 copie fatte dai rilasci
-  # shellcheck disable=SC2012 # nomi fatti da noi, senza spazi
+  # Keep the last 10 copies made by releases
+  # shellcheck disable=SC2012 # names we create, without spaces
   ls -1t "$BACKUP"/gymmaster-*-prima-di-v*.dump 2>/dev/null | tail -n +11 | xargs -r rm -f
 }
 
@@ -261,9 +261,9 @@ aspetta_sano() {
   return 1
 }
 
-# --- Utilita' ---
+# --- Utilities ---
 
-# Esegue un comando registrandone l'uscita; FASE dice dove si e' fermato
+# Runs a command logging its output; FASE says where it stopped
 passo() {
   FASE="$1"
   shift
@@ -277,7 +277,7 @@ rifiuta() {
   telegram "❌ GymMaster ${1#v} non installata: $2. Non è cambiato niente. Per riprovare: deploy/rilascio.sh --installa $1"
 }
 
-# Le voci del changelog della versione in version.json
+# The changelog entries for the version in version.json
 novita_della_versione() {
   jq -r --arg v "$(versione_installata)" '.changelog[] | select(.versione == $v) | .modifiche[] | "• " + .' version.json 2>/dev/null | head -n 8
 }
@@ -294,7 +294,7 @@ telegram() {
     --data-urlencode "chat_id=$chat" --data-urlencode "text=$1" 2>/dev/null || log "Messaggio Telegram non inviato"
 }
 
-# Un valore del .env, senza eseguirlo
+# A value from the .env, without executing it
 leggi_env() {
   [ -f .env ] || return 0
   grep -E "^$1=" .env | tail -n 1 | cut -d= -f2- | sed -E "s/^[\"']//; s/[\"']\$//"
@@ -302,7 +302,7 @@ leggi_env() {
 
 log() { printf '%s %s\n' "$(date '+%F %T')" "$*"; }
 
-# Con --installa si vede tutto e resta anche nel log
+# With --installa everything is shown and also kept in the log
 a_video() { ruota_log; exec > >(tee -a "$LOG") 2>&1; }
 
 ruota_log() {

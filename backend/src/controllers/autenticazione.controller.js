@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Controller Autenticazione
-// Gestisce le richieste HTTP per auth
+// GymMaster — Authentication controller
+// Handles the HTTP requests for auth
 // ============================================
 
 import * as authService from '../services/autenticazione.service.js';
@@ -9,8 +9,8 @@ import logger from '../utils/logger.js';
 import { descriviDispositivo } from '../utils/dispositivo.js';
 
 /**
- * Il refresh token viaggia in un cookie HttpOnly limitato alle rotte /auth:
- * JavaScript non lo legge, e le altre rotte non lo ricevono.
+ * The refresh token travels in an HttpOnly cookie limited to the /auth routes:
+ * JavaScript cannot read it, and the other routes do not receive it.
  */
 function impostaCookieRefresh(req, res, token, durataGiorni) {
   const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
@@ -25,7 +25,7 @@ function impostaCookieRefresh(req, res, token, durataGiorni) {
 
 /**
  * POST /api/v1/auth/registrazione
- * Registra un nuovo utente (attivo; verifica email se Resend è configurato).
+ * Registers a new user (active; email verification if Resend is configured).
  */
 export async function registrazione(req, res, next) {
   try {
@@ -45,7 +45,7 @@ export async function registrazione(req, res, next) {
 
 /**
  * GET /api/v1/auth/verifica-email?token=...
- * Conferma l'indirizzo email tramite il token ricevuto via email.
+ * Confirms the email address with the token received by email.
  */
 export async function verificaEmail(req, res, next) {
   try {
@@ -62,7 +62,7 @@ export async function verificaEmail(req, res, next) {
 
 /**
  * POST /api/v1/auth/reinvia-verifica { email }
- * Reinvia l'email di verifica (risposta generica per non rivelare l'esistenza dell'account).
+ * Resends the verification email (generic answer, so as not to reveal whether the account exists).
  */
 export async function reinviaVerifica(req, res, next) {
   try {
@@ -78,7 +78,7 @@ export async function reinviaVerifica(req, res, next) {
 
 /**
  * POST /api/v1/auth/richiedi-reset { email }
- * Invia (se l'email esiste) il link per reimpostare la password.
+ * Sends (if the email exists) the link to reset the password.
  */
 export async function richiediReset(req, res, next) {
   try {
@@ -94,7 +94,7 @@ export async function richiediReset(req, res, next) {
 
 /**
  * POST /api/v1/auth/reimposta-password { token, password }
- * Imposta una nuova password tramite il token ricevuto via email.
+ * Sets a new password with the token received by email.
  */
 export async function reimpostaPassword(req, res, next) {
   try {
@@ -107,7 +107,7 @@ export async function reimpostaPassword(req, res, next) {
 
 /**
  * POST /api/v1/auth/login
- * Effettua il login e restituisce i token.
+ * Logs in and returns the tokens.
  */
 export async function login(req, res, next) {
   try {
@@ -115,7 +115,7 @@ export async function login(req, res, next) {
       dispositivo: descriviDispositivo(req.headers['user-agent'])
     });
 
-    // Durata del cookie come quella del refresh token (7 giorni, 30 con "ricorda dispositivo")
+    // Same cookie lifetime as the refresh token (7 days, 30 with "remember device")
     impostaCookieRefresh(req, res, risultato.refreshToken, risultato.durataGiorni);
 
     res.json({
@@ -133,7 +133,7 @@ export async function login(req, res, next) {
 
 /**
  * POST /api/v1/auth/refresh
- * Rinnova l'access token usando il refresh token dal cookie.
+ * Renews the access token using the refresh token from the cookie.
  */
 export async function refresh(req, res, next) {
   try {
@@ -148,7 +148,7 @@ export async function refresh(req, res, next) {
 
     const risultato = await authService.rinnovaToken(tokenRefresh);
 
-    // Aggiorna il cookie con il nuovo refresh token, con la durata originale
+    // Update the cookie with the new refresh token, keeping the original lifetime
     impostaCookieRefresh(req, res, risultato.refreshToken, risultato.durataGiorni || 7);
 
     res.json({
@@ -164,7 +164,7 @@ export async function refresh(req, res, next) {
 
 /**
  * POST /api/v1/auth/logout
- * Revoca il refresh token e cancella il cookie.
+ * Revokes the refresh token and clears the cookie.
  */
 export async function logout(req, res, next) {
   try {
@@ -172,7 +172,7 @@ export async function logout(req, res, next) {
 
     await authService.logoutUtente(tokenRefresh);
 
-    // Cancella il cookie
+    // Clear the cookie
     const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
     res.clearCookie('refreshToken', {
       httpOnly: true,
@@ -192,7 +192,7 @@ export async function logout(req, res, next) {
 
 /**
  * GET /api/v1/auth/sessioni
- * I dispositivi collegati all'account, quello della richiesta per primo.
+ * The devices linked to the account, the one making the request first.
  */
 export async function sessioni(req, res, next) {
   try {
@@ -205,7 +205,7 @@ export async function sessioni(req, res, next) {
 
 /**
  * DELETE /api/v1/auth/sessioni/:famiglia
- * Scollega un altro dispositivo: smette subito di funzionare.
+ * Signs out another device: it stops working right away.
  */
 export async function chiudiSessione(req, res, next) {
   try {
@@ -218,7 +218,7 @@ export async function chiudiSessione(req, res, next) {
 
 /**
  * POST /api/v1/auth/sessioni/chiudi-altre
- * Scollega tutti i dispositivi tranne questo.
+ * Signs out all devices except this one.
  */
 export async function chiudiAltreSessioni(req, res, next) {
   try {
@@ -231,7 +231,7 @@ export async function chiudiAltreSessioni(req, res, next) {
 
 /**
  * POST /api/v1/auth/passkey/accesso/opzioni
- * La sfida da far firmare a una passkey, per entrare senza password.
+ * The challenge for a passkey to sign, to log in without a password.
  */
 export async function passkeyAccessoOpzioni(req, res, next) {
   try {
@@ -243,7 +243,7 @@ export async function passkeyAccessoOpzioni(req, res, next) {
 
 /**
  * POST /api/v1/auth/passkey/accesso/verifica { id, risposta, ricordaDispositivo }
- * La firma della passkey: se e' buona, come un login con password.
+ * The passkey's signature: if it is valid, same as a login with a password.
  */
 export async function passkeyAccessoVerifica(req, res, next) {
   try {
@@ -263,7 +263,7 @@ export async function passkeyAccessoVerifica(req, res, next) {
   }
 }
 
-/** GET /api/v1/auth/passkey — Le passkey dell'utente */
+/** GET /api/v1/auth/passkey — The user's passkeys */
 export async function passkeyElenco(req, res, next) {
   try {
     res.json({ successo: true, dati: await passkeyService.elencaPasskey(req.utente.id) });
@@ -274,7 +274,7 @@ export async function passkeyElenco(req, res, next) {
 
 /**
  * POST /api/v1/auth/passkey/registrazione/opzioni { password }
- * Per aggiungere una passkey serve la password, non basta la sessione.
+ * Adding a passkey requires the password, the session alone is not enough.
  */
 export async function passkeyRegistrazioneOpzioni(req, res, next) {
   try {

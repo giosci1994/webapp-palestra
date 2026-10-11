@@ -11,7 +11,7 @@ import CookieBanner from './componenti/comuni/CookieBanner.jsx';
 import { useAutoAggiornamento } from './hooks/useAutoAggiornamento.js';
 import { RefreshCw } from 'lucide-react';
 
-// Pagine pubbliche
+// Public pages
 import Login from './pagine/Login.jsx';
 import Registrazione from './pagine/Registrazione.jsx';
 import VerificaEmail from './pagine/VerificaEmail.jsx';
@@ -19,12 +19,12 @@ import PasswordDimenticata from './pagine/PasswordDimenticata.jsx';
 import ReimpostaPassword from './pagine/ReimpostaPassword.jsx';
 import Onboarding from './pagine/Onboarding.jsx';
 
-// Pagine legali
+// Legal pages
 import PrivacyPolicy from './pagine/legale/PrivacyPolicy.jsx';
 import CookiePolicy from './pagine/legale/CookiePolicy.jsx';
 import TerminiServizio from './pagine/legale/TerminiServizio.jsx';
 
-// Pagine protette
+// Protected pages
 import Dashboard from './pagine/Dashboard.jsx';
 import Profilo from './pagine/Profilo.jsx';
 import SchedeAllenamento from './pagine/SchedeAllenamento.jsx';
@@ -48,19 +48,19 @@ import TrovaPT from './pagine/TrovaPT.jsx';
 import Composizione from './pagine/Composizione.jsx';
 import Pianificazione from './pagine/Pianificazione.jsx';
 
-// --- Redirect intelligente: torna all'ultima rotta visitata ---
+// --- Smart redirect: back to the last visited route ---
 function RedirectIniziale() {
   const ultimaRotta = ottieniUltimaRotta();
   return <Navigate to={ultimaRotta || '/dashboard'} replace />;
 }
 
-// --- Tracker: salva la rotta corrente in sessionStorage ---
+// --- Tracker: saves the current route in sessionStorage ---
 function TrackerRotta() {
   useRottaPersistente();
   return null;
 }
 
-// --- Banner aggiornamento disponibile ---
+// --- Update available banner ---
 function BannerAggiornamento() {
   const { aggiornamentoDisponibile, nuovaVersione, forzaAggiornamento } = useAutoAggiornamento();
 
@@ -88,7 +88,7 @@ export default function App() {
       <AuthProvider>
         <SocketProvider>
           <Routes>
-            {/* Pagine pubbliche */}
+            {/* Public pages */}
             <Route path="/login" element={<Login />} />
             <Route path="/registrazione" element={<Registrazione />} />
             <Route path="/verifica-email" element={<VerificaEmail />} />
@@ -96,12 +96,12 @@ export default function App() {
             <Route path="/reimposta-password" element={<ReimpostaPassword />} />
             <Route path="/onboarding" element={<Onboarding />} />
 
-            {/* Pagine legali (pubbliche) */}
+            {/* Legal pages (public) */}
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/termini" element={<TerminiServizio />} />
 
-            {/* Pagine protette */}
+            {/* Protected pages */}
             <Route element={<LayoutAutenticato />}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/schede" element={<SchedeAllenamento />} />
@@ -124,7 +124,7 @@ export default function App() {
               <Route path="/trova-pt" element={<TrovaPT />} />
               <Route path="/composizione" element={<Composizione />} />
               <Route path="/pianificazione" element={<Pianificazione />} />
-              {/* Allenamento live: dentro il layout (gating auth) ma reso immersivo dal layout */}
+              {/* Live workout: inside the layout (auth gating) but made immersive by the layout */}
               <Route path="/allenamento/:id" element={<WorkoutLive />} />
             </Route>
 
@@ -132,10 +132,10 @@ export default function App() {
             <Route path="*" element={<RedirectIniziale />} />
           </Routes>
 
-          {/* Cookie Banner globale */}
+          {/* Global cookie banner */}
           <CookieBanner />
 
-          {/* Banner aggiornamento automatico */}
+          {/* Automatic update banner */}
           <BannerAggiornamento />
         </SocketProvider>
       </AuthProvider>

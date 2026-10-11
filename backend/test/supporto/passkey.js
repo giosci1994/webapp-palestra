@@ -1,11 +1,12 @@
 // ============================================
-// GymMaster — Test: un autenticatore di passkey in software
+// GymMaster — Test: a software passkey authenticator
 // ============================================
 //
-// Fa quello che fa il telefono: crea una coppia di chiavi P-256, risponde alla
-// registrazione con un attestation object (formato "none") e all'accesso con
-// una firma ECDSA su authenticatorData + hash del clientDataJSON. Cosi' i test
-// attraversano la verifica vera di @simplewebauthn/server senza un dispositivo.
+// It does what the phone does: it creates a P-256 key pair, answers
+// registration with an attestation object ("none" format) and sign-in with an
+// ECDSA signature over authenticatorData + the hash of clientDataJSON. This way
+// the tests go through the real @simplewebauthn/server verification without a
+// device.
 
 import crypto from 'node:crypto';
 import { isoCBOR } from '@simplewebauthn/server/helpers';
@@ -13,7 +14,7 @@ import { isoCBOR } from '@simplewebauthn/server/helpers';
 const b64u = byte => Buffer.from(byte).toString('base64url');
 const sha256 = dati => crypto.createHash('sha256').update(dati).digest();
 
-// Flag di authenticatorData: utente presente, utente verificato, dati della credenziale
+// authenticatorData flags: user present, user verified, credential data
 const UP = 0x01;
 const UV = 0x04;
 const AT = 0x40;
@@ -25,7 +26,7 @@ function contatoreBE(n) {
 }
 
 /**
- * @param {{ origine: string, rpID: string }} config - di solito configurazionePasskey()
+ * @param {{ origine: string, rpID: string }} config - usually configurazionePasskey()
  */
 export function creaAutenticatore({ origine, rpID }) {
   const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
@@ -34,7 +35,7 @@ export function creaAutenticatore({ origine, rpID }) {
   const id = b64u(idCredenziale);
   let contatore = 0;
 
-  // Chiave pubblica COSE: kty EC2, alg ES256, curva P-256, x, y
+  // COSE public key: kty EC2, alg ES256, curve P-256, x, y
   const chiaveCose = isoCBOR.encode(new Map([
     [1, 2], [3, -7], [-1, 1],
     [-2, Buffer.from(jwk.x, 'base64url')],
@@ -48,13 +49,13 @@ export function creaAutenticatore({ origine, rpID }) {
   return {
     id,
 
-    /** La risposta a navigator.credentials.create() */
+    /** The response to navigator.credentials.create() */
     registra(opzioni, { origine: o = origine } = {}) {
       const lunghezzaId = Buffer.alloc(2);
       lunghezzaId.writeUInt16BE(idCredenziale.length);
       const authData = Buffer.concat([
         sha256(rpID), Buffer.from([UP | UV | AT]), contatoreBE(contatore),
-        Buffer.alloc(16), // AAGUID: nessun modello dichiarato
+        Buffer.alloc(16), // AAGUID: no model declared
         lunghezzaId, idCredenziale, Buffer.from(chiaveCose)
       ]);
       const attestationObject = isoCBOR.encode(new Map([
@@ -73,8 +74,8 @@ export function creaAutenticatore({ origine, rpID }) {
     },
 
     /**
-     * La risposta a navigator.credentials.get(). Il contatore sale a ogni firma;
-     * `contatore` lo forza, per simulare una passkey clonata.
+     * The response to navigator.credentials.get(). The counter goes up with
+     * every signature; `contatore` forces it, to simulate a cloned passkey.
      */
     firma(opzioni, { origine: o = origine, contatore: forzato } = {}) {
       contatore = forzato ?? contatore + 1;

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Wizard Onboarding (Primo Login)
-// 6 step per completamento profilo
+// GymMaster — Onboarding Wizard (First Login)
+// 6 steps to complete the profile
 // ============================================
 
 import { useState, useRef } from 'react';
@@ -14,14 +14,14 @@ import {
 } from 'lucide-react';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';
 
-// Specializzazioni proposte per i Personal Trainer (selezione a chip)
+// Specializations offered to Personal Trainers (chip picker)
 const SPECIALIZZAZIONI_PRESET = [
   'Ipertrofia/Massa', 'Dimagrimento', 'Forza', 'Funzionale', 'Riabilitazione',
   'Preparazione atletica', 'Posturale', 'Bodybuilding', 'Cross training',
   'Senior/Terza età', 'Pre/Post parto', 'Mobilità'
 ];
 
-// Definizione degli step (config) e sequenze per tipo account
+// Step definitions (config) and sequences per account type
 const PASSI = {
   tipo:      { icona: User, titolo: 'Tipo Account', desc: 'Come vuoi usare GymMaster?' },
   foto:      { icona: Camera, titolo: 'Foto Profilo', desc: 'Aggiungi una foto (opzionale)' },
@@ -63,7 +63,7 @@ export default function Onboarding() {
     pesoKg: '',
     altezzaCm: '',
     obiettivoFitness: '',
-    // Profilo professionale (PT)
+    // Professional profile (personal trainer)
     bio: utente?.bio || '',
     specializzazioni: [],
     anniEsperienza: '',
@@ -81,25 +81,25 @@ export default function Onboarding() {
 
   const aggiorna = (campo, valore) => setForm(p => ({ ...p, [campo]: valore }));
 
-  // Sequenza di step in base al tipo account (il PT ha un percorso professionale)
+  // Step sequence based on the account type (the personal trainer has a professional path)
   const sequenza = form.tipoAccount === 'PERSONAL_TRAINER' ? SEQ_PT : SEQ_UTENTE;
   const STEP_TOTALI = sequenza.length;
   const chiaveStep = sequenza[step] || 'privacy';
 
-  // Gestione foto profilo
+  // Profile photo handling
   const gestisciFoto = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // Carica una foto di qualsiasi dimensione: il ritaglio la comprime automaticamente
+    // Upload a photo of any size: the crop compresses it automatically
     const reader = new FileReader();
     reader.onload = (ev) => setFotoDaRitagliare(ev.target.result);
     reader.readAsDataURL(file);
-    e.target.value = ''; // consente di riselezionare lo stesso file
+    e.target.value = ''; // lets the user pick the same file again
   };
 
   const puoiAvanzare = () => {
     if (chiaveStep === 'privacy') return form.accettaToS && form.accettaPrivacy;
-    return true; // Tutti gli altri step sono opzionali
+    return true; // All the other steps are optional
   };
 
   const avanti = () => {
@@ -140,10 +140,10 @@ export default function Onboarding() {
     exit: (d) => ({ x: d > 0 ? -80 : 80, opacity: 0 }),
   };
 
-  // ═══ RENDER DEGLI STEP ═══
+  // ═══ STEP RENDERING ═══
   const renderStep = () => {
     switch (chiaveStep) {
-      // Tipo Account
+      // Account type
       case 'tipo':
         return (
           <div className="flex flex-col gap-4">
@@ -182,7 +182,7 @@ export default function Onboarding() {
           </div>
         );
 
-      // Foto Profilo
+      // Profile photo
       case 'foto':
         return (
           <div className="flex flex-col items-center gap-6">
@@ -208,7 +208,7 @@ export default function Onboarding() {
           </div>
         );
 
-      // Data di nascita + Sesso
+      // Date of birth + Sex
       case 'dati':
         return (
           <div className="flex flex-col gap-5">
@@ -240,7 +240,7 @@ export default function Onboarding() {
           </div>
         );
 
-      // Peso + Altezza
+      // Weight + Height
       case 'misure':
         return (
           <div className="flex flex-col gap-5">
@@ -272,7 +272,7 @@ export default function Onboarding() {
           </div>
         );
 
-      // Obiettivo Fitness
+      // Fitness goal
       case 'obiettivo':
         return (
           <div className="grid grid-cols-2 gap-3">
@@ -291,7 +291,7 @@ export default function Onboarding() {
           </div>
         );
 
-      // Profilo PT — Presentazione (bio + specializzazioni)
+      // Personal trainer profile — Introduction (bio + specializations)
       case 'pro1':
         return (
           <div className="flex flex-col gap-5">
@@ -320,7 +320,7 @@ export default function Onboarding() {
           </div>
         );
 
-      // Profilo PT — Esperienza, qualifiche, contatti
+      // Personal trainer profile — Experience, qualifications, contacts
       case 'pro2':
         return (
           <div className="flex flex-col gap-5">
@@ -350,11 +350,11 @@ export default function Onboarding() {
           </div>
         );
 
-      // Privacy & Consensi
+      // Privacy & Consents
       case 'privacy':
         return (
           <div className="flex flex-col gap-5">
-            {/* Visibilità profilo */}
+            {/* Profile visibility */}
             <div>
               <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
                 <Shield size={16} className="text-[var(--accent)]" /> Visibilità Profilo
@@ -396,7 +396,7 @@ export default function Onboarding() {
               </label>
             </div>
 
-            {/* Consensi obbligatori */}
+            {/* Required consents */}
             <div className="pt-3 border-t border-[var(--bordo)] flex flex-col gap-3">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input type="checkbox" checked={form.accettaToS}
@@ -460,7 +460,7 @@ export default function Onboarding() {
             ))}
           </div>
 
-          {/* Header Step */}
+          {/* Step header */}
           <div className="flex items-center gap-3 mb-5">
             <div className="w-10 h-10 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center">
               <Icona size={20} className="text-[var(--accent)]" />

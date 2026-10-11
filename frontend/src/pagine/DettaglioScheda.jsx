@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Dettaglio Scheda
-// Visualizzazione completa e avvio allenamento
+// GymMaster — Plan Detail
+// Full view and workout start
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -22,7 +22,7 @@ export default function DettaglioScheda() {
   const [scaricando, setScaricando] = useState(false);
   const [erroreDownload, setErroreDownload] = useState('');
 
-  // Scarica la scheda come .docx per consultarla in palestra anche offline
+  // Download the plan as .docx to read it at the gym, even offline
   const scaricaDocx = async () => {
     try {
       setErroreDownload('');
@@ -85,8 +85,8 @@ export default function DettaglioScheda() {
 
         {/* Header */}
         <div className="glass-card p-card-inner mb-4">
-          {/* Su telefono titolo e comandi vanno incolonnati: affiancati, il
-              titolo si spezzava in cinque righe e i pulsanti uscivano dal bordo. */}
+          {/* On a phone the title and the controls are stacked: side by side, the
+              title broke into five lines and the buttons went past the edge. */}
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3 gap-3 sm:gap-4">
             <h1 className="text-2xl font-bold min-w-0">{scheda.titolo}</h1>
 
@@ -160,7 +160,7 @@ export default function DettaglioScheda() {
           </p>
         </div>
 
-        {/* Lista esercizi */}
+        {/* Exercise list */}
         <div className="flex flex-col gap-2 mb-6">
           {scheda.esercizi?.map((es, i) => {
             const cardio = es.riscaldamento || es.durataMinuti != null || es.velocitaKmh != null ||
@@ -209,7 +209,7 @@ export default function DettaglioScheda() {
               </div>
               </div>
 
-              {/* Indicazione tecnica scritta per questo esercizio in questa scheda */}
+              {/* Technique note written for this exercise in this plan */}
               {es.note && (
                 <p className="text-xs text-[var(--testo-secondario)] mt-2.5 sm:pl-12 leading-relaxed border-l-2 border-[var(--accent-dim)] pl-3 sm:border-l-0">
                   {es.note}
@@ -220,13 +220,13 @@ export default function DettaglioScheda() {
           })}
         </div>
 
-        {/* CTA Avvia */}
+        {/* Start CTA */}
         <button onClick={avviaAllenamento} className="btn-enorme">
           🏋️ Inizia Allenamento
         </button>
       </motion.div>
 
-      {/* Modale Modifica */}
+      {/* Edit modal */}
       <AnimatePresence>
         {mostraModifica && (
           <CreaScheda

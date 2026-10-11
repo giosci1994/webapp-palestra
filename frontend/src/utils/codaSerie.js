@@ -1,45 +1,47 @@
 // ============================================
-// GymMaster — Serie registrate senza rete
+// GymMaster — Sets logged without a network
 // ============================================
 //
-// In palestra la rete va e viene. Le serie, le serie saltate e "Termina"
-// passano da qui: si scrivono subito sul telefono e partono verso il server
-// in ordine, appena si puo'. Senza rete l'allenamento va avanti, e quello che
-// e' in coda arriva quando torna la connessione, anche ore dopo.
+// At the gym the network comes and goes. Sets, skipped sets and "Termina"
+// (finish) go through here: they are written right away on the phone and sent
+// to the server in order, as soon as possible. Without a network the workout
+// goes on, and what is queued arrives when the connection is back, even hours
+// later.
 //
-// - Ogni voce ha una chiave (idClient): se la risposta si perde e la voce
-//   riparte, il server la riconosce e non la registra due volte.
-// - Ogni voce porta l'ora in cui e' stata fatta: arrivata tardi, conta quella
-//   (durata dell'allenamento, chiusura degli allenamenti dimenticati).
-// - Una coda per utente: chi esce e chi entra sullo stesso telefono non si
-//   scambiano le serie, e quelle di chi e' uscito partono al suo rientro.
-// - Se l'allenamento sul server non c'e' piu' (aperto e senza serie per un
-//   giorno, il server lo elimina), le voci diventano un allenamento passato.
+// - Every entry has a key (idClient): if the response is lost and the entry
+//   is sent again, the server recognizes it and does not log it twice.
+// - Every entry carries the time it was done: when it arrives late, that time
+//   counts (workout duration, closing forgotten workouts).
+// - One queue per user: whoever logs out and whoever logs in on the same phone
+//   do not swap sets, and those of the user who logged out are sent when they
+//   come back.
+// - If the workout is no longer on the server (open and without sets for a
+//   day, the server deletes it), the entries become a past workout.
 
 import { apiChiamata } from '../config/api.js';
 
 const PREFISSO = 'gymmaster_coda_serie_';
-/** Oltre questo tempo una richiesta appesa a una rete che non risponde si lascia: si riprova dopo */
+/** Past this time a request hanging on a network that does not answer is dropped: it is retried later */
 const ATTESA_MAX_MS = 15000;
-/** Limiti di POST /sessioni/passata */
+/** Limits of POST /sessioni/passata */
 const DURATA_MIN = 1;
 const DURATA_MAX = 600;
 
-/** Una chiave nuova per una voce: un UUID, o qualcosa di simile dove non c'e' */
+/** A new key for an entry: a UUID, or something similar where it is not available */
 export function nuovoId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }
 
-// --- Archivio ---
+// --- Storage ---
 
 const chiave = utenteId => `${PREFISSO}${utenteId}`;
-// Se il telefono non lascia scrivere (spazio finito, navigazione privata) la
-// coda resta in memoria: si perde chiudendo l'app, ma intanto le serie partono
+// If the phone does not allow writing (out of space, private browsing) the
+// queue stays in memory: it is lost when the app is closed, but meanwhile the sets are sent
 const inMemoria = new Map();
 const ascoltatori = new Set();
 
-/** Le voci in coda dell'utente, dalla piu' vecchia */
+/** The user's queued entries, oldest first */
 export function leggiCoda(utenteId, archivio = globalThis.localStorage) {
   if (inMemoria.has(chiave(utenteId))) return inMemoria.get(chiave(utenteId));
   try {
@@ -62,8 +64,8 @@ function scriviCoda(utenteId, voci, archivio) {
 }
 
 /**
- * Chiama `avvisa` quando la coda cambia, anche da un'altra scheda del browser.
- * @returns {() => void} per smettere di ascoltare
+ * Calls `avvisa` when the queue changes, even from another browser tab.
+ * @returns {() => void} to stop listening
  */
 export function ascoltaCoda(avvisa) {
   ascoltatori.add(avvisa);
@@ -76,10 +78,10 @@ export function ascoltaCoda(avvisa) {
 }
 
 /**
- * Mette in coda una voce e la restituisce completa di chiave e ora.
+ * Queues an entry and returns it with its key and time.
  * @param {number} utenteId
  * @param {{ tipo: 'serie'|'completa', sessione: { id: number, schedaId: number, dataInizio: string }, dati: object }} voce
- *   serie: i campi di POST /sessioni/:id/serie; completa: { noteFinali }
+ *   serie: the fields of POST /sessioni/:id/serie; completa: { noteFinali }
  */
 export function accoda(utenteId, voce, archivio = globalThis.localStorage, adesso = new Date()) {
   const completa = { id: nuovoId(), il: adesso.toISOString(), ...voce };
@@ -87,7 +89,7 @@ export function accoda(utenteId, voce, archivio = globalThis.localStorage, adess
   return completa;
 }
 
-/** Toglie dalla coda le voci con questi id; true se almeno una c'era */
+/** Removes the entries with these ids from the queue; true if at least one was there */
 export function togliDallaCoda(utenteId, ids, archivio = globalThis.localStorage) {
   const via = new Set(ids);
   const voci = leggiCoda(utenteId, archivio);
@@ -97,14 +99,14 @@ export function togliDallaCoda(utenteId, ids, archivio = globalThis.localStorage
   return true;
 }
 
-// --- Invio ---
+// --- Sending ---
 
 /**
- * Cosa fare di una voce che non e' partita:
- * - 'riprova': senza rete, server irraggiungibile o occupato, sessione da
- *   rinnovare; la voce resta in coda e l'invio si ferma qui
- * - 'sparita': l'allenamento sul server non c'e' piu'
- * - 'scarta': il server l'ha rifiutata e la rifiuterebbe sempre
+ * What to do with an entry that was not sent:
+ * - 'riprova' (retry): no network, server unreachable or busy, login session
+ *   to renew; the entry stays in the queue and sending stops here
+ * - 'sparita' (gone): the workout is no longer on the server
+ * - 'scarta' (discard): the server rejected it and would always reject it
  */
 export function esitoErrore(errore) {
   const stato = errore?.stato;
@@ -114,8 +116,8 @@ export function esitoErrore(errore) {
 }
 
 /**
- * L'allenamento passato (POST /sessioni/passata) che prende il posto di uno
- * sparito dal server, dalle sue voci in coda; null se non c'e' niente da salvare.
+ * The past workout (POST /sessioni/passata) that takes the place of one that
+ * is gone from the server, built from its queued entries; null if there is nothing to save.
  */
 export function sessionePassataDa(voci) {
   const serie = voci.filter(v => v.tipo === 'serie');
@@ -147,16 +149,16 @@ function inviaVoce(chiama, voce) {
   });
 }
 
-// Le risposte del server alle voci partite, per chi le aspetta (le serie di
-// un "Termina" inviato: i record nel riepilogo)
+// The server's responses to the sent entries, for whoever is waiting for them
+// (the sets of a sent "Termina": the records in the summary)
 const risposte = new Map();
 
-/** La risposta del server alla voce, se e' partita da questa pagina */
+/** The server's response to the entry, if it was sent from this page */
 export const rispostaPer = idVoce => risposte.get(idVoce);
 
 /**
- * Manda le voci dell'utente in ordine, finche' la coda e' vuota o il server
- * non si raggiunge. Una voce aggiunta durante l'invio parte nello stesso giro.
+ * Sends the user's entries in order, until the queue is empty or the server
+ * cannot be reached. An entry added while sending goes out in the same round.
  * @returns {Promise<{ inviate: number, rimaste: number }>}
  */
 export async function inviaCoda(utenteId, { chiama = apiChiamata, archivio = globalThis.localStorage } = {}) {
@@ -182,7 +184,7 @@ export async function inviaCoda(utenteId, { chiama = apiChiamata, archivio = glo
       }
     }
 
-    // L'allenamento non c'e' piu': le sue voci diventano un allenamento passato
+    // The workout is gone: its entries become a past workout
     const voci = leggiCoda(utenteId, archivio).filter(v => v.sessione.id === voce.sessione.id);
     const passata = sessionePassataDa(voci);
     if (passata) {
@@ -199,15 +201,15 @@ export async function inviaCoda(utenteId, { chiama = apiChiamata, archivio = glo
   }
 }
 
-// Un invio alla volta: due insieme manderebbero la stessa voce due volte (il
-// server le riconoscerebbe, ma e' lavoro inutile). Fra schede diverse del
-// browser, dove si puo', lo stesso con un lucchetto condiviso.
+// One send at a time: two together would send the same entry twice (the
+// server would recognize it, but it is wasted work). Across different browser
+// tabs, where possible, the same with a shared lock.
 let ultimoGiro = Promise.resolve();
 const conLucchetto = fn => (globalThis.navigator?.locks?.request
   ? globalThis.navigator.locks.request('gymmaster-coda-serie', fn)
   : fn());
 
-/** Manda la coda dell'utente adesso, dopo l'eventuale invio gia' in corso */
+/** Sends the user's queue now, after any send already in progress */
 export function inviaOra(utenteId, opzioni) {
   const giro = ultimoGiro.then(() => conLucchetto(() => inviaCoda(utenteId, opzioni)));
   ultimoGiro = giro.catch(() => {});

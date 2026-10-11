@@ -1,5 +1,5 @@
-// Notifiche push: iscrizioni dei dispositivi, invii e fine del recupero.
-// L'invio vero (web-push verso i servizi push dei browser) e' simulato.
+// Push notifications: device subscriptions, sends and the end of the rest.
+// The real send (web-push to the browsers' push services) is simulated.
 import { describe, it, before, after, beforeEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import webpush from 'web-push';
@@ -46,7 +46,7 @@ describe('push con le chiavi VAPID', () => {
   it('un dispositivo si iscrive e si toglie; lo stesso browser passa a chi ci entra', async () => {
     assert.equal((await chiama('GET', '')).corpo.dati.chiave, process.env.VAPID_CHIAVE_PUBBLICA);
     assert.equal((await chiama('POST', '/iscrizione', iscrizione())).stato, 201);
-    assert.equal((await chiama('POST', '/iscrizione', iscrizione())).stato, 201); // di nuovo: nessun doppione
+    assert.equal((await chiama('POST', '/iscrizione', iscrizione())).stato, 201); // again: no duplicate
     assert.equal((await chiama('GET', '')).corpo.dati.dispositivi, 1);
 
     const altro = await creaUtente();
@@ -54,7 +54,7 @@ describe('push con le chiavi VAPID', () => {
     assert.equal((await chiama('GET', '')).corpo.dati.dispositivi, 0);
     assert.equal((await chiama('GET', '', undefined, altro)).corpo.dati.dispositivi, 1);
 
-    // Il dispositivo di un altro non si toglie
+    // Someone else's device cannot be removed
     await chiama('DELETE', '/iscrizione', { endpoint: iscrizione().endpoint });
     assert.equal(await prisma.iscrizionePush.count(), 1);
     await chiama('DELETE', '/iscrizione', { endpoint: iscrizione().endpoint }, altro);

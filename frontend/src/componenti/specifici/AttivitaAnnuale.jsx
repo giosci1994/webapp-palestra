@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Attivita' dell'ultimo anno
-// Un quadretto per giorno, come i contributi di GitHub
+// GymMaster — Activity over the last year
+// One square per day, like GitHub contributions
 // ============================================
 
 import { useMemo, useRef, useEffect, useState } from 'react';
@@ -8,7 +8,7 @@ import { grigliaAttivita, SETTIMANE_ATTIVITA } from '../../utils/attivita.js';
 import { SCALA_ALLENAMENTO, COLORE_NON_ALLENATO } from '../../utils/costanti.js';
 
 const CELLA = 12;   // px
-const SPAZIO = 3;   // px fra i quadretti
+const SPAZIO = 3;   // px between the squares
 const GIORNI_SETTIMANA = ['Lun', '', 'Mer', '', 'Ven', '', ''];
 
 const colore = gradino => (gradino ? SCALA_ALLENAMENTO[gradino - 1] : COLORE_NON_ALLENATO);
@@ -22,14 +22,14 @@ function descrivi(g) {
 
 /**
  * @param {object} p
- * @param {{giorno: string, allenamenti: number, serie: number}[]} p.giorni - i giorni con almeno un allenamento
+ * @param {{giorno: string, allenamenti: number, serie: number}[]} p.giorni - the days with at least one workout
  */
 export default function AttivitaAnnuale({ giorni = [] }) {
   const griglia = useMemo(() => grigliaAttivita(giorni), [giorni]);
   const [scelto, setScelto] = useState(null);
   const scorrimento = useRef(null);
 
-  // Su telefono la griglia scorre in orizzontale: si parte dalle settimane recenti
+  // On the phone the grid scrolls horizontally: it starts from the recent weeks
   useEffect(() => {
     const el = scorrimento.current;
     if (el) el.scrollLeft = el.scrollWidth;
@@ -55,7 +55,7 @@ export default function AttivitaAnnuale({ giorni = [] }) {
 
       <div ref={scorrimento} className="overflow-x-auto no-scrollbar pb-1">
         <div className="flex gap-2 w-max">
-          {/* Giorni della settimana, allineati alle righe */}
+          {/* Days of the week, aligned with the rows */}
           <div className="grid shrink-0 text-[9px] text-[var(--testo-terziario)]"
                style={{ gridTemplateRows: `repeat(8, ${CELLA}px)`, rowGap: SPAZIO }}>
             <span />
@@ -63,7 +63,7 @@ export default function AttivitaAnnuale({ giorni = [] }) {
           </div>
 
           <div>
-            {/* Mesi, sopra la settimana che ne contiene il primo giorno */}
+            {/* Months, above the week that holds their first day */}
             <div className="relative text-[9px] text-[var(--testo-terziario)]" style={{ height: CELLA, width: larghezza, marginBottom: SPAZIO }}>
               {griglia.mesi.map(m => (
                 <span key={m.colonna} className="absolute leading-[12px]" style={{ left: m.colonna * (CELLA + SPAZIO) }}>{m.etichetta}</span>
@@ -92,7 +92,7 @@ export default function AttivitaAnnuale({ giorni = [] }) {
         </div>
       </div>
 
-      {/* Dettaglio del giorno toccato e legenda */}
+      {/* Details of the tapped day and legend */}
       <div className="flex items-center justify-between gap-x-4 gap-y-2 mt-3 flex-wrap text-[11px] text-[var(--testo-secondario)]">
         <p className="first-letter:uppercase">{scelto ? descrivi(scelto) : 'Tocca un giorno per i dettagli.'}</p>
         <div className="flex items-center gap-1" aria-hidden="true">

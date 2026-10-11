@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Misurazioni composizione corporea
-// L'utente gestisce le proprie; il PT può aggiungerle ai suoi clienti.
+// GymMaster — Body composition measurements
+// Users manage their own; a personal trainer can add them for their clients.
 // ============================================
 
 import { Router } from 'express';
@@ -9,7 +9,7 @@ import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.use(verificaToken);
 
@@ -36,7 +36,7 @@ function costruisciDati(body) {
   };
 }
 
-// Calcola il BMI dal peso e dall'altezza dell'utente, se non fornito
+// Computes the BMI from the user's weight and height, if not provided
 async function calcolaBmiSeMancante(dati, utenteId) {
   if (dati.bmi == null && dati.peso != null) {
     const u = await prisma.utente.findUnique({ where: { id: utenteId }, select: { altezzaCm: true } });
@@ -44,7 +44,7 @@ async function calcolaBmiSeMancante(dati, utenteId) {
   }
 }
 
-// Verifica che l'utente sia il PT (attivo) del cliente indicato
+// Checks that the user is the (active) personal trainer of the given client
 async function isPTDelCliente(ptId, clienteId) {
   const isc = await prisma.iscrizionePT.findFirst({
     where: { trainerId: ptId, utenteId: clienteId, stato: 'ATTIVA' },
@@ -53,7 +53,7 @@ async function isPTDelCliente(ptId, clienteId) {
   return !!isc;
 }
 
-// GET /api/v1/misurazioni — le proprie misurazioni
+// GET /api/v1/misurazioni — your own measurements
 router.get('/', async (req, res, next) => {
   try {
     const lista = await prisma.misurazioneCorporea.findMany({
@@ -64,7 +64,7 @@ router.get('/', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/misurazioni — aggiunge una propria misurazione
+// POST /api/v1/misurazioni — adds one of your own measurements
 router.post('/', async (req, res, next) => {
   try {
     const dati = costruisciDati(req.body);
@@ -74,7 +74,7 @@ router.post('/', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/misurazioni/:id — elimina una propria misurazione
+// DELETE /api/v1/misurazioni/:id — deletes one of your own measurements
 router.delete('/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -86,7 +86,7 @@ router.delete('/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/misurazioni/cliente/:id — il PT vede le misurazioni di un suo cliente
+// GET /api/v1/misurazioni/cliente/:id — the personal trainer sees a client's measurements
 router.get('/cliente/:id', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
@@ -101,7 +101,7 @@ router.get('/cliente/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/misurazioni/cliente/:id — il PT aggiunge una misurazione a un suo cliente
+// POST /api/v1/misurazioni/cliente/:id — the personal trainer adds a measurement for a client
 router.post('/cliente/:id', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);

@@ -3,12 +3,12 @@
 # Deploy: docker compose up --build -d
 # ============================================
 
-# Nome progetto fissato esplicitamente. Senza questa riga Compose lo deriva dal
-# nome della cartella: spostando il repo da "Web-App Palestra" a
-# "Web-App_Palestra" il progetto diventava "web-app_palestra" e i volumi
-# puntavano a "web-app_palestra_pgdata" (vuoto) invece che a
-# "web-apppalestra_pgdata" (il database reale). Non toccare: cambiarlo
-# scollega lo stack dai suoi dati.
+# Project name set explicitly. Without this line Compose derives it from the
+# folder name: moving the repo from "Web-App Palestra" to
+# "Web-App_Palestra" turned the project into "web-app_palestra" and the volumes
+# pointed to "web-app_palestra_pgdata" (empty) instead of
+# "web-apppalestra_pgdata" (the real database). Do not touch: changing it
+# disconnects the stack from its data.
 name: web-apppalestra
 
 services:
@@ -31,7 +31,7 @@ services:
     networks:
       - gymmaster-rete
 
-  # --- Redis (Sessioni WebSocket & Cache) ---
+  # --- Redis (WebSocket sessions & Cache) ---
   redis:
     image: redis:7-alpine
     container_name: gymmaster-redis
@@ -58,8 +58,8 @@ services:
       - .env
     volumes:
       - ./version.json:/version.json:ro
-    # Un processo Node vivo non significa API funzionante: si interroga la
-    # rotta di stato, che tocca anche la configurazione applicativa.
+    # A live Node process does not mean a working API: it queries the
+    # status route, which also touches the application configuration.
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/v1/salute').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 60s
@@ -82,8 +82,8 @@ services:
     ports:
       - "6969:80"
     healthcheck:
-      # 127.0.0.1 e non localhost: nginx ascolta solo su IPv4, mentre
-      # localhost viene risolto prima come ::1 e la connessione fallirebbe.
+      # 127.0.0.1 and not localhost: nginx listens on IPv4 only, while
+      # localhost is resolved first as ::1 and the connection would fail.
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
       interval: 60s
       timeout: 5s
@@ -97,7 +97,7 @@ services:
     networks:
       - gymmaster-rete
 
-  # --- Scraper Affluenza (Playwright + Cron) ---
+  # --- Crowd level scraper (Playwright + Cron) ---
   scraper:
     build:
       context: .
@@ -114,7 +114,7 @@ services:
     networks:
       - gymmaster-rete
 
-  # --- Bot Telegram (grammY, long-polling) ---
+  # --- Telegram Bot (grammY, long-polling) ---
   bot:
     build:
       context: .
@@ -125,9 +125,9 @@ services:
       - .env
     environment:
       BACKEND_URL: http://backend:3000
-    # Il bot lavora in long-polling: risponde su una porta interna solo dopo
-    # che Telegram ne ha confermato l'avvio, cosi' il controllo dice davvero
-    # se e' operativo e non solo se il processo esiste.
+    # The bot works in long-polling: it answers on an internal port only after
+    # Telegram has confirmed its start, so the check really tells whether it is
+    # working and not just whether the process exists.
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/stato').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 60s

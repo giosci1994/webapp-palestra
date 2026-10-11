@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Schede Allenamento
-// Lista, creazione e dettaglio schede
+// GymMaster — Workout Plans page
+// List, creation and detail of plans
 // ============================================
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,17 +18,17 @@ export default function SchedeAllenamento() {
   const [schede, setSchede] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
   const [mostraCrea, setMostraCrea] = useState(false);
-  const [filtro, setFiltro] = useState('mie'); // Default: "Le mie"
+  const [filtro, setFiltro] = useState('mie'); // Default: "Le mie" (mine)
 
-  // Selezione multipla per l'esportazione in Word: un programma settimanale
-  // sono piu' schede in un unico documento, una per sessione.
+  // Multiple selection for the Word export: a weekly program is several plans
+  // in a single document, one per session.
   const [modalitaSelezione, setModalitaSelezione] = useState(false);
   const [selezionate, setSelezionate] = useState([]);
   const [titoloDocumento, setTitoloDocumento] = useState('');
   const [scaricando, setScaricando] = useState(false);
   const [erroreDownload, setErroreDownload] = useState('');
 
-  // L'ordine di selezione decide quale scheda diventa la Sessione 1, la 2, ecc.
+  // The selection order decides which plan becomes Session 1, Session 2, etc.
   const alternaSelezione = (id) =>
     setSelezionate(prec => prec.includes(id) ? prec.filter(x => x !== id) : [...prec, id]);
 
@@ -56,7 +56,7 @@ export default function SchedeAllenamento() {
     }
   };
 
-  // Filtri avanzati
+  // Advanced filters
   const [ricercaNome, setRicercaNome] = useState('');
   const [filtroGruppo, setFiltroGruppo] = useState('');
   const [filtroDifficolta, setFiltroDifficolta] = useState('');
@@ -78,7 +78,7 @@ export default function SchedeAllenamento() {
     }
   };
 
-  // Estrai gruppi muscolari unici da tutte le schede
+  // Extract the unique muscle groups from all the plans
   const gruppiDisponibili = useMemo(() => {
     const tutti = new Set();
     schede.forEach(s => {
@@ -91,20 +91,20 @@ export default function SchedeAllenamento() {
 
   const schedeFiltrate = useMemo(() => {
     return schede.filter(s => {
-      // Filtro tab
+      // Tab filter
       if (filtro === 'mie' && s.creatoreId !== utente.id) return false;
       if (filtro === 'globali' && s.visibilita !== 'GLOBALE') return false;
 
-      // Filtro nome
+      // Name filter
       if (ricercaNome && !s.titolo.toLowerCase().includes(ricercaNome.toLowerCase())) return false;
 
-      // Filtro gruppo muscolare
+      // Muscle group filter
       if (filtroGruppo) {
         const gruppi = s.esercizi?.map(e => e.esercizio?.gruppoMuscoloPrimario) || [];
         if (!gruppi.includes(filtroGruppo)) return false;
       }
 
-      // Filtro difficoltà
+      // Difficulty filter
       if (filtroDifficolta && s.livello !== filtroDifficolta) return false;
 
       return true;
@@ -139,7 +139,7 @@ export default function SchedeAllenamento() {
         </div>
       </div>
 
-      {/* Barra selezione per l'esportazione */}
+      {/* Selection bar for the export */}
       <AnimatePresence>
         {modalitaSelezione && (
           <motion.div
@@ -176,7 +176,7 @@ export default function SchedeAllenamento() {
         )}
       </AnimatePresence>
 
-      {/* Tab Filtro Categoria */}
+      {/* Category filter tab */}
       <div className="schede-tab-container">
         {[
           { id: 'tutte', label: 'Tutte', icona: '📋' },
@@ -192,7 +192,7 @@ export default function SchedeAllenamento() {
         ))}
       </div>
 
-      {/* Barra filtri avanzati */}
+      {/* Advanced filters bar */}
       <div className="schede-filtri-avanzati">
         <div className="schede-filtro-ricerca">
           <span className="schede-filtro-icona">🔍</span>
@@ -238,7 +238,7 @@ export default function SchedeAllenamento() {
         )}
       </div>
 
-      {/* Lista Schede */}
+      {/* Plan list */}
       {caricamento ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
@@ -272,7 +272,7 @@ export default function SchedeAllenamento() {
                     : 'hover:border-[var(--bordo-hover)]'
                 }`}
               >
-                {/* Header scheda */}
+                {/* Plan header */}
                 <div className="flex items-start justify-between">
                   {modalitaSelezione && (
                     <span
@@ -311,7 +311,7 @@ export default function SchedeAllenamento() {
                   </span>
                 </div>
 
-                {/* Gruppi muscolari */}
+                {/* Muscle groups */}
                 {scheda.esercizi?.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {[...new Set(scheda.esercizi.map(e => e.esercizio?.gruppoMuscoloPrimario))].filter(Boolean).slice(0, 4).map(g => (
@@ -350,7 +350,7 @@ export default function SchedeAllenamento() {
 
 
 
-      {/* Modale creazione */}
+      {/* Creation modal */}
       <AnimatePresence>
         {mostraCrea && (
           <CreaScheda

@@ -1,22 +1,22 @@
 // ============================================
-// GymMaster — Mappa muscolare
-// Sagoma fronte/retro con i muscoli colorati in base alle serie fatte
+// GymMaster — Muscle map
+// Front/back body outline with the muscles colored by the sets done
 // ============================================
 //
-// La sagoma e' l'unico modo per scegliere un gruppo: ogni muscolo e' quindi
-// un pulsante anche da tastiera (Tab, Invio o Spazio) e per i lettori di schermo.
+// The outline is the only way to pick a group: so every muscle is a button
+// for the keyboard too (Tab, Enter or Space) and for screen readers.
 
 import { FRONTE, RETRO } from './sagomaCorpo.js';
 import { COLORE_NON_ALLENATO } from '../../utils/costanti.js';
 
-// Parti della sagoma che non corrispondono a un muscolo allenabile
+// Parts of the outline that do not match a trainable muscle
 const DECORATIVI = new Set(['head', 'neck', 'knees']);
 
 /**
  * @param {object} p
- * @param {Record<string, string>} p.colori - zona → colore di riempimento (assente: grigio del non allenato)
- * @param {Record<string, string>} p.etichette - muscolo → descrizione (suggerimento e lettori di schermo)
- * @param {Set<string>} p.evidenziati - muscoli del gruppo selezionato
+ * @param {Record<string, string>} p.colori - zone → fill color (missing: the untrained gray)
+ * @param {Record<string, string>} p.etichette - muscle → description (tooltip and screen readers)
+ * @param {Set<string>} p.evidenziati - muscles of the selected group
  * @param {(muscolo: string) => void} p.onTocca
  */
 export default function MappaCorpo({ colori, etichette, evidenziati, onTocca }) {
@@ -48,7 +48,7 @@ export default function MappaCorpo({ colori, etichette, evidenziati, onTocca }) 
                     key={i}
                     points={p}
                     fill={colori[muscolo] || COLORE_NON_ALLENATO}
-                    // Bordo col colore dello sfondo: separa i muscoli vicini
+                    // Border in the background color: it separates neighboring muscles
                     stroke="var(--bg-primario)"
                     strokeWidth={0.4}
                     strokeLinejoin="round"
@@ -57,8 +57,8 @@ export default function MappaCorpo({ colori, etichette, evidenziati, onTocca }) 
               </g>
             );
           })}
-          {/* Contorno della selezione in un livello a parte, sopra tutto: spostare
-              il muscolo in fondo al disegno gli farebbe perdere il focus da tastiera */}
+          {/* Selection outline in a separate layer, above everything: moving the
+              muscle to the end of the drawing would make it lose keyboard focus */}
           <g aria-hidden="true" pointerEvents="none">
             {dati.filter(({ muscolo }) => evidenziati.has(muscolo)).flatMap(({ muscolo, punti }) =>
               punti.map((p, i) => (

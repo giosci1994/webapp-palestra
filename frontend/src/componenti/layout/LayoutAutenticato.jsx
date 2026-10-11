@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Layout Autenticato
-// Wrapper con Sidebar (desktop) e BottomNav (mobile)
+// GymMaster — Authenticated layout
+// Wrapper with Sidebar (desktop) and BottomNav (mobile)
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -18,10 +18,10 @@ export default function LayoutAutenticato() {
   const { autenticato, caricamento, utente } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  // Le serie registrate senza rete partono appena si puo', da qualsiasi pagina
+  // Sets recorded offline are sent as soon as possible, from any page
   useInvioCoda(utente?.id);
-  // Finche' le novita' non hanno deciso se aprirsi (o sono aperte), il
-  // promemoria dell'allenamento aspetta: due finestre insieme non si leggono
+  // Until the "what's new" stories have decided whether to open (or while they
+  // are open), the workout reminder waits: two windows at once can't be read
   const [storieOccupate, setStorieOccupate] = useState(true);
 
   // Scroll to top on route change
@@ -33,18 +33,18 @@ export default function LayoutAutenticato() {
   if (!autenticato) return <Navigate to="/login" replace />;
   if (utente && utente.profiloCompletato === false) return <Navigate to="/onboarding" replace />;
 
-  // Modalità immersiva (schermo pieno, senza nav/padding): chat singola e allenamento live
+  // Immersive mode (full screen, no nav/padding): single chat and live workout
   const isImmersivo = location.pathname.match(/^\/chat\/.+/) || location.pathname.match(/^\/allenamento\/.+/);
 
   return (
     <div className="min-h-screen min-h-[100dvh] bg-[var(--bg-primario)] flex flex-col md:flex-row">
-      {/* Sidebar — solo desktop */}
+      {/* Sidebar — desktop only */}
       <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
-      {/* Spaziatore invisibile per mantenere il layout intatto. */}
+      {/* Invisible spacer to keep the layout intact. */}
       <div className={`hidden md:block ${isCollapsed ? 'w-24' : 'w-72'} shrink-0 pointer-events-none transition-all duration-300`}></div>
 
-      {/* Contenuto principale */}
+      {/* Main content */}
       <main className="flex-1 min-w-0 transition-all flex justify-center w-full" style={{ paddingBottom: isImmersivo ? '0px' : 'calc(90px + var(--safe-bottom))' }}>
         <div 
           className="w-full max-w-5xl relative flex-1 flex flex-col"
@@ -56,20 +56,20 @@ export default function LayoutAutenticato() {
             boxSizing: 'border-box'
           }}
         >
-          {/* La chiave azzera l'errore quando si cambia pagina */}
+          {/* The key resets the error when the page changes */}
           <RecuperoErrori key={location.pathname}>
             <Outlet />
           </RecuperoErrori>
         </div>
       </main>
 
-      {/* Bottom Navigation — solo mobile (nascosta nella chat singola) */}
+      {/* Bottom Navigation — mobile only (hidden on full-screen pages: a chat, the workout in progress) */}
       {!isImmersivo && <BarraNavigazione />}
 
-      {/* Novità in-app (bolla + storie) */}
+      {/* In-app "what's new" (bubble + stories) */}
       {!isImmersivo && <NovitaStorie onOccupato={setStorieOccupate} />}
 
-      {/* All'apertura dell'app: l'allenamento in programma oggi */}
+      {/* When the app opens: the workout scheduled for today */}
       <PromemoriaAllenamento inAttesa={isImmersivo || storieOccupate} />
     </div>
   );

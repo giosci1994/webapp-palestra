@@ -1,19 +1,19 @@
 // ============================================
-// GymMaster — Admin: Gestione Novità (storie in-app)
+// GymMaster — Admin: "What's new" management (in-app stories)
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Emoji proposte per le novità (selezione a griglia)
+// Emojis offered for the "what's new" stories (grid picker)
 const EMOJI_LISTA = [
   '✨','💪','🏋️','🔥','⚡','🎯','🏆','🥇','📈','📊','⏱️','💯','✅','🚀','❤️','🧘',
   '🤸','🏃','🚴','🤖','📱','💬','📋','📝','🔔','🎉','⭐','🌟','💎','🦾','🍎','🥗',
   '💧','😴','📅','🥊','🧠','👏','🙌','😊'
 ];
 
-// Griglia di selezione emoji (inline, niente overflow/clipping)
+// Emoji picker grid (inline, no overflow/clipping)
 function GrigliaEmoji({ onSelect }) {
   return (
     <div className="grid grid-cols-8 gap-1 p-2 rounded-xl bg-[var(--bg-terziario)] border border-[var(--bordo)] max-h-40 overflow-y-auto">
@@ -46,7 +46,7 @@ export default function AdminNovita() {
   const [form, setForm] = useState(FORM_VUOTO);
   const [pickerAperto, setPickerAperto] = useState(null); // 'icona' | `punto-${i}` | null
 
-  // Al primo caricamento con lo spinner; dopo una modifica l'elenco si aggiorna sul posto
+  // On first load with the spinner; after an edit the list updates in place
   const carica = useCallback(() => api.get('/admin/novita')
     .then(r => setLista(r.dati || []))
     .catch(err => console.error(err))

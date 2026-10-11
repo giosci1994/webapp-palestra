@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Router Principale
-// Monta tutti i sotto-router dell'API
+// GymMaster — Main Router
+// Mounts every API sub-router
 // ============================================
 
 import { Router } from 'express';
@@ -27,7 +27,7 @@ import notificheRoutes from './notifiche.routes.js';
 
 const router = Router();
 
-// Legge la versione da version.json una sola volta all'avvio (con fallback)
+// Reads the version from version.json once at startup (with a fallback)
 const VERSIONE_APP = (() => {
   try {
     const dir = path.dirname(fileURLToPath(import.meta.url));
@@ -48,7 +48,7 @@ router.get('/salute', (req, res) => {
   });
 });
 
-// --- Banner Globale ---
+// --- Global Banner ---
 router.get('/banner', (req, res) => {
   try {
     const bannerPath = path.resolve('prisma/dati/banner.json');
@@ -76,13 +76,13 @@ router.use('/admin', adminRoutes);
 router.use('/gamification', gamificationRoutes);
 router.use('/suggerimenti-esercizi', suggerimentiRoutes);
 router.use('/pt', ptRoutes);
-router.use('/bot', botRoutes);            // Rotte interne per il bot Telegram (X-Bot-Secret)
-router.use('/novita', novitaRoutes);      // Novità in-app (storie)
-router.use('/misurazioni', misurazioniRoutes); // Composizione corporea (serie temporale)
-router.use('/pianificazione', pianificazioneRoutes); // Calendario allenamenti programmati
-router.use('/notifiche', notificheRoutes);           // Notifiche in-app
+router.use('/bot', botRoutes);            // Internal routes for the Telegram bot (X-Bot-Secret)
+router.use('/novita', novitaRoutes);      // In-app "what's new" (stories)
+router.use('/misurazioni', misurazioniRoutes); // Body composition (time series)
+router.use('/pianificazione', pianificazioneRoutes); // Calendar of scheduled workouts
+router.use('/notifiche', notificheRoutes);           // In-app notifications
 
-// --- 404 per rotte API non trovate ---
+// --- 404 for API routes not found ---
 router.use('*', (req, res) => {
   res.status(404).json({
     successo: false,

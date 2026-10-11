@@ -1,14 +1,14 @@
-// Vitest: i test accanto al codice (src/**/*.test.js).
-// Configurazione separata da vite.config.js: ai test non servono la PWA ne'
-// la versione dell'app.
+// Vitest: tests next to the code (src/**/*.test.{js,jsx}).
+// Configuration separate from vite.config.js: the tests need neither the PWA
+// nor the app version.
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     include: ['src/**/*.test.{js,jsx}'],
-    // Funzioni pure per ora: niente DOM simulato
+    // Pure functions for now: no simulated DOM
     environment: 'node',
-    // Il fuso di chi usa l'app, qualunque sia quello della macchina dei test
+    // The time zone of the app's users, whatever the test machine's is
     env: { TZ: 'Europe/Rome' }
   }
 });

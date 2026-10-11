@@ -1,4 +1,4 @@
-// Tipi di serie: cosa conta nel volume, in che ordine si mostrano, cosa si accetta
+// Set types: what counts towards volume, in what order they are shown, what is accepted
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { volumeDi, diLavoro, leggiTipo, ordineSerie } from '../../src/utils/tipiSerie.js';

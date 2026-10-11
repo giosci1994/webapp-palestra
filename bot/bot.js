@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Bot Telegram (grammY)
-// Container sottile: inoltra i messaggi al backend (/api/v1/bot/*)
-// con header X-Bot-Secret. Tutta la logica (AI, matching, DB) è nel backend.
+// GymMaster — Telegram Bot (grammY)
+// Thin container: forwards messages to the backend (/api/v1/bot/*)
+// with the X-Bot-Secret header. All the logic (AI, matching, DB) is in the backend.
 // ============================================
 
 import { Bot, InlineKeyboard } from 'grammy';
@@ -16,7 +16,7 @@ if (!BOT_SECRET) { console.error('❌ BOT_SECRET mancante'); process.exit(1); }
 
 const bot = new Bot(TOKEN);
 
-// --- Helper: chiama il backend ---
+// --- Helper: calls the backend ---
 async function api(percorso, body) {
   try {
     const resp = await fetch(`${BACKEND_URL}/api/v1/bot/${percorso}`, {
@@ -41,7 +41,7 @@ function messaggioErrore(r) {
 
 const chatId = (ctx) => String(ctx.chat.id);
 
-// --- /start [codice] ---
+// --- /start [code] ---
 bot.command('start', async (ctx) => {
   const codice = (ctx.match || '').trim();
   if (codice) {
@@ -73,7 +73,7 @@ bot.command('start', async (ctx) => {
   );
 });
 
-// --- /nuova: avvia la creazione guidata (azzera la bozza) ---
+// --- /nuova: starts the guided creation (clears the draft) ---
 bot.command('nuova', async (ctx) => {
   const r = await api('annulla', { chatId: chatId(ctx) });
   if (!r.ok && r.status === 409) { await ctx.reply(messaggioErrore(r)); return; }
@@ -112,7 +112,7 @@ bot.command('statistiche', async (ctx) => {
   await ctx.reply(r.corpo.dati.testo, { parse_mode: 'Markdown' });
 });
 
-// --- /guidata: creazione a pulsanti per categorie italiane ---
+// --- /guidata: button-based creation by Italian categories ---
 async function mostraCategorie(ctx) {
   const r = await api('guida/categorie', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(r)); return; }
@@ -185,7 +185,7 @@ bot.callbackQuery('gfine', async (ctx) => {
   await ctx.reply(`🎉 Scheda *${d.titolo}* salvata con ${d.numEsercizi} esercizi!\nVedila con /schede`, { parse_mode: 'Markdown' });
 });
 
-// --- Callback: dettaglio scheda ---
+// --- Callback: plan details ---
 bot.callbackQuery(/^scheda:(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
   const schedaId = ctx.match[1];
@@ -194,26 +194,26 @@ bot.callbackQuery(/^scheda:(\d+)$/, async (ctx) => {
   await ctx.reply(r.corpo.dati.testo, { parse_mode: 'Markdown' });
 });
 
-// --- Messaggi liberi -> motore conversazionale ---
+// --- Free-text messages -> conversational engine ---
 bot.on('message:text', async (ctx) => {
   const testo = ctx.message.text || '';
-  if (testo.startsWith('/')) return; // i comandi sono gestiti sopra
+  if (testo.startsWith('/')) return; // commands are handled above
   await ctx.replyWithChatAction('typing').catch(() => {});
   const r = await api('messaggio', { chatId: chatId(ctx), testo });
   if (!r.ok) { await ctx.reply(messaggioErrore(r)); return; }
   await ctx.reply(r.corpo.dati.risposta);
 });
 
-// --- Gestione errori globale ---
+// --- Global error handling ---
 bot.catch((err) => {
   console.error('Errore bot:', err.error?.message || err.message || err);
 });
 
-// Segnale di stato per il healthcheck del container.
-// Il bot lavora in long-polling e non espone nulla: senza questo, l'unico
-// controllo possibile sarebbe "il processo esiste", che resterebbe verde anche
-// con il bot scollegato da Telegram. Qui la risposta diventa positiva solo
-// dopo che Telegram ha confermato l'avvio.
+// Status signal for the container healthcheck.
+// The bot works in long-polling and exposes nothing: without this, the only
+// possible check would be "the process exists", which would stay green even
+// with the bot disconnected from Telegram. Here the response turns positive
+// only after Telegram has confirmed the start.
 let avviato = false;
 const PORTA_STATO = Number(process.env.PORTA_STATO) || 3001;
 createServer((req, res) => {

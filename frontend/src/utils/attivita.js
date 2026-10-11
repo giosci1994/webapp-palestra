@@ -1,9 +1,9 @@
 // ============================================
-// GymMaster — Griglia dell'attivita' annuale
+// GymMaster — Yearly activity grid
 // ============================================
 //
-// Un quadretto per giorno, una colonna per settimana (da lunedi' a domenica),
-// le ultime 53 settimane fino a oggi: come i contributi di GitHub.
+// One square per day, one column per week (Monday to Sunday),
+// the last 53 weeks up to today: like GitHub contributions.
 
 import { gradinoAllenamento } from './costanti.js';
 
@@ -12,8 +12,8 @@ const GIORNO = 86400000;
 const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 
 /**
- * Il riferimento per l'intensita': le serie del giorno al 90° percentile.
- * Un giorno eccezionale non schiaccia cosi' tutti gli altri sul colore piu' tenue.
+ * The reference for intensity: the day's sets at the 90th percentile.
+ * This way one exceptional day does not push all the others down to the palest color.
  */
 function riferimento(valori) {
   if (!valori.length) return 0;
@@ -22,17 +22,17 @@ function riferimento(valori) {
 }
 
 /**
- * @param {{giorno: string, allenamenti: number, serie: number}[]} giorni - i giorni con almeno un allenamento
+ * @param {{giorno: string, allenamenti: number, serie: number}[]} giorni - the days with at least one workout
  * @param {Date} oggi
  * @returns {{
  *   settimane: ({giorno: string, allenamenti: number, serie: number, gradino: number, oggi: boolean} | null)[][],
  *   mesi: {colonna: number, etichetta: string}[],
  *   allenamenti: number,
  *   giorniAttivi: number
- * }} settimane: 53 colonne di 7 giorni, null dopo oggi; gradino 0 = riposo, 1-5 = intensita'
+ * }} settimane: 53 columns of 7 days, null after today; gradino 0 = rest, 1-5 = intensity
  */
 export function grigliaAttivita(giorni, oggi = new Date()) {
-  // Si conta in mezzanotti UTC del giorno locale: niente sorprese col cambio dell'ora
+  // Count in UTC midnights of the local day: no surprises with the clock change
   const fine = Date.UTC(oggi.getFullYear(), oggi.getMonth(), oggi.getDate());
   const lunedi = fine - ((new Date(fine).getUTCDay() + 6) % 7) * GIORNO;
   const inizio = lunedi - (SETTIMANE_ATTIVITA - 1) * 7 * GIORNO;
@@ -50,7 +50,7 @@ export function grigliaAttivita(giorni, oggi = new Date()) {
       const t = inizio + (colonna * 7 + riga) * GIORNO;
       if (t > fine) { settimana.push(null); continue; }
       const data = new Date(t);
-      // Il nome del mese sopra la settimana che ne contiene il primo giorno
+      // The month name goes above the week that contains its first day
       if (data.getUTCDate() === 1) mesi.push({ colonna, etichetta: MESI[data.getUTCMonth()] });
       const voce = perGiorno.get(chiave(t));
       const allenamenti = voce?.allenamenti || 0;
@@ -59,7 +59,7 @@ export function grigliaAttivita(giorni, oggi = new Date()) {
         giorno: chiave(t),
         allenamenti,
         serie,
-        // Un allenamento senza serie registrate conta comunque come attivita'
+        // A workout with no logged sets still counts as activity
         gradino: allenamenti ? Math.max(1, gradinoAllenamento(Math.min(serie, massimo), massimo)) : 0,
         oggi: t === fine
       });

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Footer Legale
-// Link a Privacy, Cookie e ToS per pagine pubbliche
+// GymMaster — Legal footer
+// Links to Privacy, Cookies and ToS for public pages
 // ============================================
 
 import { Link } from 'react-router-dom';

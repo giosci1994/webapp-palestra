@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # ============================================
-# GymMaster — Prove dello script di rilascio
+# GymMaster — Tests for the release script
 # ============================================
 #
 #   bash deploy/test/rilascio.test.sh
 #
-# Non tocca niente di vero: un repository git di prova (con un "origin" locale)
-# fa da cartella di produzione, e docker, curl, npm e npx sono finti: scrivono
-# cosa gli si chiede in $FINTI/chiamate e i messaggi Telegram in
-# $FINTI/telegram. Servono bash, git, jq, rsync e flock.
+# It touches nothing real: a test git repository (with a local "origin")
+# acts as the production folder, and docker, curl, npm and npx are fakes: they
+# write what they are asked to do in $FINTI/chiamate and the Telegram messages
+# in $FINTI/telegram. Requires bash, git, jq, rsync and flock.
 
-# shellcheck disable=SC2016 # le prove sono stringhe che eval valuta dopo
+# shellcheck disable=SC2016 # the tests are strings that eval evaluates later
 set -uo pipefail
 QUI="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP="$(mktemp -d)"
@@ -18,7 +18,7 @@ trap 'rm -rf "$TMP"' EXIT
 export FINTI="$TMP/finti" GIT_AUTHOR_NAME=Prova GIT_AUTHOR_EMAIL=prova@esempio.it GIT_COMMITTER_NAME=Prova GIT_COMMITTER_EMAIL=prova@esempio.it
 mkdir -p "$FINTI" "$TMP/bin"
 
-# --- Comandi finti ---
+# --- Fake commands ---
 
 cat >"$TMP/bin/docker" <<'EOF'
 #!/usr/bin/env bash
@@ -67,7 +67,7 @@ mkdir -p frontend/node_modules
 EOF
 chmod +x "$TMP/bin/"*
 
-# --- Repository di prova ---
+# --- Test repository ---
 
 git init -q --bare -b master "$TMP/origine.git"
 git clone -q "$TMP/origine.git" "$TMP/sviluppo" 2>/dev/null
@@ -79,7 +79,7 @@ echo 'codice' >frontend/src/app.js
 echo 'bot' >bot/bot.js
 echo 'nginx' >nginx/nginx.conf
 
-# Una versione nuova su master, con il suo tag. $1 versione, poi i file da cambiare
+# A new version on master, with its tag. $1 the version, then the files to change
 nuova_versione() {
   local versione="$1" file
   shift
@@ -91,7 +91,7 @@ nuova_versione 1.2.0
 git clone -q "$TMP/origine.git" "$TMP/produzione" 2>/dev/null
 printf 'TELEGRAM_BOT_TOKEN=finto\nRILASCI_TELEGRAM_CHAT_ID="42"\n' >"$TMP/produzione/.env"
 
-# --- Come si lancia lo script, e cosa si controlla ---
+# --- How the script is run, and what is checked ---
 
 rilascia() {
   : >"$FINTI/chiamate"
@@ -121,7 +121,7 @@ prova() {
   fi
 }
 
-# --- Le prove ---
+# --- The tests ---
 
 rilascia
 prova "senza release non fa niente" eval '[ "$(installata)" = 1.2.0 ] && nessun_messaggio && ! chiamato docker'

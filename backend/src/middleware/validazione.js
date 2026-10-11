@@ -1,18 +1,18 @@
 // ============================================
-// GymMaster — Middleware Validazione con Zod
-// Validazione automatica di body, query e params
+// GymMaster — Validation middleware with Zod
+// Automatic validation of body, query and params
 // ============================================
 
 import { ErroreValidazione } from '../utils/errori.js';
 
 /**
- * Crea un middleware di validazione basato su uno schema Zod.
- * Valida body, query e/o params della richiesta.
+ * Creates a validation middleware based on a Zod schema.
+ * Validates the request's body, query and/or params.
  *
- * @param {Object} schemi - Oggetto con schemi Zod per body, query, params
- * @param {import('zod').ZodSchema} [schemi.body] - Schema per il body
- * @param {import('zod').ZodSchema} [schemi.query] - Schema per la query string
- * @param {import('zod').ZodSchema} [schemi.params] - Schema per i parametri URL
+ * @param {Object} schemi - Object with Zod schemas for body, query, params
+ * @param {import('zod').ZodSchema} [schemi.body] - Schema for the body
+ * @param {import('zod').ZodSchema} [schemi.query] - Schema for the query string
+ * @param {import('zod').ZodSchema} [schemi.params] - Schema for the URL parameters
  * @returns {Function} Middleware Express
  *
  * @example
@@ -23,7 +23,7 @@ export function valida(schemi) {
   return (req, res, next) => {
     const errori = [];
 
-    // Valida body
+    // Validate body
     if (schemi.body) {
       const risultato = schemi.body.safeParse(req.body);
       if (!risultato.success) {
@@ -35,12 +35,12 @@ export function valida(schemi) {
           }))
         );
       } else {
-        // Sostituisci il body con i dati validati e sanitizzati
+        // Replace the body with the validated and sanitized data
         req.body = risultato.data;
       }
     }
 
-    // Valida query
+    // Validate query
     if (schemi.query) {
       const risultato = schemi.query.safeParse(req.query);
       if (!risultato.success) {
@@ -56,7 +56,7 @@ export function valida(schemi) {
       }
     }
 
-    // Valida params
+    // Validate params
     if (schemi.params) {
       const risultato = schemi.params.safeParse(req.params);
       if (!risultato.success) {
@@ -72,7 +72,7 @@ export function valida(schemi) {
       }
     }
 
-    // Se ci sono errori, rifiuta la richiesta
+    // If there are errors, reject the request
     if (errori.length > 0) {
       return next(new ErroreValidazione('Dati della richiesta non validi', errori));
     }
@@ -81,12 +81,12 @@ export function valida(schemi) {
   };
 }
 
-/** Gli id delle tabelle sono interi a 32 bit di Postgres */
+/** Table ids are Postgres 32-bit integers */
 const ID_MASSIMO = 2147483647;
 
 /**
- * Per router.param: un id nell'indirizzo dev'essere un intero positivo. Senza
- * questo controllo "abc" arrivava a Prisma come NaN e la risposta era un 500.
+ * For router.param: an id in the URL must be a positive integer. Without this
+ * check "abc" reached Prisma as NaN and the response was a 500.
  */
 export function idNumerico(req, res, next, valore, nome) {
   if (!/^\d+$/.test(valore) || Number(valore) < 1 || Number(valore) > ID_MASSIMO) {

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Statistiche
-// Grafici e dati sui progressi dell'utente
+// GymMaster — Statistics page
+// Charts and data on the user's progress
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -11,7 +11,7 @@ import FrequenzaSettimanale from '../componenti/specifici/FrequenzaSettimanale.j
 import AttivitaAnnuale from '../componenti/specifici/AttivitaAnnuale.jsx';
 import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
 
-// Periodi selezionabili
+// Selectable periods
 const PERIODI = [
   { id: 7, label: '7g' },
   { id: 30, label: '30g' },
@@ -21,16 +21,16 @@ const PERIODI = [
 
 export default function Statistiche() {
   const [riepilogo, setRiepilogo] = useState(null);
-  // Due periodi di dati giornalieri: l'attuale e il precedente, per il confronto
+  // Two periods of daily data: the current one and the previous one, for the comparison
   const [giorniDoppi, setGiorniDoppi] = useState([]);
-  // Gruppi muscolari nel periodo: un'unica fonte per la sagoma e per le barre
+  // Muscle groups in the period: a single source for the body outline and for the bars
   const [muscoli, setMuscoli] = useState(null);
   const [frequenza, setFrequenza] = useState([]);
   const [attivita, setAttivita] = useState([]);
-  // Istante del caricamento: riferimento unico per dividere i due periodi
+  // Moment of loading: the single reference for splitting the two periods
   const [caricatoIl, setCaricatoIl] = useState(0);
   const [periodo, setPeriodo] = useState(30);
-  // Il periodo dei dati mostrati: finche' non e' quello scelto, si sta caricando
+  // The period of the data shown: until it is the chosen one, it is loading
   const [caricatoPer, setCaricatoPer] = useState(null);
   const caricamento = caricatoPer !== periodo;
 
@@ -83,26 +83,26 @@ export default function Statistiche() {
         </div>
       </div>
 
-      {/* Indicatori del periodo scelto, confrontati col precedente */}
+      {/* Indicators for the chosen period, compared with the previous one */}
       <div className="mb-7">
         <IndicatoriPeriodo giorni={giorniDoppi} periodo={periodo} adesso={caricatoIl} riepilogo={riepilogo} />
       </div>
 
-      {/* Corpo: gruppi muscolari, esercizi, carichi e massimali */}
+      {/* Body: muscle groups, exercises, loads and maxes */}
       <div className="mb-7">
         <SezioneCorpo dati={muscoli} periodo={periodo} adesso={caricatoIl} />
       </div>
 
-      {/* Grafici */}
+      {/* Charts */}
       <div className="grid gap-7 md:grid-cols-2">
-        {/* Allenamenti fatti e programmati, settimana per settimana */}
+        {/* Workouts done and scheduled, week by week */}
         <FrequenzaSettimanale settimane={frequenza} />
 
-        {/* Serie a settimana per muscolo, con la fascia consigliata */}
+        {/* Sets per week per muscle, with the recommended range */}
         <SeriePerMuscolo dati={muscoli} />
       </div>
 
-      {/* Un quadretto per giorno nell'ultimo anno */}
+      {/* One square per day over the last year */}
       <div className="mt-7">
         <AttivitaAnnuale giorni={attivita} />
       </div>

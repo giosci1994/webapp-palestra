@@ -1,27 +1,27 @@
 // ============================================
-// GymMaster — Riprendere un allenamento dal server
+// GymMaster — Resuming a workout from the server
 // ============================================
 //
-// La schermata di allenamento tiene il punto in cui sei nel browser
-// (localStorage). Se li' non c'e' niente (allenamento ripreso dallo storico,
-// aperto da un altro dispositivo, dati del browser cancellati) il punto si
-// ricostruisce dalle serie registrate sul server: senza, si ripartiva dalla
-// prima serie e le serie gia' fatte venivano registrate una seconda volta.
+// The workout screen keeps the point where you are in the browser
+// (localStorage). If nothing is there (workout resumed from the history,
+// opened from another device, browser data cleared) the point is rebuilt
+// from the sets logged on the server: without this, it started again from the
+// first set and the sets already done were logged a second time.
 
 import { diLavoro } from './tipiSerie.js';
 
-/** Valori per un esercizio aggiunto durante l'allenamento (come in WorkoutLive) */
+/** Values for an exercise added during the workout (WorkoutLive uses them too) */
 export const ESERCIZIO_EXTRA = { serieTarget: 3, repTarget: 10, recuperoSecondi: 90 };
 
 /**
- * @param {object} sessione - da GET /sessioni/:id: scheda con gli esercizi, logSerie con l'esercizio
+ * @param {object} sessione - from GET /sessioni/:id: scheda with its exercises, logSerie with the exercise
  * @returns {{ eserciziLive: object[], serieCompletate: object[], esercizioIdx: number, serieCorrente: number, tempoInizio: number }}
  */
 export function statoDaSessione(sessione) {
   const eserciziScheda = sessione.scheda?.esercizi ?? [];
   const serie = [...(sessione.logSerie ?? [])].sort((a, b) => a.id - b.id);
 
-  // Gli esercizi aggiunti durante l'allenamento: hanno serie ma non sono nella scheda
+  // The exercises added during the workout: they have sets but are not in the plan
   const nellaScheda = new Set(eserciziScheda.map(e => e.esercizioId));
   const extra = [];
   for (const s of serie) {
@@ -30,8 +30,8 @@ export function statoDaSessione(sessione) {
   }
   const eserciziLive = [...eserciziScheda, ...extra];
 
-  // Si riparte dal primo esercizio con serie ancora da fare: quelle saltate
-  // contano come fatte, come durante l'allenamento; riscaldamento e drop no
+  // Start again from the first exercise with sets still to do: skipped ones
+  // count as done, as during the workout; warm-up and drop sets do not
   const registrate = esercizioId => serie.filter(s => s.esercizioId === esercizioId && diLavoro(s)).length;
   let esercizioIdx = eserciziLive.findIndex(e => registrate(e.esercizioId) < (e.serieTarget ?? 1));
   if (esercizioIdx === -1) esercizioIdx = Math.max(0, eserciziLive.length - 1);

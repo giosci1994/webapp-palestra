@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Admin Esercizi
-// Catalogo esercizi + Gestione suggerimenti utenti
+// GymMaster — Admin Exercises page
+// Exercise catalog + management of user suggestions
 // ============================================
 
 import { useState, useEffect, useMemo } from 'react';
@@ -26,10 +26,10 @@ export default function AdminEsercizi() {
   const [ricerca, setRicerca] = useState('');
   const [form, setForm] = useState({ nome: '', gruppoMuscoloPrimario: '', gruppoMuscoloSecondario: '', attrezzaturaRichiestaId: '', descrizione: '', linkVideo: '' });
 
-  // --- Suggerimenti ---
+  // --- Suggestions ---
   const [suggerimenti, setSuggerimenti] = useState([]);
-  const [editSugg, setEditSugg] = useState({}); // { [id]: { ...campi modificati } }
-  const [gestendo, setGestendo] = useState(null); // ID del suggerimento in fase di gestione
+  const [editSugg, setEditSugg] = useState({}); // { [id]: { ...edited fields } }
+  const [gestendo, setGestendo] = useState(null); // ID of the suggestion being handled
 
   useEffect(() => {
     Promise.all([
@@ -39,7 +39,7 @@ export default function AdminEsercizi() {
     ]).finally(() => setCaricamento(false));
   }, []);
 
-  // --- Esercizi CRUD ---
+  // --- Exercises CRUD ---
   const apriForm = (e = null) => {
     if (e) { setEditId(e.id); setForm({ nome: e.nome, gruppoMuscoloPrimario: e.gruppoMuscoloPrimario, gruppoMuscoloSecondario: e.gruppoMuscoloSecondario || '', attrezzaturaRichiestaId: e.attrezzaturaRichiestaId || '', descrizione: e.descrizione || '', linkVideo: e.linkVideo || '' }); }
     else { setEditId(null); setForm({ nome: '', gruppoMuscoloPrimario: '', gruppoMuscoloSecondario: '', attrezzaturaRichiestaId: '', descrizione: '', linkVideo: '' }); }
@@ -60,7 +60,7 @@ export default function AdminEsercizi() {
     catch (err) { alert(err.message); }
   };
 
-  // --- Suggerimenti gestione ---
+  // --- Suggestion handling ---
   const aggiornaEditSugg = (id, campo, valore) => {
     setEditSugg(prev => ({
       ...prev,
@@ -82,7 +82,7 @@ export default function AdminEsercizi() {
       };
 
       const r = await api.patch(`/admin/suggerimenti/${sugg.id}/approva`, payload);
-      // Aggiorna liste
+      // Refresh the lists
       setSuggerimenti(prev => prev.map(s => s.id === sugg.id ? { ...s, stato: 'APPROVATO' } : s));
       setEsercizi(prev => [...prev, r.dati]);
     } catch (err) { alert(err.message); }
@@ -99,9 +99,9 @@ export default function AdminEsercizi() {
     finally { setGestendo(null); }
   };
 
-  // --- Filtri ---
+  // --- Filters ---
   const gruppiUnici = [...new Set(esercizi.map(e => e.gruppoMuscoloPrimario))].sort();
-  // Ricerca tollerante (utils/ricerca.js) sul nome italiano e inglese
+  // Typo-tolerant search (utils/ricerca.js) on the Italian and English name
   const indiceRicerca = useMemo(() => indicizzaEsercizi(esercizi), [esercizi]);
   const eserciziFiltrati = useMemo(
     () => cerca(indiceRicerca, ricerca).filter(e => !filtroGruppo || e.gruppoMuscoloPrimario === filtroGruppo),
@@ -123,7 +123,7 @@ export default function AdminEsercizi() {
       </div>
 
       {/* ========================================= */}
-      {/* SEZIONE SUGGERIMENTI PENDENTI */}
+      {/* PENDING SUGGESTIONS SECTION */}
       {/* ========================================= */}
       {suggerimentiPendenti.length > 0 && (
         <motion.div
@@ -151,7 +151,7 @@ export default function AdminEsercizi() {
                   animate={{ opacity: 1, x: 0 }}
                   className="glass-card px-card-inner py-4 border-l-4 border-[var(--avviso)]"
                 >
-                  {/* Header con info utente */}
+                  {/* Header with user info */}
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <div className="w-7 h-7 rounded-full bg-[var(--accent-dim)] flex items-center justify-center text-xs font-bold text-[var(--accent)]">
@@ -169,7 +169,7 @@ export default function AdminEsercizi() {
                     </span>
                   </div>
 
-                  {/* Campi editabili dall'admin */}
+                  {/* Fields the admin can edit */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                     <input
                       type="text"
@@ -204,7 +204,7 @@ export default function AdminEsercizi() {
                     </select>
                   </div>
 
-                  {/* Note suggerite dall'utente */}
+                  {/* Notes suggested by the user */}
                   {sugg.attrezzaturaSuggerita && (
                     <p className="text-xs text-[var(--testo-terziario)] mb-2 italic">
                       💬 Attrezzatura suggerita dall'utente: "{sugg.attrezzaturaSuggerita}"
@@ -216,7 +216,7 @@ export default function AdminEsercizi() {
                     </p>
                   )}
 
-                  {/* Campi extra admin */}
+                  {/* Extra admin fields */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
                     <textarea
                       value={mod.descrizione !== undefined ? mod.descrizione : (sugg.descrizione || '')}
@@ -234,7 +234,7 @@ export default function AdminEsercizi() {
                     />
                   </div>
 
-                  {/* Azioni */}
+                  {/* Actions */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => approvaSuggerimento(sugg)}
@@ -256,7 +256,7 @@ export default function AdminEsercizi() {
             })}
           </div>
 
-          {/* Storico suggerimenti gestiti */}
+          {/* History of handled suggestions */}
           {suggerimentiGestiti.length > 0 && (
             <details className="mt-3">
               <summary className="text-xs text-[var(--testo-terziario)] cursor-pointer hover:text-[var(--testo-secondario)]">
@@ -282,7 +282,7 @@ export default function AdminEsercizi() {
       )}
 
       {/* ========================================= */}
-      {/* FORM NUOVO ESERCIZIO */}
+      {/* NEW EXERCISE FORM */}
       {/* ========================================= */}
       <AnimatePresence>
         {mostraForm && (
@@ -315,7 +315,7 @@ export default function AdminEsercizi() {
       </AnimatePresence>
 
       {/* ========================================= */}
-      {/* FILTRI + LISTA ESERCIZI */}
+      {/* FILTERS + EXERCISE LIST */}
       {/* ========================================= */}
       <div className="flex flex-col sm:flex-row gap-3 mb-4">
         <input type="text" value={ricerca} onChange={e => setRicerca(e.target.value)} className="campo-input campo-ricerca flex-1" placeholder="🔍 Cerca esercizio..." />

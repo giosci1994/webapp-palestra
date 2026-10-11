@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Pagina Composizione corporea (utente)
+// GymMaster — Body composition page (user)
 // ============================================
 
 import { useAuth } from '../contesti/AuthContesto.jsx';

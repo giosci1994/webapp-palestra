@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Routes Pianificazione Allenamenti
+// GymMaster — Workout Schedule Routes
 // /api/v1/pianificazione/*
 // ============================================
 
@@ -16,28 +16,28 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 
-// Tutte le rotte richiedono autenticazione
+// Every route requires authentication
 router.use(verificaToken);
 
-// GET /api/v1/pianificazione?da=&a=&utenteId= — Allenamenti programmati nell'intervallo
+// GET /api/v1/pianificazione?da=&a=&utenteId= — Workouts scheduled in the range
 router.get('/', listaPianificazione);
 
-// GET /api/v1/pianificazione/oggi — Allenamenti ancora da fare oggi, con l'ora consigliata
+// GET /api/v1/pianificazione/oggi — Workouts still to do today, with the suggested time
 router.get('/oggi', allenamentiDiOggi);
 
-// POST /api/v1/pianificazione — Programma un singolo allenamento
+// POST /api/v1/pianificazione — Schedule a single workout
 router.post('/', creaPianificato);
 
-// POST /api/v1/pianificazione/settimanale — Distribuisce più schede sulla settimana
+// POST /api/v1/pianificazione/settimanale — Spread several plans over the week
 router.post('/settimanale', creaPianificazioneSettimanale);
 
-// PATCH /api/v1/pianificazione/:id — Sposta, rimanda o cambia stato
+// PATCH /api/v1/pianificazione/:id — Move, postpone or change status
 router.patch('/:id', aggiornaPianificato);
 
-// DELETE /api/v1/pianificazione/:id — Toglie l'allenamento dal calendario
+// DELETE /api/v1/pianificazione/:id — Remove the workout from the calendar
 router.delete('/:id', eliminaPianificato);
 
 export default router;

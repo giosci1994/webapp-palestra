@@ -1,6 +1,6 @@
 /* ============================================
    GymMaster — Design System
-   Palette dark-mode premium, glassmorphism, utilità
+   Premium dark-mode palette, glassmorphism, utilities
    ============================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap');
@@ -9,7 +9,7 @@
 
 /* --- CSS Custom Properties --- */
 :root {
-  /* L'app è già a tema scuro: impedisce a Chrome (Android) di ri-scurire/desaturare i colori */
+  /* The app is already dark-themed: this stops Chrome (Android) from darkening/desaturating the colors again */
   color-scheme: dark;
 
   /* Background (Deep Space) */
@@ -27,7 +27,7 @@
   --accent-alt: #06B6D4;   /* Cyan */
   --accent-alt-dim: rgba(6, 182, 212, 0.15);
 
-  /* Stato */
+  /* Status */
   --successo: #10B981;
   --successo-dim: rgba(16, 185, 129, 0.15);
   --pericolo: #F43F5E;
@@ -36,12 +36,12 @@
   --avviso-dim: rgba(245, 158, 11, 0.15);
   --info: #3B82F6;
 
-  /* Testo */
+  /* Text */
   --testo-primario: #F8FAFC;
   --testo-secondario: #94A3B8;
   --testo-terziario: #475569;
 
-  /* Bordi & Divisori */
+  /* Borders & Dividers */
   --bordo: rgba(255, 255, 255, 0.05);
   --bordo-hover: rgba(139, 92, 246, 0.3);
   --bordo-light: rgba(255, 255, 255, 0.1);
@@ -51,18 +51,18 @@
   --vetro-bordo: rgba(255, 255, 255, 0.08);
   --vetro-luce: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
-  /* Dimensioni (Morbide e arrotondate) */
+  /* Sizes (Soft and rounded) */
   --raggio-sm: 8px;
   --raggio-md: 12px;
   --raggio-lg: 16px;
   --raggio-xl: 24px;
   --raggio-pieno: 9999px;
 
-  /* Transizioni */
+  /* Transitions */
   --transizione: 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transizione-lenta: 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* Ombra 3D — morbida, evita l'alone tra card vicine su sfondo scuro */
+  /* 3D shadow — soft, avoids the halo between nearby cards on a dark background */
   --ombra-card: 0 4px 16px rgba(0, 0, 0, 0.3);
   --ombra-modale: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--bordo-light);
   --ombra-accent: 0 8px 25px var(--accent-glow);
@@ -74,7 +74,7 @@
   --safe-right: env(safe-area-inset-right, 0px);
 }
 
-/* --- Reset e Base: in @layer base, così le utility di spaziatura Tailwind possono sovrascriverlo --- */
+/* --- Reset and Base: in @layer base, so the Tailwind spacing utilities can override it --- */
 @layer base {
   *,
   *::before,
@@ -119,7 +119,7 @@ h1, h2, h3, h4, h5, h6 {
   min-height: 100dvh;
 }
 
-/* --- Scrollbar personalizzata --- */
+/* --- Custom scrollbar --- */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -137,20 +137,20 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--accent-dim);
 }
 
-/* --- Selezione testo --- */
+/* --- Text selection --- */
 ::selection {
   background-color: var(--accent);
   color: white;
 }
 
-/* --- Focus visibile --- */
+/* --- Visible focus --- */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: var(--raggio-sm);
 }
 
-/* --- Link base --- */
+/* --- Base links --- */
 a {
   color: var(--accent);
   text-decoration: none;
@@ -161,7 +161,7 @@ a:hover {
   color: var(--accent-hover);
 }
 
-/* --- Input e Form --- */
+/* --- Inputs and Forms --- */
 input,
 textarea,
 select {
@@ -179,7 +179,7 @@ input:-webkit-autofill:focus {
 }
 
 /* ==============================
-   CLASSI COMPONENTE
+   COMPONENT CLASSES
    ============================== */
 
 /* --- Glass Card --- */
@@ -193,7 +193,7 @@ input:-webkit-autofill:focus {
   transition: transform var(--transizione), box-shadow var(--transizione);
 }
 
-/* --- Bottone Primario --- */
+/* --- Primary button --- */
 .btn-primario {
   display: inline-flex;
   align-items: center;
@@ -233,7 +233,7 @@ input:-webkit-autofill:focus {
   filter: grayscale(1);
 }
 
-/* --- Bottone Secondario (Ghost) --- */
+/* --- Secondary button (Ghost) --- */
 .btn-secondario {
   display: inline-flex;
   align-items: center;
@@ -259,7 +259,7 @@ input:-webkit-autofill:focus {
   transform: translateY(-1px);
 }
 
-/* --- Bottone Enorme (Workout) --- */
+/* --- Huge button (Workout) --- */
 .btn-enorme {
   display: flex;
   align-items: center;
@@ -311,7 +311,7 @@ input:-webkit-autofill:focus {
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.3), 0 12px 30px var(--pericolo-dim);
 }
 
-/* --- Input campo --- */
+/* --- Field input --- */
 .campo-input {
   width: 100%;
   padding: 14px 16px;
@@ -338,20 +338,20 @@ input:-webkit-autofill:focus {
   box-shadow: 0 0 0 3px var(--pericolo-dim);
 }
 
-/* --- Campo Ricerca (dimensionato per leggibilità) --- */
+/* --- Search field (sized for readability) --- */
 .campo-ricerca {
   padding: 10px 14px;
   font-size: 0.9rem;
 }
 
-/* --- Select compatto (per filtri gruppi muscolari) --- */
+/* --- Compact select (for muscle group filters) --- */
 .campo-select-compact {
   padding: 8px 12px;
   font-size: 0.8rem;
   border-radius: var(--raggio-sm);
 }
 
-/* --- Input compatto (serie/rep/recupero nelle schede) --- */
+/* --- Compact input (sets/reps/rest in the plans) --- */
 .campo-compatto {
   padding: 4px 6px !important;
   font-size: 0.8rem !important;
@@ -359,7 +359,7 @@ input:-webkit-autofill:focus {
   border-radius: var(--raggio-sm) !important;
 }
 
-/* --- Bottone freccia riordinamento esercizi --- */
+/* --- Arrow button to reorder exercises --- */
 .btn-freccia-ordine {
   display: flex;
   align-items: center;
@@ -423,7 +423,7 @@ input:-webkit-autofill:focus {
   color: var(--avviso);
 }
 
-/* --- Animazioni --- */
+/* --- Animations --- */
 @keyframes pulsa {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
@@ -463,7 +463,7 @@ input:-webkit-autofill:focus {
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* --- Media query per mobile --- */
+/* --- Media query for mobile --- */
 @media (max-width: 768px) {
   body {
     padding-bottom: calc(72px + var(--safe-bottom));
@@ -472,7 +472,7 @@ input:-webkit-autofill:focus {
   }
 }
 
-/* --- Fix Layout Infallibile --- */
+/* --- Foolproof layout fix --- */
 .layout-infallibile {
   padding-left: 0;
   width: 100%;
@@ -484,10 +484,10 @@ input:-webkit-autofill:focus {
 }
 
 /* ============================================
-   SCHEDE ALLENAMENTO — Tab, Filtri, Parametri
+   WORKOUT PLANS — Tabs, Filters, Parameters
    ============================================ */
 
-/* --- Tab Categoria (Tutte / Le mie / Globali) --- */
+/* --- Category tabs (Tutte / Le mie / Globali: All / Mine / Global) --- */
 .schede-tab-container {
   display: flex;
   gap: 6px;
@@ -533,7 +533,7 @@ input:-webkit-autofill:focus {
   font-size: 1rem;
 }
 
-/* --- Filtri Avanzati (ricerca + select) --- */
+/* --- Advanced filters (search + select) --- */
 .schede-filtri-avanzati {
   display: flex;
   gap: 10px;
@@ -628,7 +628,7 @@ input:-webkit-autofill:focus {
   color: white;
 }
 
-/* --- CreaScheda: Filtro Gruppi Muscolari prominente --- */
+/* --- CreaScheda: prominent muscle group filter --- */
 .crea-scheda-filtro-gruppo {
   padding: 14px;
   background: var(--bg-secondario);
@@ -670,7 +670,7 @@ input:-webkit-autofill:focus {
   font-weight: 600;
 }
 
-/* --- Esercizio Selezionato Card (parametri visibili) --- */
+/* --- Selected exercise card (visible parameters) --- */
 .esercizio-selezionato-card {
   border-radius: var(--raggio-md);
   background: var(--bg-terziario);
@@ -713,7 +713,7 @@ input:-webkit-autofill:focus {
   color: var(--testo-primario);
 }
 
-/* --- Riga Parametri (Serie × Rep · Rec) --- */
+/* --- Parameters row (Sets × Reps · Rest) --- */
 .esercizio-sel-parametri {
   display: flex;
   align-items: center;
@@ -766,7 +766,7 @@ input:-webkit-autofill:focus {
   font-weight: 500;
 }
 
-/* --- Responsive mobile per filtri schede --- */
+/* --- Mobile responsive for the plan filters --- */
 @media (max-width: 640px) {
   .schede-filtri-avanzati {
     flex-direction: column;
@@ -783,7 +783,7 @@ input:-webkit-autofill:focus {
 }
 
 /* ============================================
-   WORKOUT LIVE — Video Esercizio
+   LIVE WORKOUT — Exercise video
    ============================================ */
 
 .workout-video-sezione {
@@ -841,7 +841,7 @@ input:-webkit-autofill:focus {
 }
 
 /* ============================================
-   BANNER AGGIORNAMENTO AUTOMATICO
+   AUTOMATIC UPDATE BANNER
    ============================================ */
 
 .aggiornamento-banner {
@@ -906,7 +906,7 @@ input:-webkit-autofill:focus {
   }
 }
 
-/* --- Keyframes Aggiornamento --- */
+/* --- Update keyframes --- */
 @keyframes scivola-giu {
   from { transform: translateY(-100%); }
   to { transform: translateY(0); }
@@ -917,12 +917,12 @@ input:-webkit-autofill:focus {
   to { transform: rotate(360deg); }
 }
 
-/* --- Fix Zoom Mobile iOS --- */
+/* --- iOS mobile zoom fix --- */
 input, textarea, select {
   font-size: 16px !important;
 }
 
-/* --- Padding Ultimo Elemento Lista --- */
+/* --- Last list item padding --- */
 .card-list-ultimo {
   padding-bottom: 28px !important;
   border-bottom-left-radius: var(--raggio-md) !important;
@@ -930,6 +930,6 @@ input, textarea, select {
 }
 
 
-/* --- Mappa muscolare: il muscolo raggiunto da tastiera si vede come quello selezionato --- */
+/* --- Muscle map: the muscle reached by keyboard looks like the selected one --- */
 .mappa-muscoli g[role="button"]:focus { outline: none; }
 .mappa-muscoli g[role="button"]:focus-visible polygon { stroke: var(--testo-primario); stroke-width: 1px; }

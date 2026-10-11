@@ -1,34 +1,34 @@
 // ============================================
-// GymMaster — Gruppi muscolari per le statistiche
+// GymMaster — Muscle groups for the statistics
 // ============================================
 //
-// Il catalogo descrive gli esercizi con due vocabolari diversi:
-//  - il gruppo primario usa nomi di gruppo ("Schiena", "Addome", "Gambe"…);
-//  - il campo dei secondari usa nomi anatomici separati da virgola
-//    ("Grande Gluteo, Bicipite Femorale"), in parte in inglese ("Anconeus"),
-//    mescolati nel catalogo curato a nomi di gruppo ("Spalle anteriori").
-// Qui entrambi vengono ricondotti agli stessi gruppi, quelli della mappa del
-// corpo, cosi' mappa e grafico delle serie contano allo stesso modo.
+// The catalogue describes exercises with two different vocabularies:
+//  - the primary group uses group names ("Schiena", "Addome", "Gambe"…);
+//  - the secondary field uses anatomical names separated by commas
+//    ("Grande Gluteo, Bicipite Femorale"), partly in English ("Anconeus"),
+//    mixed in the curated catalogue with group names ("Spalle anteriori").
+// Here both are brought back to the same groups, those of the body map,
+// so the map and the sets chart count the same way.
 //
-// Regole di conteggio, per serie completata:
-//  - gruppo primario: 1 serie;
-//  - ogni gruppo secondario: 0,5 serie, una volta sola anche se piu' muscoli
-//    dell'elenco cadono nello stesso gruppo, e nessuna se coincide col primario;
-//  - "Gambe" e' generico (leg press, affondi): meta' quadricipiti, meta' femorali.
+// Counting rules, per completed set:
+//  - primary group: 1 set;
+//  - each secondary group: 0.5 sets, only once even if several muscles in
+//    the list fall into the same group, and none if it matches the primary;
+//  - "Gambe" is generic (leg press, lunges): half quads, half hamstrings.
 
-/** Gruppi con una zona sulla sagoma: nel grafico delle serie compaiono anche a zero. */
+/** Groups with an area on the body outline: the sets chart shows them even at zero. */
 export const GRUPPI_PRINCIPALI = [
   'Petto', 'Schiena', 'Spalle', 'Bicipiti', 'Tricipiti', 'Quadricipiti',
   'Femorali', 'Glutei', 'Polpacci', 'Addominali', 'Trapezio', 'Avambracci',
   'Adduttori', 'Abduttori',
 ];
 
-/** Gruppi che non sono muscoli: niente secondari, niente grafico delle serie. */
+/** Groups that are not muscles: no secondaries, no sets chart. */
 export const GRUPPI_NON_MUSCOLARI = new Set(['Cardio', 'Tutto il corpo', 'Funzionale']);
 
-// Nome del catalogo (primario o secondario) → [gruppo, peso]
+// Catalogue name (primary or secondary) → [group, weight]
 const MAPPA = {
-  // nomi di gruppo
+  // group names
   'Petto': [['Petto', 1]], 'Schiena': [['Schiena', 1]], 'Dorsali': [['Schiena', 1]],
   'Schiena bassa': [['Schiena', 1]], 'Trapezio': [['Trapezio', 1]], 'Spalle': [['Spalle', 1]],
   'Spalle anteriori': [['Spalle', 1]], 'Bicipiti': [['Bicipiti', 1]], 'Tricipiti': [['Tricipiti', 1]],
@@ -39,7 +39,7 @@ const MAPPA = {
   "Flessori dell'Anca": [["Flessori dell'Anca", 1]], "Flessori dell'anca": [["Flessori dell'Anca", 1]],
   'Gambe': [['Quadricipiti', 0.5], ['Femorali', 0.5]],
   'Cardio': [['Cardio', 1]], 'Tutto il corpo': [['Tutto il corpo', 1]],
-  // nomi anatomici
+  // anatomical names
   'Gran Pettorale': [['Petto', 1]],
   'Gran Dorsale': [['Schiena', 1]], 'Romboidi': [['Schiena', 1]], 'Erettore Spinale': [['Schiena', 1]],
   'Grande Rotondo': [['Schiena', 1]],
@@ -59,12 +59,12 @@ const MAPPA = {
   'Tibiale Anteriore': [['Tibiali', 1]], 'Extensor Hallucis Longus': [['Tibiali', 1]],
   'Extensor Digitorum Longus': [['Tibiali', 1]],
   'Ileopsoas': [["Flessori dell'Anca", 1]],
-  // Dentato anteriore e "Funzionale" non hanno un gruppo chiaro: meglio non
-  // contarli che attribuirli al gruppo sbagliato.
+  // Dentato anteriore (serratus anterior) and "Funzionale" have no clear
+  // group: better not to count them than to give them to the wrong group.
 };
 
 /**
- * Gruppi allenati da un esercizio, con il peso di ciascuno per ogni serie.
+ * Groups trained by an exercise, with the weight of each one for every set.
  * @returns {{ gruppo: string, peso: number, secondario: boolean }[]}
  */
 export function gruppiDiEsercizio(primario, secondari) {
@@ -72,7 +72,7 @@ export function gruppiDiEsercizio(primario, secondari) {
   for (const [gruppo, peso] of MAPPA[primario] || (primario ? [[primario, 1]] : [])) {
     risultato.set(gruppo, { gruppo, peso, secondario: false });
   }
-  // Il cardio non conta come serie per i muscoli che muove
+  // Cardio does not count as sets for the muscles it moves
   if (GRUPPI_NON_MUSCOLARI.has(primario)) return [...risultato.values()];
 
   const visti = new Set();

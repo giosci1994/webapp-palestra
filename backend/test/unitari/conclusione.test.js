@@ -1,4 +1,4 @@
-// Quando e' finito un allenamento che si chiude adesso.
+// When a workout that is being closed now actually ended.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { fineEffettiva, MINUTI_INATTIVITA } from '../../src/services/conclusioneSessione.service.js';

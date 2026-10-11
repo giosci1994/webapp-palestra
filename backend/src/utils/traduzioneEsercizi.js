@@ -1,36 +1,36 @@
 // ============================================
-// GymMaster — Traduzione nomi esercizi EN → IT
+// GymMaster — Exercise name translation EN → IT
 // ============================================
 //
-// Il catalogo è quasi tutto in inglese e questo lo rende inutilizzabile in
-// ricerca: "affondo" restituiva zero risultati su 540 lunge presenti.
+// The catalogue is almost all in English, and that makes it useless for
+// search: "affondo" returned zero results out of the 540 lunges in it.
 //
-// I 3313 nomi sono composti da sole 480 parole distinte, quindi la traduzione
-// è un problema di dizionario, non di linguaggio naturale. L'approccio qui è
-// deterministico: stesso nome in ingresso, stesso nome in uscita, e correggere
-// una voce del dizionario rigenera coerentemente tutti i nomi che la usano.
+// The 3313 names are made of only 480 distinct words, so the translation is
+// a dictionary problem, not a natural language one. The approach here is
+// deterministic: same name in, same name out, and fixing one dictionary
+// entry consistently regenerates every name that uses it.
 //
-// L'italiano però riordina: "Double Dumbbell Romanian Deadlift" non è
-// "Doppio Manubrio Rumeno Stacco" ma "Stacco Rumeno con Due Manubri". Ogni
-// termine porta quindi un RUOLO, e la ricomposizione mette il movimento
-// davanti, i modificatori in mezzo e l'attrezzo in coda dopo "con".
+// Italian reorders, though: "Double Dumbbell Romanian Deadlift" is not
+// "Doppio Manubrio Rumeno Stacco" but "Stacco Rumeno con Due Manubri". So
+// each term carries a ROLE, and the rebuild puts the movement first, the
+// modifiers in the middle and the equipment at the end, after "con".
 //
-// Nota di calibrazione: in palestra molti termini si dicono in inglese anche
-// in italiano. Squat, plank, burpee, swing, snatch, clean, curl, hip thrust
-// restano tali: tradurli renderebbe i nomi meno riconoscibili, non più.
+// Calibration note: in the gym many terms are said in English in Italian
+// too. Squat, plank, burpee, swing, snatch, clean, curl, hip thrust stay as
+// they are: translating them would make the names less recognisable, not more.
 
 export const RUOLI = {
-  ATTREZZO: 'attrezzo',      // va in coda, preceduto da "con"
-  POSIZIONE: 'posizione',    // da seduto, in piedi, in ginocchio…
-  VARIANTE: 'variante',      // reverse, alternato, isometrico…
-  MOVIMENTO: 'movimento',    // il gesto vero e proprio
-  PARTE: 'parte',            // distretto anatomico, segue il movimento
+  ATTREZZO: 'attrezzo',      // goes at the end, after "con"
+  POSIZIONE: 'posizione',    // seated, standing, kneeling…
+  VARIANTE: 'variante',      // reverse, alternating, isometric…
+  MOVIMENTO: 'movimento',    // the movement itself
+  PARTE: 'parte',            // body area, follows the movement
 };
 
-// Match più lungo per primo: "single arm cable" prima di "cable".
-// [ inglese, italiano, ruolo ]
+// Longest match first: "single arm cable" before "cable".
+// [ English, Italian, role ]
 export const TERMINI = [
-  // ---------- Attrezzi (con quantità incorporata) ----------
+  // ---------- Equipment (with the quantity built in) ----------
   ['single arm kettlebell', 'Kettlebell a Un Braccio', RUOLI.ATTREZZO],
   ['single arm dumbbell', 'Manubrio a Un Braccio', RUOLI.ATTREZZO],
   ['single arm cable', 'Cavo a Un Braccio', RUOLI.ATTREZZO],
@@ -63,7 +63,7 @@ export const TERMINI = [
   ['pull up bar', 'Sbarra', RUOLI.ATTREZZO],
   ['kettlebell', 'Kettlebell', RUOLI.ATTREZZO],
   ['dumbbell', 'Manubri', RUOLI.ATTREZZO],
-  ['dummbell', 'Manubri', RUOLI.ATTREZZO],   // refuso presente nel catalogo
+  ['dummbell', 'Manubri', RUOLI.ATTREZZO],   // typo found in the catalogue
   ['barbell', 'Bilanciere', RUOLI.ATTREZZO],
   ['clubbell', 'Clubbell', RUOLI.ATTREZZO],
   ['macebell', 'Macebell', RUOLI.ATTREZZO],
@@ -90,7 +90,7 @@ export const TERMINI = [
   ['floor', 'a Terra', RUOLI.ATTREZZO],
   ['bar', 'Sbarra', RUOLI.ATTREZZO],
 
-  // ---------- Posizione ----------
+  // ---------- Position ----------
   ['half kneeling', 'in Ginocchio', RUOLI.POSIZIONE],
   ['tall kneeling', 'in Ginocchio Eretto', RUOLI.POSIZIONE],
   ['staggered stance', 'a Passo Sfalsato', RUOLI.POSIZIONE],
@@ -119,7 +119,7 @@ export const TERMINI = [
   ['inverted', 'Inverso', RUOLI.POSIZIONE],
   ['freestanding', 'Libero', RUOLI.POSIZIONE],
 
-  // ---------- Variante / esecuzione ----------
+  // ---------- Variant / execution ----------
   ['high to low', 'dall\'Alto al Basso', RUOLI.VARIANTE],
   ['low to high', 'dal Basso in Alto', RUOLI.VARIANTE],
   ['alternating', 'Alternato', RUOLI.VARIANTE],
@@ -177,7 +177,7 @@ export const TERMINI = [
   ['tactical', 'Tattico', RUOLI.VARIANTE],
   ['strap', 'con Straps', RUOLI.VARIANTE],
 
-  // ---------- Movimenti ----------
+  // ---------- Movements ----------
   ['turkish get up', 'Turkish Get Up', RUOLI.MOVIMENTO],
   ['get up', 'Get Up', RUOLI.MOVIMENTO],
   ['get-up', 'Get Up', RUOLI.MOVIMENTO],
@@ -311,7 +311,7 @@ export const TERMINI = [
   ['scaption', 'Scaption', RUOLI.MOVIMENTO],
   ['dislocates', 'Dislocazioni', RUOLI.MOVIMENTO],
 
-  // ---------- Parti del corpo (seguono il movimento) ----------
+  // ---------- Body parts (they follow the movement) ----------
   ['shoulder external rotation', 'Rotazione Esterna della Spalla', RUOLI.MOVIMENTO],
   ['shoulder internal rotation', 'Rotazione Interna della Spalla', RUOLI.MOVIMENTO],
   ['hip abduction', 'Abduzione dell\'Anca', RUOLI.MOVIMENTO],
@@ -346,14 +346,14 @@ export const TERMINI = [
   ['arm', 'Braccia', RUOLI.PARTE],
   ['body', 'Corpo', RUOLI.PARTE],
 
-  // ---------- Prese ----------
+  // ---------- Grips ----------
   ['horn grip', 'Presa alle Corna', RUOLI.VARIANTE],
   ['crush grip', 'Presa a Schiacciamento', RUOLI.VARIANTE],
   ['mixed grip', 'Presa Mista', RUOLI.VARIANTE],
   ['hook grip', 'Hook Grip', RUOLI.VARIANTE],
   ['grip', 'Presa', RUOLI.VARIANTE],
 
-  // ---------- Termini tecnici aggiunti in seconda passata ----------
+  // ---------- Technical terms added in a second pass ----------
   ['back rack', 'in Back Rack', RUOLI.POSIZIONE],
   ['rack', 'in Rack', RUOLI.POSIZIONE],
   ['order', 'Order', RUOLI.VARIANTE],
@@ -477,14 +477,14 @@ export const TERMINI = [
   ['bomber', 'Bomber', RUOLI.VARIANTE],
   ['cha', 'Cha', RUOLI.VARIANTE],
 
-  // Rete di sicurezza: in palestra questi si dicono identici all'inglese
+  // Safety net: in the gym these are said exactly as in English
   ['french press', 'French Press', RUOLI.MOVIMENTO],
   ['lat machine', 'Lat Machine', RUOLI.MOVIMENTO],
   ['chest press', 'Chest Press', RUOLI.MOVIMENTO],
   ['shoulder press machine', 'Shoulder Press Machine', RUOLI.MOVIMENTO],
 ];
 
-// Termini che restano identici: nomi propri, gergo internazionale, lettere.
+// Terms that stay the same: proper names, international jargon, letters.
 const INVARIATI = new Set([
   'cuban', 'turkish', 'russian', 'bulgarian', 'copenhagen', 'indian', 'german',
   'hawaiian', 'arnold', 'zottman', 'pendlay', 'meadows', 'pallof', 'cossack',
@@ -499,36 +499,37 @@ const INVARIATI = new Set([
 
 const ORDINE = [RUOLI.MOVIMENTO, RUOLI.PARTE, RUOLI.VARIANTE, RUOLI.POSIZIONE, RUOLI.ATTREZZO];
 
-// Indice per lunghezza decrescente: garantisce il match più lungo per primo
+// Index by decreasing length: guarantees the longest match first
 const INDICE = [...TERMINI].sort((a, b) => b[0].split(' ').length - a[0].split(' ').length);
 const MAX_PAROLE = Math.max(...INDICE.map(t => t[0].split(' ').length));
 
 const maiuscola = (p) => p.charAt(0).toUpperCase() + p.slice(1);
 
-/**
- * Traduce un nome di esercizio dall'inglese all'italiano.
- * @returns {{ nomeIt: string|null, copertura: number, nonTradotti: string[] }}
- *   copertura = quota di parole riconosciute; nomeIt è null se troppo bassa.
- */
-// Marcatori inequivocabili di un nome già in italiano: quei 27 esercizi
-// vanno lasciati stare, non "tradotti" una seconda volta.
+// Unmistakable markers of a name already in Italian: those 27 exercises
+// must be left alone, not "translated" a second time.
 const MARCATORI_ITALIANI = /\b(con|ai|alla|alle|della|dello|dei|delle|su|da|il|la|lo|le|un|una|bilanciere|manubri|manubrio|panca|cavi|cavo|sbarra|piegamenti|affondi|alzate|croci|stacco|rematore|trazioni|estensioni|distensioni|tirate|polpacci|gambe|piedi|testa|terra|sessione|cyclette|vogatore|ellittica|tapis)\b/i;
 
-// Gli esercizi fino a questo id sono il catalogo curato a mano: già in
-// italiano, e spesso già bilingui con l'inglese fra parentesi
-// ("Lat Machine (Lat Pulldown)"). Vanno lasciati intatti.
+// The exercises up to this id are the hand-curated catalogue: already in
+// Italian, and often already bilingual with the English in brackets
+// ("Lat Machine (Lat Pulldown)"). They must be left untouched.
 export const ULTIMO_ID_CATALOGO_CURATO = 60;
 
-/** true se il nome è già italiano e non va tradotto. */
+/** true if the name is already Italian and must not be translated. */
 export function eGiaItaliano(nome) {
   const base = nome.replace(/\([^)]*\)/g, ' ');
   return MARCATORI_ITALIANI.test(base);
 }
 
+/**
+ * Translates an exercise name from English to Italian.
+ * @returns {{ nomeIt: string|null, copertura: number, nonTradotti: string[], giaItaliano?: true }}
+ *   copertura = share of recognised words. nomeIt is null when the name is
+ *   already Italian (then giaItaliano is true) or nothing could be translated.
+ */
 export function traduciNomeEsercizio(nome) {
   if (eGiaItaliano(nome)) return { nomeIt: null, copertura: 1, nonTradotti: [], giaItaliano: true };
 
-  // La parte fra parentesi è già una glossa: la si conserva così com'è
+  // The part in brackets is already a gloss: it is kept as it is
   const conParentesi = nome.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
   const base = (conParentesi ? conParentesi[1] : nome).trim();
   const glossa = conParentesi ? conParentesi[2].trim() : null;
@@ -559,11 +560,11 @@ export function traduciNomeEsercizio(nome) {
     const pulita = parola.toLowerCase().replace(/[^a-zà-ÿ0-9'-]/g, '');
 
     if (INVARIATI.has(pulita) || /^\d+$/.test(pulita)) {
-      // I nomi propri restano attaccati al movimento, dove danno significato
+      // Proper names stay attached to the movement, where they give meaning
       perRuolo[RUOLI.MOVIMENTO].push(maiuscola(parola));
       riconosciute++;
     } else if (['to', 'and', 'the', 'with', 'in', 'on', 'a', 'of', 'up', 'out', 'over', 'through', 'around', 'down', 'off'].includes(pulita)) {
-      // Particelle: non contano né come tradotte né come mancanti
+      // Particles: they count neither as translated nor as missing
       perRuolo[RUOLI.MOVIMENTO].push(parola.toLowerCase());
     } else {
       perRuolo[RUOLI.MOVIMENTO].push(parola);
@@ -579,7 +580,7 @@ export function traduciNomeEsercizio(nome) {
 
   const copertura = significative === 0 ? 1 : riconosciute / significative;
 
-  // Deduplica: "Bar Hanging Knee Raise" produrrebbe "alla Sbarra … con Sbarra"
+  // Deduplicate: "Bar Hanging Knee Raise" would give "alla Sbarra … con Sbarra"
   const giaVisti = new Set();
   for (const ruolo of ORDINE) {
     perRuolo[ruolo] = perRuolo[ruolo].filter(v => {
@@ -590,8 +591,8 @@ export function traduciNomeEsercizio(nome) {
     });
   }
 
-  // Tutti i complementi introdotti da "con" confluiscono in uno solo:
-  // "con Piede Rialzato con Due Manubri" diventa "con Piede Rialzato e Due
+  // Every phrase introduced by "con" merges into a single one:
+  // "con Piede Rialzato con Due Manubri" becomes "con Piede Rialzato e Due
   // Manubri".
   const pezzi = [];
   const complementi = [];
@@ -602,7 +603,7 @@ export function traduciNomeEsercizio(nome) {
       if (/^con /i.test(voce)) {
         complementi.push(voce.replace(/^con /i, ''));
       } else if (ruolo === RUOLI.ATTREZZO) {
-        // "a Corpo Libero", "a Terra", "al Muro" sono già locuzioni complete
+        // "a Corpo Libero", "a Terra", "al Muro" are already complete phrases
         if (/^(a |al |su |in |alle )/i.test(voce)) pezzi.push(voce);
         else complementi.push(voce);
       } else {

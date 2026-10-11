@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Configurazione Database (Prisma)
-// Singleton PrismaClient con logging
+// GymMaster — Database configuration (Prisma)
+// PrismaClient singleton with logging
 // ============================================
 
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger.js';
 
-// Singleton: evita connessioni multiple durante hot-reload
+// Singleton: avoids multiple connections during hot reload
 let prisma;
 
 if (process.env.AMBIENTE === 'produzione') {
@@ -17,7 +17,7 @@ if (process.env.AMBIENTE === 'produzione') {
     ]
   });
 } else {
-  // In sviluppo, riutilizza la connessione tra hot-reload
+  // In development, reuse the connection across hot reloads
   if (!globalThis.__prismaClient) {
     globalThis.__prismaClient = new PrismaClient({
       log: [
@@ -30,7 +30,7 @@ if (process.env.AMBIENTE === 'produzione') {
   prisma = globalThis.__prismaClient;
 }
 
-// Logging degli errori del database
+// Database error logging
 prisma.$on('error', (e) => {
   logger.error({ erroreDb: e.message }, 'Errore database Prisma');
 });

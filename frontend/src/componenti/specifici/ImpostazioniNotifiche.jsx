@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Notifiche sul telefono (Profilo)
+// GymMaster — Phone notifications (Profile)
 // ============================================
 
 import { useState } from 'react';

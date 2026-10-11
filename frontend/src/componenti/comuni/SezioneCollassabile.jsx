@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Sezione richiudibile
+// GymMaster — Collapsible section
 // ============================================
 //
-// Sul telefono la dashboard è una colonna lunga: poter chiudere le sezioni che
-// non servono in quel momento fa risalire in alto quelle che servono.
+// On the phone the dashboard is a long column: closing the sections that are
+// not needed right now brings the ones that are needed up to the top.
 //
-// Lo stato viene ricordato nel browser, così la scelta resta fra una visita e
-// l'altra invece di doverla rifare ogni volta.
+// The state is remembered in the browser, so the choice stays from one visit
+// to the next instead of having to make it again every time.
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,17 +19,17 @@ function leggiStato(chiave, predefinito) {
     const v = localStorage.getItem(PREFISSO + chiave);
     return v === null ? predefinito : v === 'aperta';
   } catch {
-    // Navigazione privata o storage bloccato: si parte dal valore di default
+    // Private browsing or blocked storage: start from the default value
     return predefinito;
   }
 }
 
 /**
  * @param {object} p
- * @param {string} p.chiave - identificativo per ricordare aperta/chiusa
+ * @param {string} p.chiave - identifier used to remember open/closed
  * @param {string} p.titolo
  * @param {React.ComponentType<{size?: number, className?: string}>} [p.Icona]
- * @param {React.ReactNode} [p.azione] - contenuto a destra dell'intestazione
+ * @param {React.ReactNode} [p.azione] - content on the right of the header
  * @param {boolean} [p.apertaDiDefault=true]
  * @param {React.ReactNode} p.children
  */
@@ -46,7 +46,7 @@ export default function SezioneCollassabile({
   const alterna = useCallback(() => {
     setAperta(prec => {
       const nuovo = !prec;
-      try { localStorage.setItem(PREFISSO + chiave, nuovo ? 'aperta' : 'chiusa'); } catch { /* storage non disponibile */ }
+      try { localStorage.setItem(PREFISSO + chiave, nuovo ? 'aperta' : 'chiusa'); } catch { /* storage not available */ }
       return nuovo;
     });
   }, [chiave]);
@@ -74,7 +74,7 @@ export default function SezioneCollassabile({
           </motion.span>
         </button>
 
-        {/* L'azione non deve far scattare l'apertura/chiusura */}
+        {/* The action must not trigger opening/closing */}
         {azione && <div onClick={(e) => e.stopPropagation()} className="shrink-0">{azione}</div>}
       </div>
 

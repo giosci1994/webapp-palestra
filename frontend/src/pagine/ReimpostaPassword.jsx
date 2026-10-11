@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Reimposta password (landing del link email)
+// GymMaster — Reset password (landing page of the email link)
 // ============================================
 
 import { useState } from 'react';

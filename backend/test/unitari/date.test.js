@@ -1,7 +1,7 @@
-// Il giorno di un allenamento e' quello del calendario di Copenaghen, non
-// quello UTC del server: fra mezzanotte e le 2 (le 1 d'inverno) i due non
-// coincidono. Le date di ottobre sono in ora legale (UTC+2), quelle di gennaio
-// in ora solare (UTC+1).
+// The day of a workout is the one on the Copenhagen calendar, not the server's
+// UTC one: between midnight and 2 am (1 am in winter) the two differ. The
+// October dates are in summer time (UTC+2), the January ones in standard time
+// (UTC+1).
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { giornoLocale, orarioLocale, giorniDiCalendario } from '../../src/utils/date.js';
@@ -10,13 +10,13 @@ const mezzanotteUtc = giorno => new Date(`${giorno}T00:00:00Z`);
 
 describe('giornoLocale', () => {
   it("dopo mezzanotte locale e' gia' il giorno dopo, anche se in UTC non ancora", () => {
-    assert.deepEqual(giornoLocale('2026-10-09T22:30:00Z'), mezzanotteUtc('2026-10-10')); // 00:30 locali
-    assert.deepEqual(giornoLocale('2026-10-09T21:59:00Z'), mezzanotteUtc('2026-10-09')); // 23:59 locali
+    assert.deepEqual(giornoLocale('2026-10-09T22:30:00Z'), mezzanotteUtc('2026-10-10')); // 00:30 local
+    assert.deepEqual(giornoLocale('2026-10-09T21:59:00Z'), mezzanotteUtc('2026-10-09')); // 23:59 local
   });
 
   it("d'inverno il confine cade un'ora dopo", () => {
-    assert.deepEqual(giornoLocale('2026-01-15T23:30:00Z'), mezzanotteUtc('2026-01-16')); // 00:30 locali
-    assert.deepEqual(giornoLocale('2026-01-15T22:30:00Z'), mezzanotteUtc('2026-01-15')); // 23:30 locali
+    assert.deepEqual(giornoLocale('2026-01-15T23:30:00Z'), mezzanotteUtc('2026-01-16')); // 00:30 local
+    assert.deepEqual(giornoLocale('2026-01-15T22:30:00Z'), mezzanotteUtc('2026-01-15')); // 23:30 local
   });
 
   it('accetta Date, stringhe ISO e millisecondi', () => {
@@ -43,11 +43,11 @@ describe('giorniDiCalendario', () => {
 
 describe('orarioLocale', () => {
   it("ora e giorno della settimana di Copenaghen, con lunedi' = 0", () => {
-    // Lunedi' 12 ottobre 2026, 07:30 locali
+    // Monday 12 October 2026, 07:30 local
     assert.deepEqual(orarioLocale('2026-10-12T05:30:00Z'), { ora: 7, giornoSettimana: 0 });
-    // Domenica 11 ottobre, 23:30 locali
+    // Sunday 11 October, 23:30 local
     assert.deepEqual(orarioLocale('2026-10-11T21:30:00Z'), { ora: 23, giornoSettimana: 6 });
-    // Lunedi' 00:30 locali, quando in UTC e' ancora domenica
+    // Monday 00:30 local, when in UTC it is still Sunday
     assert.deepEqual(orarioLocale('2026-10-11T22:30:00Z'), { ora: 0, giornoSettimana: 0 });
   });
 });

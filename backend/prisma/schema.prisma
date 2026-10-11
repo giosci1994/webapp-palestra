@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Schema Prisma Completo
+// GymMaster — Complete Prisma schema
 // Database: PostgreSQL 17
 // ============================================
 
@@ -87,10 +87,10 @@ enum StatoIscrizione {
   TERMINATA
 }
 
-// Che serie e': di lavoro (quelle della scheda), di riscaldamento (prima
-// delle serie di lavoro, fuori da volume, conteggi, record e progressione) o
-// drop (subito dopo una serie di lavoro, a peso calato: conta nel volume, non
-// come serie a se')
+// What kind of set it is: a work set (the ones in the plan), a warm-up set
+// (before the work sets, left out of volume, counts, records and progression)
+// or a drop set (right after a work set, with less weight: it counts towards
+// volume, not as a set of its own)
 enum TipoSerie {
   LAVORO
   RISCALDAMENTO
@@ -98,7 +98,7 @@ enum TipoSerie {
 }
 
 // ============================================
-// UTENTI & SICUREZZA
+// USERS & SECURITY
 // ============================================
 
 model Utente {
@@ -112,51 +112,51 @@ model Utente {
   puntiEsperienza   Int         @default(0) @map("punti_esperienza")
   dataRegistrazione DateTime    @default(now()) @map("data_registrazione")
 
-  // Preferenze chat
+  // Chat preferences
   chatRetentionGiorni Int @default(7) @map("chat_retention_giorni")
 
-  // Profilo esteso
+  // Extended profile
   immagineProfilo      String?   @map("immagine_profilo")      // Base64 avatar (max ~200KB)
   dataNascita          DateTime? @map("data_nascita")
   pesoKg               Float?    @map("peso_kg")
   altezzaCm            Int?      @map("altezza_cm")
   genere               String?                                 // "M", "F", "Altro"
-  bio                  String?                                 // Breve descrizione
-  obiettivoFitness     String?   @map("obiettivo_fitness")     // "Massa", "Definizione", ecc.
+  bio                  String?                                 // Short description
+  obiettivoFitness     String?   @map("obiettivo_fitness")     // "Massa", "Definizione", etc.
   preferenzeVisibilita String?   @map("preferenze_visibilita") // JSON: {"palestra":true,...}
 
-  // Onboarding & Conformità
+  // Onboarding & compliance
   profiloCompletato    Boolean   @default(false) @map("profilo_completato")
   gamificationAttiva   Boolean   @default(true)  @map("gamification_attiva")
-  ruoloRichiesto       Ruolo?    @map("ruolo_richiesto")       // Se ha richiesto cambio ruolo (es. PT)
+  ruoloRichiesto       Ruolo?    @map("ruolo_richiesto")       // If they asked for a role change (e.g. PT)
   accettazioneToS      DateTime? @map("accettazione_tos")
   accettazionePrivacy  DateTime? @map("accettazione_privacy")
   consensoCookie       String?   @map("consenso_cookie")       // JSON: {"necessari":true,"analytics":false}
 
-  // Verifica email (attiva solo se RESEND_API_KEY è configurata; default true per non bloccare gli account esistenti)
+  // Email verification (on only if RESEND_API_KEY is set; default true so existing accounts are not locked out)
   emailVerificata       Boolean   @default(true)  @map("email_verificata")
   tokenVerificaEmail    String?   @map("token_verifica_email")
   tokenVerificaScadenza DateTime? @map("token_verifica_scadenza")
 
-  // Profilo Personal Trainer (compilati nell'onboarding professionale)
-  specializzazioni     String?   @map("specializzazioni")     // JSON array di stringhe
+  // Personal trainer profile (filled in during the professional onboarding)
+  specializzazioni     String?   @map("specializzazioni")     // JSON array of strings
   anniEsperienza       Int?      @map("anni_esperienza")
   certificazioni       String?   @map("certificazioni")
   contattoPubblico     String?   @map("contatto_pubblico")
   tariffaIndicativa    String?   @map("tariffa_indicativa")
 
-  // Attività / presenza
+  // Activity / presence
   ultimoAccesso        DateTime? @map("ultimo_accesso")
 
-  // Recupero password
+  // Password recovery
   tokenResetPassword   String?   @map("token_reset_password")
   tokenResetScadenza   DateTime? @map("token_reset_scadenza")
 
-  // Reset Progressi (Opzione B)
+  // Progress reset (Option B)
   dataResetStatistiche   DateTime? @map("data_reset_statistiche")
   dataResetGamification  DateTime? @map("data_reset_gamification")
 
-  // Relazioni
+  // Relations
   palestra            Palestra?             @relation(fields: [palestraId], references: [id])
   recordPersonali     RecordPersonale[]
   misurazioni         MisurazioneCorporea[] @relation("MisurazioniUtente")
@@ -170,7 +170,7 @@ model Utente {
   conversazioniAI     ConversazioneAI[]
   suggerimentiEsercizi SuggerimentoEsercizio[]
 
-  // Relazioni Personal Trainer
+  // Personal trainer relations
   iscrizioniComeCliente IscrizionePT[]    @relation("IscrizioniUtente")
   clientiComePT         IscrizionePT[]    @relation("ClientiPT")
   appuntamentiTrainer   AppuntamentoPT[]  @relation("AppuntamentiPTTrainer")
@@ -179,14 +179,14 @@ model Utente {
   annunciRicevuti       AnnuncioPT[]      @relation("AnnunciDestinatario")
   schedeAssegnateDaPT   SchedaAllenamento[] @relation("SchedeAssegnatePT")
 
-  // Collegamento bot Telegram
+  // Telegram bot link
   collegamentoTelegram  CollegamentoTelegram?
 
-  // Pianificazione allenamenti
+  // Workout schedule
   allenamentiPianificati       AllenamentoPianificato[] @relation("AllenamentiPianificatiUtente")
   allenamentiPianificatiCreati AllenamentoPianificato[] @relation("AllenamentiPianificatiCreatore")
 
-  // Notifiche in-app
+  // In-app notifications
   notifiche AllenamentoNotifica[]
   passkey   Passkey[]
   eserciziPreferiti EsercizioPreferito[]
@@ -195,8 +195,8 @@ model Utente {
   @@map("utenti")
 }
 
-// Esercizi segnati con la stella: ognuno ha i suoi, e vengono per primi nelle
-// ricerche
+// Exercises marked with the star: each user has their own, and they come first
+// in searches
 model EsercizioPreferito {
   utenteId    Int      @map("utente_id")
   esercizioId Int      @map("esercizio_id")
@@ -209,18 +209,18 @@ model EsercizioPreferito {
   @@map("esercizi_preferiti")
 }
 
-// Passkey (WebAuthn): entrare con impronta, volto o PIN del dispositivo invece
-// della password. La chiave privata resta sul dispositivo o nel gestore di
-// password; qui c'e' solo la pubblica, per verificare le firme.
+// Passkey (WebAuthn): signing in with the device's fingerprint, face or PIN
+// instead of the password. The private key stays on the device or in the
+// password manager; only the public one is here, to verify signatures.
 model Passkey {
   id             Int       @id @default(autoincrement())
   utenteId       Int       @map("utente_id")
-  credenziale    String    @unique // Id della credenziale, base64url
-  chiavePubblica String    @map("chiave_pubblica") // Chiave COSE, base64url
-  contatore      Int       @default(0) // Firme fatte: se torna indietro, la passkey e' stata clonata
+  credenziale    String    @unique // Credential id, base64url
+  chiavePubblica String    @map("chiave_pubblica") // COSE key, base64url
+  contatore      Int       @default(0) // Signatures made: if it goes back, the passkey has been cloned
   trasporti      String? // JSON: ["internal", "hybrid"]
-  sincronizzata  Boolean   @default(false) // Salvata nel cloud (Google, iCloud): vale su piu' dispositivi
-  nome           String? // "Chrome · Android": da dove e' stata aggiunta
+  sincronizzata  Boolean   @default(false) // Saved in the cloud (Google, iCloud): works on several devices
+  nome           String? // "Chrome · Android": where it was added from
   creataIl       DateTime  @default(now()) @map("creata_il")
   ultimoUso      DateTime? @map("ultimo_uso")
 
@@ -230,15 +230,15 @@ model Passkey {
   @@map("passkey")
 }
 
-// Un dispositivo che riceve le notifiche push (Web Push): l'iscrizione che il
-// browser restituisce a pushManager.subscribe (services/push.service.js)
+// A device that receives push notifications (Web Push): the subscription the
+// browser returns from pushManager.subscribe (services/push.service.js)
 model IscrizionePush {
   id          Int      @id @default(autoincrement())
   utenteId    Int      @map("utente_id")
   endpoint    String   @unique
   p256dh      String
   auth        String
-  dispositivo String? // "Chrome · Android", dallo User-Agent
+  dispositivo String? // "Chrome · Android", from the User-Agent
   creataIl    DateTime @default(now()) @map("creata_il")
 
   utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
@@ -249,17 +249,17 @@ model IscrizionePush {
 
 model RefreshToken {
   id                  Int       @id @default(autoincrement())
-  token               String    @unique // Impronta SHA-256: il token vero lo ha solo il client
+  token               String    @unique // SHA-256 fingerprint: only the client has the real token
   utenteId            Int       @map("utente_id")
   scadenza            DateTime
-  creato              DateTime  @default(now()) // Per il token attivo di una famiglia: l'ultimo uso
-  revocato            Boolean   @default(false) // Sostituito dal successivo, o chiuso per sospetto furto
-  durataGiorni        Int       @default(7) @map("durata_giorni") // Durata originale per propagare al refresh
-  // Una famiglia e' una sessione: i token nati dallo stesso login, rotazione
-  // dopo rotazione, su un dispositivo
+  creato              DateTime  @default(now()) // For the active token of a family: the last use
+  revocato            Boolean   @default(false) // Replaced by the next one, or closed on suspected theft
+  durataGiorni        Int       @default(7) @map("durata_giorni") // Original lifetime, carried over on refresh
+  // A family is a session: the tokens born from the same login, rotation
+  // after rotation, on one device
   famiglia            String
-  dispositivo         String?   // "Chrome · Android", dallo User-Agent del login
-  iniziataIl          DateTime  @default(now()) @map("iniziata_il") // Ora del login
+  dispositivo         String?   // "Chrome · Android", from the login User-Agent
+  iniziataIl          DateTime  @default(now()) @map("iniziata_il") // Login time
 
   utente Utente @relation(fields: [utenteId], references: [id], onDelete: Cascade)
 
@@ -267,8 +267,8 @@ model RefreshToken {
   @@map("refresh_tokens")
 }
 
-// Collegamento tra un account Utente e una chat Telegram (per il bot).
-// `codice` è un token usa-e-getta per il collegamento iniziale.
+// Link between a Utente account and a Telegram chat (for the bot).
+// `codice` is a one-time token for the initial link.
 model CollegamentoTelegram {
   id             Int       @id @default(autoincrement())
   utenteId       Int       @unique @map("utente_id")
@@ -284,7 +284,7 @@ model CollegamentoTelegram {
 }
 
 // ============================================
-// PALESTRE & ATTREZZATURA
+// GYMS & EQUIPMENT
 // ============================================
 
 model Palestra {
@@ -305,11 +305,11 @@ model Palestra {
 model AfluenzaPalestra {
   id                 Int      @id @default(autoincrement())
   palestraId         Int      @map("palestra_id")
-  giornoSettimana    Int      @map("giorno_settimana") // 0=Lun, 6=Dom
+  giornoSettimana    Int      @map("giorno_settimana") // 0=Mon, 6=Sun
   ora                Int                               // 0-23
-  livelloPercentuale Int      @map("livello_percentuale") // 0-100 (pattern storico)
-  liveLivello        Int?     @map("live_livello")     // 0-100 (dato real-time)
-  liveDescrizione    String?  @map("live_descrizione") // "Più affollata del solito"
+  livelloPercentuale Int      @map("livello_percentuale") // 0-100 (historical pattern)
+  liveLivello        Int?     @map("live_livello")     // 0-100 (real-time data)
+  liveDescrizione    String?  @map("live_descrizione") // "Più affollata del solito" (busier than usual)
   aggiornatoIl       DateTime @default(now()) @map("aggiornato_il")
 
   palestra Palestra @relation(fields: [palestraId], references: [id], onDelete: Cascade)
@@ -342,17 +342,17 @@ model PalestraAttrezzatura {
 }
 
 // ============================================
-// ESERCIZI & SCHEDE
+// EXERCISES & PLANS
 // ============================================
 
 model Esercizio {
   id                      Int     @id @default(autoincrement())
   nome                    String
 
-  // Nome italiano, presente solo per le voci importate con nome inglese.
-  // Il catalogo curato a mano (id <= 60) ha gia' il nome in italiano in `nome`,
-  // spesso con l'inglese fra parentesi, e qui resta null.
-  // In interfaccia si mostra `nomeIt ?? nome`, con `nome` in seconda riga.
+  // Italian name, present only for entries imported with an English name.
+  // The hand-curated catalogue (id <= 60) already has the Italian name in
+  // `nome`, often with the English in brackets, and here it stays null.
+  // The interface shows `nomeIt ?? nome`, with `nome` on a second line.
   nomeIt                  String? @map("nome_it")
 
   gruppoMuscoloPrimario   String  @map("gruppo_muscolare_primario")
@@ -361,7 +361,7 @@ model Esercizio {
   descrizione             String?
   linkVideo               String? @map("link_video")
 
-  // Campi aggiuntivi dal database Functional Fitness v2.9
+  // Extra fields from the Functional Fitness v2.9 database
   difficulty              String?                                   // Principiante, Novizio, Intermedio, Avanzato, Esperto, Master, Gran Master, Leggendario
   bodyRegion              String? @map("body_region")               // Core, Parte Superiore, Parte Inferiore, Tutto il Corpo
   mechanics               String?                                   // Composto, Isolamento
@@ -378,8 +378,8 @@ model Esercizio {
   suggerimenti    SuggerimentoEsercizio[]
   preferitoDa      EsercizioPreferito[]
 
-  // Creato dalla migrazione 20260922_nome_italiano_esercizi: la ricerca usa
-  // anche il nome italiano
+  // Created by the 20260922_nome_italiano_esercizi migration: search uses
+  // the Italian name too
   @@index([nomeIt])
   @@map("esercizi")
 }
@@ -408,16 +408,16 @@ model EsercizioScheda {
   schedaId         Int     @map("scheda_id")
   esercizioId      Int     @map("esercizio_id")
   serieTarget      Int?    @map("serie_target")
-  repTarget        String? @map("rep_target") // Formato range: "8-12" (null per cardio)
+  repTarget        String? @map("rep_target") // Range format: "8-12" (null for cardio)
   recuperoSecondi  Int?    @map("recupero_secondi")
   ordineEsecuzione Int     @map("ordine_esecuzione")
 
-  // Indicazione tecnica per QUESTO esercizio in QUESTA scheda: correzioni
-  // posturali, tempi, note sull'esecuzione unilaterale. Sta qui e non
-  // sull'esercizio perche' cambia da scheda a scheda.
+  // Technique cue for THIS exercise in THIS plan: posture corrections,
+  // tempo, notes on one-sided execution. It lives here and not on the
+  // exercise because it changes from plan to plan.
   note             String? @map("note")
 
-  // Target cardio (opzionali; usati per voci cardio e riscaldamento)
+  // Cardio targets (optional; used for cardio and warm-up entries)
   riscaldamento     Boolean @default(false)
   durataMinuti      Int?    @map("durata_minuti")
   velocitaKmh       Float?  @map("velocita_kmh")
@@ -432,7 +432,7 @@ model EsercizioScheda {
 }
 
 // ============================================
-// TRACKING: SESSIONI & LOG
+// TRACKING: WORKOUTS & LOG
 // ============================================
 
 model SessioneAllenamento {
@@ -458,8 +458,8 @@ model LogSerie {
   id                   Int     @id @default(autoincrement())
   sessioneId           Int     @map("sessione_id")
   esercizioId          Int     @map("esercizio_id")
-  // Le serie di lavoro sono numerate 1, 2, 3...; il riscaldamento ha la sua
-  // numerazione; un drop porta il numero della serie di lavoro che segue
+  // Work sets are numbered 1, 2, 3...; warm-up has its own numbering; a drop
+  // set carries the number of the work set it follows
   serieNumero          Int     @map("serie_numero")
   tipo                 TipoSerie @default(LAVORO)
   pesoEffettivo        Float   @map("peso_effettivo")
@@ -468,16 +468,16 @@ model LogSerie {
   completato           Boolean @default(true)
   motivoSaltoEsercizio String? @map("motivo_salto_esercizio")
   noteSerie            String? @map("note_serie")
-  // Quando e' stata registrata: dice quando finisce un allenamento lasciato
-  // aperto (services/conclusioneSessione.service.js). Vuota per le serie
-  // registrate prima che ci fosse. Una serie fatta senza rete la porta dal
-  // telefono: e' l'ora in cui e' stata fatta, non quella in cui e' arrivata.
+  // When it was logged: it tells when a workout left open ended
+  // (services/conclusioneSessione.service.js). Empty for sets logged before
+  // this column existed. A set done without a network brings it from the
+  // phone: it is the time the set was done, not the time it arrived.
   registrataIl         DateTime? @default(now()) @map("registrata_il")
-  // Scelto dal telefono per ogni serie: se la stessa serie arriva due volte
-  // (inviata senza rete e poi ritentata) si registra una volta sola
+  // Chosen by the phone for each set: if the same set arrives twice (sent
+  // without a network and then retried) it is logged only once
   idClient             String?   @map("id_client")
 
-  // Campi opzionali per CARDIO
+  // Optional fields for CARDIO
   distanzaKm           Float?  @map("distanza_km")
   durataMinuti         Int?    @map("durata_minuti")
   livelloResistenza    Int?    @map("livello_resistenza")
@@ -505,7 +505,7 @@ model RecordPersonale {
 }
 
 // ============================================
-// SUGGERIMENTI ESERCIZI
+// EXERCISE SUGGESTIONS
 // ============================================
 
 model SuggerimentoEsercizio {
@@ -568,7 +568,7 @@ model AppuntamentoPT {
 }
 
 // ============================================
-// CHAT & MESSAGGISTICA
+// CHAT & MESSAGING
 // ============================================
 
 model RichiestaContatto {
@@ -623,13 +623,13 @@ model Messaggio {
 }
 
 // ============================================
-// ASSISTENTE AI
+// AI ASSISTANT
 // ============================================
 
 model ConversazioneAI {
   id       Int      @id @default(autoincrement())
   utenteId Int      @map("utente_id")
-  contesto String   // es. "analisi_scheda", "suggerimento", "domanda_libera"
+  contesto String   // e.g. "analisi_scheda", "suggerimento", "domanda_libera"
   creatoIl DateTime @default(now()) @map("creato_il")
 
   utente   Utente        @relation(fields: [utenteId], references: [id], onDelete: Cascade)
@@ -641,7 +641,7 @@ model ConversazioneAI {
 model MessaggioAI {
   id                Int      @id @default(autoincrement())
   conversazioneAiId Int      @map("conversazione_ai_id")
-  ruolo             String   // "utente" o "assistente"
+  ruolo             String   // "utente" or "assistente"
   contenuto         String
   inviatoIl         DateTime @default(now()) @map("inviato_il")
 
@@ -651,7 +651,7 @@ model MessaggioAI {
 }
 
 // ============================================
-// BACHECA ANNUNCI PT
+// PERSONAL TRAINER NOTICE BOARD
 // ============================================
 
 model AnnuncioPT {
@@ -670,19 +670,19 @@ model AnnuncioPT {
 }
 
 // ============================================
-// NOVITÀ (storie in-app, gestite dall'admin)
+// WHAT'S NEW (in-app stories, managed by the admin)
 // ============================================
 
 model Novita {
   id           Int      @id @default(autoincrement())
   titolo       String
   sottotitolo  String?
-  punti        String?  // JSON: [{ "icona": "ti-...", "testo": "..." }]
-  icona        String?  // nome icona (lucide) o emoji per l'header
-  immagine     String?  // opzionale: immagine header (base64/url)
+  punti        String?  // JSON: [{ "icona": "💪", "testo": "..." }]
+  icona        String?  // emoji for the header
+  immagine     String?  // optional: header image (base64/url)
   ctaTesto     String?  @map("cta_testo")
-  ctaRotta     String?  @map("cta_rotta")     // es. "/profilo"
-  coloreInizio String?  @map("colore_inizio") // gradiente header (hex)
+  ctaRotta     String?  @map("cta_rotta")     // e.g. "/profilo"
+  coloreInizio String?  @map("colore_inizio") // header gradient (hex)
   coloreFine   String?  @map("colore_fine")
   attiva       Boolean  @default(true)
   ordine       Int      @default(0)
@@ -691,7 +691,7 @@ model Novita {
   @@map("novita")
 }
 
-// Misurazione della composizione corporea (serie temporale: bilancia smart)
+// Body composition measurement (time series: smart scale)
 model MisurazioneCorporea {
   id                    Int      @id @default(autoincrement())
   utenteId              Int      @map("utente_id")
@@ -719,12 +719,12 @@ model MisurazioneCorporea {
   @@map("misurazioni_corporee")
 }
 
-// Allenamento messo in calendario per un giorno preciso.
-// Si e' scelto di salvare occorrenze concrete invece di una regola di
-// ricorrenza: spostare o rimandare un singolo allenamento diventa un semplice
-// cambio di data, senza dover gestire eccezioni alla regola. La distribuzione
-// settimanale ("scheda A il lunedi, B il mercoledi, C il venerdi, per 4
-// settimane") viene espansa in occorrenze dal servizio di pianificazione.
+// Workout put on the calendar for a specific day.
+// We chose to store concrete occurrences instead of a recurrence rule: moving
+// or postponing a single workout becomes a simple date change, with no
+// exceptions to the rule to manage. The weekly distribution ("plan A on
+// Monday, B on Wednesday, C on Friday, for 4 weeks") is expanded into
+// occurrences by the scheduling service.
 model AllenamentoPianificato {
   id         Int                         @id @default(autoincrement())
   utenteId   Int                         @map("utente_id")
@@ -741,23 +741,23 @@ model AllenamentoPianificato {
   scheda   SchedaAllenamento    @relation(fields: [schedaId], references: [id], onDelete: Cascade)
   sessione SessioneAllenamento? @relation(fields: [sessioneId], references: [id], onDelete: SetNull)
 
-  // Stessa scheda due volte nello stesso giorno per lo stesso utente non ha senso
+  // The same plan twice on the same day for the same user makes no sense
   @@unique([utenteId, data, schedaId])
   @@index([utenteId, data])
   @@map("allenamenti_pianificati")
 }
 
-// Notifica in-app. Finora le notifiche esistevano solo come evento socket
-// volatile: chi non era collegato in quel momento le perdeva. Salvarle permette
-// di mostrarle al rientro e di tenere il conto delle non lette.
+// In-app notification. Until now notifications existed only as a volatile
+// socket event: whoever was not connected at that moment lost them. Storing
+// them makes it possible to show them on return and to count the unread ones.
 model AllenamentoNotifica {
   id        Int          @id @default(autoincrement())
   utenteId  Int          @map("utente_id")
   tipo      TipoNotifica @default(SISTEMA)
   titolo    String
   messaggio String
-  // Percorso interno da aprire al tocco (es. "/pianificazione"): niente URL
-  // esterni, cosi' una notifica non puo' portare l'utente fuori dall'app.
+  // Internal path to open on tap (e.g. "/pianificazione"): no external URLs,
+  // so a notification cannot take the user out of the app.
   percorso  String?
   letta     Boolean      @default(false)
   creatoIl  DateTime     @default(now()) @map("creato_il")

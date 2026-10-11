@@ -1,15 +1,15 @@
 // ============================================
-// GymMaster — Storie delle novita' al rilascio
+// GymMaster — "What's new" stories at release
 // ============================================
 
 import prisma from '../config/database.js';
 import { problemiStorie, righeDellaVersione } from '../utils/novitaRilascio.js';
 
 /**
- * Aggiunge le storie della versione che non ci sono ancora (stesso titolo =
- * gia' presente): ripetere il rilascio non le duplica.
- * @param {string} versione la versione appena installata
- * @param {object[]} storie il contenuto di prisma/novita.json
+ * Adds the version's stories that are not there yet (same title = already
+ * present): repeating the release does not duplicate them.
+ * @param {string} versione the version just installed
+ * @param {object[]} storie the content of prisma/novita.json
  * @returns {Promise<{ aggiunte: string[], presenti: string[] }>}
  */
 export async function applicaNovita(versione, storie) {

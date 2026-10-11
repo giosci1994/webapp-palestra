@@ -1,30 +1,34 @@
 // ============================================
-// GymMaster — Hook Auto-Aggiornamento
-// Controlla periodicamente se c'è una nuova versione
-// e forza l'aggiornamento automatico per tutti i client
+// GymMaster — Auto-update hook
+// Periodically checks whether there is a new version
+// and forces the automatic update on every client
 // ============================================
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { aggiornaApp } from '../utils/aggiornamento.js';
 
-// Versione corrente iniettata al build time
+// Current version, injected at build time
 const VERSIONE_CORRENTE = __APP_VERSION__;
 
-// Ogni 2 minuti controlla se c'è una nuova versione
+// Check for a new version every 2 minutes
 const INTERVALLO_CHECK = 2 * 60 * 1000;
 
-// Durante un allenamento non si ricarica: si aspetta che finisca
+// No reload during a workout: wait for it to end
 const inAllenamento = () => /^\/allenamento\/[^/]+/.test(window.location.pathname);
 
 /**
- * Hook che monitora nuove versioni dell'app.
- * 
- * Funzionamento:
- * 1. Ogni 2 minuti scarica /version.json (no cache)
- * 2. Se la versione è diversa da quella buildata → mostra banner
- * 3. Banner dà opzione di aggiornare subito
- * 4. Al prossimo focus/visibilità della pagina → aggiorna automatico
- * 5. Se Service Worker rileva nuovo SW → forza skipWaiting + reload
+ * Hook that watches for new versions of the app.
+ *
+ * How it works:
+ * 1. Every 2 minutes (the first time after 10 seconds) it downloads
+ *    /version.json, bypassing the cache
+ * 2. If the version differs from the built one → show the banner
+ * 3. 4 seconds later it updates on its own (utils/aggiornamento.js asks the
+ *    waiting Service Worker to skip waiting, then reloads), except during a
+ *    workout
+ * 4. Coming back to the app (visibilitychange) with an update pending →
+ *    update, again not during a workout
+ * 5. When a new Service Worker takes control (controllerchange) → reload
  */
 export function useAutoAggiornamento() {
   const [aggiornamentoDisponibile, setAggiornamentoDisponibile] = useState(false);
@@ -34,7 +38,7 @@ export function useAutoAggiornamento() {
 
   const controllaVersione = useCallback(async () => {
     try {
-      // Fetch con cache-busting
+      // Fetch with cache-busting
       const risposta = await fetch(`/version.json?_=${Date.now()}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
@@ -49,31 +53,31 @@ export function useAutoAggiornamento() {
         setNuovaVersione(dati.versione);
         setAggiornamentoDisponibile(true);
 
-        // Auto-aggiornamento: ricarica da sola dopo qualche secondo (mostra prima
-        // il banner), tranne durante un allenamento in corso per non interromperlo.
+        // Auto-update: reload on its own after a few seconds (show the banner
+        // first), except during a workout in progress, so as not to interrupt it.
         if (!haForzatoRef.current && !inAllenamento()) {
           haForzatoRef.current = true;
           setTimeout(() => aggiornaApp(), 4000);
         }
       }
     } catch {
-      // Offline o errore rete — ignora
+      // Offline or network error — ignore
     }
   }, []);
 
-  // Forza aggiornamento: pulisci SW cache + reload
+  // Force the update: clear the SW cache + reload
   const forzaAggiornamento = useCallback(async () => {
     if (haForzatoRef.current) return;
     haForzatoRef.current = true;
     await aggiornaApp();
   }, []);
 
-  // Check periodico
+  // Periodic check
   useEffect(() => {
-    // Check iniziale dopo 10 secondi (lascia caricare l'app)
+    // First check after 10 seconds (let the app load)
     const timeoutIniziale = setTimeout(controllaVersione, 10_000);
 
-    // Check periodico
+    // Periodic check
     intervalloRef.current = setInterval(controllaVersione, INTERVALLO_CHECK);
 
     return () => {
@@ -82,13 +86,13 @@ export function useAutoAggiornamento() {
     };
   }, [controllaVersione]);
 
-  // Quando l'utente torna nell'app e c'è aggiornamento → forza reload
+  // When the user comes back to the app and there is an update → force reload
   useEffect(() => {
     if (!aggiornamentoDisponibile) return;
 
     const gestisciVisibilita = () => {
-      // Anche qui non durante un allenamento: si torna all'app sbloccando il
-      // telefono fra una serie e l'altra
+      // Not during a workout here either: people come back to the app by
+      // unlocking the phone between one set and the next
       if (document.visibilityState === 'visible' && !inAllenamento()) {
         forzaAggiornamento();
       }
@@ -98,12 +102,12 @@ export function useAutoAggiornamento() {
     return () => document.removeEventListener('visibilitychange', gestisciVisibilita);
   }, [aggiornamentoDisponibile, forzaAggiornamento]);
 
-  // Ascolta Service Worker: se rileva nuovo SW → aggiorna
+  // Listen to the Service Worker: if it detects a new SW → update
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
     const gestisciControllerChange = () => {
-      // Nuovo SW ha preso il controllo → reload per caricare nuovi file
+      // A new SW took control → reload to load the new files
       if (!haForzatoRef.current) {
         window.location.reload();
       }

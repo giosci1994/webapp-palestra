@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Profilo pubblico Personal Trainer
-// Valuta un PT (bio, stats, schede pubbliche) e iscriviti.
+// GymMaster — Personal Trainer public profile
+// Evaluate a personal trainer (bio, stats, public plans) and sign up.
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -13,7 +13,7 @@ export default function TrainerProfilo() {
   const { id } = useParams();
   const naviga = useNavigate();
   const [pt, setPt] = useState(null);
-  // Il PT dei dati caricati: aprendo un altro profilo si sta caricando
+  // The personal trainer the loaded data belongs to: opening another profile means it is loading
   const [caricatoPer, setCaricatoPer] = useState(null);
   const caricamento = caricatoPer !== id;
   const [mioPT, setMioPT] = useState(undefined);
@@ -86,7 +86,7 @@ export default function TrainerProfilo() {
         ))}
       </div>
 
-      {/* CTA iscrizione */}
+      {/* Sign-up CTA */}
       {giaIscritto ? (
         <div className="glass-card p-card-inner text-center text-sm text-[var(--successo)] font-bold">✅ Sei iscritto con questo Personal Trainer</div>
       ) : iscrittoAltrove ? (
@@ -95,7 +95,7 @@ export default function TrainerProfilo() {
         <button onClick={iscriviti} disabled={iscrivendo} className="btn-primario w-full disabled:opacity-50">{iscrivendo ? 'Invio richiesta...' : '＋ Iscriviti a questo PT'}</button>
       )}
 
-      {/* Dettagli professionali */}
+      {/* Professional details */}
       {(specs.length > 0 || pt.certificazioni || pt.tariffaIndicativa || pt.contattoPubblico) && (
         <div className="glass-card p-card-inner flex flex-col gap-4">
           {specs.length > 0 && (
@@ -131,7 +131,7 @@ export default function TrainerProfilo() {
         </div>
       )}
 
-      {/* Schede pubbliche */}
+      {/* Public plans */}
       <div className="glass-card overflow-hidden">
         <div className="p-card-inner border-b border-[var(--bordo-light)]">
           <h3 className="font-bold text-lg flex items-center gap-2"><ClipboardList size={20} className="text-[var(--accent)]" /> Schede pubbliche</h3>

@@ -1,21 +1,24 @@
 # ============================================
-# GymMaster — Conversione Excel → JSON
-# Converte il database "Functional Fitness Exercise Database v2.9"
-# in formato JSON compatibile con lo schema Prisma
+# GymMaster — Excel → JSON conversion
+# Converts the "Functional Fitness Exercise Database v2.9" spreadsheet into
+# the JSON files the seed and prisma/import-esercizi.js read.
+#
+# Usage: python converti_excel.py <path to the .xlsx file>
 # ============================================
 
 import openpyxl
 import json
 import os
+import sys
 
-# --- Configurazione ---
-EXCEL_PATH = r'C:\Users\giova\Downloads\Functional+Fitness+Exercise+Database+(version+2.9).xlsx'
+# --- Configuration ---
+EXCEL_PATH = sys.argv[1] if len(sys.argv) > 1 else 'Functional+Fitness+Exercise+Database+(version+2.9).xlsx'
 OUTPUT_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# Riga di inizio dati (0-indexed nell'array rows)
-DATA_START_ROW = 16  # riga 17 nel foglio (0-indexed: 16)
+# First data row (0-indexed in the rows array)
+DATA_START_ROW = 16  # row 17 in the sheet (0-indexed: 16)
 
-# --- Mapping colonne (0-indexed) ---
+# --- Column mapping (0-indexed) ---
 COL = {
     'nome': 1,
     'video_demo': 2,       # Hyperlink
@@ -37,7 +40,7 @@ COL = {
     'classification': 31,
 }
 
-# --- Mapping Gruppi Muscolari EN → IT ---
+# --- Muscle group mapping EN → IT ---
 MUSCLE_GROUP_MAP = {
     'Quadriceps': 'Quadricipiti',
     'Shoulders': 'Spalle',
@@ -57,7 +60,7 @@ MUSCLE_GROUP_MAP = {
     'Shins': 'Tibiali',
 }
 
-# --- Mapping Muscoli Specifici EN → IT ---
+# --- Specific muscle mapping EN → IT ---
 SPECIFIC_MUSCLE_MAP = {
     'Rectus Abdominis': 'Retto Addominale',
     'Obliques': 'Obliqui',
@@ -107,12 +110,12 @@ SPECIFIC_MUSCLE_MAP = {
     'Subscapularis': 'Sottoscapolare',
 }
 
-# --- Mapping Attrezzature EN → IT ---
+# --- Equipment mapping EN → IT ---
 EQUIPMENT_MAP = {
     'Barbell': 'Bilanciere Olimpico',
     'Dumbbell': 'Manubri (Set)',
     'Kettlebell': 'Kettlebell',
-    'Bodyweight': None,  # Nessuna attrezzatura
+    'Bodyweight': None,  # No equipment
     'Cable': 'Cavo Singolo Regolabile',
     'EZ Bar': 'Bilanciere EZ',
     'Pull Up Bar': 'Sbarra per Trazioni',
@@ -143,7 +146,7 @@ EQUIPMENT_MAP = {
     'Climbing Rope': 'Corda da Arrampicata',
 }
 
-# --- Mapping Difficulty EN → IT ---
+# --- Difficulty mapping EN → IT ---
 DIFFICULTY_MAP = {
     'Beginner': 'Principiante',
     'Novice': 'Novizio',
@@ -155,7 +158,7 @@ DIFFICULTY_MAP = {
     'Legendary': 'Leggendario',
 }
 
-# --- Mapping Body Region EN → IT ---
+# --- Body region mapping EN → IT ---
 BODY_REGION_MAP = {
     'Core': 'Core',
     'Upper Body': 'Parte Superiore',
@@ -163,7 +166,7 @@ BODY_REGION_MAP = {
     'Full Body': 'Tutto il Corpo',
 }
 
-# --- Mapping Mechanics EN → IT ---
+# --- Mechanics mapping EN → IT ---
 MECHANICS_MAP = {
     'Compound': 'Composto',
     'Isolation': 'Isolamento',
@@ -180,7 +183,7 @@ def get_cell_value(row, col_idx):
 
 def get_hyperlink_url(ws, row_idx, col_idx):
     """Estrae URL hyperlink da una cella (1-indexed per openpyxl)."""
-    cell = ws.cell(row=row_idx, column=col_idx + 1)  # openpyxl è 1-indexed
+    cell = ws.cell(row=row_idx, column=col_idx + 1)  # openpyxl is 1-indexed
     if cell.hyperlink and cell.hyperlink.target:
         return cell.hyperlink.target
     return None
@@ -198,7 +201,7 @@ def main():
     wb = openpyxl.load_workbook(EXCEL_PATH)
     ws = wb['Exercises']
     
-    # Leggi tutte le righe (per accesso indicizzato)
+    # Read all the rows (for indexed access)
     rows = list(ws.rows)
     total_rows = len(rows) - DATA_START_ROW
     print(f"📊 Righe dati trovate: {total_rows}")
@@ -214,11 +217,11 @@ def main():
             skipped += 1
             continue
         
-        # --- Gruppo muscolare primario ---
+        # --- Primary muscle group ---
         target_muscle_en = get_cell_value(row, COL['target_muscle'])
         gruppo_primario = MUSCLE_GROUP_MAP.get(target_muscle_en, target_muscle_en) if target_muscle_en else 'Altro'
         
-        # --- Muscoli secondario e terziario ---
+        # --- Secondary and tertiary muscles ---
         secondary_en = get_cell_value(row, COL['secondary_muscle'])
         tertiary_en = get_cell_value(row, COL['tertiary_muscle'])
         
@@ -230,22 +233,22 @@ def main():
         
         gruppo_secondario = ', '.join(filter(None, muscoli_secondari)) or None
         
-        # --- Attrezzatura ---
+        # --- Equipment ---
         equipment_en = get_cell_value(row, COL['equipment'])
         attrezzatura = EQUIPMENT_MAP.get(equipment_en, equipment_en) if equipment_en else None
         if attrezzatura:
             attrezzature_set.add(attrezzatura)
         
         # --- Video (hyperlink) ---
-        # row index in openpyxl è 1-indexed, quindi aggiungiamo 1
-        excel_row = i + 1  # i è 0-indexed dall'array, +1 per openpyxl
+        # row index in openpyxl is 1-indexed, so we add 1
+        excel_row = i + 1  # i is 0-indexed from the array, +1 for openpyxl
         video_demo = get_hyperlink_url(ws, excel_row, COL['video_demo'])
         video_expl = get_hyperlink_url(ws, excel_row, COL['video_expl'])
         link_video = video_demo or video_expl or None
         if link_video:
             video_count += 1
         
-        # --- Campi aggiuntivi ---
+        # --- Extra fields ---
         difficulty_en = get_cell_value(row, COL['difficulty'])
         difficulty = DIFFICULTY_MAP.get(difficulty_en, difficulty_en)
         
@@ -257,7 +260,7 @@ def main():
         
         posture = get_cell_value(row, COL['posture'])
         
-        # Movement patterns (concatena fino a 3)
+        # Movement patterns (joins up to 3)
         patterns = []
         for key in ['movement_pattern_1', 'movement_pattern_2', 'movement_pattern_3']:
             p = get_cell_value(row, COL[key])
@@ -269,7 +272,7 @@ def main():
         force_type = get_cell_value(row, COL['force_type'])
         classification = get_cell_value(row, COL['classification'])
         
-        # --- Costruisci oggetto esercizio ---
+        # --- Build the exercise object ---
         esercizio = {
             'nome': nome,
             'gruppoMuscoloPrimario': gruppo_primario,
@@ -293,14 +296,14 @@ def main():
     print(f"🎬 Con link video: {video_count}")
     print(f"🏋️  Attrezzature uniche: {len(attrezzature_set)}")
     
-    # --- Salva esercizi JSON ---
+    # --- Save exercises JSON ---
     esercizi_path = os.path.join(OUTPUT_DIR, 'esercizi.json')
     with open(esercizi_path, 'w', encoding='utf-8') as f:
         json.dump(esercizi, f, ensure_ascii=False, indent=2)
     print(f"\n💾 Salvato: {esercizi_path}")
     
-    # --- Genera attrezzature aggiuntive ---
-    # Categorizzazione automatica
+    # --- Generate extra equipment ---
+    # Automatic categorization
     CATEGORIA_MAP = {
         'Bilanciere Olimpico': 'PESI_LIBERI',
         'Manubri (Set)': 'PESI_LIBERI',
@@ -349,17 +352,17 @@ def main():
         json.dump(nuove_attrezzature, f, ensure_ascii=False, indent=2)
     print(f"💾 Salvato: {attr_path}")
     
-    # --- Statistiche finali ---
+    # --- Final statistics ---
     print("\n📊 === STATISTICHE ===")
     
-    # Gruppi muscolari
+    # Muscle groups
     from collections import Counter
     gruppi = Counter(e['gruppoMuscoloPrimario'] for e in esercizi)
     print("\nGruppi muscolari:")
     for g, c in gruppi.most_common():
         print(f"  {g}: {c}")
     
-    # Difficoltà
+    # Difficulty
     diff = Counter(e['difficulty'] for e in esercizi if e['difficulty'])
     print("\nDifficoltà:")
     for d, c in diff.most_common():

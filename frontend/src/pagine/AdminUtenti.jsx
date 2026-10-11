@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Admin Utenti
-// Gestione utenti: approva, banna, cambia ruolo
+// GymMaster — Admin Users
+// User management: approve, ban, change role
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -21,8 +21,8 @@ export default function AdminUtenti() {
   const [utenti, setUtenti] = useState([]);
   const [filtroStato, setFiltroStato] = useState('');
   const [filtroRuolo, setFiltroRuolo] = useState('');
-  // I filtri dell'elenco mostrato: cambiandoli torna lo spinner, mentre dopo
-  // un'azione su un utente l'elenco si aggiorna sul posto
+  // The filters of the list shown: changing them brings the spinner back, while
+  // after an action on a user the list updates in place
   const filtri = `${filtroStato}|${filtroRuolo}`;
   const [caricatoPer, setCaricatoPer] = useState(null);
   const caricamento = caricatoPer !== filtri;
@@ -84,7 +84,7 @@ export default function AdminUtenti() {
     <div className="py-2">
       <h1 className="text-2xl font-bold mb-6">👥 Gestione Utenti</h1>
 
-      {/* Alert utenti in attesa */}
+      {/* Alert for users waiting for approval */}
       {inAttesa.length > 0 && !filtroStato && (
         <div className="p-card-inner rounded-[var(--raggio-lg)] mb-4 flex items-center gap-3"
              style={{ background: 'var(--avviso-dim)', border: '1px solid var(--avviso)' }}>
@@ -101,7 +101,7 @@ export default function AdminUtenti() {
         </div>
       )}
 
-      {/* Alert richieste PT */}
+      {/* Alert for personal trainer requests */}
       {richiestePT.length > 0 && !filtroStato && (
         <div className="p-card-inner rounded-[var(--raggio-lg)] mb-4 flex items-center gap-3"
              style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgb(139, 92, 246)' }}>
@@ -117,7 +117,7 @@ export default function AdminUtenti() {
         </div>
       )}
 
-      {/* Filtri */}
+      {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">
         <select value={filtroStato} onChange={e => setFiltroStato(e.target.value)} className="campo-input w-auto text-sm">
           <option value="">Tutti gli stati</option>
@@ -136,7 +136,7 @@ export default function AdminUtenti() {
         </span>
       </div>
 
-      {/* Tabella utenti */}
+      {/* Users table */}
       {caricamento ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
@@ -180,7 +180,7 @@ export default function AdminUtenti() {
                 <span className="text-[10px] text-[var(--testo-terziario)]" title="Data registrazione">📅 {formattaData(u.dataRegistrazione)}</span>
               </div>
 
-              {/* Azioni */}
+              {/* Actions */}
               <div className="flex gap-2 shrink-0">
                 {u.stato === 'IN_ATTESA' && (
                   <button onClick={() => approvaUtente(u.id)}

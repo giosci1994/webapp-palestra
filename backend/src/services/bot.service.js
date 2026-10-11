@@ -1,9 +1,9 @@
 // ============================================
-// GymMaster — Service Bot Telegram
-// - Collegamento account (codice usa-e-getta)
-// - Assistente conversazionale (Gemini function-calling) per creare schede
-// - Matching esercizi italiano -> catalogo inglese (v1)
-// - Lettura schede dell'utente
+// GymMaster — Telegram bot service
+// - Account linking (one-time code)
+// - Conversational assistant (Gemini function calling) to create workout plans
+// - Exercise matching, Italian -> English catalog (v1)
+// - Reading the user's workout plans
 // ============================================
 
 import crypto from 'crypto';
@@ -13,7 +13,7 @@ import redis from '../config/redis.js';
 import { ErroreApp, ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 
-// --- Client Gemini (lazy) ---
+// --- Gemini client (lazy) ---
 let clientAI = null;
 function ottieniClientAI() {
   if (!clientAI) {
@@ -29,13 +29,13 @@ function ottieniClientAI() {
 const MODELLO = 'gemini-2.5-flash';
 
 // ============================================
-// COLLEGAMENTO ACCOUNT
+// ACCOUNT LINKING
 // ============================================
 
-/** Genera/aggiorna un codice usa-e-getta per collegare l'account dall'app. */
+/** Generates/refreshes a one-time code to link the account from the app. */
 export async function generaCodiceCollegamento(utenteId) {
-  const codice = crypto.randomBytes(4).toString('hex').toUpperCase(); // 8 caratteri
-  const codiceScadenza = new Date(Date.now() + 10 * 60 * 1000); // 10 minuti
+  const codice = crypto.randomBytes(4).toString('hex').toUpperCase(); // 8 characters
+  const codiceScadenza = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   await prisma.collegamentoTelegram.upsert({
     where: { utenteId },
@@ -49,19 +49,19 @@ export async function generaCodiceCollegamento(utenteId) {
   return { codice, deepLink, username, scadenza: codiceScadenza };
 }
 
-/** Stato collegamento per la UI. */
+/** Link status for the UI. */
 export async function statoCollegamento(utenteId) {
   const c = await prisma.collegamentoTelegram.findUnique({ where: { utenteId } });
   return { collegato: !!(c && c.telegramChatId), collegatoIl: c?.collegatoIl || null };
 }
 
-/** Scollega l'account dal bot. */
+/** Unlinks the account from the bot. */
 export async function scollegaTelegram(utenteId) {
   await prisma.collegamentoTelegram.deleteMany({ where: { utenteId } });
   return { successo: true };
 }
 
-/** Collega una chat Telegram a un account validando il codice. */
+/** Links a Telegram chat to an account after validating the code. */
 export async function collegaChat(chatId, codice) {
   if (!codice) throw new ErroreValidazione('Codice mancante');
   const codiceNorm = String(codice).trim().toUpperCase();
@@ -71,7 +71,7 @@ export async function collegaChat(chatId, codice) {
     throw new ErroreValidazione('Codice non valido o scaduto. Generane uno nuovo dall\'app.');
   }
 
-  // Libera eventuali altri account collegati a questo chatId
+  // Free any other accounts linked to this chatId
   await prisma.collegamentoTelegram.updateMany({
     where: { telegramChatId: BigInt(chatId), NOT: { id: collegamento.id } },
     data: { telegramChatId: null, collegatoIl: null }
@@ -87,7 +87,7 @@ export async function collegaChat(chatId, codice) {
 }
 
 // ============================================
-// MATCHING ESERCIZI (IT -> catalogo EN, v1)
+// EXERCISE MATCHING (IT -> EN catalog, v1)
 // ============================================
 
 const STOPWORDS = new Set([
@@ -99,13 +99,13 @@ const STOPWORDS = new Set([
 function tokenizza(testo) {
   return String(testo || '')
     .toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // rimuove accenti
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strips accents
     .replace(/[^a-z0-9\s]/g, ' ')
     .split(/\s+/)
     .filter((t) => t.length >= 3 && !STOPWORDS.has(t));
 }
 
-/** Cerca i migliori candidati nel catalogo (italiano e inglese) per una descrizione. */
+/** Finds the best catalog candidates (Italian and English) for a description. */
 export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   let tokens = tokenizza(descrizione);
   if (tokens.length === 0) {
@@ -114,7 +114,7 @@ export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
     tokens = [fallback];
   }
 
-  // Dal bot si scrive in italiano: la ricerca deve coprire entrambi i nomi
+  // People write to the bot in Italian: the search must cover both names
   const candidati = await prisma.esercizio.findMany({
     where: {
       OR: tokens.flatMap((t) => ([
@@ -130,8 +130,8 @@ export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   });
 
   const scored = candidati.map((e) => {
-    // Il punteggio considera entrambi i nomi: chi scrive in italiano al bot
-    // deve ottenere lo stesso risultato di chi scrive in inglese.
+    // The score looks at both names: someone writing to the bot in Italian
+    // must get the same result as someone writing in English.
     const testo = `${e.nome} ${e.nomeIt || ''}`.toLowerCase();
     const score = tokens.reduce((s, t) => s + (testo.includes(t) ? 1 : 0), 0);
     const mostrato = e.nomeIt || e.nome;
@@ -148,7 +148,7 @@ export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   return scored.slice(0, limite);
 }
 
-// Macchine cardio: parole chiave -> nome esercizio canonico (creato nel seed).
+// Cardio machines: keywords -> canonical exercise name (created in the seed).
 const MACCHINE_CARDIO = [
   { nome: 'Tapis Roulant', chiavi: ['tapis', 'roulant', 'tappeto', 'treadmill', 'corsa', 'camminata', 'corro', 'cammino', 'corri'] },
   { nome: 'Cyclette', chiavi: ['cyclette', 'ciclette', 'cyclet', 'bici', 'bike', 'spinning', 'pedala', 'pedalo'] },
@@ -158,7 +158,7 @@ const MACCHINE_CARDIO = [
   { nome: 'Air Bike', chiavi: ['air bike', 'airbike', 'assault', 'air-bike'] }
 ];
 
-/** Risolve la macchina cardio richiesta nell'esercizio corrispondente del catalogo. */
+/** Resolves the requested cardio machine to the matching catalog exercise. */
 async function risolviMacchinaCardio(macchina) {
   const m = String(macchina || '').toLowerCase().trim();
   if (!m) return null;
@@ -171,10 +171,10 @@ async function risolviMacchinaCardio(macchina) {
 }
 
 // ============================================
-// STATO CONVERSAZIONE (Redis)
+// CONVERSATION STATE (Redis)
 // ============================================
 
-const TTL_STATO = 6 * 60 * 60; // 6 ore
+const TTL_STATO = 6 * 60 * 60; // 6 hours
 const chiaveStato = (utenteId) => `bot:stato:${utenteId}`;
 
 function statoVuoto() {
@@ -199,9 +199,9 @@ async function salvaStato(utenteId, stato) {
   }
 }
 
-/** Annulla la bozza/conversazione corrente. */
+/** Cancels the current draft/conversation. */
 export async function annullaBozza(utenteId) {
-  try { await redis.del(chiaveStato(utenteId)); } catch { /* ignora */ }
+  try { await redis.del(chiaveStato(utenteId)); } catch { /* ignore */ }
   return { successo: true };
 }
 
@@ -215,12 +215,12 @@ async function verificaRateLimit(utenteId) {
     }
   } catch (e) {
     if (e instanceof ErroreApp) throw e;
-    // Redis non disponibile: non bloccare l'utente
+    // Redis unavailable: do not block the user
   }
 }
 
 // ============================================
-// MOTORE CONVERSAZIONALE (Gemini function-calling)
+// CONVERSATION ENGINE (Gemini function calling)
 // ============================================
 
 const SYSTEM_PROMPT = `Sei GymBot, l'assistente di GymMaster su Telegram. Aiuti l'utente a creare una SCHEDA DI ALLENAMENTO (un template riutilizzabile) parlando in linguaggio naturale mentre si allena.
@@ -400,7 +400,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
                   inclinazione: e.inclinazione ?? null,
                   livelloResistenza: e.livelloResistenza ?? null,
                   distanzaKm: e.distanzaKm ?? null,
-                  serieTarget: 1,        // mantiene funzionante l'esecuzione (WorkoutLive)
+                  serieTarget: 1,        // keeps the live workout working (WorkoutLive)
                   repTarget: null,
                   recuperoSecondi: 0
                 };
@@ -427,7 +427,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
   }
 }
 
-/** Elabora un messaggio dell'utente e restituisce la risposta del bot. */
+/** Processes a user message and returns the bot's answer. */
 export async function elaboraMessaggio(utente, testo) {
   if (!testo || !testo.trim()) throw new ErroreValidazione('Messaggio vuoto');
   if (testo.length > 1000) throw new ErroreValidazione('Messaggio troppo lungo (max 1000 caratteri)');
@@ -494,10 +494,10 @@ export async function elaboraMessaggio(utente, testo) {
 }
 
 // ============================================
-// LETTURA SCHEDE
+// READING WORKOUT PLANS
 // ============================================
 
-/** Schede dell'utente + schede globali, in forma compatta per il bot. */
+/** The user's workout plans + global plans, in a compact form for the bot. */
 export async function listaSchedeUtente(utenteId) {
   const schede = await prisma.schedaAllenamento.findMany({
     where: { OR: [{ creatoreId: utenteId, assegnataDaPTId: null }, { visibilita: 'GLOBALE' }] },
@@ -517,7 +517,7 @@ export async function listaSchedeUtente(utenteId) {
   }));
 }
 
-/** Dettaglio di una scheda formattato come testo (Markdown Telegram). */
+/** A workout plan's details formatted as text (Telegram Markdown). */
 export async function dettaglioSchedaTesto(utenteId, schedaId) {
   const scheda = await prisma.schedaAllenamento.findUnique({
     where: { id: parseInt(schedaId) },
@@ -552,7 +552,7 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
   return { id: scheda.id, titolo: scheda.titolo, testo, numEsercizi: scheda.esercizi.length };
 }
 
-/** Riepilogo statistiche dell'utente, pronto da inviare su Telegram (Markdown). */
+/** Summary of the user's stats, ready to send on Telegram (Markdown). */
 export async function statisticheTesto(utenteId) {
   const setteGiorniFa = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [totSessioni, sessioni7g, agg, record, ultima] = await Promise.all([
@@ -577,9 +577,9 @@ export async function statisticheTesto(utenteId) {
   return { testo: righe.join('\n') };
 }
 
-// ─── Creazione guidata a pulsanti (categorie italiane) ───
+// ─── Guided creation with buttons (Italian categories) ───
 
-/** Regioni del corpo disponibili nel catalogo (italiano). */
+/** Body regions available in the catalog (Italian). */
 export async function categorieEsercizi() {
   const r = await prisma.esercizio.findMany({
     where: { bodyRegion: { not: null } },
@@ -588,7 +588,7 @@ export async function categorieEsercizi() {
   return r.map(x => x.bodyRegion).filter(Boolean);
 }
 
-/** Gruppi muscolari di una regione del corpo. */
+/** Muscle groups of a body region. */
 export async function gruppiPerRegione(bodyRegion) {
   const r = await prisma.esercizio.findMany({
     where: { bodyRegion },
@@ -597,7 +597,7 @@ export async function gruppiPerRegione(bodyRegion) {
   return r.map(x => x.gruppoMuscoloPrimario).filter(Boolean);
 }
 
-/** ID degli esercizi più usati dall'utente, ordinati per frequenza. */
+/** IDs of the user's most used exercises, sorted by frequency. */
 async function eserciziPiuUsatiIds(utenteId) {
   const usati = await prisma.esercizioScheda.groupBy({
     by: ['esercizioId'],
@@ -609,7 +609,7 @@ async function eserciziPiuUsatiIds(utenteId) {
   return usati.map(u => u.esercizioId);
 }
 
-/** Esercizi di un gruppo muscolare, con i più usati dall'utente in cima (C4). */
+/** Exercises of a muscle group, with the user's most used at the top (C4). */
 export async function eserciziPerGruppo(utenteId, gruppo, limite = 12) {
   const [esercizi, usatiIds] = await Promise.all([
     prisma.esercizio.findMany({ where: { gruppoMuscoloPrimario: gruppo }, select: { id: true, nome: true } }),
@@ -620,7 +620,7 @@ export async function eserciziPerGruppo(utenteId, gruppo, limite = 12) {
   return esercizi.slice(0, limite);
 }
 
-/** I N esercizi più usati dall'utente (scorciatoia "più usati"). */
+/** The user's N most used exercises (the "più usati" (most used) shortcut). */
 export async function eserciziPiuUsati(utenteId, limite = 12) {
   const ids = await eserciziPiuUsatiIds(utenteId);
   if (!ids.length) return [];
@@ -630,7 +630,7 @@ export async function eserciziPiuUsati(utenteId, limite = 12) {
   return esercizi.sort((a, b) => ordine.get(a.id) - ordine.get(b.id));
 }
 
-/** Aggiunge un esercizio (per id) alla bozza, dalla creazione guidata. */
+/** Adds an exercise (by id) to the draft, from the guided creation. */
 export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie = 3, ripetizioni = '8-12') {
   const es = await prisma.esercizio.findUnique({ where: { id: parseInt(esercizioId) }, select: { id: true, nome: true } });
   if (!es) throw new ErroreNonTrovato('Esercizio non trovato');
@@ -643,7 +643,7 @@ export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie = 3,
   return { aggiunto: es.nome, totaleEsercizi: stato.bozza.esercizi.length };
 }
 
-/** Finalizza la bozza in una scheda (creazione guidata). */
+/** Turns the draft into a workout plan (guided creation). */
 export async function terminaSchedaGuidata(utenteId, titolo = null) {
   const stato = await caricaStato(utenteId);
   if (!stato.bozza.esercizi.length) throw new ErroreValidazione('La bozza è vuota: aggiungi almeno un esercizio.');

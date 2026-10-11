@@ -1,18 +1,18 @@
 // ============================================
-// GymMaster — Hook esercizi preferiti
+// GymMaster — Favorite exercises hook
 // ============================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../config/api.js';
 
 /**
- * Gli esercizi preferiti dell'utente (un Set di id) e la funzione per mettere
- * o togliere la stella. La stella cambia subito; se il server non risponde
- * torna com'era.
+ * The user's favorite exercises (a Set of ids) and the function to add or
+ * remove the star. The star changes right away; if the server does not answer
+ * it goes back to how it was.
  */
 export function usePreferiti() {
   const [preferiti, setPreferiti] = useState(() => new Set());
-  // Il valore aggiornato anche fra due tocchi ravvicinati, prima del render
+  // The up-to-date value, even between two quick taps, before the render
   const attuali = useRef(preferiti);
 
   const imposta = useCallback(insieme => {
@@ -24,7 +24,7 @@ export function usePreferiti() {
     let attivo = true;
     api.get('/esercizi/preferiti')
       .then(r => { if (attivo) imposta(new Set(r.dati || [])); })
-      .catch(() => { /* senza preferiti le pagine funzionano lo stesso */ });
+      .catch(() => { /* the pages work without favorites anyway */ });
     return () => { attivo = false; };
   }, [imposta]);
 

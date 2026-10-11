@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Ritaglio + compressione foto profilo
-// Modale: ritaglia (quadrato/touch) e riduce automaticamente la dimensione.
+// GymMaster — Profile photo crop + compression
+// Modal: crops (square/touch) and reduces the size automatically.
 // ============================================
 
 import { useState, useCallback } from 'react';
@@ -15,7 +15,7 @@ function caricaImmagine(src) {
   });
 }
 
-// Ritaglia la regione scelta e la ridisegna a `dimensione`px, esportando JPEG compresso (base64).
+// Crops the chosen region and redraws it at `dimensione`px, exporting a compressed JPEG (base64).
 async function ritagliaEComprimi(src, pixelCrop, dimensione = 400, qualita = 0.85) {
   const image = await caricaImmagine(src);
   const canvas = document.createElement('canvas');

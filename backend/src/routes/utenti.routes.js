@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Routes Utenti
+// GymMaster — User Routes
 // /api/v1/utenti/*
 // ============================================
 
@@ -10,28 +10,28 @@ import { autorizza } from '../middleware/autorizzazione.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 
-// Tutte le rotte richiedono autenticazione
+// Every route requires authentication
 router.use(verificaToken);
 
-// GET /api/v1/utenti/profilo — Profilo dell'utente corrente
+// GET /api/v1/utenti/profilo — Profile of the current user
 router.get('/profilo', profilo);
 
-// GET /api/v1/utenti/esportazione — Tutti i propri dati in un file JSON
+// GET /api/v1/utenti/esportazione — All your own data in a JSON file
 router.get('/esportazione', esportaDati);
 
-// PATCH /api/v1/utenti/profilo — Aggiorna profilo
+// PATCH /api/v1/utenti/profilo — Update the profile
 router.patch('/profilo', aggiornaProfilo);
 
-// POST /api/v1/utenti/cambia-password — Cambia password
+// POST /api/v1/utenti/cambia-password — Change the password
 router.post('/cambia-password', cambiaPassword);
 
-// GET /api/v1/utenti/info-app — Info tecniche dell'applicazione
+// GET /api/v1/utenti/info-app — Technical info about the application
 router.get('/info-app', infoApp);
 
-// GET /api/v1/utenti/cerca?q=nome — Cerca utenti per nome
+// GET /api/v1/utenti/cerca?q=nome — Search users by name
 router.get('/cerca', async (req, res, next) => {
   try {
     const { q } = req.query;
@@ -55,9 +55,9 @@ router.get('/cerca', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/utenti/account — Elimina definitivamente il proprio account
-// Richiede la password: e' irreversibile, e un token rubato o una sessione
-// lasciata aperta non devono poter cancellare l'account di qualcuno.
+// DELETE /api/v1/utenti/account — Permanently delete your own account
+// Requires the password: it cannot be undone, and a stolen token or a session
+// left open must not be able to delete someone's account.
 router.delete('/account', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -84,8 +84,8 @@ router.delete('/account', async (req, res, next) => {
       throw new ErroreNonAutorizzato('Password non corretta');
     }
 
-    // L'ultimo amministratore non puo' sparire: resterebbe un'installazione
-    // senza nessuno in grado di amministrarla.
+    // The last administrator cannot disappear: that would leave an
+    // installation with nobody able to administer it.
     if (utente.ruolo === 'SUPERADMIN') {
       const altri = await prisma.utente.count({ where: { ruolo: 'SUPERADMIN', id: { not: utente.id } } });
       if (altri === 0) {
@@ -95,9 +95,9 @@ router.delete('/account', async (req, res, next) => {
 
     const riepilogo = await eliminaAccount(utente.id);
 
-    // Senza rimuovere il cookie il browser continuerebbe a tentare di rinnovare
-    // la sessione di un utente che non esiste piu'. Stesso path con cui e' stato
-    // impostato (autenticazione.controller.js), altrimenti il browser lo tiene.
+    // Without removing the cookie the browser would keep trying to renew the
+    // session of a user who no longer exists. Same path it was set with
+    // (autenticazione.controller.js), otherwise the browser keeps it.
     res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', path: '/api/v1/auth' });
     res.json({ successo: true, messaggio: 'Account eliminato definitivamente', dati: riepilogo });
   } catch (errore) { next(errore); }
@@ -127,7 +127,7 @@ router.post('/reset-gamification', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// PATCH /api/v1/utenti/completa-profilo — Wizard onboarding
+// PATCH /api/v1/utenti/completa-profilo — Onboarding wizard
 router.patch('/completa-profilo', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -151,7 +151,7 @@ router.patch('/completa-profilo', async (req, res, next) => {
       ...(gamificationAttiva !== undefined && { gamificationAttiva }),
       ...(accettaToS && { accettazioneToS: new Date() }),
       ...(accettaPrivacy && { accettazionePrivacy: new Date() }),
-      // Profilo professionale (onboarding PT)
+      // Professional profile (personal trainer onboarding)
       ...(bio !== undefined && { bio }),
       ...(specializzazioni !== undefined && { specializzazioni: Array.isArray(specializzazioni) ? JSON.stringify(specializzazioni) : specializzazioni }),
       ...(anniEsperienza !== undefined && anniEsperienza !== '' && anniEsperienza !== null && { anniEsperienza: parseInt(anniEsperienza) || null }),
@@ -160,10 +160,10 @@ router.patch('/completa-profilo', async (req, res, next) => {
       ...(tariffaIndicativa !== undefined && { tariffaIndicativa }),
     };
 
-    // Gestione richiesta ruolo PT
+    // Handle the request for the personal trainer role
     if (tipoAccount === 'PERSONAL_TRAINER' && req.utente.ruolo === 'UTENTE') {
       datiAggiornamento.ruoloRichiesto = 'PERSONAL_TRAINER';
-      // Notifica admin via Socket.IO
+      // Notify the admins via Socket.IO
       const io = req.app.get('io');
       if (io) {
         io.emit('notifica:admin', {
@@ -194,10 +194,10 @@ router.patch('/completa-profilo', async (req, res, next) => {
 });
 
 // ============================
-// COLLEGAMENTO BOT TELEGRAM
+// TELEGRAM BOT LINKING
 // ============================
 
-// POST /api/v1/utenti/telegram/genera-codice — Genera codice/deep-link di collegamento
+// POST /api/v1/utenti/telegram/genera-codice — Generate the linking code/deep link
 router.post('/telegram/genera-codice', async (req, res, next) => {
   try {
     const { generaCodiceCollegamento } = await import('../services/bot.service.js');
@@ -206,7 +206,7 @@ router.post('/telegram/genera-codice', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/utenti/telegram/stato — Stato del collegamento
+// GET /api/v1/utenti/telegram/stato — Link status
 router.get('/telegram/stato', async (req, res, next) => {
   try {
     const { statoCollegamento } = await import('../services/bot.service.js');
@@ -215,7 +215,7 @@ router.get('/telegram/stato', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/utenti/telegram — Scollega il bot
+// DELETE /api/v1/utenti/telegram — Unlink the bot
 router.delete('/telegram', async (req, res, next) => {
   try {
     const { scollegaTelegram } = await import('../services/bot.service.js');
@@ -225,10 +225,10 @@ router.delete('/telegram', async (req, res, next) => {
 });
 
 // ============================
-// ISCRIZIONE PERSONAL TRAINER
+// PERSONAL TRAINER ENROLMENT
 // ============================
 
-// GET /api/v1/utenti/personal-trainers — Lista PT disponibili
+// GET /api/v1/utenti/personal-trainers — List of available personal trainers
 router.get('/personal-trainers', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -249,7 +249,7 @@ router.get('/personal-trainers', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/utenti/personal-trainers/:id — Profilo pubblico di un PT + sue schede globali
+// GET /api/v1/utenti/personal-trainers/:id — Public profile of a personal trainer + their global plans
 router.get('/personal-trainers/:id', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -288,7 +288,7 @@ router.get('/personal-trainers/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// POST /api/v1/utenti/richiedi-pt — L'utente richiede di diventare Personal Trainer
+// POST /api/v1/utenti/richiedi-pt — The user asks to become a personal trainer
 router.post('/richiedi-pt', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -313,10 +313,10 @@ router.post('/richiedi-pt', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// Lunghezza massima del messaggio che accompagna la richiesta a un PT
+// Maximum length of the message that comes with a request to a personal trainer
 const MESSAGGIO_PT_MAX = 500;
 
-// POST /api/v1/utenti/iscrizione-pt — Invia richiesta iscrizione a un PT
+// POST /api/v1/utenti/iscrizione-pt — Send an enrolment request to a personal trainer
 router.post('/iscrizione-pt', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -324,8 +324,8 @@ router.post('/iscrizione-pt', async (req, res, next) => {
     const { trainerId, messaggio } = req.body || {};
     const utenteId = req.utente.id;
 
-    // Dati della richiesta prima di tutto: un id che non e' un numero arrivava
-    // fino a Prisma e diventava un errore 500
+    // The request data first of all: an id that is not a number used to reach
+    // Prisma and turn into a 500 error
     const idTrainer = Number(trainerId);
     if (!Number.isInteger(idTrainer) || idTrainer <= 0) {
       throw new ErroreValidazione('Personal Trainer non valido');
@@ -338,7 +338,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
       throw new ErroreValidazione(`Il messaggio può avere al massimo ${MESSAGGIO_PT_MAX} caratteri`);
     }
 
-    // Verifica di non essere già iscritto a un PT
+    // Check that the user is not already enrolled with a personal trainer
     const iscrizioneEsistente = await prisma.iscrizionePT.findFirst({
       where: { utenteId, stato: { in: ['IN_ATTESA', 'ATTIVA'] } }
     });
@@ -352,7 +352,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
       });
     }
 
-    // Verifica che il trainer esista e sia PT
+    // Check that the trainer exists and is a personal trainer
     const trainer = await prisma.utente.findFirst({
       where: { id: idTrainer, ruolo: 'PERSONAL_TRAINER', stato: 'ATTIVO' }
     });
@@ -372,7 +372,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
       }
     });
 
-    // Notifica il PT
+    // Notify the personal trainer
     const io = req.app.get('io');
     if (io) {
       io.to(`utente:${idTrainer}`).emit('notifica:nuova', {
@@ -387,7 +387,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// DELETE /api/v1/utenti/iscrizione-pt — Annulla iscrizione / termina rapporto
+// DELETE /api/v1/utenti/iscrizione-pt — Cancel the enrolment / end the relationship
 router.delete('/iscrizione-pt', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -408,7 +408,7 @@ router.delete('/iscrizione-pt', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/utenti/mio-pt — Info sul PT attuale dell'utente
+// GET /api/v1/utenti/mio-pt — Info on the user's current personal trainer
 router.get('/mio-pt', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
@@ -431,7 +431,7 @@ router.get('/mio-pt', async (req, res, next) => {
       return res.json({ successo: true, dati: null });
     }
 
-    // Se iscrizione attiva, recupera anche i prossimi appuntamenti
+    // If the enrolment is active, also fetch the upcoming appointments
     let prossimiAppuntamenti = [];
     if (iscrizione.stato === 'ATTIVA') {
       prossimiAppuntamenti = await prisma.appuntamentoPT.findMany({
@@ -452,13 +452,13 @@ router.get('/mio-pt', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/utenti/mio-pt/dashboard — Dashboard completa per il tab "Allenamento con PT"
+// GET /api/v1/utenti/mio-pt/dashboard — Full dashboard for the "Allenamento con PT" tab (training with a personal trainer)
 router.get('/mio-pt/dashboard', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
     const utenteId = req.utente.id;
 
-    // Iscrizione attiva
+    // Active enrolment
     const iscrizione = await prisma.iscrizionePT.findFirst({
       where: { utenteId, stato: 'ATTIVA' },
       include: {
@@ -481,13 +481,13 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
     const trainerId = iscrizione.trainerId;
 
     const [annunci, schedeAssegnate, appuntamenti, appuntamentiCompletati] = await Promise.all([
-      // Ultimi annunci del PT
+      // Latest announcements from the personal trainer
       prisma.annuncioPT.findMany({
         where: { trainerId },
         orderBy: { creatoIl: 'desc' },
         take: 20
       }),
-      // Schede assegnate dal PT (con suffisso "da PT")
+      // Plans assigned by the personal trainer (with the "da PT" suffix)
       prisma.schedaAllenamento.findMany({
         where: {
           creatoreId: utenteId,
@@ -502,7 +502,7 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
         },
         orderBy: { creatoIl: 'desc' }
       }),
-      // Prossimi appuntamenti
+      // Upcoming appointments
       prisma.appuntamentoPT.findMany({
         where: {
           clienteId: utenteId,
@@ -511,13 +511,13 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
         orderBy: { dataOra: 'asc' },
         take: 10
       }),
-      // Appuntamenti completati (statistiche)
+      // Completed appointments (statistics)
       prisma.appuntamentoPT.count({
         where: { clienteId: utenteId, completato: true }
       })
     ]);
 
-    // Calcola giorni di iscrizione
+    // Work out the days enrolled
     const giorniIscritto = Math.floor((Date.now() - new Date(iscrizione.dataRichiesta).getTime()) / (1000 * 60 * 60 * 24));
 
     res.json({
@@ -539,9 +539,9 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// --- Rotte Solo SuperAdmin ---
+// --- SuperAdmin-only Routes ---
 
-// Impedisce a un admin di eseguire azioni distruttive sul proprio account (auto-ban/declassamento/eliminazione)
+// Stops an admin from running destructive actions on their own account (self-ban/demotion/deletion)
 const vietaSuSeStesso = (req, res, next) => {
   if (parseInt(req.params.id) === req.utente.id) {
     return res.status(400).json({ successo: false, messaggio: 'Non puoi eseguire questa azione sul tuo stesso account' });
@@ -549,19 +549,19 @@ const vietaSuSeStesso = (req, res, next) => {
   next();
 };
 
-// GET /api/v1/utenti — Lista tutti gli utenti
+// GET /api/v1/utenti — List every user
 router.get('/', autorizza('SUPERADMIN'), listaUtenti);
 
-// PATCH /api/v1/utenti/:id/approva — Approva un utente
+// PATCH /api/v1/utenti/:id/approva — Approve a user
 router.patch('/:id/approva', autorizza('SUPERADMIN'), approva);
 
-// PATCH /api/v1/utenti/:id/banna — Banna un utente
+// PATCH /api/v1/utenti/:id/banna — Ban a user
 router.patch('/:id/banna', autorizza('SUPERADMIN'), vietaSuSeStesso, banna);
 
-// PATCH /api/v1/utenti/:id/ruolo — Cambia ruolo
+// PATCH /api/v1/utenti/:id/ruolo — Change the role
 router.patch('/:id/ruolo', autorizza('SUPERADMIN'), vietaSuSeStesso, cambiaRuolo);
 
-// DELETE /api/v1/utenti/:id — Elimina utente
+// DELETE /api/v1/utenti/:id — Delete a user
 router.delete('/:id', autorizza('SUPERADMIN'), vietaSuSeStesso, elimina);
 
 export default router;

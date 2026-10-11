@@ -1,16 +1,16 @@
 // ============================================
-// GymMaster — Notifiche push: funzioni del browser
+// GymMaster — Push notifications: browser functions
 // ============================================
 
-/** La chiave VAPID del server (base64url) nel formato di pushManager.subscribe */
+/** The server's VAPID key (base64url) in the format pushManager.subscribe wants */
 export function chiaveInByte(base64url) {
   const base64 = (base64url + '='.repeat((4 - (base64url.length % 4)) % 4)).replace(/-/g, '+').replace(/_/g, '/');
   return Uint8Array.from(atob(base64), carattere => carattere.charCodeAt(0));
 }
 
 /**
- * Le push funzionano in questo browser? Su iPhone e iPad solo con l'app
- * aggiunta alla schermata Home (iOS 16.4 e successivi).
+ * Do push notifications work in this browser? On iPhone and iPad only with the
+ * app added to the Home Screen (iOS 16.4 and later).
  * @returns {{ supportate: boolean, motivo?: 'iphone-da-installare' | 'browser' }}
  */
 export function supportoPush(ambiente = globalThis) {
@@ -22,9 +22,9 @@ export function supportoPush(ambiente = globalThis) {
 }
 
 /**
- * L'iscrizione push di questo browser, o null. Senza service worker attivo
- * (sviluppo, primo caricamento) navigator.serviceWorker.ready non arriva mai:
- * dopo `attesaMs` si rinuncia.
+ * This browser's push subscription, or null. Without an active service worker
+ * (development, first load) navigator.serviceWorker.ready never resolves:
+ * after `attesaMs` we give up.
  */
 export async function iscrizioneAttuale(attesaMs = 4000) {
   if (!supportoPush().supportate) return null;
@@ -36,9 +36,9 @@ export async function iscrizioneAttuale(attesaMs = 4000) {
 }
 
 /**
- * Al logout: questo dispositivo smette di ricevere le push dell'utente che
- * esce (chi entra dopo le riattiva, se vuole). Va chiamata prima di uscire,
- * finche' la sessione vale ancora.
+ * On logout: this device stops receiving the push notifications of the user
+ * logging out (whoever logs in next turns them back on, if they want). It must
+ * be called before logging out, while the login session is still valid.
  */
 export async function disiscriviDispositivo(api) {
   const attuale = await iscrizioneAttuale(1000);
@@ -48,7 +48,7 @@ export async function disiscriviDispositivo(api) {
   await iscrizione.unsubscribe().catch(() => {});
 }
 
-/** La promessa, o un errore con `messaggio` se non arriva entro `ms` */
+/** The promise, or an error with `messaggio` if it does not settle within `ms` */
 export function entro(promessa, ms, messaggio) {
   let timer;
   const scaduta = new Promise((_, rifiuta) => { timer = setTimeout(() => rifiuta(new Error(messaggio)), ms); });

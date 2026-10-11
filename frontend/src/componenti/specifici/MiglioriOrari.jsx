@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Migliori orari per allenarsi
-// Ricava dalle rilevazioni di affluenza quando la palestra è più libera
+// GymMaster — Best times to train
+// Works out from the crowd level readings when the gym is least busy
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -10,7 +10,7 @@ import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 
 const GIORNI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
 
-/** Indice giorno con lunedì = 0, coerente col resto dell'app. */
+/** Day index with Monday = 0, consistent with the rest of the app. */
 function oggiIndice() {
   return (new Date().getDay() + 6) % 7;
 }
@@ -23,7 +23,7 @@ function colorePerLivello(livello) {
 
 export default function MiglioriOrari({ palestraId }) {
   const [dati, setDati] = useState(null);
-  // La palestra dei dati caricati: finche' non e' quella attuale, si sta caricando
+  // The gym of the loaded data: until it is the current one, it is still loading
   const [caricatoPer, setCaricatoPer] = useState(null);
   const caricamento = Boolean(palestraId) && caricatoPer !== palestraId;
 
@@ -37,8 +37,8 @@ export default function MiglioriOrari({ palestraId }) {
     return () => { annullato = true; };
   }, [palestraId]);
 
-  // Senza dati la card non viene mostrata affatto: meglio niente che un
-  // riquadro vuoto che suggerisce un guasto.
+  // Without data the card is not shown at all: better nothing than an
+  // empty box that suggests something is broken.
   if (caricamento || !dati?.disponibile) return null;
 
   const oggi = oggiIndice();

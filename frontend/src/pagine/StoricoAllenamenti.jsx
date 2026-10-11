@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Storico Allenamenti
-// Visualizzazione dettagliata degli allenamenti passati
+// GymMaster — Workout History
+// Detailed view of past workouts
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,10 +14,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
 
-/** Finito da poco: si puo' ancora riprendere (PATCH /sessioni/:id/riapri). */
+/** Finished recently: it can still be resumed (PATCH /sessioni/:id/riapri). */
 const riprendibile = (sessione) => sessione.dataFine && Date.now() - new Date(sessione.dataFine).getTime() <= RIAPERTURA_MAX_MINUTI * 60000;
 
-/** Durata da allenamento rimasto aperto per sbaglio: falsa le statistiche, va corretta. */
+/** Duration of a workout left open by mistake: it skews the statistics and needs fixing. */
 const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MINUTI;
 
 export default function StoricoAllenamenti() {
@@ -40,8 +40,8 @@ export default function StoricoAllenamenti() {
     setTimeout(() => setConferma(''), 6000);
   };
 
-  // Gli esercizi fatti quel giorno, con serie e ripetizioni, diventano una
-  // nuova scheda personale: si apre subito, per rinominarla o ritoccarla
+  // The exercises done that day, with sets and reps, become a new personal
+  // plan: it opens right away, to rename it or touch it up
   const salvaComeScheda = async (sessione) => {
     try {
       setSalvandoScheda(true);
@@ -54,8 +54,8 @@ export default function StoricoAllenamenti() {
     }
   };
 
-  // Chiuso per sbaglio da poco: torna in corso e si riapre la schermata
-  // dell'allenamento, che ricostruisce dal server il punto in cui eri
+  // Closed by mistake a moment ago: it goes back to in progress and the workout
+  // screen reopens, rebuilding from the server the point where you were
   const riprendiAllenamento = async (sessione) => {
     try {
       setRiprendendo(true);
@@ -68,15 +68,15 @@ export default function StoricoAllenamenti() {
     }
   };
 
-  // Carica le schede disponibili per il filtro
+  // Load the plans available for the filter
   useEffect(() => {
     api.get('/schede')
       .then(r => setSchedeDisponibili(r.dati || []))
       .catch(() => {});
   }, []);
 
-  // La pagina mostrata: cambiando pagina o filtro torna lo spinner, mentre
-  // dopo una modifica l'elenco si aggiorna sul posto
+  // The page shown: changing page or filter brings the spinner back, while
+  // after an edit the list updates in place
   const query = `?pagina=${pagina}&limite=15${schedaFiltro ? `&schedaId=${schedaFiltro}` : ''}`;
   const [caricatoPer, setCaricatoPer] = useState(null);
   const caricamento = caricatoPer !== query;
@@ -98,7 +98,7 @@ export default function StoricoAllenamenti() {
       await api.delete(`/sessioni/${id}`);
       setSessioni(prev => prev.filter(s => s.id !== id));
       setSessioneAperta(null);
-      // Ricarica per aggiornare la paginazione
+      // Reload to update the pagination
       caricaStorico();
     } catch (err) {
       alert(err.message);
@@ -138,7 +138,7 @@ export default function StoricoAllenamenti() {
         </div>
       )}
 
-      {/* Filtro per scheda — dropdown compatto */}
+      {/* Filter by plan — compact dropdown */}
       <div className="mb-4">
         <select
           value={schedaFiltro}
@@ -157,7 +157,7 @@ export default function StoricoAllenamenti() {
         </select>
       </div>
 
-      {/* Lista sessioni */}
+      {/* Workout list */}
       {caricamento ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
@@ -204,7 +204,7 @@ export default function StoricoAllenamenti() {
                   </button>
                 </div>
 
-                {/* KPI riga */}
+                {/* KPI row */}
                 <div className="grid grid-cols-3 gap-2">
                   <div
                     className="flex items-center gap-2 p-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)]"
@@ -234,7 +234,7 @@ export default function StoricoAllenamenti() {
                   </div>
                 </div>
 
-                {/* Anteprima esercizi */}
+                {/* Exercise preview */}
                 <div className="flex flex-wrap gap-1 mt-3">
                   {sessione.esercizi.slice(0, 4).map((es, idx) => (
                     <span key={idx} className="text-xs px-2 py-0.5 rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">
@@ -248,7 +248,7 @@ export default function StoricoAllenamenti() {
                   )}
                 </div>
 
-                {/* Freccia dettaglio */}
+                {/* Detail arrow */}
                 <div className="text-right mt-2">
                   <span className="text-xs font-semibold text-[var(--accent)] group-hover:text-[var(--accent-hover)]">
                     Vedi dettagli →
@@ -258,7 +258,7 @@ export default function StoricoAllenamenti() {
             ))}
           </AnimatePresence>
 
-          {/* Paginazione */}
+          {/* Pagination */}
           {paginazione && paginazione.pagine > 1 && (
             <div className="flex items-center justify-center gap-2 mt-4">
               <button
@@ -283,7 +283,7 @@ export default function StoricoAllenamenti() {
         </div>
       )}
 
-      {/* Drawer Dettaglio Sessione (lascia il posto all'editor durante la modifica) */}
+      {/* Workout Detail Drawer (makes way for the editor while editing) */}
       <AnimatePresence>
         {sessioneAperta && !inModifica && (
           <motion.div
@@ -300,7 +300,7 @@ export default function StoricoAllenamenti() {
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
               className="glass-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] flex flex-col overflow-hidden"
             >
-              {/* Header drawer */}
+              {/* Drawer header */}
               <div className="px-card-inner py-5 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
                 <div className="min-w-0">
                   <h3 className="font-bold text-lg truncate">{sessioneAperta.scheda.titolo}</h3>
@@ -325,9 +325,9 @@ export default function StoricoAllenamenti() {
                 </div>
               </div>
 
-              {/* Contenuto drawer con scroll */}
+              {/* Drawer content with scroll */}
               <div className="px-card-inner py-5 overflow-y-auto flex flex-col gap-4">
-                {/* KPI sessione */}
+                {/* Workout KPIs */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-center">
                     {durataSospetta(sessioneAperta) ? (
@@ -347,7 +347,7 @@ export default function StoricoAllenamenti() {
                   </div>
                 </div>
 
-                {/* Allenamento rimasto aperto: la correzione e' a un tocco */}
+                {/* Workout left open: the fix is one tap away */}
                 {durataSospetta(sessioneAperta) && (
                   <div className="flex items-center gap-3 p-3 rounded-[var(--raggio-md)] border border-[var(--avviso)]/40 bg-[var(--avviso-dim)]">
                     <span className="text-lg">⚠️</span>
@@ -367,7 +367,7 @@ export default function StoricoAllenamenti() {
                   </div>
                 )}
 
-                {/* Note finali */}
+                {/* Final notes */}
                 {sessioneAperta.noteFinali && (
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] border-l-3 border-[var(--accent)]">
                     <p className="text-xs text-[var(--testo-terziario)] mb-1">📝 Note</p>
@@ -375,7 +375,7 @@ export default function StoricoAllenamenti() {
                   </div>
                 )}
 
-                {/* Lista esercizi con dettaglio serie */}
+                {/* Exercise list with set details */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-semibold text-[var(--testo-terziario)] uppercase tracking-wider">
                     Dettaglio Esercizi
@@ -393,7 +393,7 @@ export default function StoricoAllenamenti() {
                         transition={{ delay: idx * 0.05 }}
                         className="rounded-[var(--raggio-md)] border border-[var(--bordo)] overflow-hidden"
                       >
-                        {/* Header esercizio */}
+                        {/* Exercise header */}
                         <div className="flex items-center gap-3 px-4 py-3 bg-[var(--bg-terziario)]">
                           <div
                             className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
@@ -412,9 +412,9 @@ export default function StoricoAllenamenti() {
                           </div>
                         </div>
 
-                        {/* Tabella serie */}
+                        {/* Sets table */}
                         <div className="px-4 pb-3 pt-2">
-                          {/* Header tabella */}
+                          {/* Table header */}
                           <div className={`grid ${isCardio ? 'grid-cols-3' : 'grid-cols-4'} gap-1 mb-1`}>
                             <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">Serie</span>
                             {isCardio ? (
@@ -431,7 +431,7 @@ export default function StoricoAllenamenti() {
                             )}
                           </div>
 
-                          {/* Righe serie */}
+                          {/* Set rows */}
                           {es.serie.map((serie, sIdx) => (
                             <div
                               key={sIdx}
@@ -473,7 +473,7 @@ export default function StoricoAllenamenti() {
                   })}
                 </div>
 
-                {/* Riprendi: solo appena finito */}
+                {/* Resume: only right after finishing */}
                 {riprendibile(sessioneAperta) && (
                   <button
                     onClick={() => riprendiAllenamento(sessioneAperta)}
@@ -484,7 +484,7 @@ export default function StoricoAllenamenti() {
                   </button>
                 )}
 
-                {/* Salva come scheda */}
+                {/* Save as plan */}
                 {sessioneAperta.serieCompletate > 0 && (
                   <div className="mt-2">
                     <button
@@ -500,7 +500,7 @@ export default function StoricoAllenamenti() {
                   </div>
                 )}
 
-                {/* Bottone elimina sessione */}
+                {/* Delete workout button */}
                 <button
                   onClick={() => eliminaSessione(sessioneAperta.id)}
                   disabled={eliminando === sessioneAperta.id}
@@ -520,11 +520,11 @@ export default function StoricoAllenamenti() {
             sessione={sessioneAperta}
             onChiudi={() => setInModifica(false)}
             onSalvato={(aggiornata) => {
-              // Si torna al dettaglio, gia' con i valori corretti
+              // Back to the detail, already with the corrected values
               setSessioneAperta(aggiornata);
               setInModifica(false);
               mostraConferma('Allenamento aggiornato: statistiche e record ora tengono conto delle correzioni.');
-              // Ricarica: se la data e' cambiata, cambia anche il posto nell'elenco
+              // Reload: if the date changed, the place in the list changes too
               caricaStorico();
             }}
           />

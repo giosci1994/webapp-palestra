@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Dashboard Personal Trainer
-// Panoramica, Clienti, Calendario, Esercizi & Schede
+// GymMaster — Personal Trainer Dashboard
+// Overview, Clients, Calendar, Exercises & Plans
 // ============================================
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -40,25 +40,25 @@ export default function DashboardPT() {
   const [mostraNuovoApp, setMostraNuovoApp] = useState(false);
   const [formApp, setFormApp] = useState({ clienteId: '', titolo: '', descrizione: '', dataOra: '', durataMinuti: 60 });
 
-  // Annunci state
+  // Announcements state
   const [formAnnuncio, setFormAnnuncio] = useState({ titolo: '', contenuto: '', priorita: 'normale', destinatarioId: '' });
   const [mostraFormAnnuncio, setMostraFormAnnuncio] = useState(false);
 
-  // Calendario state
+  // Calendar state
   const [meseCalendario, setMeseCalendario] = useState(new Date());
   const [giornoSelezionato, setGiornoSelezionato] = useState(null);
 
-  // Schede state
+  // Plans state
   const [subTabSchede, setSubTabSchede] = useState('mie');
   const [formScheda, setFormScheda] = useState({ titolo: '', descrizione: '', livello: 'BASE', esercizi: [] });
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
   const [ricercaEsercizio, setRicercaEsercizio] = useState('');
-  // Ricerca tollerante (utils/ricerca.js): l'indice si prepara una volta
+  // Typo-tolerant search (utils/ricerca.js): the index is built once
   const indiceEsercizi = useMemo(() => indicizzaEsercizi(catalogoEsercizi), [catalogoEsercizi]);
   const risultatiEsercizi = useMemo(() => cerca(indiceEsercizi, ricercaEsercizio), [indiceEsercizi, ricercaEsercizio]);
   const [creandoScheda, setCreandoScheda] = useState(false);
 
-  // Al primo caricamento con lo spinner; accettato un cliente, i dati si aggiornano sul posto
+  // On first load with the spinner; once a client is accepted, the data updates in place
   const caricaDati = useCallback(() => Promise.all([
     api.get('/pt/dashboard'),
     api.get('/pt/clienti'),
@@ -132,7 +132,7 @@ export default function DashboardPT() {
     } catch (err) { alert(err.message); }
   };
 
-  // --- Annunci ---
+  // --- Announcements ---
   const creaAnnuncio = async () => {
     try {
       const payload = { ...formAnnuncio };
@@ -150,7 +150,7 @@ export default function DashboardPT() {
     catch (err) { alert(err.message); }
   };
 
-  // --- Schede ---
+  // --- Plans ---
   const caricaCatalogo = async () => {
     if (catalogoEsercizi.length > 0) return;
     try { const r = await api.get('/esercizi?limite=500'); setCatalogoEsercizi(r.dati || []); }
@@ -178,7 +178,7 @@ export default function DashboardPT() {
     setFormScheda(prev => ({ ...prev, esercizi: prev.esercizi.filter((_, i) => i !== idx) }));
   };
 
-  // --- Calendario helpers ---
+  // --- Calendar helpers ---
   const giorniMeseCalendario = () => {
     const anno = meseCalendario.getFullYear(), mese = meseCalendario.getMonth();
     const primo = new Date(anno, mese, 1).getDay();
@@ -217,10 +217,10 @@ export default function DashboardPT() {
         ))}
       </div>
 
-      {/* ======= TAB PANORAMICA ======= */}
+      {/* ======= OVERVIEW TAB ======= */}
       {tab === 'panoramica' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
-          {/* Azioni rapide */}
+          {/* Quick actions */}
           <div className="glass-card p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-3">Azioni rapide</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -285,7 +285,7 @@ export default function DashboardPT() {
             </div>
           )}
 
-          {/* I tuoi clienti */}
+          {/* Your clients */}
           <div className="glass-card p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-lg">👥 I tuoi clienti</h3>
@@ -316,7 +316,7 @@ export default function DashboardPT() {
             )}
           </div>
 
-          {/* Prossimi appuntamenti */}
+          {/* Upcoming appointments */}
           <div className="glass-card p-5">
             <h3 className="font-bold text-lg mb-3">📅 Prossimi Appuntamenti</h3>
             {appuntamenti.filter(a => !a.completato && new Date(a.dataOra) >= new Date()).length === 0 ? (
@@ -339,7 +339,7 @@ export default function DashboardPT() {
             )}
           </div>
 
-          {/* Bacheca Annunci */}
+          {/* Announcements board */}
           <div className="glass-card p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-lg">📢 Bacheca Annunci</h3>
@@ -390,7 +390,7 @@ export default function DashboardPT() {
         </motion.div>
       )}
 
-      {/* ======= TAB CLIENTI ======= */}
+      {/* ======= CLIENTS TAB ======= */}
       {tab === 'clienti' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-3">
           {clienti.length === 0 ? (
@@ -412,7 +412,7 @@ export default function DashboardPT() {
         </motion.div>
       )}
 
-      {/* ======= TAB CALENDARIO ======= */}
+      {/* ======= CALENDAR TAB ======= */}
       {tab === 'calendario' && (() => {
         const { offset, totGiorni, anno, mese } = giorniMeseCalendario();
         const oggi = new Date();
@@ -421,7 +421,7 @@ export default function DashboardPT() {
 
         return (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
-            {/* Header calendario */}
+            {/* Calendar header */}
             <div className="flex items-center justify-between">
               <button onClick={() => cambiaMese(-1)} className="w-9 h-9 rounded-full bg-[var(--bg-terziario)] flex items-center justify-center hover:bg-[var(--bordo)] transition-colors">←</button>
               <h3 className="font-bold text-lg capitalize">
@@ -430,7 +430,7 @@ export default function DashboardPT() {
               <button onClick={() => cambiaMese(1)} className="w-9 h-9 rounded-full bg-[var(--bg-terziario)] flex items-center justify-center hover:bg-[var(--bordo)] transition-colors">→</button>
             </div>
 
-            {/* Griglia calendario */}
+            {/* Calendar grid */}
             <div className="glass-card p-4 overflow-hidden">
               <div className="grid grid-cols-7 gap-1 mb-2">
                 {['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'].map(d => (
@@ -466,7 +466,7 @@ export default function DashboardPT() {
               </div>
             </div>
 
-            {/* Dettaglio giorno selezionato */}
+            {/* Detail of the selected day */}
             {giornoSelezionato && (
               <div className="glass-card p-5">
                 <div className="flex items-center justify-between mb-3">
@@ -498,7 +498,7 @@ export default function DashboardPT() {
               </div>
             )}
 
-            {/* Lista completa (sotto il calendario) */}
+            {/* Full list (below the calendar) */}
             <div className="glass-card p-5">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-bold text-lg">Tutti gli Appuntamenti</h3>
@@ -530,7 +530,7 @@ export default function DashboardPT() {
         );
       })()}
 
-      {/* ======= TAB ESERCIZI & SCHEDE ======= */}
+      {/* ======= EXERCISES & PLANS TAB ======= */}
       {tab === 'esercizi' && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col gap-4">
           {/* Sub-tabs */}
@@ -547,7 +547,7 @@ export default function DashboardPT() {
             ))}
           </div>
 
-          {/* Sub-tab: Le mie schede */}
+          {/* Sub-tab: My plans */}
           {subTabSchede === 'mie' && (
             <>
               {schede.filter(s => s.creatoreId === utente?.id).length === 0 ? (
@@ -580,7 +580,7 @@ export default function DashboardPT() {
             </>
           )}
 
-          {/* Sub-tab: Crea scheda */}
+          {/* Sub-tab: Create plan */}
           {subTabSchede === 'crea' && (
             <div className="glass-card p-5">
               <h3 className="font-bold text-lg mb-4">Crea Nuova Scheda</h3>
@@ -593,7 +593,7 @@ export default function DashboardPT() {
                   <option value="AVANZATO">Avanzato</option>
                 </select>
 
-                {/* Ricerca esercizi */}
+                {/* Exercise search */}
                 <div className="border-t border-[var(--bordo)] pt-3">
                   <label className="text-xs font-bold text-[var(--testo-terziario)] mb-2 block">Aggiungi Esercizi dal Catalogo</label>
                   <div className="relative">
@@ -615,7 +615,7 @@ export default function DashboardPT() {
                   </div>
                 </div>
 
-                {/* Lista esercizi aggiunti */}
+                {/* List of added exercises */}
                 {formScheda.esercizi.length > 0 && (
                   <div className="flex flex-col gap-2">
                     {formScheda.esercizi.map((es, idx) => (
@@ -644,7 +644,7 @@ export default function DashboardPT() {
             </div>
           )}
 
-          {/* Sub-tab: Catalogo (schede globali) */}
+          {/* Sub-tab: Catalog (global plans) */}
           {subTabSchede === 'catalogo' && (
             <>
               {schede.filter(s => s.visibilita === 'GLOBALE').length === 0 ? (
@@ -684,7 +684,7 @@ export default function DashboardPT() {
         </motion.div>
       )}
 
-      {/* ======= MODALE DETTAGLIO CLIENTE ======= */}
+      {/* ======= CLIENT DETAIL MODAL ======= */}
       <AnimatePresence>
         {clienteDettaglio && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -692,7 +692,7 @@ export default function DashboardPT() {
             onClick={e => e.target === e.currentTarget && setClienteDettaglio(null)}>
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95 }}
               className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-              {/* Header cliente */}
+              {/* Client header */}
               <div className="flex items-center gap-4 mb-5">
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 overflow-hidden" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
                   {clienteDettaglio.cliente?.immagineProfilo ? <img src={clienteDettaglio.cliente.immagineProfilo} className="w-full h-full object-cover" /> : clienteDettaglio.cliente?.nome?.charAt(0)?.toUpperCase()}
@@ -722,13 +722,13 @@ export default function DashboardPT() {
                 </div>
               )}
 
-              {/* Composizione corporea del cliente (il PT può aggiungere misurazioni) */}
+              {/* The client's body composition (the personal trainer can add measurements) */}
               <div className="mb-5">
                 <h4 className="text-sm font-bold mb-2 flex items-center gap-2">📊 Composizione corporea</h4>
                 <ComposizioneCorporea clienteId={clienteDettaglio.cliente?.id} altezzaCm={clienteDettaglio.cliente?.altezzaCm} />
               </div>
 
-              {/* Grafico Volume */}
+              {/* Volume chart */}
               {clienteDettaglio.statistiche?.sessioni?.length > 0 && (
                 <div className="mb-5 p-4 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
                   <h4 className="text-xs font-bold text-[var(--testo-terziario)] mb-3">📈 Volume nel tempo (kg)</h4>
@@ -744,7 +744,7 @@ export default function DashboardPT() {
                 </div>
               )}
 
-              {/* Gruppi muscolari */}
+              {/* Muscle groups */}
               {clienteDettaglio.statistiche?.gruppiMuscolari?.length > 0 && (
                 <div className="mb-5 p-4 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
                   <h4 className="text-xs font-bold text-[var(--testo-terziario)] mb-3">🎯 Gruppi muscolari</h4>
@@ -765,7 +765,7 @@ export default function DashboardPT() {
                 </div>
               )}
 
-              {/* Schede assegnate dal PT */}
+              {/* Plans assigned by the personal trainer */}
               <div className="mb-5">
                 <h4 className="text-sm font-semibold mb-2">📋 Schede Assegnate</h4>
                 {(!clienteDettaglio.schedeAssegnate || clienteDettaglio.schedeAssegnate.length === 0) ? (
@@ -786,7 +786,7 @@ export default function DashboardPT() {
                 )}
               </div>
 
-              {/* Record personali */}
+              {/* Personal records */}
               {clienteDettaglio.record?.length > 0 && (
                 <div className="mb-5">
                   <h4 className="text-sm font-semibold mb-2">🏆 Top Record</h4>
@@ -801,7 +801,7 @@ export default function DashboardPT() {
                 </div>
               )}
 
-              {/* Ultime sessioni */}
+              {/* Latest workouts */}
               {clienteDettaglio.ultime5Sessioni?.length > 0 && (
                 <div className="mb-5">
                   <h4 className="text-sm font-semibold mb-2">🗓️ Ultime Sessioni</h4>
@@ -825,7 +825,7 @@ export default function DashboardPT() {
         )}
       </AnimatePresence>
 
-      {/* ======= MODALE NUOVO APPUNTAMENTO ======= */}
+      {/* ======= NEW APPOINTMENT MODAL ======= */}
       <AnimatePresence>
         {mostraNuovoApp && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

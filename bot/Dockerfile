@@ -1,20 +1,20 @@
 # ============================================
-# GymMaster Bot Telegram — Dockerfile
-# Context: root del progetto (docker-compose)
+# GymMaster Telegram Bot — Dockerfile
+# Context: project root (docker-compose)
 # ============================================
 
 FROM node:22-slim
 
 WORKDIR /app
 
-# Dipendenze
+# Dependencies
 COPY bot/package*.json ./
 RUN npm install --omit=dev
 
-# Codice del bot
+# Bot code
 COPY bot/ .
 
-# Utente non-root per sicurezza
+# Non-root user for security
 USER node
 
 CMD ["node", "bot.js"]

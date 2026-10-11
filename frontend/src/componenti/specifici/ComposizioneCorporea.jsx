@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Composizione corporea (con storico)
-// Riutilizzabile: modalità proprietario o PT-per-cliente.
+// GymMaster — Body composition (with history)
+// Reusable: owner mode or personal-trainer-for-client mode.
 // ============================================
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Plus, Trash2, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
 
-// Campi misurazione: il primo (peso) è base, gli altri sono "info avanzate"
+// Measurement fields: the first (weight) is basic, the others are "info avanzate" (advanced info)
 const CAMPI = [
   { k: 'peso', label: 'Peso', unita: 'kg', step: '0.1' },
   { k: 'grassoCorporeoPct', label: 'Grasso corporeo', unita: '%', step: '0.1' },
@@ -31,7 +31,7 @@ function Delta({ attuale, precedente, invertito }) {
   const d = Math.round((attuale - precedente) * 10) / 10;
   if (d === 0) return <span className="text-[10px] text-[var(--testo-terziario)]">=</span>;
   const positivo = d > 0;
-  // "invertito": per peso/grasso un calo è "buono" (verde)
+  // "invertito": for weight/fat a drop is "good" (green)
   const buono = invertito ? !positivo : positivo;
   return (
     <span className={`text-[10px] font-semibold flex items-center gap-0.5 ${buono ? 'text-[var(--successo)]' : 'text-[var(--pericolo)]'}`}>
@@ -54,7 +54,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
   const ultima = lista?.[0];
   const penultima = lista?.[1];
 
-  // BMI: usa quello salvato o lo calcola da peso + altezza
+  // BMI: uses the saved one or computes it from weight + height
   const bmiCalcolato = (m) => {
     if (!m) return null;
     if (m.bmi != null) return m.bmi;
@@ -102,7 +102,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Snapshot valori attuali */}
+      {/* Snapshot of the current values */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {snapshot.map(s => (
           <div key={s.label} className="glass-card p-3 text-center">
@@ -113,7 +113,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
         ))}
       </div>
 
-      {/* Grafico andamento peso */}
+      {/* Weight trend chart */}
       {datiGrafico.length >= 2 && (
         <div className="glass-card p-card-inner">
           <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-2">Andamento peso</p>
@@ -134,7 +134,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
         </div>
       )}
 
-      {/* Aggiungi misurazione */}
+      {/* Add measurement */}
       {modificabile && (
         <div className="glass-card p-card-inner">
           {!mostraForm ? (
@@ -182,7 +182,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
         </div>
       )}
 
-      {/* Storico */}
+      {/* History */}
       <div className="glass-card overflow-hidden">
         <div className="p-card-inner border-b border-[var(--bordo-light)]">
           <h4 className="font-bold flex items-center gap-2">📋 Storico misurazioni</h4>

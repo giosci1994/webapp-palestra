@@ -1,10 +1,10 @@
 // ============================================
-// GymMaster — Date nel calendario locale
+// GymMaster — Dates in the local calendar
 // ============================================
 //
-// Il server gira in UTC, la palestra e chi la frequenta a Copenaghen (lo stesso
-// fuso dell'Italia). Il giorno di un allenamento e' quello del calendario
-// locale: fra mezzanotte e le 2 il giorno UTC e' ancora quello prima.
+// The server runs in UTC, the gym and its members in Copenhagen (the same
+// time zone as Italy). The day of a workout is the one of the local
+// calendar: between midnight and 2 a.m. the UTC day is still the day before.
 
 export const FUSO_ORARIO = 'Europe/Copenhagen';
 
@@ -13,8 +13,8 @@ const formatoGiorno = new Intl.DateTimeFormat('en-CA', {
 });
 
 /**
- * Giorno di calendario locale di un istante, come Date a mezzanotte UTC:
- * lo stesso formato delle colonne @db.Date (per esempio la pianificazione).
+ * Local calendar day of an instant, as a Date at UTC midnight:
+ * the same format as the @db.Date columns (for example the schedule).
  */
 export function giornoLocale(istante) {
   const [anno, mese, giorno] = formatoGiorno.format(new Date(istante)).split('-').map(Number);
@@ -27,15 +27,15 @@ const formatoOra = new Intl.DateTimeFormat('en-US', {
 const GIORNI = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 };
 
 /**
- * Ora e giorno della settimana locali di un istante, con la stessa numerazione
- * dei dati di affluenza: 0 = lunedi' … 6 = domenica.
+ * Local hour and weekday of an instant, with the same numbering as the
+ * crowd level data: 0 = Monday … 6 = Sunday.
  */
 export function orarioLocale(istante = new Date()) {
   const parti = Object.fromEntries(formatoOra.formatToParts(new Date(istante)).map(p => [p.type, p.value]));
   return { ora: Number(parti.hour), giornoSettimana: GIORNI[parti.weekday] };
 }
 
-/** Giorni di calendario locale fra due istanti: ieri sera e stamattina distano 1. */
+/** Local calendar days between two instants: last night and this morning are 1 apart. */
 export function giorniDiCalendario(da, a) {
   return Math.round((giornoLocale(a) - giornoLocale(da)) / 86400000);
 }

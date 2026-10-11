@@ -13,7 +13,7 @@ export default function CookieBanner() {
   useEffect(() => {
     const consenso = localStorage.getItem('cookieConsent');
     if (!consenso) {
-      // Mostra dopo un breve ritardo per non sovrapporre al caricamento
+      // Shows up after a short delay so it does not overlap the loading
       const timer = setTimeout(() => setVisibile(true), 1500);
       return () => clearTimeout(timer);
     }

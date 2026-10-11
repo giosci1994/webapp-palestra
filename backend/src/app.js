@@ -1,10 +1,10 @@
 // ============================================
-// GymMaster — Applicazione Express
-// App, server HTTP e Socket.io, senza metterli in ascolto
+// GymMaster — Express application
+// App, HTTP server and Socket.io, without making them listen
 // ============================================
 //
-// server.js li avvia sulla porta del backend e aggiunge i lavori periodici;
-// i test d'integrazione li avviano su una porta libera, senza timer.
+// server.js starts them on the backend port and adds the periodic jobs;
+// the integration tests start them on a free port, without timers.
 
 import express from 'express';
 import { createServer } from 'http';
@@ -19,28 +19,28 @@ import { ErroreApp } from './utils/errori.js';
 const AMBIENTE = process.env.AMBIENTE || 'sviluppo';
 
 /**
- * Crea l'app Express con tutte le rotte, il server HTTP che la serve e
- * Socket.io agganciato a quel server.
+ * Creates the Express app with all the routes, the HTTP server that serves it
+ * and Socket.io attached to that server.
  * @returns {{ app: import('express').Express, serverHttp: import('http').Server, io: import('socket.io').Server }}
  */
 export function creaServer() {
   const app = express();
   const serverHttp = createServer(app);
 
-  // --- Middleware di Sicurezza ---
+  // --- Security middleware ---
   app.use(configuraHelmet());
   app.use(configuraCORS());
   app.use(limitatoreGlobale);
 
-  // --- Middleware di Parsing ---
+  // --- Parsing middleware ---
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
   app.use(cookieParser());
 
-  // --- Trust proxy (per Nginx e Cloudflare) ---
+  // --- Trust proxy (for Nginx and Cloudflare) ---
   app.set('trust proxy', 1);
 
-  // --- Log delle richieste (solo in sviluppo) ---
+  // --- Request logging (development only) ---
   if (AMBIENTE !== 'produzione') {
     app.use((req, res, next) => {
       logger.debug({ metodo: req.method, percorso: req.path }, 'Richiesta ricevuta');
@@ -48,12 +48,12 @@ export function creaServer() {
     });
   }
 
-  // --- Monta le rotte API ---
+  // --- Mount the API routes ---
   app.use('/api/v1', router);
 
-  // --- Gestione Errori Centralizzata ---
+  // --- Centralized error handling ---
   app.use((errore, req, res, next) => {
-    // Errori personalizzati dell'app
+    // The app's custom errors
     if (errore instanceof ErroreApp) {
       return res.status(errore.codiceStato).json({
         successo: false,
@@ -63,7 +63,7 @@ export function creaServer() {
       });
     }
 
-    // Errori CORS
+    // CORS errors
     if (errore.message?.includes('CORS')) {
       return res.status(403).json({
         successo: false,
@@ -72,8 +72,8 @@ export function creaServer() {
       });
     }
 
-    // Prisma: l'elemento da modificare o eliminare non esiste (un id sbagliato
-    // nell'indirizzo), non un guasto del server
+    // Prisma: the item to update or delete does not exist (a wrong id in the
+    // URL), not a server failure
     if (errore.code === 'P2025') {
       return res.status(404).json({
         successo: false,
@@ -82,7 +82,7 @@ export function creaServer() {
       });
     }
 
-    // Errori di parsing JSON
+    // JSON parsing errors
     if (errore.type === 'entity.parse.failed') {
       return res.status(400).json({
         successo: false,
@@ -91,7 +91,7 @@ export function creaServer() {
       });
     }
 
-    // Errori imprevisti (non esporre dettagli in produzione)
+    // Unexpected errors (do not expose details in production)
     logger.error({ errore: errore.message, stack: errore.stack }, 'Errore imprevisto');
 
     res.status(500).json({
@@ -103,9 +103,9 @@ export function creaServer() {
     });
   });
 
-  // --- Inizializza Socket.io ---
+  // --- Initialize Socket.io ---
   const io = inizializzaSocket(serverHttp);
-  // Rende l'istanza io accessibile dalle rotte Express (per notifiche)
+  // Makes the io instance available to the Express routes (for notifications)
   app.set('io', io);
 
   return { app, serverHttp, io };

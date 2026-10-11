@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Serie a settimana per muscolo
-// Barre orizzontali con la fascia di volume consigliata
+// GymMaster — Sets per week per muscle
+// Horizontal bars with the recommended volume band
 // ============================================
 //
-// Prende il posto della torta dei gruppi: undici fette non si confrontano, e
-// la sagoma della sezione Corpo mostra gia' le proporzioni. Qui conta il
-// valore assoluto: quante serie a settimana riceve ogni muscolo rispetto alle
-// 10-20 indicate di solito per la crescita muscolare.
+// Takes the place of the muscle groups pie chart: eleven slices can't be
+// compared, and the outline in the Corpo (body) section already shows the
+// proportions. Here the absolute value matters: how many sets per week each
+// muscle gets compared with the 10-20 usually advised for muscle growth.
 
 const FASCIA = [10, 20];
 
@@ -14,18 +14,18 @@ const numero = (n) => n.toLocaleString('it-IT', { maximumFractionDigits: 1 });
 
 /**
  * @param {object} p
- * @param {{periodo: {settimane: number}, gruppi: object[]}} p.dati - risposta di /statistiche/muscoli
+ * @param {{periodo: {settimane: number}, gruppi: object[]}} p.dati - response of /statistiche/muscoli
  */
 export default function SeriePerMuscolo({ dati }) {
   const muscolari = (dati?.gruppi || []).filter(g => g.muscolare);
   const allenati = muscolari.filter(g => g.serieSettimanali > 0).sort((a, b) => b.serieSettimanali - a.serieSettimanali);
   const senzaSerie = muscolari.filter(g => !(g.serieSettimanali > 0));
-  // La scala lascia sempre vedere tutta la fascia, e un po' oltre
+  // The scale always shows the whole band, and a bit beyond
   const massimo = Math.max(FASCIA[1] + 2, ...allenati.map(g => g.serieSettimanali));
   const pos = (v) => `${(v / massimo) * 100}%`;
   const settimane = dati?.periodo?.settimane;
 
-  // Colonne: nome, barra, valore. La fascia e l'asse usano la stessa colonna della barra.
+  // Columns: name, bar, value. The band and the axis use the same column as the bar.
   const colonne = { gridTemplateColumns: '6.5rem 1fr 2.5rem' };
 
   return (
@@ -41,7 +41,7 @@ export default function SeriePerMuscolo({ dati }) {
       ) : (
         <>
           <div className="relative">
-            {/* Fascia consigliata, dietro le barre */}
+            {/* Recommended band, behind the bars */}
             <div className="absolute inset-0 grid pointer-events-none" style={colonne} aria-hidden="true">
               <div />
               <div className="relative">
@@ -71,7 +71,7 @@ export default function SeriePerMuscolo({ dati }) {
             </ul>
           </div>
 
-          {/* Asse: solo i riferimenti che servono */}
+          {/* Axis: only the reference marks that are needed */}
           <div className="grid mt-1 text-[10px] text-[var(--testo-terziario)]" style={colonne} aria-hidden="true">
             <span />
             <span className="relative h-3">

@@ -1,6 +1,6 @@
 // ============================================
 // GymMaster — API Client
-// Fetch wrapper con gestione JWT automatica
+// Fetch wrapper with automatic JWT handling
 // ============================================
 
 const BASE_URL = '/api/v1';
@@ -9,38 +9,38 @@ let accessToken = null;
 let refreshPromise = null;
 let onSessioneScaduta = null;
 
-/** Imposta il token di accesso (chiamato dal login) */
+/** Sets the access token (called by the login) */
 export function impostaToken(token) {
   accessToken = token;
 }
 
-/** Recupera il token corrente */
+/** Returns the current token */
 export function ottieniToken() {
   return accessToken;
 }
 
-/** Cancella il token (logout) */
+/** Clears the token (logout) */
 export function cancellaToken() {
   accessToken = null;
 }
 
-/** Registra il gestore da invocare quando la sessione risulta definitivamente scaduta */
+/** Registers the handler to call when the session turns out to be expired for good */
 export function impostaGestoreSessioneScaduta(fn) {
   onSessioneScaduta = fn;
 }
 
-/** Refresh condiviso della sessione (dedup con le chiamate interne). Ritorna il token o null. */
+/** Shared session refresh (deduplicated with the internal calls). Returns the token or null. */
 export async function refreshSessione() {
   return tentaRefresh();
 }
 
 /**
- * Fetch wrapper con:
- * - Header Authorization automatico
- * - Refresh token automatico se 401
- * - Parsing JSON automatico
- * - Gestione errori strutturata
- * - `signal` facoltativo per interrompere la richiesta (es. AbortSignal.timeout)
+ * Fetch wrapper with:
+ * - Automatic Authorization header
+ * - Automatic token refresh on 401
+ * - Automatic JSON parsing
+ * - Structured error handling
+ * - Optional `signal` to abort the request (e.g. AbortSignal.timeout)
  */
 export async function apiChiamata(percorso, opzioni = {}) {
   const { body, metodo = 'GET', headers = {}, skipAuth = false, signal } = opzioni;
@@ -51,12 +51,12 @@ export async function apiChiamata(percorso, opzioni = {}) {
       'Content-Type': 'application/json',
       ...headers
     },
-    credentials: 'include', // Per cookie refresh token
+    credentials: 'include', // For the refresh token cookie
     signal
   };
 
-  // Se non abbiamo un token e non è una chiamata skipAuth,
-  // tenta un refresh automatico (copre race condition al refresh pagina)
+  // If we have no token and this is not a skipAuth call,
+  // try an automatic refresh (covers a race condition on page reload)
   if (!accessToken && !skipAuth) {
     const tokenRefreshato = await tentaRefresh();
     if (tokenRefreshato) {
@@ -64,7 +64,7 @@ export async function apiChiamata(percorso, opzioni = {}) {
     }
   }
 
-  // Aggiungi Authorization header se abbiamo un token
+  // Add the Authorization header if we have a token
   if (accessToken && !skipAuth) {
     config.headers['Authorization'] = `Bearer ${accessToken}`;
   }
@@ -75,16 +75,16 @@ export async function apiChiamata(percorso, opzioni = {}) {
 
   let risposta = await fetch(`${BASE_URL}${percorso}`, config);
 
-  // Se 401 (token scaduto/mancante), prova refresh e riprova
+  // On 401 (token expired/missing), try a refresh and retry
   if (risposta.status === 401 && !skipAuth) {
     const nuovoToken = await tentaRefresh();
     if (nuovoToken) {
       config.headers['Authorization'] = `Bearer ${nuovoToken}`;
       risposta = await fetch(`${BASE_URL}${percorso}`, config);
     } else {
-      // Refresh fallito su una rotta protetta: sessione realmente scaduta.
-      // Non lasciamo che parta un errore criptico ("Token di accesso mancante"):
-      // notifichiamo l'app (redirect al login) e interrompiamo con un errore chiaro.
+      // Refresh failed on a protected route: the session really expired.
+      // We don't let a cryptic error through ("Token di accesso mancante"):
+      // we notify the app (redirect to login) and stop with a clear error.
       if (onSessioneScaduta) onSessioneScaduta();
       const err = new Error('Sessione scaduta. Accedi di nuovo per continuare.');
       err.codice = 'SESSIONE_SCADUTA';
@@ -93,14 +93,14 @@ export async function apiChiamata(percorso, opzioni = {}) {
     }
   }
 
-  // Controlla il content-type prima di fare il parsing JSON
+  // Check the content-type before parsing JSON
   const contentType = risposta.headers.get('content-type');
   let dati;
   
   if (contentType && contentType.includes('application/json')) {
     dati = await risposta.json();
   } else {
-    // Se non è JSON (es. pagina di blocco HTML da Cloudflare o Nginx)
+    // If it is not JSON (e.g. an HTML block page from Cloudflare or Nginx)
     await risposta.text();
     if (!risposta.ok) {
       if (risposta.status === 429) {
@@ -111,7 +111,7 @@ export async function apiChiamata(percorso, opzioni = {}) {
         throw new Error(`Errore del server (${risposta.status}). Riprova più tardi.`);
       }
     } else {
-      // Risposta 200 OK ma non JSON
+      // 200 OK response but not JSON
       throw new Error('Risposta dal server non valida (formato non supportato).');
     }
   }
@@ -127,9 +127,9 @@ export async function apiChiamata(percorso, opzioni = {}) {
   return dati;
 }
 
-/** Refresh del token di accesso */
+/** Refreshes the access token */
 async function tentaRefresh() {
-  // Evita refresh multipli paralleli
+  // Avoid multiple parallel refreshes
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
@@ -162,11 +162,11 @@ async function tentaRefresh() {
 // --- Helper shortcuts ---
 
 /**
- * Scarica un file binario protetto da autenticazione.
+ * Downloads a binary file protected by authentication.
  *
- * Un semplice <a href> non basterebbe: il token di accesso vive in memoria e
- * non in un cookie, quindi la richiesta deve passare da qui per portarsi
- * dietro l'header Authorization.
+ * A plain <a href> would not be enough: the access token lives in memory and
+ * not in a cookie, so the request has to go through here to carry the
+ * Authorization header.
  */
 export async function scaricaFile(percorso, nomePredefinito = 'documento') {
   if (!accessToken) {
@@ -196,7 +196,7 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
     throw new Error(`Download non riuscito (errore ${risposta.status})`);
   }
 
-  // Il nome proposto dal server ha la precedenza su quello di riserva
+  // The name suggested by the server wins over the fallback one
   const disposizione = risposta.headers.get('content-disposition') || '';
   const nome = /filename="?([^"';]+)"?/i.exec(disposizione)?.[1] || nomePredefinito;
 
@@ -210,7 +210,7 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
     link.click();
     link.remove();
   } finally {
-    // Senza revoke il blob resterebbe in memoria per tutta la sessione
+    // Without revoke the blob would stay in memory for the whole session
     URL.revokeObjectURL(url);
   }
   return nome;
@@ -221,7 +221,7 @@ export const api = {
   post: (percorso, body) => apiChiamata(percorso, { metodo: 'POST', body }),
   patch: (percorso, body) => apiChiamata(percorso, { metodo: 'PATCH', body }),
   put: (percorso, body) => apiChiamata(percorso, { metodo: 'PUT', body }),
-  // Il body e' facoltativo: serve alle DELETE che richiedono una conferma
-  // (es. l'eliminazione dell'account, che vuole la password)
+  // The body is optional: it is for DELETEs that need a confirmation
+  // (e.g. deleting the account, which asks for the password)
   delete: (percorso, body) => apiChiamata(percorso, { metodo: 'DELETE', body })
 };

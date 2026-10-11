@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Routes Gamification
-// Leaderboard, badge e punti XP
+// GymMaster — Gamification Routes
+// Leaderboard, badges and XP points
 // ============================================
 
 import { Router } from 'express';
@@ -9,13 +9,13 @@ import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
-// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+// Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.use(verificaToken);
 
 // Badge definitions
 const BADGE = [
-  // --- Sessioni ---
+  // --- Sessions ---
   { id: 'primo_allenamento', nome: 'Prima Volta', icona: '🎯', desc: 'Completa il primo allenamento', xp: 50, check: (s) => s.sessioni >= 1 },
   { id: 'costante', nome: 'Costante', icona: '📅', desc: '10 sessioni completate', xp: 100, check: (s) => s.sessioni >= 10 },
   { id: 'veterano', nome: 'Veterano', icona: '🏅', desc: '50 sessioni completate', xp: 300, check: (s) => s.sessioni >= 50 },
@@ -27,14 +27,14 @@ const BADGE = [
   { id: 'titano', nome: 'Titano', icona: '⚡', desc: '100.000 kg di volume totale', xp: 1000, check: (s) => s.volume >= 100000 },
   { id: 'atlas', nome: 'Atlas', icona: '🌍', desc: '500.000 kg di volume totale', xp: 2000, check: (s) => s.volume >= 500000 },
   { id: 'volume_millionario', nome: 'Milionario', icona: '💰', desc: '1.000.000 kg di volume totale', xp: 3000, check: (s) => s.volume >= 1000000 },
-  // --- Record ---
+  // --- Records ---
   { id: 'primo_record', nome: 'Primo Record', icona: '🎖️', desc: 'Stabilisci il primo record personale', xp: 50, check: (s) => s.record >= 1 },
   { id: 'recordman', nome: 'Recordman', icona: '🏆', desc: 'Stabilisci 5 record personali', xp: 150, check: (s) => s.record >= 5 },
   { id: 'recordman_elite', nome: 'Recordman Elite', icona: '👑', desc: '20 record personali', xp: 400, check: (s) => s.record >= 20 },
-  // --- Durata ---
+  // --- Duration ---
   { id: 'maratoneta', nome: 'Maratoneta', icona: '🏃', desc: '10 ore di allenamento totali', xp: 200, check: (s) => s.durata >= 600 },
   { id: 'maratoneta_pro', nome: 'Ultra Maratoneta', icona: '🏅', desc: '50 ore di allenamento totali', xp: 500, check: (s) => s.durata >= 3000 },
-  // --- Schede ---
+  // --- Plans ---
   { id: 'creatore', nome: 'Creatore', icona: '📋', desc: 'Crea 3 schede di allenamento', xp: 100, check: (s) => s.schede >= 3 },
   { id: 'creatore_pro', nome: 'Architect', icona: '🏗️', desc: 'Crea 10 schede di allenamento', xp: 300, check: (s) => s.schede >= 10 },
   // --- Social ---
@@ -46,7 +46,7 @@ const BADGE = [
   { id: 'streak_100', nome: 'Centuria', icona: '💎', desc: '100 giorni di streak', xp: 1000, check: (s) => s.streak >= 100 },
 ];
 
-// Livelli XP
+// XP levels
 function calcolaLivello(xp) {
   if (xp < 100) return { livello: 1, nome: 'Principiante', prossimo: 100 };
   if (xp < 300) return { livello: 2, nome: 'Apprendista', prossimo: 300 };
@@ -62,7 +62,7 @@ function calcolaLivello(xp) {
   return { livello: 12, nome: 'Immortale', prossimo: null };
 }
 
-// GET /api/v1/gamification/profilo — Profilo gamification utente
+// GET /api/v1/gamification/profilo — User gamification profile
 router.get('/profilo', async (req, res, next) => {
   try {
     const uid = req.utente.id;
@@ -92,7 +92,7 @@ router.get('/profilo', async (req, res, next) => {
     const xpTotale = badgeSbloccati.reduce((s, b) => s + b.xp, 0);
     const livello = calcolaLivello(xpTotale);
 
-    // Aggiorna XP nel DB
+    // Update the XP in the DB
     await prisma.utente.update({ where: { id: uid }, data: { puntiEsperienza: xpTotale } });
 
     res.json({ successo: true, dati: {
@@ -103,7 +103,7 @@ router.get('/profilo', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/gamification/leaderboard — Classifica
+// GET /api/v1/gamification/leaderboard — Ranking
 router.get('/leaderboard', async (req, res, next) => {
   try {
     const utenti = await prisma.utente.findMany({
@@ -123,7 +123,7 @@ router.get('/leaderboard', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/gamification/profilo-pubblico/:id — Profilo pubblico utente (rispetta privacy)
+// GET /api/v1/gamification/profilo-pubblico/:id — Public user profile (respects privacy)
 router.get('/profilo-pubblico/:id', async (req, res, next) => {
   try {
     const targetId = parseInt(req.params.id);
@@ -133,7 +133,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
         id: true, nome: true, ruolo: true, stato: true, immagineProfilo: true,
         puntiEsperienza: true, bio: true, dataRegistrazione: true,
         preferenzeVisibilita: true, gamificationAttiva: true,
-        // Campi condizionali (filtrati dopo)
+        // Conditional fields (filtered later)
         palestraId: true, pesoKg: true, altezzaCm: true,
         dataNascita: true, obiettivoFitness: true, genere: true,
         palestra: { select: { nomeCatena: true, citta: true } }
@@ -157,7 +157,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
       puntiEsperienza: utente.puntiEsperienza,
       livello: calcolaLivello(utente.puntiEsperienza),
       dataRegistrazione: utente.dataRegistrazione,
-      // Campi condizionali privacy
+      // Privacy-dependent fields
       ...(vis.palestra && utente.palestra && { palestra: utente.palestra }),
       ...(vis.peso && utente.pesoKg && { pesoKg: utente.pesoKg }),
       ...(vis.altezza && utente.altezzaCm && { altezzaCm: utente.altezzaCm }),
@@ -165,7 +165,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
       ...(vis.obiettivo && utente.obiettivoFitness && { obiettivoFitness: utente.obiettivoFitness }),
     };
 
-    // Statistiche allenamento (se condivise)
+    // Workout statistics (if shared)
     if (vis.statistiche) {
       const sessioni = await prisma.sessioneAllenamento.findMany({
         where: { utenteId: targetId, dataFine: { not: null } },
@@ -178,7 +178,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
       };
     }
 
-    // Schede globali create
+    // Global plans created
     const schedeGlobali = await prisma.schedaAllenamento.findMany({
       where: { creatoreId: targetId, visibilita: 'GLOBALE' },
       select: { id: true, titolo: true, livello: true, creatoIl: true,
@@ -188,7 +188,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
     });
     profilo.schedeGlobali = schedeGlobali;
 
-    // Record personali (se condivisi)
+    // Personal records (if shared)
     if (vis.record) {
       const records = await prisma.recordPersonale.findMany({
         where: { utenteId: targetId },
@@ -203,10 +203,10 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
-// GET /api/v1/gamification/classifica-record — Top 3 per esercizio (peso max)
+// GET /api/v1/gamification/classifica-record — Top 3 per exercise (max weight)
 router.get('/classifica-record', async (req, res, next) => {
   try {
-    // Prendi tutti i record di utenti attivi con gamification attiva
+    // Get every record of active users with gamification on
     const records = await prisma.recordPersonale.findMany({
       where: {
         utente: { stato: 'ATTIVO', gamificationAttiva: true }
@@ -218,7 +218,7 @@ router.get('/classifica-record', async (req, res, next) => {
       orderBy: { pesoMaxRaggiunto: 'desc' }
     });
 
-    // Raggruppa per esercizio, prendi top 3
+    // Group by exercise, take the top 3
     const perEsercizio = {};
     for (const r of records) {
       const eid = r.esercizioId;
@@ -228,7 +228,7 @@ router.get('/classifica-record', async (req, res, next) => {
           top: []
         };
       }
-      // Evita duplicati stesso utente (prendi solo il miglior record)
+      // Avoid duplicates of the same user (take only the best record)
       if (perEsercizio[eid].top.length < 3 && !perEsercizio[eid].top.find(t => t.utente.id === r.utenteId)) {
         perEsercizio[eid].top.push({
           utente: r.utente,
@@ -238,7 +238,7 @@ router.get('/classifica-record', async (req, res, next) => {
       }
     }
 
-    // Ordina esercizi per numero di partecipanti (più popolari prima)
+    // Sort exercises by the size of their podium (up to 3), then by the best weight
     const classifica = Object.values(perEsercizio)
       .sort((a, b) => b.top.length - a.top.length || b.top[0]?.pesoMax - a.top[0]?.pesoMax);
 

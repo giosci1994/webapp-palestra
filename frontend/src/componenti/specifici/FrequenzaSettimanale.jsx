@@ -1,11 +1,11 @@
 // ============================================
-// GymMaster — Frequenza settimanale
-// Allenamenti fatti e programmati, settimana per settimana
+// GymMaster — Weekly frequency
+// Workouts done and scheduled, week by week
 // ============================================
 //
-// Prende il posto di "Durata sessioni": la durata media sta negli indicatori,
-// mentre qui si vede se ti alleni con costanza e se rispetti il programma
-// messo in Pianificazione.
+// Takes the place of "Durata sessioni" (session duration): the average
+// duration is in the indicators, while here you see whether you train
+// consistently and stick to the schedule set in the Pianificazione page.
 
 import { ComposedChart, Bar, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -13,7 +13,7 @@ const numero = (n) => n.toLocaleString('it-IT', { maximumFractionDigits: 1 });
 const dataBreve = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
 const plurale = (n, uno, molti) => `${numero(n)} ${n === 1 ? uno : molti}`;
 
-/** Trattino orizzontale all'altezza degli allenamenti programmati. */
+/** Horizontal dash at the height of the scheduled workouts. */
 function Tacca({ cx, cy, payload }) {
   if (!payload?.programmati) return null;
   return <line x1={cx - 12} x2={cx + 12} y1={cy} y2={cy} stroke="var(--testo-secondario)" strokeWidth={2} strokeLinecap="round" />;
@@ -35,12 +35,12 @@ function Suggerimento({ active, payload }) {
 
 /**
  * @param {object} p
- * @param {{settimana: string, fatti: number, programmati: number}[]} p.settimane - dalla piu' vecchia, 12 voci
+ * @param {{settimana: string, fatti: number, programmati: number}[]} p.settimane - oldest first, 12 entries
  */
 export default function FrequenzaSettimanale({ settimane = [] }) {
   const dati = settimane.map((s, i) => ({ ...s, corrente: i === settimane.length - 1 }));
   const attuale = dati[dati.length - 1];
-  const concluse = dati.slice(0, -1);   // la settimana in corso falserebbe la media
+  const concluse = dati.slice(0, -1);   // the current week would skew the average
   const media = concluse.length ? concluse.reduce((t, s) => t + s.fatti, 0) / concluse.length : 0;
   const conPiano = dati.some(s => s.programmati > 0);
   const massimo = Math.max(3, ...dati.map(s => Math.max(s.fatti, s.programmati)));
@@ -54,7 +54,7 @@ export default function FrequenzaSettimanale({ settimane = [] }) {
         <p className="text-sm text-[var(--testo-terziario)] text-center py-8">Nessun dato disponibile.</p>
       ) : (
         <>
-          {/* Sintesi: quello che serve sapere senza leggere il grafico */}
+          {/* Summary: what you need to know without reading the chart */}
           <div className="flex gap-6 mt-3 mb-3">
             <div>
               <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Questa settimana</p>
@@ -69,7 +69,7 @@ export default function FrequenzaSettimanale({ settimane = [] }) {
             </div>
           </div>
 
-          {/* Legenda: due segni diversi, non affidati al solo colore */}
+          {/* Legend: two different marks, not relying on color alone */}
           {conPiano && (
             <div className="flex gap-4 text-[11px] text-[var(--testo-secondario)] mb-1">
               <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent)]" />Fatti</span>
@@ -86,7 +86,7 @@ export default function FrequenzaSettimanale({ settimane = [] }) {
                 tickLine={false}
                 axisLine={false}
                 tick={{ fontSize: 10, fill: 'var(--testo-terziario)' }}
-                // Un'etichetta ogni tre settimane, e sempre quella in corso
+                // One label every three weeks, and always the current one
                 tickFormatter={(v, i) => (i === dati.length - 1 ? 'Ora' : i % 3 === 2 ? dataBreve(v) : '')}
               />
               <YAxis allowDecimals={false} domain={[0, massimo]} tickLine={false} axisLine={false}

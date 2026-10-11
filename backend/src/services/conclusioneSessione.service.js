@@ -1,15 +1,15 @@
 // ============================================
-// GymMaster — Fine di un allenamento
+// GymMaster — End of a workout
 // ============================================
 //
-// Chiudere un allenamento: durata, volume, calendario e record personali.
-// Lo fa chi tocca "Termina", e lo fa il server con gli allenamenti rimasti
-// aperti.
+// Closing a workout: duration, volume, calendar and personal records. It
+// happens when someone taps "Termina" (finish), and the server does it for
+// workouts left open.
 //
-// Un allenamento dimenticato aperto e chiuso giorni dopo durava giorni (in
-// produzione 21, 72 e 93 ore) e falsava durate medie, recupero e badge. Da
-// quando le serie hanno l'orario di registrazione, la fine vera e' l'ultima
-// serie.
+// A workout forgotten open and closed days later lasted days (21, 72 and 93
+// hours in production) and skewed average durations, recovery and badges.
+// Since sets carry the time they were logged, the real end is the last
+// set.
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
@@ -19,16 +19,16 @@ import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 
 const MINUTO = 60 * 1000;
 
-/** Senza serie nuove da tanto, l'allenamento e' stato dimenticato aperto */
+/** With no new sets for this long, the workout was forgotten open */
 export const MINUTI_INATTIVITA = 120;
 
 /**
- * Un allenamento aperto senza serie si elimina solo dopo un giorno: le serie
- * possono essere ancora su un telefono senza rete, in coda, e arrivare tardi
+ * An open workout with no sets is deleted only after a day: the sets may
+ * still be queued on a phone with no network, and arrive late
  */
 export const ORE_SESSIONE_VUOTA = 24;
 
-/** Per le serie registrate prima che avessero un orario: minuti stimati a serie */
+/** For sets logged before they had a time: estimated minutes per set */
 const MINUTI_PER_SERIE = 3;
 
 /**
@@ -38,13 +38,13 @@ const MINUTI_PER_SERIE = 3;
 export const STATI_DA_CHIUDERE = ['PIANIFICATO', 'SALTATO'];
 
 /**
- * Quando e' finito un allenamento che si chiude adesso.
- * Se l'ultima attivita' (l'ultima serie, o l'inizio se non ce ne sono) e'
- * recente, adesso; se no l'allenamento e' stato dimenticato aperto e finisce
- * con l'ultima serie. Le serie senza orario (registrate prima che lo avessero)
- * valgono MINUTI_PER_SERIE minuti l'una dall'inizio.
+ * When a workout being closed now actually ended.
+ * If the last activity (the last set, or the start if there are none) is
+ * recent, now; otherwise the workout was forgotten open and ends with the
+ * last set. Sets with no time (logged before they had one) count
+ * MINUTI_PER_SERIE minutes each from the start.
  * @param {Date} dataInizio
- * @param {{ registrataIl: Date | null }[]} serie - tutte, anche quelle saltate
+ * @param {{ registrataIl: Date | null }[]} serie - all of them, skipped ones too
  * @returns {{ fine: Date, dimenticata: boolean }}
  */
 export function fineEffettiva(dataInizio, serie, adesso = new Date()) {
@@ -61,16 +61,16 @@ export function fineEffettiva(dataInizio, serie, adesso = new Date()) {
 }
 
 /**
- * Chiude un allenamento: fine (vedi fineEffettiva), durata, volume delle serie
- * completate, calendario del giorno segnato come fatto, record personali di
- * chi si e' allenato.
- * @param {object} sessione - la riga di sessioni_allenamento
+ * Closes a workout: end (see fineEffettiva), duration, volume of the
+ * completed sets, the day's calendar entry marked as done, personal records
+ * of whoever trained.
+ * @param {object} sessione - the sessioni_allenamento row
  * @param {{ noteFinali?: string, adesso?: Date }} [opzioni]
  */
 export async function concludiSessione(sessione, { noteFinali, adesso = new Date() } = {}) {
   const serie = await prisma.logSerie.findMany({ where: { sessioneId: sessione.id } });
   const completate = serie.filter(s => s.completato);
-  // Il riscaldamento non e' volume (utils/tipiSerie.js)
+  // Warm-up is not volume (utils/tipiSerie.js)
   const volumeTotale = volumeDi(completate);
   const { fine, dimenticata } = fineEffettiva(sessione.dataInizio, serie, adesso);
 
@@ -84,7 +84,7 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
     }
   });
 
-  // Se quel giorno questa scheda era in calendario, risulta fatta
+  // If this plan was on the calendar that day, it counts as done
   await prisma.allenamentoPianificato.updateMany({
     where: {
       utenteId: sessione.utenteId,
@@ -96,9 +96,9 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
     data: { stato: 'COMPLETATO', sessioneId: sessione.id }
   });
 
-  // I record sono di chi si e' allenato, anche se a chiudere e' il superadmin,
-  // e del giorno dell'allenamento: chiuso tardi (dimenticato aperto, o con le
-  // serie arrivate dopo da un telefono senza rete) non diventano di oggi
+  // Records belong to whoever trained, even if the superadmin closes it, and
+  // to the day of the workout: when it is closed late (forgotten open, or with
+  // sets arriving later from a phone with no network) they do not become today's
   const recordPersonali = await controllaRecord(sessione.utenteId, completate, fine);
 
   return { sessione: aggiornata, recordPersonali, dimenticata };
@@ -108,10 +108,10 @@ const formatoGiorno = new Intl.DateTimeFormat('it-IT', { timeZone: FUSO_ORARIO, 
 const formatoOra = new Intl.DateTimeFormat('it-IT', { timeZone: FUSO_ORARIO, hour: '2-digit', minute: '2-digit' });
 
 /**
- * Il controllo periodico (server.js): gli allenamenti fermi da piu' di
- * MINUTI_INATTIVITA minuti vengono chiusi all'ultima serie, e chi si allenava
- * riceve una notifica. Quelli senza nemmeno una serie dopo ORE_SESSIONE_VUOTA
- * ore non erano allenamenti: si eliminano.
+ * The periodic check (server.js): workouts idle for more than
+ * MINUTI_INATTIVITA minutes are closed at the last set, and whoever was
+ * training gets a notification. Those without a single set after
+ * ORE_SESSIONE_VUOTA hours were not workouts: they are deleted.
  * @returns {Promise<{ chiuse: number, eliminate: number }>}
  */
 export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
@@ -151,14 +151,14 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
 }
 
 /**
- * Nuovi record personali dalle serie date: un record nuovo per ogni esercizio
- * in cui il peso massimo supera quello di prima. Contano le serie di lavoro:
- * riscaldamento e drop no.
+ * New personal records from the given sets: a new record for each exercise
+ * where the top weight beats the previous one. Working sets count: warm-up
+ * sets and drop sets do not.
  */
 export async function controllaRecord(utenteId, serie, dataRecord = null) {
   const recordAggiornati = [];
 
-  // Raggruppa serie per esercizio e trova il peso max
+  // Group sets by exercise and find the top weight
   const pesoPerEsercizio = {};
   for (const s of serie.filter(diLavoro)) {
     if (!pesoPerEsercizio[s.esercizioId] || s.pesoEffettivo > pesoPerEsercizio[s.esercizioId]) {

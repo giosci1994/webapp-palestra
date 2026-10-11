@@ -1,31 +1,27 @@
 // ============================================
-// GymMaster — Gestore Socket Notifiche
-// Gestisce gli eventi di notifica real-time
+// GymMaster — Notifications socket handler
+// Handles the real-time notification events
 // ============================================
 
 import logger from '../../utils/logger.js';
 import { segnaLetta, creaNotifica as creaNotificaPersistita } from '../../services/notifiche.service.js';
 
 /**
- * Registra i gestori delle notifiche per un socket.
- * Le notifiche vengono inviate alla room personale dell'utente.
+ * Registers the notification handlers for a socket.
+ * Notifications are sent to the user's personal room.
  */
 export function gestoreNotifiche(io, socket, utentiConnessi) {
-  // Per ora questo gestore serve come infrastruttura per notifiche future:
-  // - Nuova richiesta di contatto
-  // - Richiesta accettata/rifiutata
-  // - Nuovo messaggio (quando non sei nella conversazione)
-  // - Record personale raggiunto
-  // - Approvazione account
+  // Notifications are saved and emitted by services/notifiche.service.js
+  // (creaNotifica): contact requests, plans, reminders, records and more.
 
-  // Le notifiche vengono emesse dal server, non dal client
-  // Questo gestore gestisce solo le conferme di lettura
+  // Notifications are emitted by the server, not by the client
+  // This handler only handles the read confirmations
 
   socket.on('notifica:letta', async (dati) => {
     const notificaId = parseInt(dati?.notificaId, 10);
     if (Number.isNaN(notificaId)) return;
     try {
-      // segnaLetta filtra per utenteId: nessuno puo' marcare le notifiche altrui
+      // segnaLetta filters by utenteId: nobody can mark other people's notifications
       await segnaLetta(socket.utente.utenteId, notificaId);
       logger.debug({ utenteId: socket.utente.utenteId, notificaId }, 'Notifica segnata come letta');
     } catch (err) {
@@ -35,20 +31,20 @@ export function gestoreNotifiche(io, socket, utentiConnessi) {
 }
 
 /**
- * Invia una notifica a un utente specifico.
- * Utilizzabile da qualsiasi service del backend.
+ * Sends a notification to a specific user.
+ * Usable from any backend service.
  *
- * @param {import('socket.io').Server} io - Istanza Socket.io
- * @param {number} utenteId - ID dell'utente destinatario
- * @param {Object} notifica - Oggetto notifica
- * @param {string} notifica.tipo - Tipo (es. 'nuova_richiesta', 'messaggio', 'record')
- * @param {string} notifica.titolo - Titolo della notifica
- * @param {string} notifica.messaggio - Corpo della notifica
- * @param {Object} [notifica.dati] - Dati aggiuntivi
+ * @param {import('socket.io').Server} io - Socket.io instance
+ * @param {number} utenteId - ID of the recipient user
+ * @param {Object} notifica - Notification object
+ * @param {string} notifica.tipo - Type (e.g. 'nuova_richiesta', 'messaggio', 'record')
+ * @param {string} notifica.titolo - Title of the notification
+ * @param {string} notifica.messaggio - Body of the notification
+ * @param {Object} [notifica.dati] - Extra data
  */
 export function inviaNotifica(io, utenteId, notifica) {
-  // Deprecata: emetteva soltanto, senza salvare nulla, quindi chi non era
-  // collegato perdeva la notifica. Usare creaNotifica dal servizio, che
-  // persiste e poi emette. Mantenuta come semplice rimando per compatibilita'.
+  // Deprecated: it only emitted, without saving anything, so whoever was not
+  // connected lost the notification. Use creaNotifica from the service, which
+  // persists and then emits. Kept as a simple forward for compatibility.
   return creaNotificaPersistita(io, utenteId, notifica);
 }

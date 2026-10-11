@@ -1,13 +1,13 @@
 // ============================================
-// GymMaster — Middleware Autenticazione Bot Telegram
-// Protegge le rotte /api/v1/bot/* con un segreto condiviso
-// (rete interna bot <-> backend) e risolve l'utente dal chatId.
+// GymMaster — Telegram bot authentication middleware
+// Protects the /api/v1/bot/* routes with a shared secret
+// (internal bot <-> backend network) and resolves the user from the chatId.
 // ============================================
 
 import prisma from '../config/database.js';
 import { ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 
-/** Verifica l'header X-Bot-Secret. Le rotte bot non sono mai esposte pubblicamente. */
+/** Checks the X-Bot-Secret header. The bot routes are never exposed publicly. */
 export function verificaSegretoBot(req, res, next) {
   const segreto = req.headers['x-bot-secret'];
   if (!process.env.BOT_SECRET || segreto !== process.env.BOT_SECRET) {
@@ -17,8 +17,8 @@ export function verificaSegretoBot(req, res, next) {
 }
 
 /**
- * Risolve l'utente collegato a partire dal `chatId` nel body.
- * Richiede un account già collegato e attivo; attacca req.utenteTelegram.
+ * Resolves the linked user from the `chatId` in the body.
+ * Requires an account already linked and active; attaches req.utenteTelegram.
  */
 export async function risolviUtenteTelegram(req, res, next) {
   try {

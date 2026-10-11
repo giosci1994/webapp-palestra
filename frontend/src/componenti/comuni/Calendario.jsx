@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Calendario mese/settimana
+// GymMaster — Month/week calendar
 // ============================================
 //
-// Componente condiviso fra la dashboard e la pagina di pianificazione: le due
-// mostravano due griglie quasi identiche scritte due volte.
+// Component shared by the dashboard and the schedule page: the two used to
+// show two almost identical grids, written twice.
 //
-// Sul telefono la vista mensile stringe i giorni al punto da rendere scomodo
-// il tocco, quindi la settimana è il modo predefinito lì.
+// On the phone the month view squeezes the days so much that tapping them is
+// awkward, so the week is the default mode there.
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { aStringaData, lunediDi } from '../../utils/formattatori.js';
@@ -14,9 +14,9 @@ import { aStringaData, lunediDi } from '../../utils/formattatori.js';
 const GIORNI_BREVI = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
 
 /**
- * Etichetta del periodo mostrato.
- * In versione breve per il telefono: "settembre 2026" accanto al selettore
- * mese/settimana non ci sta e veniva troncato a "Settembr…".
+ * Label of the period shown.
+ * Short version for the phone: "settembre 2026" does not fit next to the
+ * month/week selector and was cut to "Settembr…".
  */
 function etichetta(ancora, modo, breve = false) {
   if (modo === 'mese') {
@@ -34,12 +34,12 @@ function etichetta(ancora, modo, breve = false) {
 /**
  * @param {object} p
  * @param {'mese'|'settimana'} p.modo
- * @param {Date} p.ancora - data che definisce il periodo mostrato
+ * @param {Date} p.ancora - date that defines the period shown
  * @param {(nuova: Date) => void} p.onCambiaAncora
- * @param {(modo: 'mese'|'settimana') => void} [p.onCambiaModo] - omesso: niente selettore
- * @param {Record<string, {colore: string}[]>} [p.marcatori] - pallini per giorno
+ * @param {(modo: 'mese'|'settimana') => void} [p.onCambiaModo] - omitted: no selector
+ * @param {Record<string, {colore: string}[]>} [p.marcatori] - dots per day
  * @param {string} [p.giornoSelezionato] - "YYYY-MM-DD"
- * @param {(giorno: string) => void} [p.onSelezionaGiorno] - omesso: giorni non cliccabili
+ * @param {(giorno: string) => void} [p.onSelezionaGiorno] - omitted: days are not clickable
  */
 export default function Calendario({
   modo = 'mese',
@@ -60,12 +60,12 @@ export default function Calendario({
   const oggi = aStringaData(new Date());
   const cliccabile = typeof onSelezionaGiorno === 'function';
 
-  // Celle del periodo: il mese parte dal lunedì e ha i vuoti iniziali,
-  // la settimana è una riga sola.
+  // Cells of the period: the month starts on Monday and has leading blanks,
+  // the week is a single row.
   const celle = [];
   if (modo === 'mese') {
     const anno = ancora.getFullYear(), m = ancora.getMonth();
-    const primo = new Date(anno, m, 1).getDay();          // 0 = domenica
+    const primo = new Date(anno, m, 1).getDay();          // 0 = Sunday
     const offset = primo === 0 ? 6 : primo - 1;
     const giorniMese = new Date(anno, m + 1, 0).getDate();
     for (let i = 0; i < offset; i++) celle.push(null);
@@ -81,7 +81,7 @@ export default function Calendario({
 
   return (
     <div>
-      {/* Intestazione: navigazione e, se richiesto, selettore del modo */}
+      {/* Header: navigation and, if requested, the mode selector */}
       <div className="flex items-center justify-between gap-2 mb-4 bg-[rgba(0,0,0,0.2)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
         <button
           onClick={() => scorri(-1)}
@@ -137,7 +137,7 @@ export default function Calendario({
           const scelto = chiave === giornoSelezionato;
           const eOggi = chiave === oggi;
 
-          // In settimana le celle sono più alte: c'è spazio e il tocco è più comodo
+          // In week mode the cells are taller: there is room and tapping is easier
           const altezza = modo === 'settimana' ? 'h-16' : 'h-12';
 
           const classi = `relative ${altezza} rounded-[var(--raggio-md)] text-sm flex flex-col items-center justify-center border transition-colors ${
