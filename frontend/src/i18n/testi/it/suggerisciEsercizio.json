@@ -1,0 +1,21 @@
+{
+  "stato": {
+    "IN_ATTESA": "In attesa",
+    "APPROVATO": "Approvato",
+    "RIFIUTATO": "Rifiutato"
+  },
+  "nonTrovi": "Non trovi un esercizio?",
+  "suggerisciNuovo": "Suggeriscine uno nuovo all'amministratore",
+  "inviata": "Proposta inviata!",
+  "inviataDescrizione": "L'amministratore esaminerà il tuo suggerimento e ti notificherà l'esito.",
+  "suggerisciAltro": "Suggerisci un altro",
+  "proponi": "Proponi un nuovo esercizio",
+  "nomeEsercizio": "Nome esercizio *",
+  "gruppoPrimario": "Gruppo primario *",
+  "gruppoSecondario": "Gruppo secondario",
+  "attrezzatura": "Attrezzatura (es: Manubri, Cavi, Sbarra...)",
+  "descrizione": "Descrizione o note (opzionale)",
+  "invioInCorso": "Invio in corso...",
+  "invia": "📤 Invia suggerimento",
+  "tuoiSuggerimenti": "I tuoi suggerimenti ({numero})"
+}

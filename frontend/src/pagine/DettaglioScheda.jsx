@@ -4,7 +4,8 @@
 // ============================================
 
 import { useState, useEffect } from 'react';
-import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
+import { nomeEsercizio, nomeEsercizioOriginale, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api, scaricaFile } from '../config/api.js';
 import { LIVELLI } from '../utils/costanti.js';
@@ -13,6 +14,7 @@ import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 
 export default function DettaglioScheda() {
+  const { t } = useLingua();
   const { id } = useParams();
   const naviga = useNavigate();
   const { utente } = useAuth();
@@ -27,9 +29,9 @@ export default function DettaglioScheda() {
     try {
       setErroreDownload('');
       setScaricando(true);
-      await scaricaFile(`/schede/${scheda.id}/docx`, `${scheda.titolo || 'scheda'}.docx`);
+      await scaricaFile(`/schede/${scheda.id}/docx`, `${scheda.titolo || t('dettaglioScheda.nomeFileScheda')}.docx`);
     } catch (err) {
-      setErroreDownload(err?.message || 'Download non riuscito');
+      setErroreDownload(err?.message || t('dettaglioScheda.downloadFallito'));
     } finally {
       setScaricando(false);
     }
@@ -80,7 +82,7 @@ export default function DettaglioScheda() {
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
         {/* Back */}
         <Link to="/schede" className="text-sm text-[var(--testo-secondario)] hover:text-[var(--accent)] mb-4 inline-block">
-          ← Torna alle schede
+          {t('dettaglioScheda.tornaAlleSchede')}
         </Link>
 
         {/* Header */}
@@ -92,33 +94,33 @@ export default function DettaglioScheda() {
 
             <div className="flex gap-2 items-center flex-wrap sm:shrink-0">
               <span className={`badge ${LIVELLI[scheda.livello]?.colore || 'accent'}`}>
-                {LIVELLI[scheda.livello]?.label}
+                {LIVELLI[scheda.livello] && t(LIVELLI[scheda.livello].label)}
               </span>
               {scheda.creatore?.id === utente?.id ? (
                 <button
                   onClick={() => setMostraModifica(true)}
                   className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors"
                 >
-                  ✏️ Modifica
+                  {t('dettaglioScheda.modifica')}
                 </button>
               ) : (
                 <button
                   onClick={clonaScheda}
                   disabled={clonando}
                   className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50"
-                  title="Salva una copia personale modificabile"
+                  title={t('dettaglioScheda.clonaTitolo')}
                 >
-                  {clonando ? 'Clono…' : '⧉ Clona'}
+                  {clonando ? t('dettaglioScheda.clono') : t('dettaglioScheda.clona')}
                 </button>
               )}
 
               <button
                 onClick={scaricaDocx}
                 disabled={scaricando}
-                title="Scarica in formato Word, per consultarla offline"
+                title={t('dettaglioScheda.scaricaWordTitolo')}
                 className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50"
               >
-                {scaricando ? 'Preparo…' : '⬇ Word'}
+                {scaricando ? t('dettaglioScheda.preparo') : '⬇ Word'}
               </button>
             </div>
           </div>
@@ -139,7 +141,7 @@ export default function DettaglioScheda() {
                   onClick={() => setDescrizioneEspansa(!descrizioneEspansa)}
                   className="flex items-center gap-1 text-xs text-[var(--accent)] font-semibold mt-2 hover:text-[var(--accent-hover)] transition-colors focus:outline-none"
                 >
-                  {descrizioneEspansa ? 'Mostra meno' : 'Mostra tutto'}
+                  {descrizioneEspansa ? t('dettaglioScheda.mostraMeno') : t('dettaglioScheda.mostraTutto')}
                   <svg
                     className={`w-3.5 h-3.5 transform transition-transform duration-200 ${
                       descrizioneEspansa ? 'rotate-180' : ''
@@ -156,7 +158,7 @@ export default function DettaglioScheda() {
           )}
 
           <p className="text-xs text-[var(--testo-terziario)] border-t border-[var(--bordo)] pt-3 mt-1">
-            Creata da {scheda.creatore?.nome} · {scheda.esercizi?.length} esercizi
+            {t('dettaglioScheda.creataDa', { nome: scheda.creatore?.nome ?? '', count: scheda.esercizi?.length ?? 0 })}
           </p>
         </div>
 
@@ -168,8 +170,8 @@ export default function DettaglioScheda() {
             const partiCardio = [];
             if (es.durataMinuti != null) partiCardio.push(`${es.durataMinuti} min`);
             if (es.velocitaKmh != null) partiCardio.push(`${es.velocitaKmh} km/h`);
-            if (es.inclinazione != null) partiCardio.push(`incl ${es.inclinazione}%`);
-            if (es.livelloResistenza != null) partiCardio.push(`liv ${es.livelloResistenza}`);
+            if (es.inclinazione != null) partiCardio.push(t('dettaglioScheda.inclinazione', { valore: es.inclinazione }));
+            if (es.livelloResistenza != null) partiCardio.push(t('dettaglioScheda.livelloResistenza', { valore: es.livelloResistenza }));
             if (es.distanzaKm != null) partiCardio.push(`${es.distanzaKm} km`);
             return (
             <motion.div
@@ -187,23 +189,23 @@ export default function DettaglioScheda() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium">
                   {es.riscaldamento ? '🔥 ' : cardio ? '🏃 ' : ''}{nomeEsercizio(es.esercizio)}
-                  {es.riscaldamento && <span className="text-xs text-[var(--accent)]"> · riscaldamento</span>}
+                  {es.riscaldamento && <span className="text-xs text-[var(--accent)]"> · {t('dettaglioScheda.riscaldamento')}</span>}
                 </p>
                 {nomeEsercizioOriginale(es.esercizio) && (
                   <p className="text-xs text-[var(--testo-terziario)] italic truncate">{nomeEsercizioOriginale(es.esercizio)}</p>
                 )}
                 <p className="text-xs text-[var(--testo-terziario)]">
-                  {es.esercizio.gruppoMuscoloPrimario}
-                  {es.esercizio.attrezzatura ? ` · ${es.esercizio.attrezzatura.nome}` : ''}
+                  {nomeGruppo(es.esercizio.gruppoMuscoloPrimario)}
+                  {es.esercizio.attrezzatura ? ` · ${nomeAttrezzatura(es.esercizio.attrezzatura.nome)}` : ''}
                 </p>
               </div>
               <div className="text-right shrink-0">
                 {cardio ? (
-                  <p className="text-sm font-semibold">{partiCardio.join(' · ') || 'Cardio'}</p>
+                  <p className="text-sm font-semibold">{partiCardio.join(' · ') || t('dettaglioScheda.cardio')}</p>
                 ) : (
                   <>
                     <p className="text-sm font-semibold">{es.serieTarget} × {es.repTarget}</p>
-                    <p className="text-xs text-[var(--testo-terziario)]">{es.recuperoSecondi}s rec.</p>
+                    <p className="text-xs text-[var(--testo-terziario)]">{t('dettaglioScheda.recupero', { secondi: es.recuperoSecondi ?? '' })}</p>
                   </>
                 )}
               </div>
@@ -222,7 +224,7 @@ export default function DettaglioScheda() {
 
         {/* Start CTA */}
         <button onClick={avviaAllenamento} className="btn-enorme">
-          🏋️ Inizia Allenamento
+          {t('dettaglioScheda.iniziaAllenamento')}
         </button>
       </motion.div>
 

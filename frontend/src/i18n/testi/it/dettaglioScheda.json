@@ -1,0 +1,21 @@
+{
+  "nomeFileScheda": "scheda",
+  "downloadFallito": "Download non riuscito",
+  "tornaAlleSchede": "← Torna alle schede",
+  "modifica": "✏️ Modifica",
+  "clonaTitolo": "Salva una copia personale modificabile",
+  "clono": "Clono…",
+  "clona": "⧉ Clona",
+  "scaricaWordTitolo": "Scarica in formato Word, per consultarla offline",
+  "preparo": "Preparo…",
+  "mostraMeno": "Mostra meno",
+  "mostraTutto": "Mostra tutto",
+  "creataDa_one": "Creata da {nome} · {count} esercizio",
+  "creataDa_other": "Creata da {nome} · {count} esercizi",
+  "inclinazione": "incl {valore}%",
+  "livelloResistenza": "liv {valore}",
+  "riscaldamento": "riscaldamento",
+  "cardio": "Cardio",
+  "recupero": "{secondi}s rec.",
+  "iniziaAllenamento": "🏋️ Inizia Allenamento"
+}

@@ -7,12 +7,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../../utils/ricerca.js';
 import { usePreferiti } from '../../hooks/usePreferiti.js';
 import { useAPezzi } from '../../hooks/useAPezzi.js';
-import { nomeEsercizio } from '../../utils/formattatori.js';
+import { nomeEsercizio, nomeGruppo, nomeAttrezzatura, formattaNumero } from '../../utils/formattatori.js';
+import { useLingua } from '../../hooks/useLingua.js';
+import Testo from '../../i18n/Testo.jsx';
 import { api } from '../../config/api.js';
-import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, LIVELLI } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null }) {
+  const { t } = useLingua();
   const [step, setStep] = useState(1); // 1: basic info, 2: add exercises
   const [form, setForm] = useState(
     schedaEsistente 
@@ -158,7 +161,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-[var(--bordo)]">
           <h2 className="text-xl font-bold">
-            {schedaEsistente ? 'Modifica Scheda' : (step === 1 ? 'Nuova Scheda' : 'Aggiungi Esercizi')}
+            {schedaEsistente ? t('creaScheda.modificaScheda') : (step === 1 ? t('creaScheda.nuovaScheda') : t('creaScheda.aggiungiEsercizi'))}
           </h2>
           <button onClick={onChiudi} className="text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] text-xl p-1">✕</button>
         </div>
@@ -169,29 +172,29 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
             /* Step 1: Basic info */
             <div className="flex flex-col gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Titolo *</label>
+                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('creaScheda.titoloCampo')}</label>
                 <input type="text" value={form.titolo} onChange={e => setForm(p => ({...p, titolo: e.target.value}))}
-                       className="campo-input" placeholder="Es: Push Day - Petto e Tricipiti" autoFocus />
+                       className="campo-input" placeholder={t('creaScheda.titoloPlaceholder')} autoFocus />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Descrizione</label>
+                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('creaScheda.descrizione')}</label>
                 <textarea value={form.descrizione} onChange={e => setForm(p => ({...p, descrizione: e.target.value}))}
-                          className="campo-input" rows={2} placeholder="Descrizione opzionale" />
+                          className="campo-input" rows={2} placeholder={t('creaScheda.descrizionePlaceholder')} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Livello</label>
+                  <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('creaScheda.livello')}</label>
                   <select value={form.livello} onChange={e => setForm(p => ({...p, livello: e.target.value}))} className="campo-input">
-                    <option value="BASE">Base</option>
-                    <option value="INTERMEDIO">Intermedio</option>
-                    <option value="AVANZATO">Avanzato</option>
+                    <option value="BASE">{t(LIVELLI.BASE.label)}</option>
+                    <option value="INTERMEDIO">{t(LIVELLI.INTERMEDIO.label)}</option>
+                    <option value="AVANZATO">{t(LIVELLI.AVANZATO.label)}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Visibilità</label>
+                  <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('creaScheda.visibilita')}</label>
                   <select value={form.visibilita} onChange={e => setForm(p => ({...p, visibilita: e.target.value}))} className="campo-input">
-                    <option value="PERSONALE">Personale</option>
-                    <option value="GLOBALE">Globale</option>
+                    <option value="PERSONALE">{t('creaScheda.personale')}</option>
+                    <option value="GLOBALE">{t('creaScheda.globale')}</option>
                   </select>
                 </div>
               </div>
@@ -203,7 +206,8 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
               {eserciziSelezionati.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--testo-secondario)] mb-3">
-                    Selezionati ({eserciziSelezionati.length}) — <span className="text-[10px] font-normal text-[var(--testo-terziario)]">usa ▲▼ per riordinare</span>
+                    <Testo t="creaScheda.selezionati" valori={{ numero: eserciziSelezionati.length }}
+                           componenti={{ piccolo: <span className="text-[10px] font-normal text-[var(--testo-terziario)]" /> }} />
                   </h3>
                   <div className="flex flex-col gap-3">
                     <AnimatePresence initial={false}>
@@ -225,37 +229,37 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                                 onClick={() => spostaEsercizio(idx, -1)}
                                 disabled={idx === 0}
                                 className="btn-freccia-ordine"
-                                title="Sposta su"
+                                title={t('creaScheda.spostaSu')}
                               >▲</button>
                               <button
                                 onClick={() => spostaEsercizio(idx, 1)}
                                 disabled={idx === eserciziSelezionati.length - 1}
                                 className="btn-freccia-ordine"
-                                title="Sposta giù"
+                                title={t('creaScheda.spostaGiu')}
                               >▼</button>
                             </div>
                             <span className="esercizio-sel-numero">{idx + 1}</span>
                             <span className="esercizio-sel-nome">{es.nome}</span>
                             <button onClick={() => toggleEsercizio({ id: es.esercizioId })}
                                     className="text-[var(--pericolo)] text-sm px-1 hover:scale-110 transition-transform shrink-0"
-                                    title="Rimuovi esercizio">✕</button>
+                                    title={t('creaScheda.rimuoviEsercizio')}>✕</button>
                           </div>
 
                           {/* Parameters row - IMPROVED */}
                           <div className="esercizio-sel-parametri">
                             <div className="esercizio-param-gruppo">
-                              <label className="esercizio-param-label">Serie</label>
+                              <label className="esercizio-param-label">{t('creaScheda.serie')}</label>
                               <input type="number" value={es.serieTarget} onChange={e => aggiornaPianoEsercizio(idx, 'serieTarget', e.target.value)}
                                      className="esercizio-param-input" style={{ width: '52px' }} min={1} max={10} />
                             </div>
                             <span className="esercizio-param-sep">×</span>
                             <div className="esercizio-param-gruppo">
-                              <label className="esercizio-param-label">Rep</label>
+                              <label className="esercizio-param-label">{t('creaScheda.rep')}</label>
                               <input type="text" value={es.repTarget} onChange={e => aggiornaPianoEsercizio(idx, 'repTarget', e.target.value)}
                                      className="esercizio-param-input" style={{ width: '64px' }} />
                             </div>
                             <div className="esercizio-param-gruppo ml-auto">
-                              <label className="esercizio-param-label">Rec.</label>
+                              <label className="esercizio-param-label">{t('creaScheda.recupero')}</label>
                               <input type="number" value={es.recuperoSecondi} onChange={e => aggiornaPianoEsercizio(idx, 'recuperoSecondi', e.target.value)}
                                      className="esercizio-param-input" style={{ width: '64px' }} step={15} min={0} />
                               <span className="esercizio-param-unita">s</span>
@@ -268,7 +272,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                             type="text"
                             value={es.note || ''}
                             onChange={e => aggiornaPianoEsercizio(idx, 'note', e.target.value)}
-                            placeholder="Nota tecnica (facoltativa) — es. gomiti a 45°, pausa di 2 secondi in cima"
+                            placeholder={t('creaScheda.notaTecnica')}
                             className="w-full mt-2 px-3 py-2 rounded-[var(--raggio-sm)] text-xs bg-[var(--bg-terziario)] text-[var(--testo-primario)] border border-[var(--bordo-light)] focus:border-[var(--accent)] focus:outline-none"
                           />
                         </motion.div>
@@ -280,12 +284,12 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
 
               {/* Highlighted muscle group filter */}
               <div className="crea-scheda-filtro-gruppo">
-                <label className="text-sm font-semibold text-[var(--testo-primario)] mb-2 block">Filtra per gruppo muscolare</label>
+                <label className="text-sm font-semibold text-[var(--testo-primario)] mb-2 block">{t('creaScheda.filtraPerGruppo')}</label>
                 <div className="crea-scheda-gruppi-wrap">
                   <button
                     onClick={() => setFiltroGruppo('')}
                     className={`crea-scheda-gruppo-btn ${!filtroGruppo ? 'attivo' : ''}`}
-                  >Tutti</button>
+                  >{t('comune.tutti')}</button>
                   {gruppiUnici.map(g => {
                     const info = GRUPPI_MUSCOLARI[g];
                     return (
@@ -295,7 +299,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                         style={filtroGruppo === g && info ? { borderColor: info.colore, background: `${info.colore}22` } : {}}
                       >
                         {info?.emoji && <span>{info.emoji}</span>}
-                        {g}
+                        {nomeGruppo(g)}
                       </button>
                     );
                   })}
@@ -304,12 +308,12 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
 
               {/* Search bar */}
               <input type="text" value={ricerca} onChange={e => setRicerca(e.target.value)}
-                     className="campo-input campo-ricerca" placeholder="🔍 Cerca esercizio..." />
+                     className="campo-input campo-ricerca" placeholder={t('creaScheda.cercaEsercizio')} />
 
               {/* Exercise catalog */}
               <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
                 {eserciziFiltrati.length === 0 ? (
-                  <div className="text-center py-6 text-[var(--testo-terziario)]">Nessun esercizio trovato</div>
+                  <div className="text-center py-6 text-[var(--testo-terziario)]">{t('creaScheda.nessunEsercizio')}</div>
                 ) : eserciziVisibili.map(es => {
                   const selezionato = eserciziSelezionati.some(e => e.esercizioId === es.id);
                   return (
@@ -319,9 +323,9 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                             }`}>
                       <span className="text-lg">{selezionato ? '✅' : '➕'}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{preferiti.has(es.id) && <span title="Preferito">⭐ </span>}{nomeEsercizio(es)}</p>
+                        <p className="font-medium truncate">{preferiti.has(es.id) && <span title={t('creaScheda.preferito')}>⭐ </span>}{nomeEsercizio(es)}</p>
                         <p className="text-xs text-[var(--testo-terziario)]">
-                          {es.gruppoMuscoloPrimario} {es.attrezzatura ? `· ${es.attrezzatura.nome}` : ''}
+                          {nomeGruppo(es.gruppoMuscoloPrimario)} {es.attrezzatura ? `· ${nomeAttrezzatura(es.attrezzatura.nome)}` : ''}
                         </p>
                       </div>
                     </button>
@@ -329,7 +333,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                 })}
                 {restanti > 0 && (
                   <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-2 hover:underline">
-                    Mostra altri ({restanti.toLocaleString('it-IT')})
+                    {t('creaScheda.mostraAltri', { numero: formattaNumero(restanti) })}
                   </button>
                 )}
               </div>
@@ -340,15 +344,19 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
         {/* Footer */}
         <div className="flex items-center justify-between p-5 border-t border-[var(--bordo)]">
           {step === 2 ? (
-            <button onClick={() => setStep(1)} className="btn-secondario">← Indietro</button>
+            <button onClick={() => setStep(1)} className="btn-secondario">{t('creaScheda.indietro')}</button>
           ) : <div />}
           {step === 1 ? (
             <button onClick={() => setStep(2)} disabled={!form.titolo.trim()} className="btn-primario">
-              Aggiungi esercizi →
+              {t('creaScheda.aggiungiEserciziAvanti')}
             </button>
           ) : (
             <button onClick={gestisciCrea} disabled={caricamento} className="btn-primario">
-              {caricamento ? 'Salvataggio...' : (schedaEsistente ? `Salva modifiche (${eserciziSelezionati.length} es.)` : `Crea scheda (${eserciziSelezionati.length} es.)`)}
+              {caricamento
+                ? t('creaScheda.salvataggio')
+                : (schedaEsistente
+                  ? t('creaScheda.salvaModifiche', { numero: eserciziSelezionati.length })
+                  : t('creaScheda.creaScheda', { numero: eserciziSelezionati.length }))}
             </button>
           )}
         </div>

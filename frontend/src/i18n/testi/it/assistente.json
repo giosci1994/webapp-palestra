@@ -1,0 +1,23 @@
+{
+  "suggerimenti": {
+    "push": "Suggerisci un allenamento push per intermedi",
+    "panca": "Ho la panca occupata, cosa posso fare al suo posto?",
+    "progressi": "Analizza i miei progressi recenti",
+    "nutrizione": "Consigli per la nutrizione post-workout",
+    "gambe": "Esercizi per rinforzare le gambe senza squat",
+    "carichi": "Come dovrei aumentare i carichi progressivamente?"
+  },
+  "erroreComunicazione": "Errore nella comunicazione con GymBot. Riprova.",
+  "conversazioneRipresa": "📂 Conversazione ripresa. Scrivi un messaggio per continuare!",
+  "sottotitolo": "Assistente fitness AI · Powered by Gemini",
+  "storico": "📂 Storico",
+  "nuova": "＋ Nuova",
+  "conversazioniPrecedenti": "Conversazioni precedenti",
+  "nessunaConversazione": "Nessuna conversazione passata",
+  "conversazione": "Conversazione",
+  "benvenuto": "Ciao! Sono GymBot",
+  "benvenutoDescrizione": "Il tuo assistente fitness personale. Chiedimi consigli su allenamento, nutrizione, progressione carichi e molto altro!",
+  "staPensando": "GymBot sta pensando...",
+  "chiedi": "Chiedi a GymBot...",
+  "avvertenza": "GymBot può commettere errori. Consulta un professionista per consigli medici."
+}

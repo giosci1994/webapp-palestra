@@ -9,10 +9,13 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useSocket } from '../contesti/SocketContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
+import { useLingua } from '../hooks/useLingua.js';
+import { localeCorrente } from '../i18n/index.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeft } from 'lucide-react';
 
 export default function Conversazione() {
+  const { t } = useLingua();
   const { id } = useParams();
   const { utente } = useAuth();
   const { emit, on, connesso } = useSocket();
@@ -45,7 +48,7 @@ export default function Conversazione() {
         const conv = (convRisposta.dati || []).find(c => c.id === conversazioneId);
         if (conv) {
           const altro = conv.partecipanti?.find(p => p.utente?.id !== utente.id)?.utente;
-          setNomeAltro(altro?.nome || 'Utente');
+          setNomeAltro(altro?.nome || '');
           setAltroId(altro?.id || null);
         }
       } catch (err) {
@@ -183,7 +186,7 @@ export default function Conversazione() {
     let dataCorrente = null;
 
     msgs.forEach(msg => {
-      const data = new Date(msg.inviatoIl).toLocaleDateString('it-IT');
+      const data = new Date(msg.inviatoIl).toLocaleDateString(localeCorrente());
       if (data !== dataCorrente) {
         gruppi.push({ tipo: 'data', valore: data });
         dataCorrente = data;
@@ -203,6 +206,8 @@ export default function Conversazione() {
   }
 
   const elementiChat = raggruppaPerData(messaggi);
+  // The other user's name; the placeholder only if the server gave none
+  const nomeVisibile = nomeAltro || t('conversazione.utente');
 
   return (
     <div className="relative z-[60] bg-[var(--bg-primario)] flex flex-col w-full mx-auto border-x-0 md:border-x border-[var(--bordo)] rounded-[var(--raggio-lg)] overflow-hidden"
@@ -215,18 +220,18 @@ export default function Conversazione() {
         </Link>
         <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
              style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-          {nomeAltro.charAt(0)?.toUpperCase()}
+          {nomeVisibile.charAt(0)?.toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-semibold text-sm truncate">{nomeAltro}</p>
+          <p className="font-semibold text-sm truncate">{nomeVisibile}</p>
           <p className="text-[10px] text-[var(--testo-terziario)]">
             {staScrivendo
-              ? 'sta scrivendo...'
+              ? t('conversazione.staScrivendo')
               : altroOnline
-                ? '🟢 online'
+                ? t('conversazione.online')
                 : altroUltimoAccesso
-                  ? `visto ${formattaDataRelativa(altroUltimoAccesso)}`
-                  : '⚪ offline'}
+                  ? t('conversazione.visto', { quando: formattaDataRelativa(altroUltimoAccesso) })
+                  : t('conversazione.offline')}
           </p>
         </div>
       </div>
@@ -263,7 +268,7 @@ export default function Conversazione() {
               >
                 <p style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{msg.contenuto}</p>
                 <p className={`text-[10px] mt-1.5 ${mio ? 'text-white/60' : 'text-[var(--testo-terziario)]'}`}>
-                  {new Date(msg.inviatoIl).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                  {new Date(msg.inviatoIl).toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
             </motion.div>
@@ -297,7 +302,7 @@ export default function Conversazione() {
             onChange={gestisciInput}
             onKeyDown={gestisciTasto}
             onFocus={() => setTimeout(() => window.scrollTo(0, 0), 100)}
-            placeholder="Scrivi un messaggio..."
+            placeholder={t('conversazione.scriviMessaggio')}
             rows={1}
             className="campo-input flex-1 resize-none min-h-[48px] max-h-[120px] rounded-[24px] pr-12 text-[16px]"
             style={{ paddingTop: '12px', paddingBottom: '12px' }}
@@ -310,7 +315,7 @@ export default function Conversazione() {
           </button>
         </div>
         {!connesso && (
-          <p className="text-xs text-[var(--avviso)] mt-2 text-center font-medium">⚠️ Connessione in corso...</p>
+          <p className="text-xs text-[var(--avviso)] mt-2 text-center font-medium">{t('conversazione.connessione')}</p>
         )}
       </div>
     </div>

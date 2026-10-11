@@ -6,16 +6,19 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
+import { nomeGruppo } from '../../utils/formattatori.js';
+import { useLingua } from '../../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Status badges for the suggestions
+// Status badges for the suggestions (label is a translation key)
 const STATI_BADGE = {
-  IN_ATTESA: { label: 'In attesa', classe: 'bg-[var(--avviso-dim)] text-[var(--avviso)]' },
-  APPROVATO: { label: 'Approvato', classe: 'bg-[var(--successo-dim)] text-[var(--successo)]' },
-  RIFIUTATO: { label: 'Rifiutato', classe: 'bg-[var(--pericolo-dim)] text-[var(--pericolo)]' }
+  IN_ATTESA: { label: 'suggerisciEsercizio.stato.IN_ATTESA', classe: 'bg-[var(--avviso-dim)] text-[var(--avviso)]' },
+  APPROVATO: { label: 'suggerisciEsercizio.stato.APPROVATO', classe: 'bg-[var(--successo-dim)] text-[var(--successo)]' },
+  RIFIUTATO: { label: 'suggerisciEsercizio.stato.RIFIUTATO', classe: 'bg-[var(--pericolo-dim)] text-[var(--pericolo)]' }
 };
 
 export default function SuggerisciEsercizio({ className }) {
+  const { t } = useLingua();
   const [aperto, setAperto] = useState(false);
   const [invio, setInvio] = useState(false);
   const [successo, setSuccesso] = useState(false);
@@ -71,8 +74,8 @@ export default function SuggerisciEsercizio({ className }) {
         <div className="flex items-center gap-3">
           <span className="text-2xl">💡</span>
           <div className="text-left">
-            <p className="font-semibold text-sm">Non trovi un esercizio?</p>
-            <p className="text-xs text-[var(--testo-terziario)]">Suggeriscine uno nuovo all'amministratore</p>
+            <p className="font-semibold text-sm">{t('suggerisciEsercizio.nonTrovi')}</p>
+            <p className="text-xs text-[var(--testo-terziario)]">{t('suggerisciEsercizio.suggerisciNuovo')}</p>
           </div>
         </div>
         <motion.span
@@ -102,16 +105,16 @@ export default function SuggerisciEsercizio({ className }) {
                   className="text-center py-6"
                 >
                   <span className="text-5xl mb-4 block">✅</span>
-                  <h3 className="text-lg font-bold mb-2">Proposta inviata!</h3>
+                  <h3 className="text-lg font-bold mb-2">{t('suggerisciEsercizio.inviata')}</h3>
                   <p className="text-sm text-[var(--testo-secondario)] mb-4">
-                    L'amministratore esaminerà il tuo suggerimento e ti notificherà l'esito.
+                    {t('suggerisciEsercizio.inviataDescrizione')}
                   </p>
                   <div className="flex gap-2 justify-center">
                     <button onClick={resetForm} className="btn-primario text-sm">
-                      Suggerisci un altro
+                      {t('suggerisciEsercizio.suggerisciAltro')}
                     </button>
                     <button onClick={() => setAperto(false)} className="btn-secondario text-sm">
-                      Chiudi
+                      {t('comune.chiudi')}
                     </button>
                   </div>
                 </motion.div>
@@ -119,7 +122,7 @@ export default function SuggerisciEsercizio({ className }) {
                 /* Suggestion form */
                 <div className="flex flex-col gap-3">
                   <h3 className="font-semibold text-sm text-[var(--testo-secondario)] flex items-center gap-2">
-                    <span>📝</span> Proponi un nuovo esercizio
+                    <span>📝</span> {t('suggerisciEsercizio.proponi')}
                   </h3>
 
                   <input
@@ -127,7 +130,7 @@ export default function SuggerisciEsercizio({ className }) {
                     value={form.nome}
                     onChange={e => setForm(p => ({ ...p, nome: e.target.value }))}
                     className="campo-input"
-                    placeholder="Nome esercizio *"
+                    placeholder={t('suggerisciEsercizio.nomeEsercizio')}
                     autoFocus
                   />
 
@@ -137,9 +140,9 @@ export default function SuggerisciEsercizio({ className }) {
                       onChange={e => setForm(p => ({ ...p, gruppoMuscoloPrimario: e.target.value }))}
                       className="campo-input"
                     >
-                      <option value="" disabled>Gruppo primario *</option>
+                      <option value="" disabled>{t('suggerisciEsercizio.gruppoPrimario')}</option>
                       {gruppi.map(g => (
-                        <option key={g} value={g}>{GRUPPI_MUSCOLARI[g]?.emoji} {g}</option>
+                        <option key={g} value={g}>{GRUPPI_MUSCOLARI[g]?.emoji} {nomeGruppo(g)}</option>
                       ))}
                     </select>
 
@@ -148,9 +151,9 @@ export default function SuggerisciEsercizio({ className }) {
                       onChange={e => setForm(p => ({ ...p, gruppoMuscoloSecondario: e.target.value }))}
                       className="campo-input"
                     >
-                      <option value="">Gruppo secondario</option>
+                      <option value="">{t('suggerisciEsercizio.gruppoSecondario')}</option>
                       {gruppi.map(g => (
-                        <option key={g} value={g}>{GRUPPI_MUSCOLARI[g]?.emoji} {g}</option>
+                        <option key={g} value={g}>{GRUPPI_MUSCOLARI[g]?.emoji} {nomeGruppo(g)}</option>
                       ))}
                     </select>
                   </div>
@@ -160,7 +163,7 @@ export default function SuggerisciEsercizio({ className }) {
                     value={form.attrezzaturaSuggerita}
                     onChange={e => setForm(p => ({ ...p, attrezzaturaSuggerita: e.target.value }))}
                     className="campo-input"
-                    placeholder="Attrezzatura (es: Manubri, Cavi, Sbarra...)"
+                    placeholder={t('suggerisciEsercizio.attrezzatura')}
                   />
 
                   <textarea
@@ -168,7 +171,7 @@ export default function SuggerisciEsercizio({ className }) {
                     onChange={e => setForm(p => ({ ...p, descrizione: e.target.value }))}
                     className="campo-input"
                     rows={2}
-                    placeholder="Descrizione o note (opzionale)"
+                    placeholder={t('suggerisciEsercizio.descrizione')}
                   />
 
                   <button
@@ -176,7 +179,7 @@ export default function SuggerisciEsercizio({ className }) {
                     disabled={invio || !form.nome.trim() || !form.gruppoMuscoloPrimario}
                     className="btn-primario w-full"
                   >
-                    {invio ? 'Invio in corso...' : '📤 Invia suggerimento'}
+                    {invio ? t('suggerisciEsercizio.invioInCorso') : t('suggerisciEsercizio.invia')}
                   </button>
                 </div>
               )}
@@ -189,7 +192,7 @@ export default function SuggerisciEsercizio({ className }) {
                     className="text-xs font-semibold text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] flex items-center gap-1 transition-colors"
                   >
                     <span>{mostraStorico ? '▾' : '▸'}</span>
-                    I tuoi suggerimenti ({suggerimenti.length})
+                    {t('suggerisciEsercizio.tuoiSuggerimenti', { numero: suggerimenti.length })}
                   </button>
 
                   <AnimatePresence>
@@ -206,10 +209,10 @@ export default function SuggerisciEsercizio({ className }) {
                               <span className="text-lg">{GRUPPI_MUSCOLARI[s.gruppoMuscoloPrimario]?.emoji || '💪'}</span>
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium truncate">{s.nome}</p>
-                                <p className="text-[10px] text-[var(--testo-terziario)]">{s.gruppoMuscoloPrimario}</p>
+                                <p className="text-[10px] text-[var(--testo-terziario)]">{nomeGruppo(s.gruppoMuscoloPrimario)}</p>
                               </div>
                               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${STATI_BADGE[s.stato]?.classe}`}>
-                                {STATI_BADGE[s.stato]?.label}
+                                {STATI_BADGE[s.stato] && t(STATI_BADGE[s.stato].label)}
                               </span>
                             </div>
                           ))}
