@@ -61,19 +61,12 @@ export default function SchedeAllenamento() {
   const [filtroGruppo, setFiltroGruppo] = useState('');
   const [filtroDifficolta, setFiltroDifficolta] = useState('');
 
-  const caricaSchede = async () => {
-    try {
-      setCaricamento(true);
-      const risposta = await api.get('/schede');
-      setSchede(risposta.dati || []);
-    } catch (err) {
-      console.error('Errore caricamento schede:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
-
-  useEffect(() => { caricaSchede(); }, []);
+  useEffect(() => {
+    api.get('/schede')
+      .then(risposta => setSchede(risposta.dati || []))
+      .catch(err => console.error('Errore caricamento schede:', err))
+      .finally(() => setCaricamento(false));
+  }, []);
 
   const eliminaScheda = async (id) => {
     if (!confirm('Sei sicuro di voler eliminare questa scheda?')) return;

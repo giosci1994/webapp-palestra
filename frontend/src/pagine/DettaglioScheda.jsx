@@ -42,7 +42,7 @@ export default function DettaglioScheda() {
       .then(r => setScheda(r.dati))
       .catch(err => { alert(err.message); naviga('/schede'); })
       .finally(() => setCaricamento(false));
-  }, [id]);
+  }, [id, naviga]);
 
   const avviaAllenamento = async () => {
     try {

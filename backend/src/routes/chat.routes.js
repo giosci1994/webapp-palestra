@@ -6,10 +6,12 @@
 import { Router } from 'express';
 import { inviaRichiesta, rispondiRichiesta, richiesteRicevute, listaConversazioni, messaggiConversazione, contatoreNonLetti } from '../controllers/chat.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
-import { valida } from '../middleware/validazione.js';
+import { valida, idNumerico } from '../middleware/validazione.js';
 import { schemaRichiestaContatto, schemaRispostaContatto } from '../validators/chat.schema.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 
 // Tutte le rotte chat richiedono autenticazione
 router.use(verificaToken);

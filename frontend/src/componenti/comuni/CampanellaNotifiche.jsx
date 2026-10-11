@@ -19,15 +19,14 @@ export default function CampanellaNotifiche({ compatta = false }) {
   const { on } = useSocket();
   const naviga = useNavigate();
 
-  const carica = useCallback(async () => {
-    try {
-      const res = await api.get('/notifiche?limite=20');
+  const carica = useCallback(() => api.get('/notifiche?limite=20')
+    .then(res => {
       setNotifiche(res.dati?.notifiche || []);
       setNonLette(res.dati?.nonLette || 0);
-    } catch {
+    })
+    .catch(() => {
       // Silenzioso: la campanella non deve disturbare se l'API non risponde
-    }
-  }, []);
+    }), []);
 
   useEffect(() => { carica(); }, [carica]);
 

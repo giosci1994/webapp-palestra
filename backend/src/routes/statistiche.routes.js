@@ -9,8 +9,12 @@ import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_PRINCIPALI, GRUPPI_NON_MUSCOLARI } from '../utils/gruppiMuscolari.js';
 import { consiglioAllenamento } from '../services/consiglio.service.js';
 import { giornoLocale } from '../utils/date.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
+router.param('esercizioId', idNumerico);
 router.use(verificaToken);
 
 const SETTIMANA = 7 * 86400000;

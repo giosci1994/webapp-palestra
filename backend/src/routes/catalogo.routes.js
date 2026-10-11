@@ -7,8 +7,11 @@ import { Router } from 'express';
 import { verificaToken, verificaTokenOpzionale } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione } from '../utils/errori.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 
 // --- Lista Esercizi (con filtri avanzati) ---
 router.get('/esercizi', verificaToken, async (req, res, next) => {

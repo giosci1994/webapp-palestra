@@ -8,6 +8,7 @@ import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { GRUPPI_MUSCOLARI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAPezzi } from '../hooks/useAPezzi.js';
 
 const STATI_BADGE = {
   IN_ATTESA: { label: 'In attesa', classe: 'bg-[var(--avviso-dim)] text-[var(--avviso)]' },
@@ -106,6 +107,7 @@ export default function AdminEsercizi() {
     () => cerca(indiceRicerca, ricerca).filter(e => !filtroGruppo || e.gruppoMuscoloPrimario === filtroGruppo),
     [indiceRicerca, ricerca, filtroGruppo]
   );
+  const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
   const suggerimentiPendenti = suggerimenti.filter(s => s.stato === 'IN_ATTESA');
   const suggerimentiGestiti = suggerimenti.filter(s => s.stato !== 'IN_ATTESA');
@@ -327,8 +329,8 @@ export default function AdminEsercizi() {
         <div className="flex justify-center py-12"><div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" /></div>
       ) : (
         <div className="flex flex-col gap-1">
-          {eserciziFiltrati.map((e, i) => (
-            <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}
+          {eserciziVisibili.map((e, i) => (
+            <motion.div key={e.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i, 20) * 0.02 }}
                         className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] hover:bg-[var(--bg-terziario)] transition-all group">
               <span className="text-lg">{GRUPPI_MUSCOLARI[e.gruppoMuscoloPrimario]?.emoji || '💪'}</span>
               <div className="flex-1 min-w-0">
@@ -341,6 +343,11 @@ export default function AdminEsercizi() {
               </div>
             </motion.div>
           ))}
+          {restanti > 0 && (
+            <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
+              Mostra altri ({restanti.toLocaleString('it-IT')})
+            </button>
+          )}
         </div>
       )}
     </div>

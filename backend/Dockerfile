@@ -33,6 +33,7 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package*.json ./
 COPY --from=build /app/src ./src
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/prisma.config.js ./
 
 # Copia version.json dalla root del progetto per l'endpoint info-app
 COPY version.json ../version.json

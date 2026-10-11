@@ -2,6 +2,8 @@
 # Backend: test unitari e d'integrazione, con Postgres e Redis usa-e-getta
 # avviati da Docker Compose come in locale (backend/test/esegui.js).
 # Frontend: lint, test e build.
+# Immagini: le immagini Docker di produzione si costruiscono e il backend
+# parte davvero (.github/immagini/docker-compose.yml).
 name: Test
 
 on:
@@ -49,9 +51,35 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      # Gli errori bloccano, gli avvisi no
+      # Errori e avvisi bloccano: il frontend e' a zero e ci resta
       - run: npm run lint
       - run: npm test
       # Un import rotto o un JSX sbagliato fanno fallire la build prima di
       # qualsiasi test
       - run: npm run build
+
+  immagini:
+    # Non basta che un'immagine si costruisca: deve anche partire. Il backend
+    # applica le migrazioni a un database vuoto, esegue il seed e risponde
+    # come in produzione; bot e scraper (che hanno bisogno di Telegram e di
+    # internet) si costruiscono e il loro codice deve caricarsi.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .github/immagini
+    steps:
+      - uses: actions/checkout@v7
+      - run: docker compose --profile controlli build
+      - run: docker compose up -d --wait --wait-timeout 300 backend
+      - name: Il backend risponde
+        run: |
+          docker compose exec -T backend node -e "fetch('http://localhost:3000/api/v1/salute').then(async r => { console.log(r.status, await r.text()); process.exit(r.ok ? 0 : 1) })"
+      - name: Il codice del bot si carica
+        run: docker compose --profile controlli run --rm --no-deps bot node --check bot.js
+      - name: Il codice dello scraper si carica
+        run: docker compose --profile controlli run --rm --no-deps --entrypoint node scraper --check scraper-affluenza.js
+      - name: Log dei container
+        if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose --profile controlli down -v

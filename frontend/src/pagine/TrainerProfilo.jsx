@@ -13,13 +13,14 @@ export default function TrainerProfilo() {
   const { id } = useParams();
   const naviga = useNavigate();
   const [pt, setPt] = useState(null);
-  const [caricamento, setCaricamento] = useState(true);
+  // Il PT dei dati caricati: aprendo un altro profilo si sta caricando
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = caricatoPer !== id;
   const [mioPT, setMioPT] = useState(undefined);
   const [iscrivendo, setIscrivendo] = useState(false);
 
   useEffect(() => {
-    setCaricamento(true);
-    api.get(`/utenti/personal-trainers/${id}`).then(r => setPt(r.dati)).catch(() => setPt(null)).finally(() => setCaricamento(false));
+    api.get(`/utenti/personal-trainers/${id}`).then(r => setPt(r.dati)).catch(() => setPt(null)).finally(() => setCaricatoPer(id));
     api.get('/utenti/mio-pt').then(r => setMioPT(r.dati)).catch(() => setMioPT(null));
   }, [id]);
 

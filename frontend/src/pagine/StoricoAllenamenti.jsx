@@ -3,22 +3,24 @@
 // Visualizzazione dettagliata degli allenamenti passati
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
-import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
+
+/** Finito da poco: si puo' ancora riprendere (PATCH /sessioni/:id/riapri). */
+const riprendibile = (sessione) => sessione.dataFine && Date.now() - new Date(sessione.dataFine).getTime() <= RIAPERTURA_MAX_MINUTI * 60000;
 
 /** Durata da allenamento rimasto aperto per sbaglio: falsa le statistiche, va corretta. */
 const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MINUTI;
 
 export default function StoricoAllenamenti() {
   const [sessioni, setSessioni] = useState([]);
-  const [caricamento, setCaricamento] = useState(true);
   const [pagina, setPagina] = useState(1);
   const [paginazione, setPaginazione] = useState(null);
   const [schedaFiltro, setSchedaFiltro] = useState('');
@@ -29,6 +31,7 @@ export default function StoricoAllenamenti() {
   const [mostraPassato, setMostraPassato] = useState(false);
   const [conferma, setConferma] = useState('');
   const [salvandoScheda, setSalvandoScheda] = useState(false);
+  const [riprendendo, setRiprendendo] = useState(false);
   const naviga = useNavigate();
 
   const mostraConferma = (testo) => {
@@ -50,6 +53,20 @@ export default function StoricoAllenamenti() {
     }
   };
 
+  // Chiuso per sbaglio da poco: torna in corso e si riapre la schermata
+  // dell'allenamento, che ricostruisce dal server il punto in cui eri
+  const riprendiAllenamento = async (sessione) => {
+    try {
+      setRiprendendo(true);
+      await api.patch(`/sessioni/${sessione.id}/riapri`);
+      naviga(`/allenamento/${sessione.id}`);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setRiprendendo(false);
+    }
+  };
+
   // Carica le schede disponibili per il filtro
   useEffect(() => {
     api.get('/schede')
@@ -57,24 +74,21 @@ export default function StoricoAllenamenti() {
       .catch(() => {});
   }, []);
 
-  const caricaStorico = async () => {
-    try {
-      setCaricamento(true);
-      const query = `?pagina=${pagina}&limite=15${schedaFiltro ? `&schedaId=${schedaFiltro}` : ''}`;
-      const risposta = await api.get(`/sessioni/storico${query}`);
+  // La pagina mostrata: cambiando pagina o filtro torna lo spinner, mentre
+  // dopo una modifica l'elenco si aggiorna sul posto
+  const query = `?pagina=${pagina}&limite=15${schedaFiltro ? `&schedaId=${schedaFiltro}` : ''}`;
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = caricatoPer !== query;
+
+  const caricaStorico = useCallback(() => api.get(`/sessioni/storico${query}`)
+    .then(risposta => {
       setSessioni(risposta.dati || []);
       setPaginazione(risposta.paginazione || null);
-    } catch (err) {
-      console.error('Errore caricamento storico:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
+    })
+    .catch(err => console.error('Errore caricamento storico:', err))
+    .finally(() => setCaricatoPer(query)), [query]);
 
-  // Carica storico sessioni
-  useEffect(() => {
-    caricaStorico();
-  }, [pagina, schedaFiltro]);
+  useEffect(() => { caricaStorico(); }, [caricaStorico]);
 
   const eliminaSessione = async (id) => {
     if (!confirm('Sei sicuro di voler eliminare questa sessione? I dati saranno persi.')) return;
@@ -456,6 +470,17 @@ export default function StoricoAllenamenti() {
                     );
                   })}
                 </div>
+
+                {/* Riprendi: solo appena finito */}
+                {riprendibile(sessioneAperta) && (
+                  <button
+                    onClick={() => riprendiAllenamento(sessioneAperta)}
+                    disabled={riprendendo}
+                    className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition-all disabled:opacity-50"
+                  >
+                    {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+                  </button>
+                )}
 
                 {/* Salva come scheda */}
                 {sessioneAperta.serieCompletate > 0 && (

@@ -6,8 +6,11 @@
 import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 router.use(verificaToken);
 
 // Badge definitions

@@ -11,11 +11,13 @@ import {
   passkeyRegistrazioneOpzioni, passkeyRegistrazioneVerifica, passkeyElimina
 } from '../controllers/autenticazione.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
-import { valida } from '../middleware/validazione.js';
+import { valida, idNumerico } from '../middleware/validazione.js';
 import { schemaRegistrazione, schemaLogin } from '../validators/autenticazione.schema.js';
 import { limitatoreAuth } from '../middleware/limitatore.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 
 // POST /api/v1/auth/registrazione — Registra nuovo utente
 router.post('/registrazione', limitatoreAuth, valida({ body: schemaRegistrazione }), registrazione);

@@ -3,7 +3,7 @@
 // Lista conversazioni + richieste contatto
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
@@ -21,23 +21,19 @@ export default function Chat() {
   const [risultatiRicerca, setRisultatiRicerca] = useState([]);
   const [tab, setTab] = useState('chat'); // chat, richieste
 
-  const caricaDati = async () => {
-    try {
-      setCaricamento(true);
-      const [conv, rich] = await Promise.all([
-        api.get('/chat/conversazioni'),
-        api.get('/chat/contatti/ricevute')
-      ]);
+  // Al primo caricamento con lo spinner; accettata una richiesta, l'elenco si aggiorna sul posto
+  const caricaDati = useCallback(() => Promise.all([
+    api.get('/chat/conversazioni'),
+    api.get('/chat/contatti/ricevute')
+  ])
+    .then(([conv, rich]) => {
       setConversazioni(conv.dati || []);
       setRichieste(rich.dati || []);
-    } catch (err) {
-      console.error('Errore caricamento chat:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
+    })
+    .catch(err => console.error('Errore caricamento chat:', err))
+    .finally(() => setCaricamento(false)), []);
 
-  useEffect(() => { caricaDati(); }, []);
+  useEffect(() => { caricaDati(); }, [caricaDati]);
 
   const cercaUtenti = async (q) => {
     setRicerca(q);

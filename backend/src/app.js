@@ -72,6 +72,16 @@ export function creaServer() {
       });
     }
 
+    // Prisma: l'elemento da modificare o eliminare non esiste (un id sbagliato
+    // nell'indirizzo), non un guasto del server
+    if (errore.code === 'P2025') {
+      return res.status(404).json({
+        successo: false,
+        codice: 'NON_TROVATO',
+        messaggio: 'Elemento non trovato'
+      });
+    }
+
     // Errori di parsing JSON
     if (errore.type === 'entity.parse.failed') {
       return res.status(400).json({

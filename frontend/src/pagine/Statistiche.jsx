@@ -30,32 +30,32 @@ export default function Statistiche() {
   // Istante del caricamento: riferimento unico per dividere i due periodi
   const [caricatoIl, setCaricatoIl] = useState(0);
   const [periodo, setPeriodo] = useState(30);
-  const [caricamento, setCaricamento] = useState(true);
+  // Il periodo dei dati mostrati: finche' non e' quello scelto, si sta caricando
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = caricatoPer !== periodo;
 
-  const caricaDati = async () => {
-    try {
-      setCaricamento(true);
-      const [rie, ses, grp, freq, att] = await Promise.all([
-        api.get('/statistiche/riepilogo'),
-        api.get(`/statistiche/sessioni?giorni=${periodo * 2}`),
-        api.get(`/statistiche/muscoli?giorni=${periodo}`),
-        api.get('/statistiche/frequenza'),
-        api.get('/statistiche/attivita-annuale')
-      ]);
-      setRiepilogo(rie.dati);
-      setGiorniDoppi(ses.dati || []);
-      setCaricatoIl(Date.now());
-      setMuscoli(grp.dati || null);
-      setFrequenza(freq.dati || []);
-      setAttivita(att.dati || []);
-    } catch (err) {
-      console.error('Errore caricamento statistiche:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
-
-  useEffect(() => { caricaDati(); }, [periodo]);
+  useEffect(() => {
+    let annullato = false;
+    Promise.all([
+      api.get('/statistiche/riepilogo'),
+      api.get(`/statistiche/sessioni?giorni=${periodo * 2}`),
+      api.get(`/statistiche/muscoli?giorni=${periodo}`),
+      api.get('/statistiche/frequenza'),
+      api.get('/statistiche/attivita-annuale')
+    ])
+      .then(([rie, ses, grp, freq, att]) => {
+        if (annullato) return;
+        setRiepilogo(rie.dati);
+        setGiorniDoppi(ses.dati || []);
+        setCaricatoIl(Date.now());
+        setMuscoli(grp.dati || null);
+        setFrequenza(freq.dati || []);
+        setAttivita(att.dati || []);
+      })
+      .catch(err => console.error('Errore caricamento statistiche:', err))
+      .finally(() => { if (!annullato) setCaricatoPer(periodo); });
+    return () => { annullato = true; };
+  }, [periodo]);
 
   if (caricamento) {
     return (

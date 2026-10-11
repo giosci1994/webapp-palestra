@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import { Link, useSearchParams } from 'react-router-dom';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   Sparkles, AlertCircle, ExternalLink, Building, LogOut,
@@ -133,20 +133,25 @@ export default function Profilo() {
     }
   };
 
+  // Il modulo riparte dai dati dell'utente ogni volta che questi cambiano:
+  // si riallinea durante il render, senza un effetto e un render in piu'
+  const [utenteDelModulo, setUtenteDelModulo] = useState(null);
+  if (utente && utente !== utenteDelModulo) {
+    setUtenteDelModulo(utente);
+    setForm({
+      nome: utente.nome || '', bio: utente.bio || '',
+      dataNascita: utente.dataNascita ? utente.dataNascita.split('T')[0] : '',
+      pesoKg: utente.pesoKg || '', altezzaCm: utente.altezzaCm || '',
+      genere: utente.genere || '', obiettivoFitness: utente.obiettivoFitness || '',
+      palestraId: utente.palestra?.id || utente.palestraId || ''
+    });
+    setAvatarPreview(utente.immagineProfilo || null);
+    setGamificationAttiva(utente.gamificationAttiva !== false);
+    try { setVisibilita({ ...VIS_DEFAULT, ...JSON.parse(utente.preferenzeVisibilita || '{}') }); }
+    catch { setVisibilita(VIS_DEFAULT); }
+  }
+
   useEffect(() => {
-    if (utente) {
-      setForm({
-        nome: utente.nome || '', bio: utente.bio || '',
-        dataNascita: utente.dataNascita ? utente.dataNascita.split('T')[0] : '',
-        pesoKg: utente.pesoKg || '', altezzaCm: utente.altezzaCm || '',
-        genere: utente.genere || '', obiettivoFitness: utente.obiettivoFitness || '',
-        palestraId: utente.palestra?.id || utente.palestraId || ''
-      });
-      setAvatarPreview(utente.immagineProfilo || null);
-      setGamificationAttiva(utente.gamificationAttiva !== false);
-      try { setVisibilita({ ...VIS_DEFAULT, ...JSON.parse(utente.preferenzeVisibilita || '{}') }); }
-      catch { setVisibilita(VIS_DEFAULT); }
-    }
     api.get('/utenti/mio-pt').then(r => setMioPT(r.dati)).catch(() => setMioPT(null));
     api.get('/palestre').then(r => setListaPalestre(r.dati || [])).catch(() => setListaPalestre([]));
   }, [utente]);
@@ -197,11 +202,9 @@ export default function Profilo() {
     }
   };
 
-  const caricaSessioni = async () => {
-    setErroreSessioni('');
-    try { const r = await api.get('/auth/sessioni'); setSessioni(r.dati); }
-    catch (err) { setErroreSessioni(err.message); setSessioni([]); }
-  };
+  const caricaSessioni = () => api.get('/auth/sessioni')
+    .then(r => { setErroreSessioni(''); setSessioni(r.dati); })
+    .catch(err => { setErroreSessioni(err.message); setSessioni([]); });
 
   const scollegaDispositivo = async (famiglia) => {
     try { await api.delete(`/auth/sessioni/${famiglia}`); }
@@ -215,10 +218,9 @@ export default function Profilo() {
     caricaSessioni();
   };
 
-  const caricaPasskey = async () => {
-    try { const r = await api.get('/auth/passkey'); setPasskey(r.dati); }
-    catch (err) { setMsgPasskey({ testo: err.message, tipo: 'err' }); setPasskey([]); }
-  };
+  const caricaPasskey = () => api.get('/auth/passkey')
+    .then(r => setPasskey(r.dati))
+    .catch(err => { setMsgPasskey({ testo: err.message, tipo: 'err' }); setPasskey([]); });
 
   /** Password, poi il gesto sul dispositivo (impronta, volto o PIN) */
   const aggiungiPasskey = async () => {
@@ -249,16 +251,18 @@ export default function Profilo() {
     caricaPasskey();
   };
 
-  const caricaTelegram = async () => {
+  const caricaTelegram = () => {
     if (telegram) return;
-    try { const r = await api.get('/utenti/telegram/stato'); setTelegram(r.dati); }
-    catch { setTelegram({ collegato: false }); }
+    api.get('/utenti/telegram/stato')
+      .then(r => setTelegram(r.dati))
+      .catch(() => setTelegram({ collegato: false }));
   };
 
-  const caricaInfoApp = async () => {
+  const caricaInfoApp = () => {
     if (infoApp) return;
-    try { const r = await api.get('/utenti/info-app'); setInfoApp(r.dati); }
-    catch { setInfoApp({ versione: 'N/A', stack: {}, changelog: [] }); }
+    api.get('/utenti/info-app')
+      .then(r => setInfoApp(r.dati))
+      .catch(() => setInfoApp({ versione: 'N/A', stack: {}, changelog: [] }));
   };
 
   /** I dati che una scheda carica quando si apre */
@@ -268,8 +272,8 @@ export default function Profilo() {
   };
 
   // Aperta da un link direttamente su una scheda: i suoi dati si caricano subito
-  const tabIniziale = useRef(tabAttivo);
-  useEffect(() => { caricaTab(tabIniziale.current); }, []);
+  const caricaTabIniziale = useEffectEvent(() => caricaTab(tabAttivo));
+  useEffect(() => { caricaTabIniziale(); }, []);
 
   const cambiaPw = async () => {
     setPwMsg({ testo: '', tipo: '' });
@@ -362,9 +366,14 @@ export default function Profilo() {
         {/* ═══ TABS ═══ */}
         <div style={{ paddingTop: '0px', paddingBottom: '25px', width: '100%' }}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ background: 'var(--vetro)', border: '1px solid var(--vetro-bordo)', padding: '10px', borderRadius: '32px', boxShadow: 'var(--ombra-card)' }}>
-            <div className="flex items-center gap-2 flex-1">
+            {/* Le schede sono solo icone: il nome per chi usa uno screen reader e come suggerimento */}
+            <div className="flex items-center gap-2 flex-1" role="tablist" aria-label="Sezioni del profilo">
               {tabVisibili.map((tab) => (
                 <button key={tab.id}
+                  role="tab"
+                  aria-selected={tabAttivo === tab.id}
+                  aria-label={tab.label}
+                  title={tab.label}
                   onClick={() => { setTabAttivo(tab.id); caricaTab(tab.id); }}
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
@@ -390,6 +399,7 @@ export default function Profilo() {
                 onClick={(e) => { e.preventDefault(); if (window.confirm('Sei sicuro di voler uscire?')) logout(); }}
                 className="flex items-center justify-center py-2.5 px-5 rounded-[14px] transition-all duration-300 text-[var(--testo-terziario)] hover:text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)]"
                 title="Esci dall'account"
+                aria-label="Esci dall'account"
               >
                 <LogOut size={20} />
               </button>

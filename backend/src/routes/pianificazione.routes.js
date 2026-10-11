@@ -13,8 +13,11 @@ import {
   eliminaPianificato
 } from '../controllers/pianificazione.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
+import { idNumerico } from '../middleware/validazione.js';
 
 const router = Router();
+// Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
+router.param('id', idNumerico);
 
 // Tutte le rotte richiedono autenticazione
 router.use(verificaToken);

@@ -23,15 +23,17 @@ function colorePerLivello(livello) {
 
 export default function MiglioriOrari({ palestraId }) {
   const [dati, setDati] = useState(null);
-  const [caricamento, setCaricamento] = useState(true);
+  // La palestra dei dati caricati: finche' non e' quella attuale, si sta caricando
+  const [caricatoPer, setCaricatoPer] = useState(null);
+  const caricamento = Boolean(palestraId) && caricatoPer !== palestraId;
 
   useEffect(() => {
-    if (!palestraId) { setCaricamento(false); return; }
+    if (!palestraId) return;
     let annullato = false;
     api.get(`/palestre/${palestraId}/affluenza/migliori-orari`)
       .then(r => { if (!annullato) setDati(r.dati); })
       .catch(() => { if (!annullato) setDati(null); })
-      .finally(() => { if (!annullato) setCaricamento(false); });
+      .finally(() => { if (!annullato) setCaricatoPer(palestraId); });
     return () => { annullato = true; };
   }, [palestraId]);
 

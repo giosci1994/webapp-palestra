@@ -1,0 +1,60 @@
+# Le immagini di produzione, avviate in CI (.github/workflows/test.yml):
+# non basta che si costruiscano. Il backend parte come in produzione:
+# applica le migrazioni a un database vuoto, esegue il seed e risponde su
+# /api/v1/salute. Bot e scraper hanno bisogno di Telegram e di internet:
+# si costruiscono e si controlla che il codice si carichi.
+name: gymmaster-immagini
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: gymmaster
+      POSTGRES_PASSWORD: gymmaster
+      POSTGRES_DB: gymmaster
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymmaster -d gymmaster"]
+      interval: 2s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      retries: 30
+
+  backend:
+    build:
+      context: ../..
+      dockerfile: backend/Dockerfile
+    environment:
+      AMBIENTE: produzione
+      PORTA_BACKEND: 3000
+      DATABASE_URL: postgresql://gymmaster:gymmaster@db:5432/gymmaster
+      REDIS_URL: redis://redis:6379
+      JWT_SEGRETO_ACCESS: segreto-di-prova-solo-per-la-ci-access
+      JWT_SEGRETO_REFRESH: segreto-di-prova-solo-per-la-ci-refresh
+      APP_URL: https://palestra.test
+      ORIGINI_CONSENTITE: https://palestra.test
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/v1/salute').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 3s
+      retries: 100
+
+  bot:
+    build:
+      context: ../..
+      dockerfile: bot/Dockerfile
+    profiles: [controlli]
+
+  scraper:
+    build:
+      context: ../..
+      dockerfile: scraper/Dockerfile
+    profiles: [controlli]

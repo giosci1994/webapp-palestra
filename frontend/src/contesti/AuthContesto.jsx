@@ -64,26 +64,20 @@ export function AuthProvider({ children }) {
     return () => document.removeEventListener('visibilitychange', gestisciVisibilita);
   }, [utente]);
 
-  const verificaSessione = async () => {
-    try {
-      setCaricamento(true);
-      // Refresh condiviso: ottiene un nuovo access token dal cookie HttpOnly
-      const token = await refreshSessione();
-      if (token) {
+  // Verifica sessione all'avvio: il refresh condiviso ottiene un nuovo access
+  // token dal cookie HttpOnly, poi si legge il profilo
+  useEffect(() => {
+    refreshSessione()
+      .then(async token => {
+        if (!token) return;
         const profilo = await apiChiamata('/utenti/profilo');
         setUtente(profilo.dati);
-      }
-    } catch {
-      // Nessuna sessione attiva — l'utente dovrà fare login
-      cancellaToken();
-    } finally {
-      setCaricamento(false);
-    }
-  };
-
-  // Verifica sessione all'avvio (refresh token dal cookie)
-  useEffect(() => {
-    verificaSessione();
+      })
+      .catch(() => {
+        // Nessuna sessione attiva — l'utente dovrà fare login
+        cancellaToken();
+      })
+      .finally(() => setCaricamento(false));
   }, []);
 
   const login = useCallback(async (email, password, ricordaDispositivo = false) => {

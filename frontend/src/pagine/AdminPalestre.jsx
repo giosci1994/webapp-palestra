@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -9,12 +9,13 @@ export default function AdminPalestre() {
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({ nomeCatena: '', citta: '', indirizzo: '', nazione: 'Italia', googlePlaceId: '' });
 
-  const caricaPalestre = async () => {
-    try { setCaricamento(true); const r = await api.get('/palestre'); setPalestre(r.dati || []); }
-    catch (err) { console.error(err); } finally { setCaricamento(false); }
-  };
+  // Al primo caricamento con lo spinner; dopo una modifica l'elenco si aggiorna sul posto
+  const caricaPalestre = useCallback(() => api.get('/palestre')
+    .then(r => setPalestre(r.dati || []))
+    .catch(err => console.error(err))
+    .finally(() => setCaricamento(false)), []);
 
-  useEffect(() => { caricaPalestre(); }, []);
+  useEffect(() => { caricaPalestre(); }, [caricaPalestre]);
 
   const apriForm = (p = null) => {
     if (p) { setEditId(p.id); setForm({ nomeCatena: p.nomeCatena, citta: p.citta, indirizzo: p.indirizzo, nazione: p.nazione, googlePlaceId: p.googlePlaceId || '' }); }

@@ -80,3 +80,17 @@ export function valida(schemi) {
     next();
   };
 }
+
+/** Gli id delle tabelle sono interi a 32 bit di Postgres */
+const ID_MASSIMO = 2147483647;
+
+/**
+ * Per router.param: un id nell'indirizzo dev'essere un intero positivo. Senza
+ * questo controllo "abc" arrivava a Prisma come NaN e la risposta era un 500.
+ */
+export function idNumerico(req, res, next, valore, nome) {
+  if (!/^\d+$/.test(valore) || Number(valore) < 1 || Number(valore) > ID_MASSIMO) {
+    return next(new ErroreValidazione(`Parametro "${nome}" non valido`));
+  }
+  next();
+}

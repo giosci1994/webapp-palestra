@@ -174,20 +174,11 @@ export default function Allenamento() {
     if (richiesta) setParametri({}, { replace: true });
   };
 
-  const caricaSchede = async () => {
-    try {
-      setCaricamento(true);
-      const risposta = await api.get('/schede');
-      setSchede(risposta.dati || []);
-    } catch (err) {
-      console.error('Errore caricamento schede:', err);
-    } finally {
-      setCaricamento(false);
-    }
-  };
-
   useEffect(() => {
-    caricaSchede();
+    api.get('/schede')
+      .then(risposta => setSchede(risposta.dati || []))
+      .catch(err => console.error('Errore caricamento schede:', err))
+      .finally(() => setCaricamento(false));
   }, []);
 
   const avviaAllenamento = async (schedaId) => {

@@ -8,10 +8,12 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
+import { useAPezzi } from '../hooks/useAPezzi.js';
+import { statoDaSessione, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
-import { RPE_LABELS } from '../utils/costanti.js';
+import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaData, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -44,6 +46,8 @@ export default function WorkoutLive() {
   const [serieCompletate, setSerieCompletate] = useState(ss ? ss.serieCompletate : []);
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
   const [riprendendo, setRiprendendo] = useState(false);
+  // Chiuso ore dopo l'ultima serie: il server lo fa finire li' (e non si riprende)
+  const [finitoAllUltimaSerie, setFinitoAllUltimaSerie] = useState(null);
   const [mostraSelettoreEsercizi, setMostraSelettoreEsercizi] = useState(false);
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
@@ -53,7 +57,9 @@ export default function WorkoutLive() {
   const [eserciziLive, setEserciziLive] = useState(() =>
     ss?.eserciziLive?.length ? ss.eserciziLive : [...(location.state?.sessione?.scheda?.esercizi ?? [])]);
   const [caricamento, setCaricamento] = useState(!location.state?.sessione);
-  const [timerAttivo, setTimerAttivo] = useState(false);
+  // Recupero avviato dall'ultima serie: e' attivo finche' il timer non arriva a
+  // zero (timerAttivo, ricavato dal timer senza un effetto che lo spenga)
+  const [recuperoAvviato, setRecuperoAvviato] = useState(false);
   // Durata del recupero in corso: la barra di avanzamento non puo' usare quella
   // dell'esercizio attuale, che dopo il passaggio automatico e' gia' il successivo
   const [durataRecupero, setDurataRecupero] = useState(0);
@@ -61,9 +67,10 @@ export default function WorkoutLive() {
   // l'ultima serie si mostra gia' l'esercizio successivo, cosi' durante il
   // recupero vedi cosa ti aspetta e puoi spostarti al macchinario.
   const [recuperoInCima, setRecuperoInCima] = useState(false);
+  const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
   const [nuoviRecord, setNuoviRecord] = useState([]);
   const [mostraVideo, setMostraVideo] = useState(false);
-  const [tempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
+  const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
   // Ultima volta che hai fatto ciascun esercizio, in qualsiasi scheda
   const [ultimiCarichi, setUltimiCarichi] = useState({});
@@ -71,13 +78,13 @@ export default function WorkoutLive() {
   const inviandoRef = useRef(false);
   const [inviando, setInviando] = useState(false);
 
-  const salvaProgressi = (stato) => {
+  const salvaProgressi = useCallback((stato) => {
     try {
       localStorage.setItem(CHIAVE_PROGRESSO, JSON.stringify(stato));
     } catch {
       // localStorage pieno o non disponibile — ignora silenziosamente
     }
-  };
+  }, [CHIAVE_PROGRESSO]);
   const statoAttuale = () => ({ esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio });
 
   // --- Salva progressi in localStorage (debounce 500ms) ---
@@ -89,12 +96,13 @@ export default function WorkoutLive() {
     if (!id || mostraRiepilogo) return; // Non salvare dopo completamento
 
     if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
-    salvaTimeoutRef.current = setTimeout(() => salvaProgressi(statoAttuale()), 500);
+    salvaTimeoutRef.current = setTimeout(
+      () => salvaProgressi({ esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio }), 500);
 
     return () => {
       if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
     };
-  }, [esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio, id, mostraRiepilogo]);
+  }, [esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio, id, mostraRiepilogo, salvaProgressi]);
 
   /** Pulisci progressi salvati (completamento o abbandono) */
   const pulisciProgressi = useCallback(() => {
@@ -113,18 +121,27 @@ export default function WorkoutLive() {
       api.get(`/sessioni/${id}`)
         .then(r => {
           setSessione(r.dati);
-          setEserciziLive(prima => prima.length ? prima : [...(r.dati?.scheda?.esercizi ?? [])]);
+          if (ss) return;
+          // Niente nel browser (ripreso dallo storico, un altro dispositivo):
+          // il punto in cui eri si ricostruisce dalle serie sul server
+          const stato = statoDaSessione(r.dati);
+          setEserciziLive(stato.eserciziLive);
+          setSerieCompletate(stato.serieCompletate);
+          setEsercizioIdx(stato.esercizioIdx);
+          setSerieCorrente(stato.serieCorrente);
+          setTempoInizio(stato.tempoInizio);
         })
         .catch(() => naviga('/schede'))
         .finally(() => setCaricamento(false));
     }
-  }, [id]);
+  }, [id, sessione, ss, naviga]);
 
-  // Attiva wake lock
+  // Attiva wake lock (attiva e disattiva non cambiano fra un render e l'altro)
+  const { attiva: attivaWakeLock, disattiva: disattivaWakeLock } = wakeLock;
   useEffect(() => {
-    wakeLock.attiva();
-    return () => wakeLock.disattiva();
-  }, []);
+    attivaWakeLock();
+    return () => disattivaWakeLock();
+  }, [attivaWakeLock, disattivaWakeLock]);
 
   // Carichi dell'ultima volta per ogni esercizio in programma. Prima si
   // guardava solo l'ultima sessione della stessa scheda: con una scheda nuova
@@ -153,9 +170,7 @@ export default function WorkoutLive() {
     const nuovoEsercizio = {
       esercizioId: es.id,
       esercizio: es,
-      serieTarget: 3, // Default
-      repTarget: 10,
-      recuperoSecondi: 90
+      ...ESERCIZIO_EXTRA
     };
     setEserciziLive(prev => {
       const aggiornati = [...prev, nuovoEsercizio];
@@ -177,6 +192,7 @@ export default function WorkoutLive() {
     () => preferitiPrima(cerca(indiceRicerca, ricercaTesto), preferiti),
     [indiceRicerca, ricercaTesto, preferiti]
   );
+  const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
   // --- Tracking esercizi completati ---
   // Un esercizio è "completato" quando ha >= serieTarget serie registrate
@@ -359,13 +375,13 @@ export default function WorkoutLive() {
   const avviaRecupero = (secondi, inCima) => {
     timer.avvia(secondi);
     setDurataRecupero(secondi);
-    setTimerAttivo(true);
+    setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
   };
 
   const fermaRecupero = () => {
     timer.resetta();
-    setTimerAttivo(false);
+    setRecuperoAvviato(false);
     setRecuperoInCima(false);
   };
 
@@ -382,6 +398,7 @@ export default function WorkoutLive() {
         noteFinali: ''
       });
       setNuoviRecord(risposta.recordPersonali || []);
+      setFinitoAllUltimaSerie(risposta.dimenticata ? new Date(risposta.dati.dataFine) : null);
       setMostraRiepilogo(true);
       pulisciProgressi(); // Pulisci localStorage al completamento
       wakeLock.disattiva();
@@ -406,14 +423,6 @@ export default function WorkoutLive() {
       setRiprendendo(false);
     }
   };
-
-  // Se il timer finisce, nascondi l'overlay
-  useEffect(() => {
-    if (timerAttivo && timer.secondiRimasti === 0 && !timer.inCorso) {
-      setTimerAttivo(false);
-      setRecuperoInCima(false);
-    }
-  }, [timer.secondiRimasti, timer.inCorso, timerAttivo]);
 
   if (caricamento) {
     return (
@@ -460,10 +469,18 @@ export default function WorkoutLive() {
           <button onClick={() => naviga('/dashboard')} className="btn-primario w-full">
             Torna alla Dashboard
           </button>
-          <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
-            {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
-          </button>
-          <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro 30 minuti.</p>
+          {finitoAllUltimaSerie ? (
+            <p className="text-xs text-[var(--testo-terziario)] mt-3">
+              Era rimasto aperto: l'ho fatto finire all'ultima serie, alle {finitoAllUltimaSerie.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}.
+            </p>
+          ) : (
+            <>
+              <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
+                {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+              </button>
+              <p className="text-[11px] text-[var(--testo-terziario)] mt-2">Puoi riprendere l'allenamento entro {RIAPERTURA_MAX_MINUTI} minuti, anche dallo Storico.</p>
+            </>
+          )}
         </motion.div>
       </div>
     );
@@ -937,7 +954,7 @@ export default function WorkoutLive() {
               </div>
 
               <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
-                {eserciziFiltrati.map((es) => (
+                {eserciziVisibili.map((es) => (
                   <button
                     key={es.id}
                     onClick={() => aggiungiEsercizioExtra(es)}
@@ -950,6 +967,11 @@ export default function WorkoutLive() {
                     <span className="text-[var(--accent)] font-bold">➕</span>
                   </button>
                 ))}
+{restanti > 0 && (
+                  <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
+                    Mostra altri ({restanti.toLocaleString('it-IT')})
+                  </button>
+                )}
                 {catalogoEsercizi.length > 0 && eserciziFiltrati.length === 0 && (
                   <p className="text-center text-[var(--testo-terziario)] text-sm py-4">Nessun esercizio trovato</p>
                 )}

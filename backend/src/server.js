@@ -7,6 +7,7 @@ import 'dotenv/config';
 import { creaServer } from './app.js';
 import { inviaPromemoriaAllenamenti } from './services/notifiche.service.js';
 import { pulisciMessaggiScaduti } from './services/chat.service.js';
+import { chiudiSessioniDimenticate } from './services/conclusioneSessione.service.js';
 import logger from './utils/logger.js';
 import fs from 'fs';
 import path from 'path';
@@ -57,6 +58,18 @@ setInterval(async () => {
     logger.error({ errore: errore.message }, 'Errore nell\'invio dei promemoria allenamento');
   }
 }, INTERVALLO_PROMEMORIA);
+
+// --- Allenamenti dimenticati aperti (controllo ogni 30 minuti) ---
+// Fermi da piu' di due ore: si chiudono all'ultima serie, con una notifica
+// (services/conclusioneSessione.service.js).
+const INTERVALLO_SESSIONI_DIMENTICATE = 30 * 60 * 1000;
+setInterval(async () => {
+  try {
+    await chiudiSessioniDimenticate(io);
+  } catch (errore) {
+    logger.error({ errore: errore.message }, 'Errore nella chiusura degli allenamenti dimenticati');
+  }
+}, INTERVALLO_SESSIONI_DIMENTICATE);
 
 // --- Avvio Server ---
 serverHttp.listen(PORTA, '0.0.0.0', () => {
