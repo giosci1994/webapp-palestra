@@ -1,0 +1,7 @@
+{
+  "titolo": "Crop the photo",
+  "zoom": "Zoom",
+  "istruzioni": "Drag to move, use the zoom to frame it. The photo will be shrunk automatically.",
+  "elaborazione": "Processing…",
+  "errore": "Could not crop the photo"
+}

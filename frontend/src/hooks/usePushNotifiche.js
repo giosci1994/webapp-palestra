@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
+import { traduci } from '../i18n/index.js';
 import { chiaveInByte, supportoPush, iscrizioneAttuale, disiscriviDispositivo, entro } from '../utils/push.js';
 
 const permessoAttuale = () => (typeof Notification === 'undefined' ? 'default' : Notification.permission);
@@ -39,7 +40,7 @@ export function usePushNotifiche() {
     setStato(s => ({ ...s, permesso }));
     if (permesso !== 'granted') return false;
     const attuale = await iscrizioneAttuale();
-    if (!attuale) throw new Error('Il service worker non è attivo: ricarica la pagina e riprova');
+    if (!attuale) throw new Error(traduci('usePushNotifiche.serviceWorkerInattivo'));
     // The subscription goes through the browser's push service (Google, Mozilla,
     // Apple): if it does not answer we say so, instead of hanging
     let iscrizione = attuale.iscrizione;
@@ -48,9 +49,9 @@ export function usePushNotifiche() {
         iscrizione = await entro(attuale.registrazione.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: chiaveInByte(stato.chiave)
-        }), 20000, 'il servizio di notifiche del browser non risponde');
+        }), 20000, traduci('usePushNotifiche.servizioNonRisponde'));
       } catch (err) {
-        throw new Error(`Il browser non è riuscito ad attivare le notifiche (${err.message}). Riprova fra poco.`, { cause: err });
+        throw new Error(traduci('usePushNotifiche.attivazioneFallita', { motivo: err.message }), { cause: err });
       }
     }
     await api.post('/notifiche/push/iscrizione', iscrizione.toJSON());

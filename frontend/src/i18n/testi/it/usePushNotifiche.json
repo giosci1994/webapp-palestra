@@ -1,0 +1,5 @@
+{
+  "serviceWorkerInattivo": "Il service worker non è attivo: ricarica la pagina e riprova",
+  "servizioNonRisponde": "il servizio di notifiche del browser non risponde",
+  "attivazioneFallita": "Il browser non è riuscito ad attivare le notifiche ({motivo}). Riprova fra poco."
+}
