@@ -10,15 +10,16 @@
 // - Three times in a row at the same weight without even reaching the bottom
 //   of the range: deload by 10% (rounded down to the equipment step, so a
 //   little more on heavy steps) and build back up.
-// Every suggestion says why.
+// Every suggestion says why, in the current language (progressione.* texts).
 
 import { bilanciereDi } from './dischi.js';
+import { localeCorrente, traduci } from '../i18n/index.js';
 
 /** How many times in a row below the range, at the same weight, before deloading */
 export const FALLIMENTI_PRIMA_DELLO_SCARICO = 3;
 const SCARICO = 0.9;
 
-const kg = n => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
+const kg = n => n.toLocaleString(localeCorrente(), { maximumFractionDigits: 2 });
 
 /** "8-12" → { min: 8, max: 12 }; "10" or 10 → { min: 10, max: 10 }; anything else → null */
 export function leggiForbice(repTarget) {
@@ -70,14 +71,15 @@ export function propostaCarico({ storico = [], serieTarget = 3, repTarget, incre
 
   const ultima = sedute[0];
   const fatte = ultima.ripetizioni.slice(0, serieTarget);
-  const descrizione = `l'ultima volta ${fatte.join('-')} ripetizioni a ${kg(ultima.peso)} kg`;
+  // What the "motivo" sentences say about the last time
+  const ultimaVolta = { fatte: fatte.join('-'), peso: kg(ultima.peso) };
 
   if (fatte.length >= serieTarget && fatte.every(r => r >= forbice.max)) {
     return {
       peso: ultima.peso + incremento,
       ripetizioni: forbice,
       esito: 'sali',
-      motivo: `Tutte le serie in cima alla forbice (${descrizione}): si sale di ${kg(incremento)} kg`
+      motivo: traduci('progressione.motivo.sali', { ...ultimaVolta, incremento: kg(incremento) })
     };
   }
 
@@ -94,14 +96,14 @@ export function propostaCarico({ storico = [], serieTarget = 3, repTarget, incre
         peso: scaricato,
         ripetizioni: forbice,
         esito: 'scarico',
-        motivo: `${difficili} volte di fila sotto le ${forbice.min} ripetizioni a ${kg(ultima.peso)} kg: si scarica del 10% e si risale`
+        motivo: traduci('progressione.motivo.scarico', { volte: difficili, min: forbice.min, peso: kg(ultima.peso) })
       };
     }
     return {
       peso: ultima.peso,
       ripetizioni: forbice,
       esito: 'resta',
-      motivo: `Stesso peso (${descrizione}): punta ad almeno ${forbice.min} ripetizioni in ogni serie`
+      motivo: traduci('progressione.motivo.restaSottoForbice', { ...ultimaVolta, min: forbice.min })
     };
   }
 
@@ -109,6 +111,6 @@ export function propostaCarico({ storico = [], serieTarget = 3, repTarget, incre
     peso: ultima.peso,
     ripetizioni: forbice,
     esito: 'resta',
-    motivo: `Stesso peso, una ripetizione in piu' (${descrizione}): quando tutte arrivano a ${forbice.max} si sale`
+    motivo: traduci('progressione.motivo.restaUnaInPiu', { ...ultimaVolta, max: forbice.max })
   };
 }

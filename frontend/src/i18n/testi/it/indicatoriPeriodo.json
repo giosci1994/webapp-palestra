@@ -1,0 +1,30 @@
+{
+  "ariaIndicatori": "Indicatori del periodo",
+  "periodo": {
+    "titolo7": "Ultimi 7 giorni",
+    "titolo30": "Ultimi 30 giorni",
+    "titolo90": "Ultimi 3 mesi",
+    "titolo365": "Ultimi 12 mesi",
+    "titoloAltro": "Ultimi {giorni} giorni",
+    "confronto7": "rispetto ai 7 precedenti",
+    "confronto30": "rispetto ai 30 precedenti",
+    "confronto90": "rispetto ai 3 precedenti",
+    "confronto365": "rispetto ai 12 precedenti",
+    "confrontoAltro": "rispetto ai {giorni} precedenti"
+  },
+  "invariato": "invariato",
+  "inPiu": "in più rispetto al periodo precedente",
+  "inMeno": "in meno rispetto al periodo precedente",
+  "daZero": "da 0",
+  "allenamenti": "Allenamenti",
+  "volume": "Volume sollevato",
+  "durataMedia": "Durata media",
+  "settimaneDiFila": "Settimane di fila",
+  "allenamentiN_one": "{count} allenamento",
+  "allenamentiN_other": "{count} allenamenti",
+  "minutiDiMedia": "{valore} min di media",
+  "ariaUltimeSettimane": "Ultime 12 settimane: {attive} con almeno un allenamento",
+  "questaSettimana": "Questa settimana",
+  "settimaneFa_one": "{count} settimana fa",
+  "settimaneFa_other": "{count} settimane fa"
+}

@@ -10,8 +10,10 @@ import { Bell, CheckCheck } from 'lucide-react';
 import { useSocket } from '../../contesti/SocketContesto.jsx';
 import { api } from '../../config/api.js';
 import { formattaDataRelativa } from '../../utils/formattatori.js';
+import { useLingua } from '../../hooks/useLingua.js';
 
 export default function CampanellaNotifiche({ compatta = false }) {
+  const { t } = useLingua();
   const [aperto, setAperto] = useState(false);
   const [notifiche, setNotifiche] = useState([]);
   const [nonLette, setNonLette] = useState(0);
@@ -71,7 +73,7 @@ export default function CampanellaNotifiche({ compatta = false }) {
       <button
         type="button"
         onClick={() => setAperto(v => !v)}
-        aria-label={nonLette > 0 ? `Notifiche: ${nonLette} non lette` : 'Notifiche'}
+        aria-label={nonLette > 0 ? t('campanellaNotifiche.notificheNonLette', { numero: nonLette }) : t('campanellaNotifiche.notifiche')}
         aria-expanded={aperto}
         className="relative p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-white"
       >
@@ -97,17 +99,17 @@ export default function CampanellaNotifiche({ compatta = false }) {
             style={{ background: 'var(--bg-secondario, #14141c)', border: '1px solid var(--bordo-light)', boxShadow: 'var(--ombra-card)' }}
           >
             <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--bordo-light)]">
-              <span className="font-bold text-sm">Notifiche</span>
+              <span className="font-bold text-sm">{t('campanellaNotifiche.notifiche')}</span>
               {nonLette > 0 && (
                 <button type="button" onClick={segnaTutte} className="text-xs text-[var(--accent)] hover:underline flex items-center gap-1">
-                  <CheckCheck size={14} /> Segna tutte lette
+                  <CheckCheck size={14} /> {t('campanellaNotifiche.segnaTutteLette')}
                 </button>
               )}
             </div>
 
             <div className="max-h-[360px] overflow-y-auto">
               {notifiche.length === 0 ? (
-                <p className="text-sm text-[var(--testo-terziario)] px-4 py-6 text-center">Nessuna notifica.</p>
+                <p className="text-sm text-[var(--testo-terziario)] px-4 py-6 text-center">{t('campanellaNotifiche.nessunaNotifica')}</p>
               ) : (
                 notifiche.map(n => (
                   <button

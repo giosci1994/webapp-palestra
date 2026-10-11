@@ -1,0 +1,21 @@
+{
+  "titolo": "Train now",
+  "sottotitolo": "Pick a plan and start your workout",
+  "nessunaScheda": {
+    "titolo": "No plans",
+    "testo": "You don't have any plans yet. Go to Plan management to create one.",
+    "vai": "Go to Plan management"
+  },
+  "tueSchede": "Your plans",
+  "schedeGlobali": "Global plans",
+  "globale": "Global",
+  "eserciziBreve": "{count} ex.",
+  "sessioni_one": "{count} session",
+  "sessioni_other": "{count} sessions",
+  "conferma": {
+    "testo_one": "This plan has {count} exercise. Ready to start?",
+    "testo_other": "This plan has {count} exercises. Ready to start?",
+    "avvio": "Starting...",
+    "inizia": "Start workout"
+  }
+}

@@ -6,17 +6,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../config/api.js';
 import { useAuth } from '../contesti/AuthContesto.jsx';
+import { useLingua } from '../hooks/useLingua.js';
 import { RUOLI } from '../utils/costanti.js';
 import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
 import { motion } from 'framer-motion';
 
+// label is a translation key: show it with t()
 const STATI = {
-  IN_ATTESA: { label: 'In attesa', colore: 'avviso', bg: 'var(--avviso-dim)' },
-  ATTIVO: { label: 'Attivo', colore: 'successo', bg: 'var(--successo-dim)' },
-  BANNATO: { label: 'Bannato', colore: 'pericolo', bg: 'var(--pericolo-dim)' }
+  IN_ATTESA: { label: 'adminUtenti.stati.IN_ATTESA', colore: 'avviso', bg: 'var(--avviso-dim)' },
+  ATTIVO: { label: 'adminUtenti.stati.ATTIVO', colore: 'successo', bg: 'var(--successo-dim)' },
+  BANNATO: { label: 'adminUtenti.stati.BANNATO', colore: 'pericolo', bg: 'var(--pericolo-dim)' }
 };
 
 export default function AdminUtenti() {
+  const { t } = useLingua();
   const { utente: utenteCorrente } = useAuth();
   const [utenti, setUtenti] = useState([]);
   const [filtroStato, setFiltroStato] = useState('');
@@ -47,7 +50,7 @@ export default function AdminUtenti() {
   };
 
   const bannaUtente = async (id) => {
-    if (!confirm('Sei sicuro di voler bannare questo utente?')) return;
+    if (!confirm(t('adminUtenti.confermaBanna'))) return;
     try {
       await api.patch(`/utenti/${id}/banna`);
       caricaUtenti();
@@ -62,7 +65,7 @@ export default function AdminUtenti() {
   };
 
   const eliminaUtente = async (id) => {
-    if (!confirm('Sei sicuro di voler ELIMINARE definitivamente questo utente? Questa operazione è irreversibile e cancellerà tutto il suo storico.')) return;
+    if (!confirm(t('adminUtenti.confermaElimina'))) return;
     try {
       await api.delete(`/utenti/${id}`);
       caricaUtenti();
@@ -70,10 +73,10 @@ export default function AdminUtenti() {
   };
 
   const resetPassword = async (id) => {
-    if (!confirm('Resettare la password di questo utente? Verrà generata una password temporanea da comunicargli.')) return;
+    if (!confirm(t('adminUtenti.confermaResetPassword'))) return;
     try {
       const r = await api.put(`/admin/utenti/${id}/reset-password`);
-      alert(`Password temporanea generata:\n\n${r.dati?.passwordTemporanea || '(errore)'}\n\nComunicala all'utente: potrà cambiarla dopo l'accesso.`);
+      alert(t('adminUtenti.passwordTemporanea', { password: r.dati?.passwordTemporanea || t('adminUtenti.passwordErrore') }));
     } catch (err) { alert(err.message); }
   };
 
@@ -82,7 +85,7 @@ export default function AdminUtenti() {
 
   return (
     <div className="py-2">
-      <h1 className="text-2xl font-bold mb-6">👥 Gestione Utenti</h1>
+      <h1 className="text-2xl font-bold mb-6">{t('adminUtenti.titolo')}</h1>
 
       {/* Alert for users waiting for approval */}
       {inAttesa.length > 0 && !filtroStato && (
@@ -91,12 +94,12 @@ export default function AdminUtenti() {
           <span className="text-xl">⚠️</span>
           <div>
             <p className="font-semibold text-sm" style={{ color: 'var(--avviso)' }}>
-              {inAttesa.length} utent{inAttesa.length === 1 ? 'e' : 'i'} in attesa di approvazione
+              {t('adminUtenti.inAttesaApprovazione', { count: inAttesa.length })}
             </p>
           </div>
           <button onClick={() => setFiltroStato('IN_ATTESA')} className="ml-auto text-xs font-medium px-3 py-1.5 rounded-[var(--raggio-md)]"
                   style={{ background: 'var(--avviso)', color: '#000' }}>
-            Mostra
+            {t('adminUtenti.mostra')}
           </button>
         </div>
       )}
@@ -108,7 +111,7 @@ export default function AdminUtenti() {
           <span className="text-xl">🏋️</span>
           <div>
             <p className="font-semibold text-sm" style={{ color: 'rgb(139, 92, 246)' }}>
-              {richiestePT.length} utent{richiestePT.length === 1 ? 'e richiede' : 'i richiedono'} il ruolo di Personal Trainer
+              {t('adminUtenti.richiedonoPT', { count: richiestePT.length })}
             </p>
             <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
               {richiestePT.map(u => u.nome).join(', ')}
@@ -120,19 +123,19 @@ export default function AdminUtenti() {
       {/* Filters */}
       <div className="flex flex-wrap gap-2 mb-4">
         <select value={filtroStato} onChange={e => setFiltroStato(e.target.value)} className="campo-input w-auto text-sm">
-          <option value="">Tutti gli stati</option>
-          <option value="IN_ATTESA">In attesa</option>
-          <option value="ATTIVO">Attivo</option>
-          <option value="BANNATO">Bannato</option>
+          <option value="">{t('adminUtenti.tuttiGliStati')}</option>
+          <option value="IN_ATTESA">{t(STATI.IN_ATTESA.label)}</option>
+          <option value="ATTIVO">{t(STATI.ATTIVO.label)}</option>
+          <option value="BANNATO">{t(STATI.BANNATO.label)}</option>
         </select>
         <select value={filtroRuolo} onChange={e => setFiltroRuolo(e.target.value)} className="campo-input w-auto text-sm">
-          <option value="">Tutti i ruoli</option>
-          <option value="UTENTE">Utente</option>
-          <option value="PERSONAL_TRAINER">Personal Trainer</option>
-          <option value="SUPERADMIN">SuperAdmin</option>
+          <option value="">{t('adminUtenti.tuttiIRuoli')}</option>
+          <option value="UTENTE">{t('adminUtenti.filtroRuolo.UTENTE')}</option>
+          <option value="PERSONAL_TRAINER">{t('adminUtenti.filtroRuolo.PERSONAL_TRAINER')}</option>
+          <option value="SUPERADMIN">{t('adminUtenti.filtroRuolo.SUPERADMIN')}</option>
         </select>
         <span className="text-xs text-[var(--testo-terziario)] self-center ml-2">
-          {utenti.length} utenti
+          {t('adminUtenti.utenti', { count: utenti.length })}
         </span>
       </div>
 
@@ -156,11 +159,11 @@ export default function AdminUtenti() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm truncate flex items-center gap-1.5">
                     {u.nome}
-                    {u.emailVerificata === false && <span title="Email non verificata" className="text-[var(--avviso)] text-xs shrink-0">✉️⚠️</span>}
+                    {u.emailVerificata === false && <span title={t('adminUtenti.emailNonVerificata')} className="text-[var(--avviso)] text-xs shrink-0">✉️⚠️</span>}
                   </p>
                   <p className="text-xs text-[var(--testo-terziario)] truncate">{u.email}</p>
                   <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5 truncate">
-                    {u.ultimoAccesso ? `Ultimo accesso ${formattaDataRelativa(u.ultimoAccesso)}` : 'Mai connesso'}
+                    {u.ultimoAccesso ? t('adminUtenti.ultimoAccesso', { quando: formattaDataRelativa(u.ultimoAccesso) }) : t('adminUtenti.maiConnesso')}
                     {(u._count?.schedeCreate > 0 || u._count?.sessioni > 0) && ` · 📋 ${u._count?.schedeCreate || 0} · 🏋️ ${u._count?.sessioni || 0}`}
                     {u._count?.clientiComePT > 0 && ` · 👥 ${u._count.clientiComePT}`}
                     {u.palestra && ` · 🏢 ${u.palestra.nomeCatena}`}
@@ -170,14 +173,14 @@ export default function AdminUtenti() {
 
               {/* Badge */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`badge ${STATI[u.stato]?.colore || 'accent'}`}>{STATI[u.stato]?.label}</span>
-                <span className={`badge ${RUOLI[u.ruolo]?.colore || 'accent'}`}>{RUOLI[u.ruolo]?.label}</span>
+                <span className={`badge ${STATI[u.stato]?.colore || 'accent'}`}>{STATI[u.stato] && t(STATI[u.stato].label)}</span>
+                <span className={`badge ${RUOLI[u.ruolo]?.colore || 'accent'}`}>{RUOLI[u.ruolo] && t(RUOLI[u.ruolo].label)}</span>
                 {u.ruoloRichiesto === 'PERSONAL_TRAINER' && u.ruolo === 'UTENTE' && (
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(139, 92, 246, 0.2)', color: 'rgb(139, 92, 246)' }}>
-                    🏋️ Vuole diventare PT
+                    {t('adminUtenti.vuoleDiventarePT')}
                   </span>
                 )}
-                <span className="text-[10px] text-[var(--testo-terziario)]" title="Data registrazione">📅 {formattaData(u.dataRegistrazione)}</span>
+                <span className="text-[10px] text-[var(--testo-terziario)]" title={t('adminUtenti.dataRegistrazione')}>📅 {formattaData(u.dataRegistrazione)}</span>
               </div>
 
               {/* Actions */}
@@ -186,28 +189,28 @@ export default function AdminUtenti() {
                   <button onClick={() => approvaUtente(u.id)}
                           className="text-xs font-medium px-3 py-1.5 rounded-[var(--raggio-md)] transition-all"
                           style={{ background: 'var(--successo)', color: '#fff' }}>
-                    ✓ Approva
+                    {t('adminUtenti.approva')}
                   </button>
                 )}
                 {u.ruoloRichiesto === 'PERSONAL_TRAINER' && u.ruolo === 'UTENTE' && u.stato === 'ATTIVO' && (
                   <button onClick={() => cambiaRuolo(u.id, 'PERSONAL_TRAINER')}
                           className="text-xs font-medium px-3 py-1.5 rounded-[var(--raggio-md)] transition-all"
                           style={{ background: 'rgb(139, 92, 246)', color: '#fff' }}>
-                    ✓ Approva PT
+                    {t('adminUtenti.approvaPT')}
                   </button>
                 )}
                 {u.id === utenteCorrente?.id ? (
-                  <span className="text-xs font-semibold text-[var(--testo-terziario)] px-2 py-1.5 flex items-center gap-1" title="Non puoi modificare o eliminare il tuo stesso account">
-                    👤 Tu
+                  <span className="text-xs font-semibold text-[var(--testo-terziario)] px-2 py-1.5 flex items-center gap-1" title={t('adminUtenti.tuoAccount')}>
+                    {t('adminUtenti.tu')}
                   </span>
                 ) : (
                   <>
                     {u.stato === 'ATTIVO' && (
                       <select defaultValue={u.ruolo} onChange={e => cambiaRuolo(u.id, e.target.value)}
                               className="campo-input text-xs py-1 w-auto">
-                        <option value="UTENTE">Utente</option>
-                        <option value="PERSONAL_TRAINER">PT</option>
-                        <option value="SUPERADMIN">Admin</option>
+                        <option value="UTENTE">{t('adminUtenti.ruoloBreve.UTENTE')}</option>
+                        <option value="PERSONAL_TRAINER">{t('adminUtenti.ruoloBreve.PERSONAL_TRAINER')}</option>
+                        <option value="SUPERADMIN">{t('adminUtenti.ruoloBreve.SUPERADMIN')}</option>
                       </select>
                     )}
                     {u.stato !== 'BANNATO' && (
@@ -219,11 +222,11 @@ export default function AdminUtenti() {
                     {u.stato === 'BANNATO' && (
                       <button onClick={() => approvaUtente(u.id)}
                               className="text-xs font-medium px-3 py-1.5 rounded-[var(--raggio-md)] bg-[var(--successo-dim)] text-[var(--successo)]">
-                        Riattiva
+                        {t('adminUtenti.riattiva')}
                       </button>
                     )}
                     <button onClick={() => resetPassword(u.id)}
-                            title="Resetta password (genera una temporanea)"
+                            title={t('adminUtenti.resetPassword')}
                             className="text-xs text-[var(--avviso)] px-2 py-1.5 rounded-[var(--raggio-md)] hover:bg-[var(--avviso-dim)] transition-all">
                       🔑
                     </button>

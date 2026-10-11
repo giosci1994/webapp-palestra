@@ -1,0 +1,22 @@
+{
+  "richiestaInviata": "Richiesta di contatto inviata! ✉️",
+  "titolo": "Chat",
+  "conversazioni_one": "{count} conversazione",
+  "conversazioni_other": "{count} conversazioni",
+  "richieste_one": "{count} richiesta",
+  "richieste_other": "{count} richieste",
+  "nuovoContatto": "＋ Nuovo contatto",
+  "tabChat": "💬 Chat",
+  "tabRichieste": "✉️ Richieste",
+  "cercaUtente": "🔍 Cerca per nome o email...",
+  "contatta": "Contatta",
+  "nessunUtente": "Nessun utente trovato",
+  "nessunaConversazione": "Nessuna conversazione",
+  "cercaPerIniziare": "Cerca un utente per iniziare a chattare",
+  "utente": "Utente",
+  "tu": "Tu: ",
+  "nessunaRichiesta": "Nessuna richiesta in attesa",
+  "vuoleContattarti": "Vuole contattarti · {data}",
+  "accetta": "Accetta",
+  "rifiuta": "Rifiuta"
+}

@@ -1,0 +1,62 @@
+{
+  "tornaApp": "Back to the app",
+  "titolo": "Terms and Conditions",
+  "ultimoAggiornamento": "Last updated: 11 May 2026",
+  "oggetto": {
+    "titolo": "1. Subject of the Service",
+    "testo": "GymMaster is a web platform for managing gym workouts that allows users to create and follow workout plans, track their progress, communicate with other users and interact with personal trainers."
+  },
+  "registrazione": {
+    "titolo": "2. Registration and Account",
+    "datiVeritieri": "To use the service you must create an account by providing truthful and up-to-date information.",
+    "personale": "The account is personal and non-transferable.",
+    "approvazione": "Registration is subject to approval by the administrator.",
+    "credenziali": "The user is responsible for the security of their login credentials.",
+    "eta": "The user must be at least 16 years old to register (pursuant to Art. 8 GDPR)."
+  },
+  "obblighi": {
+    "titolo": "3. User Obligations",
+    "intro": "The user undertakes to:",
+    "lecito": "Use the service lawfully and in accordance with these terms",
+    "contenuti": "Not share offensive, illegal or inappropriate content",
+    "accessi": "Not attempt to access the accounts or data of other users",
+    "automatismi": "Not use unauthorised bots, scripts or automated tools",
+    "sicurezza": "Not circumvent the application's security measures"
+  },
+  "personalTrainer": {
+    "titolo": "4. Personal Trainers",
+    "ruolo": "Users can request the Personal Trainer role, subject to approval.",
+    "attivita": "Personal Trainers can create exercises, manage clients and schedule appointments.",
+    "qualifiche": "GymMaster does not verify the professional qualifications of Personal Trainers and accepts no responsibility for their services.",
+    "responsabilita": "A user who signs up with a Personal Trainer does so at their own responsibility."
+  },
+  "proprietaIntellettuale": {
+    "titolo": "5. Intellectual Property",
+    "testo": "GymMaster is an open-source project. The source code is available on <link>GitHub</link>. Content created by users (plans, custom exercises) remains the property of its respective authors."
+  },
+  "disclaimerMedico": {
+    "titolo": "6. Medical Disclaimer",
+    "testo": "GymMaster does not provide medical advice. The application is a workout tracking tool and does not replace the advice of a doctor or healthcare professional. Always consult a doctor before starting a new workout programme."
+  },
+  "responsabilita": {
+    "titolo": "7. Limitation of Liability",
+    "intro": "The service is provided \"as is\" without warranties of any kind. The owner is not liable for:",
+    "interruzioni": "Temporary service interruptions",
+    "perditaDati": "Data loss due to force majeure",
+    "usoImproprio": "Damage resulting from improper use of the application",
+    "infortuni": "Injuries or physical harm resulting from workouts"
+  },
+  "sospensione": {
+    "titolo": "8. Suspension and Deletion",
+    "ban": "The administrator may suspend or ban accounts that violate these terms.",
+    "cancellazione": "The user may request the deletion of their account and related data at any time."
+  },
+  "modifiche": {
+    "titolo": "9. Changes to the Terms",
+    "testo": "We reserve the right to modify these terms. Changes will be communicated through the application. Continued use of the service after notification constitutes acceptance of the new terms."
+  },
+  "leggeApplicabile": {
+    "titolo": "10. Governing Law",
+    "testo": "These terms are governed by European Union law, in particular Regulation (EU) 2016/679 (GDPR). For any dispute, the court of the place of residence of the consumer user shall have jurisdiction, in accordance with Regulation (EU) No 1215/2012."
+  }
+}

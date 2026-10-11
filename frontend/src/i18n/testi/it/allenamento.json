@@ -1,0 +1,21 @@
+{
+  "titolo": "Allenati Ora",
+  "sottotitolo": "Scegli una scheda e inizia il workout",
+  "nessunaScheda": {
+    "titolo": "Nessuna Scheda",
+    "testo": "Non hai ancora schede. Vai nella sezione Gestione Schede per crearne una.",
+    "vai": "Vai a Gestione Schede"
+  },
+  "tueSchede": "Le Tue Schede",
+  "schedeGlobali": "Schede Globali",
+  "globale": "Globale",
+  "eserciziBreve": "{count} Es.",
+  "sessioni_one": "{count} sessione",
+  "sessioni_other": "{count} sessioni",
+  "conferma": {
+    "testo_one": "Questa scheda contiene {count} esercizio. Sei pronto per iniziare?",
+    "testo_other": "Questa scheda contiene {count} esercizi. Sei pronto per iniziare?",
+    "avvio": "Avvio in corso...",
+    "inizia": "Inizia Allenamento"
+  }
+}

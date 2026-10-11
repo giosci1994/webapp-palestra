@@ -9,8 +9,11 @@ import { api } from '../config/api.js';
 import { motion } from 'framer-motion';
 import { browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import FooterLegale from '../componenti/comuni/FooterLegale.jsx';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
 
 export default function Login() {
+  const { t } = useLingua();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [caricamento, setCaricamento] = useState(false);
@@ -44,7 +47,7 @@ export default function Login() {
     } catch (err) {
       // Cancelled on the device: no error to show
       if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
-        setErroreLocale(err.message || 'Accesso con passkey non riuscito');
+        setErroreLocale(err.message || t('login.erroreAccessoPasskey'));
       }
     } finally {
       setCaricamento(false);
@@ -59,7 +62,7 @@ export default function Login() {
     try {
       vaiDopoAccesso(await login(email, password, ricordaDispositivo));
     } catch (err) {
-      setErroreLocale(err.message || 'Errore durante il login');
+      setErroreLocale(err.message || t('login.erroreLogin'));
       if ((err.message || '').includes('Verifica la tua email')) setMostraReinvio(true);
     } finally {
       setCaricamento(false);
@@ -86,7 +89,7 @@ export default function Login() {
           <div className="text-5xl mb-3">🏋️</div>
           <h1 className="text-3xl font-extrabold testo-gradient">GymMaster</h1>
           <p className="text-[var(--testo-secondario)] mt-1 text-sm">
-            Accedi per iniziare il tuo allenamento
+            {t('login.sottotitolo')}
           </p>
         </div>
 
@@ -110,13 +113,13 @@ export default function Login() {
               disabled={reinviato}
               className="text-sm text-[var(--accent)] hover:underline self-start -mt-2 disabled:opacity-60 disabled:no-underline"
             >
-              {reinviato ? '✓ Email di verifica reinviata (controlla lo spam)' : 'Reinvia email di verifica'}
+              {reinviato ? t('login.verificaReinviata') : t('login.reinviaVerifica')}
             </button>
           )}
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">
-              Email
+              {t('login.email')}
             </label>
             <input
               id="email"
@@ -124,7 +127,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="campo-input"
-              placeholder="la-tua@email.com"
+              placeholder={t('login.emailPlaceholder')}
               required
               autoComplete="email"
               autoFocus
@@ -133,7 +136,7 @@ export default function Login() {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">
-              Password
+              {t('login.password')}
             </label>
             <input
               id="password"
@@ -148,7 +151,7 @@ export default function Login() {
           </div>
 
           <div className="-mt-2 text-right">
-            <Link to="/password-dimenticata" className="text-xs text-[var(--accent)] hover:underline">Password dimenticata?</Link>
+            <Link to="/password-dimenticata" className="text-xs text-[var(--accent)] hover:underline">{t('login.passwordDimenticata')}</Link>
           </div>
 
           {/* Checkbox — Ricorda questo dispositivo */}
@@ -170,10 +173,10 @@ export default function Login() {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium text-[var(--testo-primario)] group-hover:text-[var(--accent)] transition-colors">
-                Ricorda questo dispositivo
+                {t('login.ricordaDispositivo')}
               </span>
               <span className="text-[10px] text-[var(--testo-terziario)] leading-tight mt-0.5">
-                Resta connesso per 30 giorni
+                {t('login.ricordaDispositivoDettaglio')}
               </span>
             </div>
           </label>
@@ -187,10 +190,10 @@ export default function Login() {
             {caricamento ? (
               <>
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full anima-ruota" />
-                Accesso in corso...
+                {t('login.accessoInCorso')}
               </>
             ) : (
-              'Accedi'
+              t('login.accedi')
             )}
           </button>
 
@@ -202,17 +205,14 @@ export default function Login() {
               className="btn-secondario w-full justify-center"
               style={{ padding: '14px 24px', fontSize: '1rem' }}
             >
-              🔑 Accedi con una passkey
+              {t('login.accediPasskey')}
             </button>
           )}
         </form>
 
         {/* Sign-up link */}
         <p className="text-center mt-6 text-sm text-[var(--testo-secondario)]">
-          Non hai un account?{' '}
-          <Link to="/registrazione" className="font-semibold">
-            Registrati
-          </Link>
+          <Testo t="login.nessunAccount" componenti={{ registrati: <Link to="/registrazione" className="font-semibold" /> }} />
         </p>
 
         <FooterLegale />

@@ -1,0 +1,9 @@
+{
+  "sessioneScaduta": "Session expired. Sign in again to continue.",
+  "troppeRichieste": "Too many requests, or your address is temporarily blocked by the security systems.",
+  "accessoNegato": "Access denied. The traffic may have been blocked by the firewall.",
+  "erroreServerCodice": "Server error ({codice}). Try again later.",
+  "rispostaNonValida": "Invalid response from the server (unsupported format).",
+  "erroreServer": "Server error",
+  "downloadFallito": "Download failed (error {codice})"
+}

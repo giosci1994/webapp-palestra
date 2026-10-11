@@ -6,19 +6,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Quick suggestions for the user
+// Quick suggestions for the user (testo is a translation key; the text of the
+// suggestion is also what is sent to the assistant, in the app's language)
 const SUGGERIMENTI = [
-  { icona: '💪', testo: 'Suggerisci un allenamento push per intermedi' },
-  { icona: '🔄', testo: 'Ho la panca occupata, cosa posso fare al suo posto?' },
-  { icona: '📊', testo: 'Analizza i miei progressi recenti' },
-  { icona: '🍽️', testo: 'Consigli per la nutrizione post-workout' },
-  { icona: '🦵', testo: 'Esercizi per rinforzare le gambe senza squat' },
-  { icona: '⚖️', testo: 'Come dovrei aumentare i carichi progressivamente?' }
+  { icona: '💪', testo: 'assistente.suggerimenti.push' },
+  { icona: '🔄', testo: 'assistente.suggerimenti.panca' },
+  { icona: '📊', testo: 'assistente.suggerimenti.progressi' },
+  { icona: '🍽️', testo: 'assistente.suggerimenti.nutrizione' },
+  { icona: '🦵', testo: 'assistente.suggerimenti.gambe' },
+  { icona: '⚖️', testo: 'assistente.suggerimenti.carichi' }
 ];
 
 export default function Assistente() {
+  const { t } = useLingua();
   const [conversazioni, setConversazioni] = useState([]);
   const [conversazioneAttiva, setConversazioneAttiva] = useState(null);
   const [messaggi, setMessaggi] = useState([]);
@@ -74,7 +77,7 @@ export default function Assistente() {
     } catch (err) {
       const msgErrore = {
         ruolo: 'assistente',
-        contenuto: `⚠️ ${err.message || 'Errore nella comunicazione con GymBot. Riprova.'}`,
+        contenuto: `⚠️ ${err.message || t('assistente.erroreComunicazione')}`,
         inviatoIl: new Date().toISOString(),
         errore: true
       };
@@ -107,7 +110,7 @@ export default function Assistente() {
         // The backend returns only the last message, so we tell the user
         setMessaggi([{
           ruolo: 'assistente',
-          contenuto: '📂 Conversazione ripresa. Scrivi un messaggio per continuare!',
+          contenuto: t('assistente.conversazioneRipresa'),
           inviatoIl: new Date().toISOString()
         }]);
       }
@@ -144,18 +147,18 @@ export default function Assistente() {
           <div>
             <h1 className="font-bold text-sm">GymBot</h1>
             <p className="text-[10px] text-[var(--testo-terziario)]">
-              Assistente fitness AI · Powered by Gemini
+              {t('assistente.sottotitolo')}
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setMostraStorico(!mostraStorico)}
                   className="text-xs px-3 py-1.5 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-all">
-            📂 Storico
+            {t('assistente.storico')}
           </button>
           <button onClick={nuovaConversazione}
                   className="text-xs px-3 py-1.5 rounded-[var(--raggio-md)] bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all">
-            ＋ Nuova
+            {t('assistente.nuova')}
           </button>
         </div>
       </div>
@@ -167,9 +170,9 @@ export default function Assistente() {
                       className="overflow-hidden border-b border-[var(--bordo)]"
                       style={{ background: 'var(--bg-secondario)' }}>
             <div className="p-4 max-h-48 overflow-y-auto">
-              <h3 className="text-xs font-semibold text-[var(--testo-terziario)] mb-2 uppercase">Conversazioni precedenti</h3>
+              <h3 className="text-xs font-semibold text-[var(--testo-terziario)] mb-2 uppercase">{t('assistente.conversazioniPrecedenti')}</h3>
               {conversazioni.length === 0 ? (
-                <p className="text-xs text-[var(--testo-terziario)]">Nessuna conversazione passata</p>
+                <p className="text-xs text-[var(--testo-terziario)]">{t('assistente.nessunaConversazione')}</p>
               ) : (
                 <div className="flex flex-col gap-1">
                   {conversazioni.map(c => (
@@ -180,7 +183,7 @@ export default function Assistente() {
                       <span className="text-sm">💬</span>
                       <div className="flex-1 min-w-0">
                         <p className="truncate text-[var(--testo-primario)]">
-                          {c.messaggi?.[0]?.contenuto || 'Conversazione'}
+                          {c.messaggi?.[0]?.contenuto || t('assistente.conversazione')}
                         </p>
                         <p className="text-[var(--testo-terziario)]">{formattaDataRelativa(c.creatoIl)}</p>
                       </div>
@@ -200,10 +203,9 @@ export default function Assistente() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                       className="flex flex-col items-center justify-center flex-1 py-8">
             <div className="text-6xl mb-4">🤖</div>
-            <h2 className="text-xl font-bold mb-1">Ciao! Sono GymBot</h2>
+            <h2 className="text-xl font-bold mb-1">{t('assistente.benvenuto')}</h2>
             <p className="text-sm text-[var(--testo-secondario)] text-center max-w-md mb-6">
-              Il tuo assistente fitness personale. Chiedimi consigli su allenamento,
-              nutrizione, progressione carichi e molto altro!
+              {t('assistente.benvenutoDescrizione')}
             </p>
 
             {/* Quick suggestions */}
@@ -214,11 +216,11 @@ export default function Assistente() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 + i * 0.05 }}
-                  onClick={() => inviaMessaggio(s.testo)}
+                  onClick={() => inviaMessaggio(t(s.testo))}
                   className="flex items-center gap-2 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-left text-sm hover:bg-[var(--accent-dim)] hover:border-[var(--accent)] border border-transparent transition-all"
                 >
                   <span className="text-lg shrink-0">{s.icona}</span>
-                  <span className="text-[var(--testo-secondario)]">{s.testo}</span>
+                  <span className="text-[var(--testo-secondario)]">{t(s.testo)}</span>
                 </motion.button>
               ))}
             </div>
@@ -273,7 +275,7 @@ export default function Assistente() {
                     <span className="w-2 h-2 rounded-full bg-[var(--accent)] anima-pulsa" style={{ animationDelay: '0.2s' }} />
                     <span className="w-2 h-2 rounded-full bg-[var(--accent)] anima-pulsa" style={{ animationDelay: '0.4s' }} />
                   </div>
-                  <span className="text-xs text-[var(--testo-terziario)]">GymBot sta pensando...</span>
+                  <span className="text-xs text-[var(--testo-terziario)]">{t('assistente.staPensando')}</span>
                 </div>
               </div>
             </motion.div>
@@ -289,7 +291,7 @@ export default function Assistente() {
             value={testo}
             onChange={(e) => setTesto(e.target.value)}
             onKeyDown={gestisciTasto}
-            placeholder="Chiedi a GymBot..."
+            placeholder={t('assistente.chiedi')}
             rows={1}
             className="campo-input flex-1 resize-none min-h-[44px] max-h-[120px]"
             style={{ paddingTop: '10px', paddingBottom: '10px' }}
@@ -304,7 +306,7 @@ export default function Assistente() {
           </button>
         </div>
         <p className="text-[10px] text-[var(--testo-terziario)] mt-1 text-center">
-          GymBot può commettere errori. Consulta un professionista per consigli medici.
+          {t('assistente.avvertenza')}
         </p>
       </div>
     </div>

@@ -1,0 +1,27 @@
+{
+  "titolo": "Notifiche sul telefono",
+  "descrizione": "Ti avvisano anche ad app chiusa. Con l'app aperta restano nella campanella, senza doppioni.",
+  "cosaArriva": {
+    "recupero": "La fine del recupero, anche a schermo bloccato",
+    "chat": "I messaggi in chat",
+    "promemoria": "I promemoria degli allenamenti in programma",
+    "campanella": "Tutto quello che arriva nella campanella"
+  },
+  "avvisoIphone": "Su iPhone le notifiche arrivano solo con GymMaster nella schermata Home: in Safari tocca Condividi → «Aggiungi alla schermata Home», poi apri l'app da lì.",
+  "avvisoBrowser": "Questo browser non supporta le notifiche push.",
+  "avvisoServer": "Le notifiche push non sono ancora attive sul server.",
+  "avvisoBloccate": "Hai bloccato le notifiche per GymMaster: riattivale dalle impostazioni del browser (il lucchetto accanto all'indirizzo → Notifiche), poi torna qui.",
+  "controllo": "Controllo le notifiche su questo dispositivo…",
+  "attive": "✅ Attive su questo dispositivo",
+  "prova": "Prova",
+  "disattiva": "Disattiva",
+  "attendi": "Un attimo…",
+  "attiva": "Attiva le notifiche",
+  "esito": {
+    "attivate": "Notifiche attive su questo dispositivo.",
+    "disattivate": "Questo dispositivo non riceve più notifiche.",
+    "provaInviata": "Notifica di prova inviata: dovrebbe arrivare fra un attimo.",
+    "provaNessunDispositivo": "Nessun dispositivo raggiunto: prova a disattivare e riattivare.",
+    "erroreGenerico": "Operazione non riuscita"
+  }
+}

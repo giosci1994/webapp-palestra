@@ -11,7 +11,9 @@
 
 import { useState, useMemo, useRef } from 'react';
 import { PersonStanding, Trophy, X, TrendingUp } from 'lucide-react';
-import { formattaPeso, nomeEsercizio } from '../../utils/formattatori.js';
+import { useLingua } from '../../hooks/useLingua.js';
+import { localeCorrente } from '../../i18n/index.js';
+import { formattaPeso, nomeEsercizio, nomeGruppo } from '../../utils/formattatori.js';
 import { SCALA_ALLENAMENTO, gradinoAllenamento, STATI_RECUPERO, statoRecupero } from '../../utils/costanti.js';
 import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 import MappaCorpo from './MappaCorpo.jsx';
@@ -38,10 +40,11 @@ const GRUPPO_DI_ZONA = Object.fromEntries(
   Object.entries(ZONE_PER_GRUPPO).flatMap(([gruppo, zone]) => zone.map(z => [z, gruppo]))
 );
 
-const NOMI_PERIODO = { 7: 'negli ultimi 7 giorni', 30: 'negli ultimi 30 giorni', 90: 'negli ultimi 3 mesi', 365: 'negli ultimi 12 mesi' };
-const PERIODO_BREVE = { 7: '7 giorni', 30: '30 giorni', 90: '3 mesi', 365: '12 mesi' };
+// The period in words, as translation keys: the sentences that use it ("in the last 30 days") and the header
+const NOMI_PERIODO = { 7: 'sezioneCorpo.periodo.7', 30: 'sezioneCorpo.periodo.30', 90: 'sezioneCorpo.periodo.90', 365: 'sezioneCorpo.periodo.365' };
+const PERIODO_BREVE = { 7: 'sezioneCorpo.periodoBreve.7', 30: 'sezioneCorpo.periodoBreve.30', 90: 'sezioneCorpo.periodoBreve.90', 365: 'sezioneCorpo.periodoBreve.365' };
 
-const numero = (n) => n.toLocaleString('it-IT', { maximumFractionDigits: 1 });
+const numero = (n) => n.toLocaleString(localeCorrente(), { maximumFractionDigits: 1 });
 
 // What colors the outline: the sets in the period or the recovery state.
 // The choice stays from one visit to the next.
@@ -50,42 +53,43 @@ function leggiVista() {
   try { return localStorage.getItem(CHIAVE_VISTA) === 'recupero' ? 'recupero' : 'serie'; } catch { return 'serie'; }
 }
 
-/** "23 set" (23 Sep), with the year only if it is not the current one. */
+/** "23 Sep", with the year only if it is not the current one. */
 function dataBreve(data) {
   const d = new Date(data);
   const opzioni = { day: 'numeric', month: 'short' };
   if (d.getFullYear() !== new Date().getFullYear()) opzioni.year = 'numeric';
-  return d.toLocaleDateString('it-IT', opzioni);
+  return d.toLocaleDateString(localeCorrente(), opzioni);
 }
 
 /** A set in readable form: load and reps, or duration for cardio. */
-function descriviSerie(s) {
+function descriviSerie(s, t) {
   if (!s) return '—';
   if (s.minuti) return `${s.minuti} min`;
   if (s.peso > 0) return `${formattaPeso(s.peso)} kg × ${s.rep}`;
-  if (s.rep > 0) return `Corpo libero × ${s.rep}`;
+  if (s.rep > 0) return t('sezioneCorpo.corpoLibero', { rep: s.rep });
   return '—';
 }
 
 function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
+  const { t } = useLingua();
   const [andamento, setAndamento] = useState(false);
   return (
     <li className={`rounded-[var(--raggio-sm)] bg-[var(--bg-primario)] border border-[var(--bordo)] p-3 ${nelPeriodo ? '' : 'opacity-70'}`}>
       <p className="font-semibold text-sm leading-snug">{nomeEsercizio(e)}</p>
       <p className="text-[11px] text-[var(--testo-terziario)] mt-0.5">
         {nelPeriodo
-          ? <>{e.seriePeriodo} serie {periodoTesto} · </>
-          : <>Non fatto {periodoTesto} · </>}
-        <span className="whitespace-nowrap">ultima volta {dataBreve(e.ultimo.data)}</span>
+          ? <>{t('sezioneCorpo.seriePeriodo', { count: e.seriePeriodo, numero: numero(e.seriePeriodo), periodo: periodoTesto })} · </>
+          : <>{t('sezioneCorpo.nonFatto', { periodo: periodoTesto })} · </>}
+        <span className="whitespace-nowrap">{t('sezioneCorpo.ultimaVolta', { data: dataBreve(e.ultimo.data) })}</span>
       </p>
       <div className="flex gap-6 mt-2.5">
         <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Carico</p>
-          <p className="text-base font-bold leading-tight mt-0.5">{descriviSerie(e.ultimo)}</p>
+          <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{t('sezioneCorpo.carico')}</p>
+          <p className="text-base font-bold leading-tight mt-0.5">{descriviSerie(e.ultimo, t)}</p>
         </div>
         {e.massimale ? (
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Massimale</p>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{t('sezioneCorpo.massimale')}</p>
             <p className="text-base font-bold leading-tight mt-0.5 flex items-center gap-1">
               <Trophy size={14} className="text-[var(--avviso)] shrink-0" />
               {formattaPeso(e.massimale.peso)} kg
@@ -94,10 +98,10 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
           </div>
         ) : e.stimato && (
           // Without a real test, the estimate from the working sets: always labeled as such
-          <div className="min-w-0" title={`Formula di Epley sulla serie da ${formattaPeso(e.stimato.daPeso)} kg × ${e.stimato.daRip} del ${dataBreve(e.stimato.data)}`}>
-            <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">Massimale</p>
+          <div className="min-w-0" title={t('sezioneCorpo.formulaEpley', { peso: formattaPeso(e.stimato.daPeso), rep: e.stimato.daRip, data: dataBreve(e.stimato.data) })}>
+            <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{t('sezioneCorpo.massimale')}</p>
             <p className="text-base font-bold leading-tight mt-0.5">≈ {formattaPeso(e.stimato.peso)} kg</p>
-            <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">stimato da {formattaPeso(e.stimato.daPeso)} × {e.stimato.daRip}</p>
+            <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{t('sezioneCorpo.stimatoDa', { peso: formattaPeso(e.stimato.daPeso), rep: e.stimato.daRip })}</p>
           </div>
         )}
       </div>
@@ -111,7 +115,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
             aria-expanded={andamento}
             className="mt-3 text-xs font-semibold text-[var(--accent)] inline-flex items-center gap-1 hover:underline"
           >
-            <TrendingUp size={14} /> {andamento ? 'Nascondi andamento' : 'Andamento'}
+            <TrendingUp size={14} /> {andamento ? t('sezioneCorpo.nascondiAndamento') : t('sezioneCorpo.andamento')}
           </button>
           {andamento && <ProgressioneEsercizio esercizioId={e.id} />}
         </>
@@ -121,6 +125,7 @@ function SchedaEsercizio({ esercizio: e, nelPeriodo, periodoTesto }) {
 }
 
 function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
+  const { t } = useLingua();
   // First the ones done in the period, then the others from the most recent
   const ordina = (lista) => lista
     .map(id => esercizi[id]).filter(Boolean)
@@ -134,13 +139,15 @@ function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
       <div className="flex items-start gap-3 px-3 pt-3">
         <span className="w-3 h-3 rounded-full shrink-0 mt-1" style={{ background: colore }} />
         <div className="min-w-0">
-          <h4 className="font-bold text-sm">{g.nome}</h4>
+          <h4 className="font-bold text-sm">{nomeGruppo(g.nome)}</h4>
           <p className="text-[11px] text-[var(--testo-terziario)]">
-            {stato && <><span className="font-semibold text-[var(--testo-secondario)]">{STATI_RECUPERO[stato].etichetta}</span> · </>}
+            {stato && <><span className="font-semibold text-[var(--testo-secondario)]">{t(STATI_RECUPERO[stato].etichetta)}</span> · </>}
             {g.seriePeriodo > 0
-              ? <>{numero(g.seriePeriodo)} serie {periodoTesto}{indirette > 0 && <>, di cui {numero(indirette)} da muscolo secondario</>}</>
-              : <>Nessuna serie {periodoTesto}</>}
-            {g.ultimaData && <> · <span className="whitespace-nowrap">ultima volta {dataBreve(g.ultimaData)}</span></>}
+              ? t(indirette > 0 ? 'sezioneCorpo.seriePeriodoConIndirette' : 'sezioneCorpo.seriePeriodo', {
+                count: g.seriePeriodo, numero: numero(g.seriePeriodo), periodo: periodoTesto, indirette: numero(indirette)
+              })
+              : t('sezioneCorpo.nessunaSerie', { periodo: periodoTesto })}
+            {g.ultimaData && <> · <span className="whitespace-nowrap">{t('sezioneCorpo.ultimaVolta', { data: dataBreve(g.ultimaData) })}</span></>}
           </p>
         </div>
       </div>
@@ -155,13 +162,13 @@ function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
 
       {secondari.length > 0 && (
         <div className={`px-3 pb-3 ${principali.length ? '' : 'pt-3'}`}>
-          <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] mb-1.5">Lavorato anche in</p>
+          <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] mb-1.5">{t('sezioneCorpo.lavoratoAnche')}</p>
           <ul className="flex flex-col gap-1">
             {secondari.map(e => (
               <li key={e.id} className="flex items-baseline justify-between gap-3 text-xs">
                 <span className="text-[var(--testo-secondario)] truncate">{nomeEsercizio(e)}</span>
                 <span className="text-[var(--testo-terziario)] shrink-0 tabular-nums">
-                  {e.seriePeriodo > 0 ? `${e.seriePeriodo} serie` : dataBreve(e.ultimo.data)}
+                  {e.seriePeriodo > 0 ? t('comune.serie', { count: e.seriePeriodo }) : dataBreve(e.ultimo.data)}
                 </span>
               </li>
             ))}
@@ -179,6 +186,7 @@ function SchedaGruppo({ gruppo: g, esercizi, colore, periodoTesto, stato }) {
  * @param {number} p.adesso - instant the data was loaded (ms), for recovery
  */
 export default function SezioneCorpo({ dati, periodo, adesso }) {
+  const { t } = useLingua();
   const [selezione, setSelezione] = useState(null);     // group name
   const [vista, setVista] = useState(leggiVista);
   const cambiaVista = (v) => {
@@ -189,7 +197,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
 
   const gruppi = useMemo(() => dati?.gruppi || [], [dati]);
   const esercizi = dati?.esercizi || {};
-  const periodoTesto = NOMI_PERIODO[periodo] || `negli ultimi ${periodo} giorni`;
+  const periodoTesto = t(NOMI_PERIODO[periodo] || 'sezioneCorpo.periodo.altro', { giorni: periodo });
   const perNome = useMemo(() => Object.fromEntries(gruppi.map(g => [g.nome, g])), [gruppi]);
 
   // Scale: the group on the outline with the most sets in the period is the top step
@@ -208,18 +216,20 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
         const stato = statoRecupero(g?.ultimaData, g?.ultimaDataDiretta, adesso);
         if (stato) colori[zona] = STATI_RECUPERO[stato].colore;
         etichette[zona] = stato
-          ? `${nome}: ${STATI_RECUPERO[stato].etichetta.toLowerCase()}, ultima volta ${dataBreve(g.ultimaData)}`
-          : `${nome}: mai allenato`;
+          ? t('sezioneCorpo.etichetta.recupero', { nome: nomeGruppo(nome), stato: t(STATI_RECUPERO[stato].etichetta).toLowerCase(), data: dataBreve(g.ultimaData) })
+          : t('sezioneCorpo.etichetta.maiAllenato', { nome: nomeGruppo(nome) });
       } else {
         const gradino = gradinoAllenamento(g?.seriePeriodo || 0, massimo);
         if (gradino) colori[zona] = SCALA_ALLENAMENTO[gradino - 1];
         etichette[zona] = g?.seriePeriodo > 0
-          ? `${nome}: ${numero(g.seriePeriodo)} serie ${periodoTesto}`
-          : g?.ultimaData ? `${nome}: nessuna serie ${periodoTesto}` : `${nome}: mai allenato`;
+          ? t('sezioneCorpo.etichetta.serie', { nome: nomeGruppo(nome), count: g.seriePeriodo, numero: numero(g.seriePeriodo), periodo: periodoTesto })
+          : g?.ultimaData
+            ? t('sezioneCorpo.etichetta.nessunaSerie', { nome: nomeGruppo(nome), periodo: periodoTesto })
+            : t('sezioneCorpo.etichetta.maiAllenato', { nome: nomeGruppo(nome) });
       }
     }
     return { colori, etichette };
-  }, [perNome, massimo, periodoTesto, vista, adesso]);
+  }, [perNome, massimo, periodoTesto, vista, adesso, t]);
 
   // Groups trained at least once that have no zone on the outline
   const fuoriSagoma = gruppi.filter(g => !ZONE_PER_GRUPPO[g.nome] && g.ultimaData);
@@ -237,24 +247,24 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
   return (
     <SezioneCollassabile
       chiave="statistiche-corpo"
-      titolo="Corpo"
+      titolo={t('sezioneCorpo.titolo')}
       Icona={PersonStanding}
       // In the header, what the colors depend on: the period, or today for recovery
-      azione={<span className="text-xs text-[var(--testo-terziario)]">{vista === 'recupero' ? 'a oggi' : (PERIODO_BREVE[periodo] || `${periodo} giorni`)}</span>}
+      azione={<span className="text-xs text-[var(--testo-terziario)]">{vista === 'recupero' ? t('sezioneCorpo.aOggi') : t(PERIODO_BREVE[periodo] || 'sezioneCorpo.periodoBreve.altro', { giorni: periodo })}</span>}
     >
       <div className="p-card-inner pt-4 flex flex-col gap-4">
         {!dati ? (
-          <p className="text-sm text-[var(--testo-terziario)] text-center py-6">Impossibile caricare i dati del corpo.</p>
+          <p className="text-sm text-[var(--testo-terziario)] text-center py-6">{t('sezioneCorpo.erroreDati')}</p>
         ) : !gruppi.some(g => g.ultimaData) ? (
           <p className="text-sm text-[var(--testo-terziario)] text-center py-6">
-            Completa qualche allenamento per vedere quali muscoli hai allenato.
+            {t('sezioneCorpo.vuoto')}
           </p>
         ) : (
           <>
             {/* Sets in the period or recovery: two meanings, never together */}
             <div className="flex justify-center">
-              <div className="inline-flex bg-[var(--bg-terziario)] p-1 rounded-xl border border-[var(--bordo-light)]" role="group" aria-label="Cosa mostrano i colori">
-                {[['serie', 'Serie'], ['recupero', 'Recupero']].map(([id, testo]) => (
+              <div className="inline-flex bg-[var(--bg-terziario)] p-1 rounded-xl border border-[var(--bordo-light)]" role="group" aria-label={t('sezioneCorpo.ariaVista')}>
+                {[['serie', t('sezioneCorpo.vista.serie')], ['recupero', t('sezioneCorpo.vista.recupero')]].map(([id, testo]) => (
                   <button
                     key={id}
                     type="button"
@@ -276,28 +286,28 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
                 {Object.values(STATI_RECUPERO).map(s => (
                   <li key={s.etichetta} className="inline-flex items-center gap-1.5 whitespace-nowrap">
                     <span className="w-2.5 h-2.5 rounded-sm" style={{ background: s.colore }} />
-                    {s.etichetta} <span className="text-[var(--testo-terziario)]">({s.dettaglio})</span>
+                    {t(s.etichetta)} <span className="text-[var(--testo-terziario)]">({t(s.dettaglio)})</span>
                   </li>
                 ))}
               </ul>
             ) : massimo > 0 ? (
               <div className="flex items-center justify-center gap-2 text-[11px] text-[var(--testo-secondario)] whitespace-nowrap">
-                <span>1 serie</span>
+                <span>{t('sezioneCorpo.unaSerie')}</span>
                 <span className="flex gap-0.5" aria-hidden="true">
                   {SCALA_ALLENAMENTO.map(c => <span key={c} className="w-5 h-2.5 rounded-sm" style={{ background: c }} />)}
                 </span>
-                <span>{numero(massimo)} serie</span>
+                <span>{t('sezioneCorpo.serieMassimo', { count: massimo, numero: numero(massimo) })}</span>
               </div>
             ) : (
               <p className="text-xs text-center text-[var(--testo-secondario)]">
-                Nessuna serie {periodoTesto}: tocca un muscolo per vedere lo storico.
+                {t('sezioneCorpo.nessunaSerieTocca', { periodo: periodoTesto })}
               </p>
             )}
 
             {/* Groups with no zone on the outline: otherwise unreachable */}
             {fuoriSagoma.length > 0 && (
               <div className="flex items-center justify-center gap-2 flex-wrap">
-                <span className="text-[11px] text-[var(--testo-terziario)]">Fuori dalla sagoma:</span>
+                <span className="text-[11px] text-[var(--testo-terziario)]">{t('sezioneCorpo.fuoriSagoma')}</span>
                 {fuoriSagoma.map(g => (
                   <button
                     key={g.nome}
@@ -306,7 +316,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
                     aria-pressed={selezione === g.nome}
                     className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${selezione === g.nome ? 'border-[var(--accent)] bg-[var(--accent-dim)] text-[var(--testo-primario)]' : 'border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)]'}`}
                   >
-                    {g.nome}{g.seriePeriodo > 0 ? ` · ${numero(g.seriePeriodo)}` : ''}
+                    {nomeGruppo(g.nome)}{g.seriePeriodo > 0 ? ` · ${numero(g.seriePeriodo)}` : ''}
                   </button>
                 ))}
               </div>
@@ -316,16 +326,16 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
             <div ref={dettaglio} aria-live="polite" className="scroll-mt-4">
               {!selezione ? (
                 <p className="text-xs text-center text-[var(--testo-terziario)]">
-                  Tocca un muscolo per vedere esercizi, carichi e massimali.
+                  {t('sezioneCorpo.toccaMuscolo')}
                 </p>
               ) : (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs uppercase tracking-wider text-[var(--testo-terziario)]">{selezione}</p>
+                    <p className="text-xs uppercase tracking-wider text-[var(--testo-terziario)]">{nomeGruppo(selezione)}</p>
                     <button
                       type="button"
                       onClick={() => setSelezione(null)}
-                      aria-label="Chiudi il dettaglio"
+                      aria-label={t('sezioneCorpo.chiudiDettaglio')}
                       className="p-1 rounded-full text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] transition-colors"
                     >
                       <X size={16} />
@@ -336,7 +346,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
                                     stato={vista === 'recupero' ? statoRecupero(scelto.ultimaData, scelto.ultimaDataDiretta, adesso) : null} />
                     : (
                       <p className="text-sm text-center text-[var(--testo-secondario)] py-2">
-                        Nessun esercizio registrato per questo muscolo.
+                        {t('sezioneCorpo.nessunEsercizio')}
                       </p>
                     )}
                 </div>
@@ -347,9 +357,9 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
             <p className="text-[11px] text-[var(--testo-terziario)] flex items-start gap-1.5">
               <Trophy size={12} className="shrink-0 mt-0.5" />
               <span>
-                Il massimale è la serie più pesante fatta con una sola ripetizione.
-                {!ciSonoMassimali && ' Quando fai un test di massimale, registra la serie con 1 ripetizione e comparirà qui.'}
-                {' '}Senza un test, ≈ indica una stima dalle serie fino a 12 ripetizioni.
+                {t('sezioneCorpo.notaMassimale')}
+                {!ciSonoMassimali && ` ${t('sezioneCorpo.notaTest')}`}
+                {' '}{t('sezioneCorpo.notaStima')}
               </span>
             </p>
           </>

@@ -8,21 +8,24 @@ import { api } from '../../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Plus, Trash2, TrendingUp, TrendingDown, ChevronDown } from 'lucide-react';
+import { useLingua } from '../../hooks/useLingua.js';
+import { localeCorrente } from '../../i18n/index.js';
 
-// Measurement fields: the first (weight) is basic, the others are "info avanzate" (advanced info)
+// Measurement fields: the first (weight) is basic, the others are "info avanzate" (advanced info).
+// label is a translation key; unita is a unit symbol, or unitaChiave when the unit is a word.
 const CAMPI = [
-  { k: 'peso', label: 'Peso', unita: 'kg', step: '0.1' },
-  { k: 'grassoCorporeoPct', label: 'Grasso corporeo', unita: '%', step: '0.1' },
-  { k: 'massaMuscolareKg', label: 'Massa muscolare', unita: 'kg', step: '0.1' },
-  { k: 'muscoloScheletricoPct', label: 'Muscolo scheletrico', unita: '%', step: '0.1' },
-  { k: 'acquaPct', label: 'Acqua corporea', unita: '%', step: '0.1' },
-  { k: 'massaMagraKg', label: 'Massa magra (senza grasso)', unita: 'kg', step: '0.1' },
-  { k: 'grassoSottocutaneoPct', label: 'Grasso sottocutaneo', unita: '%', step: '0.1' },
-  { k: 'grassoViscerale', label: 'Grasso viscerale', unita: 'liv.', step: '1' },
-  { k: 'massaOsseaKg', label: 'Massa ossea', unita: 'kg', step: '0.1' },
-  { k: 'proteinePct', label: 'Proteine', unita: '%', step: '0.1' },
-  { k: 'bmr', label: 'Metabolismo basale (BMR)', unita: 'kcal', step: '1' },
-  { k: 'etaMetabolica', label: 'Età metabolica', unita: 'anni', step: '1' },
+  { k: 'peso', label: 'composizioneCorporea.campi.peso', unita: 'kg', step: '0.1' },
+  { k: 'grassoCorporeoPct', label: 'composizioneCorporea.campi.grassoCorporeoPct', unita: '%', step: '0.1' },
+  { k: 'massaMuscolareKg', label: 'composizioneCorporea.campi.massaMuscolareKg', unita: 'kg', step: '0.1' },
+  { k: 'muscoloScheletricoPct', label: 'composizioneCorporea.campi.muscoloScheletricoPct', unita: '%', step: '0.1' },
+  { k: 'acquaPct', label: 'composizioneCorporea.campi.acquaPct', unita: '%', step: '0.1' },
+  { k: 'massaMagraKg', label: 'composizioneCorporea.campi.massaMagraKg', unita: 'kg', step: '0.1' },
+  { k: 'grassoSottocutaneoPct', label: 'composizioneCorporea.campi.grassoSottocutaneoPct', unita: '%', step: '0.1' },
+  { k: 'grassoViscerale', label: 'composizioneCorporea.campi.grassoViscerale', unitaChiave: 'composizioneCorporea.unita.livello', step: '1' },
+  { k: 'massaOsseaKg', label: 'composizioneCorporea.campi.massaOsseaKg', unita: 'kg', step: '0.1' },
+  { k: 'proteinePct', label: 'composizioneCorporea.campi.proteinePct', unita: '%', step: '0.1' },
+  { k: 'bmr', label: 'composizioneCorporea.campi.bmr', unita: 'kcal', step: '1' },
+  { k: 'etaMetabolica', label: 'composizioneCorporea.campi.etaMetabolica', unitaChiave: 'composizioneCorporea.unita.anni', step: '1' },
 ];
 const FORM_VUOTO = Object.fromEntries(CAMPI.map(c => [c.k, '']));
 
@@ -41,6 +44,7 @@ function Delta({ attuale, precedente, invertito }) {
 }
 
 export default function ComposizioneCorporea({ clienteId = null, altezzaCm = null, modificabile = true }) {
+  const { t, lingua } = useLingua();
   const base = clienteId ? `/misurazioni/cliente/${clienteId}` : '/misurazioni';
   const [lista, setLista] = useState(null);
   const [mostraForm, setMostraForm] = useState(false);
@@ -65,11 +69,11 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
   const datiGrafico = useMemo(() => {
     if (!lista) return [];
     return [...lista].reverse().filter(m => m.peso != null).map(m => ({
-      data: new Date(m.data).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' }),
+      data: new Date(m.data).toLocaleDateString(localeCorrente(lingua), { day: '2-digit', month: '2-digit' }),
       peso: m.peso,
       grasso: m.grassoCorporeoPct
     }));
-  }, [lista]);
+  }, [lista, lingua]);
 
   const salva = async () => {
     setSalvando(true);
@@ -84,16 +88,16 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
   };
 
   const elimina = async (id) => {
-    if (!confirm('Eliminare questa misurazione?')) return;
+    if (!confirm(t('composizioneCorporea.eliminaConferma'))) return;
     try { await api.delete(`/misurazioni/${id}`); await carica(); } catch (err) { alert(err.message); }
   };
 
   const bmiUlt = bmiCalcolato(ultima);
   const snapshot = [
-    { label: 'Peso', valore: ultima?.peso, unita: 'kg', prev: penultima?.peso, invertito: true, colore: 'var(--accent)' },
+    { label: t('composizioneCorporea.riepilogo.peso'), valore: ultima?.peso, unita: 'kg', prev: penultima?.peso, invertito: true, colore: 'var(--accent)' },
     { label: 'BMI', valore: bmiUlt, unita: '', prev: bmiCalcolato(penultima), invertito: true, colore: 'var(--accent-alt)' },
-    { label: '% Grasso', valore: ultima?.grassoCorporeoPct, unita: '%', prev: penultima?.grassoCorporeoPct, invertito: true, colore: 'var(--avviso)' },
-    { label: 'Massa musc.', valore: ultima?.massaMuscolareKg, unita: 'kg', prev: penultima?.massaMuscolareKg, invertito: false, colore: 'var(--successo)' },
+    { label: t('composizioneCorporea.riepilogo.grasso'), valore: ultima?.grassoCorporeoPct, unita: '%', prev: penultima?.grassoCorporeoPct, invertito: true, colore: 'var(--avviso)' },
+    { label: t('composizioneCorporea.riepilogo.massaMuscolare'), valore: ultima?.massaMuscolareKg, unita: 'kg', prev: penultima?.massaMuscolareKg, invertito: false, colore: 'var(--successo)' },
   ];
 
   if (lista === null) {
@@ -116,7 +120,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
       {/* Weight trend chart */}
       {datiGrafico.length >= 2 && (
         <div className="glass-card p-card-inner">
-          <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-2">Andamento peso</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-[var(--testo-terziario)] mb-2">{t('composizioneCorporea.andamentoPeso')}</p>
           <ResponsiveContainer width="100%" height={160}>
             <AreaChart data={datiGrafico} margin={{ top: 5, right: 8, left: -20, bottom: 0 }}>
               <defs>
@@ -128,7 +132,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
               <XAxis dataKey="data" tick={{ fontSize: 10, fill: 'var(--testo-terziario)' }} />
               <YAxis tick={{ fontSize: 10, fill: 'var(--testo-terziario)' }} domain={['auto', 'auto']} />
               <Tooltip contentStyle={{ background: 'var(--bg-secondario)', border: '1px solid var(--bordo)', borderRadius: 8, fontSize: 12 }} />
-              <Area type="monotone" dataKey="peso" stroke="var(--accent)" strokeWidth={2} fill="url(#gradPeso)" />
+              <Area type="monotone" dataKey="peso" name={t('composizioneCorporea.campi.peso')} stroke="var(--accent)" strokeWidth={2} fill="url(#gradPeso)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -139,19 +143,19 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
         <div className="glass-card p-card-inner">
           {!mostraForm ? (
             <button onClick={() => setMostraForm(true)} className="btn-primario w-full flex items-center justify-center gap-2">
-              <Plus size={18} /> Nuova misurazione
+              <Plus size={18} /> {t('composizioneCorporea.nuovaMisurazione')}
             </button>
           ) : (
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs text-[var(--testo-terziario)] mb-1">Peso (kg)</label>
+                <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('composizioneCorporea.campoConUnita', { nome: t(CAMPI[0].label), unita: CAMPI[0].unita })}</label>
                 <input type="number" inputMode="decimal" step="0.1" value={form.peso}
                        onChange={e => setForm(f => ({ ...f, peso: e.target.value }))}
                        className="campo-input" placeholder="75.0" autoFocus />
               </div>
 
               <button onClick={() => setMostraAvanzate(a => !a)} className="flex items-center gap-1 text-sm text-[var(--accent)] font-semibold self-start">
-                <ChevronDown size={16} className={`transition-transform ${mostraAvanzate ? 'rotate-180' : ''}`} /> Info avanzate (bilancia)
+                <ChevronDown size={16} className={`transition-transform ${mostraAvanzate ? 'rotate-180' : ''}`} /> {t('composizioneCorporea.infoAvanzate')}
               </button>
 
               <AnimatePresence>
@@ -160,7 +164,7 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
                     <div className="grid grid-cols-2 gap-2">
                       {CAMPI.filter(c => c.k !== 'peso').map(c => (
                         <div key={c.k}>
-                          <label className="block text-[10px] text-[var(--testo-terziario)] mb-1 truncate">{c.label} ({c.unita})</label>
+                          <label className="block text-[10px] text-[var(--testo-terziario)] mb-1 truncate">{t('composizioneCorporea.campoConUnita', { nome: t(c.label), unita: c.unitaChiave ? t(c.unitaChiave) : c.unita })}</label>
                           <input type="number" inputMode="decimal" step={c.step} value={form[c.k]}
                                  onChange={e => setForm(f => ({ ...f, [c.k]: e.target.value }))}
                                  className="campo-input text-sm" />
@@ -172,9 +176,9 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
               </AnimatePresence>
 
               <div className="flex gap-2">
-                <button onClick={() => { setMostraForm(false); setForm(FORM_VUOTO); setMostraAvanzate(false); }} className="btn-secondario flex-1">Annulla</button>
+                <button onClick={() => { setMostraForm(false); setForm(FORM_VUOTO); setMostraAvanzate(false); }} className="btn-secondario flex-1">{t('comune.annulla')}</button>
                 <button onClick={salva} disabled={salvando || !Object.values(form).some(v => v !== '')} className="btn-primario flex-1 disabled:opacity-50">
-                  {salvando ? 'Salvataggio…' : 'Salva'}
+                  {salvando ? t('comune.salvataggio') : t('comune.salva')}
                 </button>
               </div>
             </div>
@@ -185,23 +189,23 @@ export default function ComposizioneCorporea({ clienteId = null, altezzaCm = nul
       {/* History */}
       <div className="glass-card overflow-hidden">
         <div className="p-card-inner border-b border-[var(--bordo-light)]">
-          <h4 className="font-bold flex items-center gap-2">📋 Storico misurazioni</h4>
+          <h4 className="font-bold flex items-center gap-2">{t('composizioneCorporea.storico')}</h4>
         </div>
         {lista.length === 0 ? (
-          <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">Nessuna misurazione registrata.</p>
+          <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">{t('composizioneCorporea.nessunaMisurazione')}</p>
         ) : (
           <div className="divide-y divide-[var(--bordo-light)]">
             {lista.map(m => (
               <div key={m.id} className="px-card-inner py-3 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold">{new Date(m.data).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+                  <p className="text-sm font-semibold">{new Date(m.data).toLocaleDateString(localeCorrente(lingua), { day: '2-digit', month: 'long', year: 'numeric' })}</p>
                   <p className="text-xs text-[var(--testo-terziario)] truncate">
-                    {[m.peso != null && `${m.peso}kg`, bmiCalcolato(m) != null && `BMI ${bmiCalcolato(m)}`, m.grassoCorporeoPct != null && `${m.grassoCorporeoPct}% grasso`, m.massaMuscolareKg != null && `${m.massaMuscolareKg}kg musc.`].filter(Boolean).join(' · ') || 'Nessun valore'}
-                    {m.inseritaDaPTId && ' · 👨‍🏫 dal PT'}
+                    {[m.peso != null && `${m.peso}kg`, bmiCalcolato(m) != null && `BMI ${bmiCalcolato(m)}`, m.grassoCorporeoPct != null && t('composizioneCorporea.voce.grasso', { valore: m.grassoCorporeoPct }), m.massaMuscolareKg != null && t('composizioneCorporea.voce.muscolo', { valore: m.massaMuscolareKg })].filter(Boolean).join(' · ') || t('composizioneCorporea.voce.nessunValore')}
+                    {m.inseritaDaPTId && ` · ${t('composizioneCorporea.voce.dalPT')}`}
                   </p>
                 </div>
                 {modificabile && !clienteId && (
-                  <button onClick={() => elimina(m.id)} className="text-[var(--testo-terziario)] hover:text-[var(--pericolo)] shrink-0 p-1" title="Elimina">
+                  <button onClick={() => elimina(m.id)} className="text-[var(--testo-terziario)] hover:text-[var(--pericolo)] shrink-0 p-1" title={t('comune.elimina')}>
                     <Trash2 size={16} />
                   </button>
                 )}

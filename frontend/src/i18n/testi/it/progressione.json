@@ -1,0 +1,8 @@
+{
+  "motivo": {
+    "sali": "Tutte le serie in cima alla forbice (l'ultima volta {fatte} ripetizioni a {peso} kg): si sale di {incremento} kg",
+    "scarico": "{volte} volte di fila sotto le {min} ripetizioni a {peso} kg: si scarica del 10% e si risale",
+    "restaSottoForbice": "Stesso peso (l'ultima volta {fatte} ripetizioni a {peso} kg): punta ad almeno {min} ripetizioni in ogni serie",
+    "restaUnaInPiu": "Stesso peso, una ripetizione in piu' (l'ultima volta {fatte} ripetizioni a {peso} kg): quando tutte arrivano a {max} si sale"
+  }
+}

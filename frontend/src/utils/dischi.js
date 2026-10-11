@@ -5,11 +5,16 @@
 // Once the total weight of a barbell set is entered, which plates to put on
 // each side: no mental math between one set and the next.
 
-/** The catalog's bars, recognized by the equipment name, and their empty weight */
+import { localeCorrente } from '../i18n/index.js';
+
+/**
+ * The catalog's bars, recognized by the equipment name, and their empty weight.
+ * `nome` is a translation key: show it with t()
+ */
 export const BILANCIERI = [
-  { schema: /olimpic/i, nome: 'bilanciere olimpico', peso: 20 },
-  { schema: /\bez\b/i, nome: 'bilanciere EZ', peso: 10 },
-  { schema: /trap bar|hex bar/i, nome: 'trap bar', peso: 25 }
+  { schema: /olimpic/i, nome: 'dischi.bilancieri.olimpico', peso: 20 },
+  { schema: /\bez\b/i, nome: 'dischi.bilancieri.ez', peso: 10 },
+  { schema: /trap bar|hex bar/i, nome: 'dischi.bilancieri.trapBar', peso: 25 }
 ];
 
 /** A gym's plates, heaviest first */
@@ -43,7 +48,7 @@ export function dischiPerLato(pesoTotale, pesoBilanciere = 20, dischi = DISCHI) 
   return { perLato, mancano: arrotonda(restante * 2) };
 }
 
-/** "2 × 20 + 2,5": identical plates grouped */
+/** "2 × 20 + 2.5" (2,5 in Italian): identical plates grouped */
 export function descriviDischi(perLato) {
   const gruppi = [];
   for (const disco of perLato) {
@@ -52,6 +57,6 @@ export function descriviDischi(perLato) {
     else gruppi.push({ disco, quanti: 1 });
   }
   return gruppi
-    .map(({ disco, quanti }) => `${quanti > 1 ? `${quanti} × ` : ''}${String(disco).replace('.', ',')}`)
+    .map(({ disco, quanti }) => `${quanti > 1 ? `${quanti} × ` : ''}${disco.toLocaleString(localeCorrente())}`)
     .join(' + ');
 }

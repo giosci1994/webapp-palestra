@@ -1,0 +1,191 @@
+{
+  "tab": {
+    "profilo": "Profile",
+    "notifiche": "Notifications",
+    "privacy": "Privacy",
+    "pt": "Personal trainer",
+    "sicurezza": "Security",
+    "fatturazione": "Billing",
+    "legale": "Legal & compliance",
+    "elimina": "Delete account"
+  },
+  "sezioni": "Profile sections",
+  "avatar": "Avatar",
+  "dal": "Since {data}",
+  "esci": {
+    "conferma": "Are you sure you want to sign out?",
+    "titolo": "Sign out"
+  },
+  "richiestaInAttesa": "Request pending",
+  "dati": {
+    "titolo": "Personal details",
+    "abilitaModifiche": "Enable editing",
+    "disabilitaModifiche": "Disable editing",
+    "nome": "Name",
+    "nomePlaceholder": "Your name",
+    "dataNascita": "Date of birth",
+    "genere": "Gender",
+    "peso": "Weight (kg)",
+    "altezza": "Height (cm)",
+    "composizione": "📊 Body composition",
+    "composizioneDettaglio": "weight, fat, muscle…",
+    "palestra": "Gym",
+    "nessunaPalestra": "No gym",
+    "obiettivo": "Fitness goal",
+    "seleziona": "Select…",
+    "bio": "Bio",
+    "bioPlaceholder": "Something about you…",
+    "salvataggio": "Saving…",
+    "salva": "💾 Save changes",
+    "salvato": "✅ Saved!"
+  },
+  "generi": {
+    "M": "Male",
+    "F": "Female",
+    "Altro": "Other"
+  },
+  "obiettivi": {
+    "massaMuscolare": "Build muscle",
+    "definizione": "Get lean",
+    "resistenza": "Endurance",
+    "saluteGenerale": "General health",
+    "perditaPeso": "Weight loss"
+  },
+  "professionale": {
+    "titolo": "Professional account",
+    "inAttesaDettaglio": "An admin will review your request to become a personal trainer shortly.",
+    "invito": "Are you a fitness professional? Request the <b>Personal Trainer</b> role to manage clients, create public plans and show up among the trainers members can find.",
+    "invio": "Sending request…",
+    "diventa": "🏋️ Become a Personal Trainer"
+  },
+  "privacy": {
+    "visibilitaTitolo": "Profile visibility",
+    "visibilitaDescrizione": "Choose what other users can see",
+    "mostra": {
+      "palestra": "Show gym",
+      "peso": "Show weight",
+      "altezza": "Show height",
+      "eta": "Show age",
+      "obiettivo": "Show fitness goal",
+      "statistiche": "Show workout stats",
+      "record": "Show personal records"
+    },
+    "gamification": "Gamification",
+    "gamificationPartecipa": "✨ Take part in leaderboards and badges",
+    "gamificationAttiva": "Experience points, levels and leaderboards are on.",
+    "gamificationDisattivata": "Gamification is off — you won't appear on the leaderboards. You can turn it back on any time."
+  },
+  "esportazione": {
+    "titolo": "Your data",
+    "descrizione": "A copy of everything GymMaster keeps about you: profile, plans, workouts, records, measurements and messages. It's a JSON file you can open with any program or take to another app.",
+    "scarica": "Download my data",
+    "scaricaPrima": "Download a copy of your data first",
+    "preparazione": "Preparing the file…",
+    "errore": "Download failed"
+  },
+  "pt": {
+    "titolo": "Your personal trainer",
+    "nonIscritto": "You're not signed up with any personal trainer.",
+    "cerca": "🔍 Find a personal trainer",
+    "messaggioPlaceholder": "Message for the personal trainer (optional): goals, availability…",
+    "messaggioNota": "It goes to the trainer you pick, along with your request.",
+    "nessuno": "No personal trainers available right now.",
+    "clienti_one": "{count} client",
+    "clienti_other": "{count} clients",
+    "schede_one": "{count} plan",
+    "schede_other": "{count} plans",
+    "iscriviti": "Sign up",
+    "attesaRisposta": "Waiting for a reply from {nome}",
+    "confermaAnnullaRichiesta": "Cancel the request?",
+    "attivo": "Active",
+    "termina": "End enrollment",
+    "confermaTermina": "End your relationship with your personal trainer?"
+  },
+  "password": {
+    "titolo": "Change password",
+    "attuale": "Current password",
+    "nuova": "New password (min 8 characters)",
+    "conferma": "Confirm new password",
+    "aggiorna": "🔑 Update password",
+    "aggiornamento": "Updating…",
+    "nota": "Changing your password signs out your other devices.",
+    "nonCorrispondono": "Passwords don't match",
+    "minimo": "Minimum 8 characters",
+    "aggiornata": "Password updated successfully!"
+  },
+  "dispositivi": {
+    "titolo": "Connected devices",
+    "descrizione": "Where you've signed in with your account. If you don't recognize a device, sign it out and change your password.",
+    "sconosciuto": "Unknown device",
+    "questo": "THIS DEVICE",
+    "dettaglio": "Signed in on {data} · last active {ultimoUso}",
+    "esci": "Sign out",
+    "esciAltri": "Sign out of all other devices"
+  },
+  "passkey": {
+    "titolo": "Passkey",
+    "descrizione": "Sign in with your fingerprint, face or your device's PIN instead of a password. Your password still works.",
+    "nessuna": "No passkeys yet.",
+    "nomePredefinito": "Passkey",
+    "sincronizzata": "synced",
+    "aggiuntaUsata": "Added on {data} · used {ultimoUso}",
+    "aggiuntaMaiUsata": "Added on {data} · never used",
+    "passwordPlaceholder": "Current password, to add a passkey",
+    "aggiungi": "🔑 Add a passkey",
+    "istruzioni": "Follow your device's prompts…",
+    "nonSupportate": "This browser doesn't support passkeys.",
+    "aggiunta": "Passkey added: next time you can sign in without a password.",
+    "annullata": "Cancelled on the device.",
+    "giaPresente": "This device already has a passkey for GymMaster.",
+    "confermaElimina": "Delete this passkey? You'll need your password again to sign in from that device."
+  },
+  "telegram": {
+    "titolo": "📲 Telegram bot",
+    "descrizione": "Link your account to the Telegram bot to read your plans and create new ones by chatting with the assistant.",
+    "collegato": "✅ Account linked",
+    "scollega": "Unlink",
+    "invia": "Open the bot and send this code (valid for 10 minutes):",
+    "apri": "Open the bot and link",
+    "nuovoCodice": "Generate new code",
+    "generazione": "Generating…",
+    "collega": "🔗 Link Telegram"
+  },
+  "reset": {
+    "titolo": "Data management",
+    "descrizione": "Reset all your stats (sessions and records). Your plans will be kept.",
+    "resetta": "⚠️ Reset stats",
+    "istruzione": "Type <strong>{frase}</strong> to proceed.",
+    "frase": "CONFIRM",
+    "inCorso": "Resetting…",
+    "conferma": "Reset",
+    "fatto": "Stats reset!"
+  },
+  "fatturazione": {
+    "titolo": "Billing",
+    "inLavorazione": "Work in progress",
+    "descrizione": "This section is under development. It will be available soon with billing and subscription management."
+  },
+  "legale": {
+    "documentiTitolo": "Legal documents",
+    "termini": "Terms and conditions",
+    "privacy": "Privacy policy",
+    "cookie": "Cookie policy",
+    "infoTitolo": "🏋️ App info",
+    "versione": "Version",
+    "versioneValori": "App v{app} · Server v{server} · Build {build}",
+    "sviluppatore": "Developer",
+    "sviluppatoreRuolo": "Developer & creator"
+  },
+  "elimina": {
+    "titolo": "Delete account",
+    "attenzione": "Warning: this can't be undone",
+    "attenzioneDettaglio": "Deleting your account permanently erases all your data: plans, workouts, stats, messages and progress. This can't be undone.",
+    "istruzione": "To proceed, type <strong>{frase}</strong> in the field below.",
+    "frase": "DELETE MY ACCOUNT",
+    "password": "Confirm with your password.",
+    "passwordPlaceholder": "Password",
+    "inCorso": "Deleting…",
+    "definitivo": "🗑️ Delete permanently",
+    "errore": "Could not delete the account"
+  }
+}

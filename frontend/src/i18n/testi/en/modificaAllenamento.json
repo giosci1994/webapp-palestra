@@ -1,0 +1,57 @@
+{
+  "titolo": "Edit workout",
+  "tipo": {
+    "LAVORO": "working set",
+    "RISCALDAMENTO": "warm-up",
+    "DROP": "drop set"
+  },
+  "errori": {
+    "minutiMancanti": "{esercizio}, set {numero}: enter the minutes or delete the set",
+    "minutiNonValidi": "{esercizio}, set {numero}: invalid minutes",
+    "livelloNonValido": "{esercizio}, set {numero}: invalid level",
+    "pesoNonValido": "{esercizio}, set {numero}: invalid weight",
+    "ripMancanti": "{esercizio}, set {numero}: enter the reps or delete the set",
+    "ripNonValide": "{esercizio}, set {numero}: invalid reps",
+    "dataOraNonValide": "Invalid date or time",
+    "durataFuoriLimiti": "The duration must be between 1 and {max} minutes",
+    "inizioNelFuturo": "The start is in the future",
+    "fineNelFuturo": "With this time and duration the workout would end in the future",
+    "riscaldamentoNonValido": "Invalid warm-up minutes",
+    "salvataggio": "Could not save"
+  },
+  "uscireSenzaSalvare": "Leave without saving your changes?",
+  "durataSospetta": "It shows as lasting <b>{durata}</b>: it was probably left open after you finished. Set the time you really finished.",
+  "giorno": "Day",
+  "oraInizio": "Start time",
+  "oraFine": "End time",
+  "giorniDopo_one": "next day",
+  "giorniDopo_other": "+{count} days",
+  "durata": "Duration (min)",
+  "riscaldamento": "Warm-up (min)",
+  "facoltativo": "optional",
+  "facoltative": "optional",
+  "note": "Notes",
+  "serie": "Sets",
+  "suggerimentoTipo": "Tap a set's number to mark it as a warm-up 🔥 or a drop set ↳: they don't count as sets, and warm-ups don't count towards volume either.",
+  "nessunaSerieRegistrata": "No sets logged in this workout.",
+  "colonne": {
+    "numero": "#",
+    "minuti": "Minutes",
+    "livello": "Level",
+    "rip": "Reps"
+  },
+  "cambiaTipoAria": "Set {numero}: {tipo}. Tap to change type",
+  "cambiaTipoTitolo": "Tap to change type: set, warm-up, drop set",
+  "aria": {
+    "minuti": "Minutes, set {numero}",
+    "livello": "Level, set {numero}",
+    "peso": "Weight in kg, set {numero}",
+    "rip": "Reps, set {numero}",
+    "rpe": "RPE, set {numero}",
+    "eliminaSerie": "Delete set {numero}"
+  },
+  "esercizioRimosso": "No sets: when you save, the exercise will be removed from this workout.",
+  "aggiungiSerie": "Add set",
+  "salvo": "Saving…",
+  "salvaModifiche": "Save changes"
+}

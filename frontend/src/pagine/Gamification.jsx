@@ -7,11 +7,14 @@ import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { RUOLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaData, formattaPeso, formattaDurata, formattaNumero, nomeEsercizio} from '../utils/formattatori.js';
+import { formattaData, formattaPeso, formattaDurata, formattaNumero, nomeEsercizio, nomeGruppo } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Building } from 'lucide-react';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
 
 export default function Gamification() {
+  const { t } = useLingua();
   const { utente } = useAuth();
   const [profilo, setProfilo] = useState(null);
   const [classifica, setClassifica] = useState([]);
@@ -37,12 +40,15 @@ export default function Gamification() {
     ]).finally(() => setCaricamento(false));
   }, []);
 
+  // The word to type to confirm the reset: shown to the user, so it follows the language
+  const parolaConferma = t('gamification.reset.parolaConferma');
+
   const eseguiReset = async () => {
-    if (confermaReset !== 'AZZERA') return;
+    if (confermaReset !== parolaConferma) return;
     try {
       setAvviandoReset(true);
       await api.post('/utenti/reset-gamification');
-      alert('Progressi azzerati con successo!');
+      alert(t('gamification.reset.riuscito'));
       window.location.reload();
     } catch (err) { alert(err.message); }
     finally { setAvviandoReset(false); setMostraReset(false); setConfermaReset(''); }
@@ -69,9 +75,9 @@ export default function Gamification() {
     : 100;
 
   const TABS = [
-    { id: 'badge', label: '🏅 Badge', cnt: `${profilo?.badgeSbloccati}/${profilo?.badgeTotali}` },
-    { id: 'classifica', label: '🏆 Classifica', cnt: `#${posizione}` },
-    { id: 'record', label: '🥇 Record', cnt: `${classificaRecord.length}` }
+    { id: 'badge', label: t('gamification.tab.badge'), cnt: `${profilo?.badgeSbloccati}/${profilo?.badgeTotali}` },
+    { id: 'classifica', label: t('gamification.tab.classifica'), cnt: `#${posizione}` },
+    { id: 'record', label: t('gamification.tab.record'), cnt: `${classificaRecord.length}` }
   ];
 
   return (
@@ -85,13 +91,13 @@ export default function Gamification() {
           onClick={() => setMostraReset(true)}
           className="absolute top-4 right-4 text-[10px] uppercase font-bold px-2 py-1 rounded bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo)] hover:text-white transition-colors z-10"
         >
-          Azzera XP
+          {t('gamification.azzeraXp')}
         </button>
 
         <div className="absolute inset-0 opacity-10" style={{ background: 'linear-gradient(135deg, var(--accent), transparent)' }} />
         <div className="relative">
           <div className="text-5xl mb-2">⭐</div>
-          <p className="text-xs text-[var(--testo-terziario)] uppercase tracking-widest mb-1">Livello {profilo?.livello?.livello}</p>
+          <p className="text-xs text-[var(--testo-terziario)] uppercase tracking-widest mb-1">{t('gamification.livello', { livello: profilo?.livello?.livello })}</p>
           <h1 className="text-2xl font-bold testo-gradient mb-1">{profilo?.livello?.nome}</h1>
           <p className="text-lg font-bold">{profilo?.xp} XP</p>
 
@@ -99,9 +105,9 @@ export default function Gamification() {
           {profilo?.livello?.prossimo && (
             <div className="mt-4 max-w-xs mx-auto">
               <div className="flex justify-between text-[10px] text-[var(--testo-terziario)] mb-1">
-                <span>Lvl {profilo.livello.livello}</span>
+                <span>{t('gamification.livelloBreve', { livello: profilo.livello.livello })}</span>
                 <span>{profilo.xp} / {profilo.livello.prossimo} XP</span>
-                <span>Lvl {profilo.livello.livello + 1}</span>
+                <span>{t('gamification.livelloBreve', { livello: profilo.livello.livello + 1 })}</span>
               </div>
               <div className="h-3 rounded-full bg-[var(--bg-terziario)] overflow-hidden">
                 <motion.div initial={{ width: 0 }} animate={{ width: `${progresso}%` }}
@@ -112,23 +118,23 @@ export default function Gamification() {
           )}
 
           <div className="grid grid-cols-3 gap-4 mt-5">
-            <div><p className="text-lg font-bold">{profilo?.badgeSbloccati}</p><p className="text-[10px] text-[var(--testo-terziario)]">Badge</p></div>
-            <div><p className="text-lg font-bold">#{posizione || '—'}</p><p className="text-[10px] text-[var(--testo-terziario)]">Classifica</p></div>
-            <div><p className="text-lg font-bold">{profilo?.stats?.streak || 0}🔥</p><p className="text-[10px] text-[var(--testo-terziario)]">Streak</p></div>
+            <div><p className="text-lg font-bold">{profilo?.badgeSbloccati}</p><p className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.badge')}</p></div>
+            <div><p className="text-lg font-bold">#{posizione || '—'}</p><p className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.classifica')}</p></div>
+            <div><p className="text-lg font-bold">{profilo?.stats?.streak || 0}🔥</p><p className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.streak')}</p></div>
           </div>
         </div>
       </motion.div>
 
       {/* Tabs — more visible */}
       <div className="flex gap-3 mb-8 mt-2">
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)}
+        {TABS.map(voce => (
+          <button key={voce.id} onClick={() => setTab(voce.id)}
                   className={`px-5 py-3 rounded-xl text-base font-semibold transition-all flex-1 text-center ${
-                    tab === t.id
+                    tab === voce.id
                       ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25'
                       : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:bg-[var(--bordo)]'
                   }`}>
-            {t.label} <span className="text-xs opacity-70 ml-1">{t.cnt}</span>
+            {voce.label} <span className="text-xs opacity-70 ml-1">{voce.cnt}</span>
           </button>
         ))}
       </div>
@@ -181,10 +187,10 @@ export default function Gamification() {
                 )}
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${mio ? 'text-[var(--accent)]' : ''}`}>
-                    {u.nome} {mio ? '(tu)' : ''}
+                    {u.nome} {mio ? t('gamification.tu') : ''}
                   </p>
                   <p className="text-[10px] text-[var(--testo-terziario)]">
-                    Lvl {u.livello.livello} · {u.livello.nome}
+                    {t('gamification.livelloNome', { livello: u.livello.livello, nome: u.livello.nome })}
                   </p>
                 </div>
                 <p className="text-sm font-bold shrink-0 testo-gradient">{u.puntiEsperienza} XP</p>
@@ -200,7 +206,7 @@ export default function Gamification() {
           {classificaRecord.length === 0 ? (
             <div className="glass-card p-card-inner text-center">
               <div className="text-4xl mb-3">🏋️</div>
-              <p className="text-sm text-[var(--testo-terziario)]">Nessun record ancora registrato. Completa allenamenti per scalare la classifica!</p>
+              <p className="text-sm text-[var(--testo-terziario)]">{t('gamification.nessunRecord')}</p>
             </div>
           ) : classificaRecord.map((item, idx) => {
             const gruppo = GRUPPI_MUSCOLARI[item.esercizio?.gruppoMuscoloPrimario];
@@ -217,33 +223,33 @@ export default function Gamification() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold truncate">{nomeEsercizio(item.esercizio)}</p>
-                    <p className="text-[10px] text-[var(--testo-terziario)]">{item.esercizio?.gruppoMuscoloPrimario}</p>
+                    <p className="text-[10px] text-[var(--testo-terziario)]">{nomeGruppo(item.esercizio?.gruppoMuscoloPrimario)}</p>
                   </div>
                 </div>
                 {/* Top 3 */}
                 <div className="px-card-inner py-3 flex flex-col gap-1">
-                  {item.top.map((t, pos) => {
-                    const isMio = t.utente.id === utente?.id;
+                  {item.top.map((riga, pos) => {
+                    const isMio = riga.utente.id === utente?.id;
                     const medal = pos === 0 ? '🥇' : pos === 1 ? '🥈' : '🥉';
                     return (
-                      <div key={t.utente.id}
-                           onClick={() => apriProfilo(t.utente.id)}
+                      <div key={riga.utente.id}
+                           onClick={() => apriProfilo(riga.utente.id)}
                            className={`flex items-center gap-2 p-2 rounded-lg transition-all ${
                              !isMio ? 'cursor-pointer hover:bg-[var(--bg-terziario)]' : ''
                            } ${isMio ? 'bg-[var(--accent-dim)]' : ''}`}>
                         <span className="text-base w-6 text-center">{medal}</span>
-                        {t.utente.immagineProfilo ? (
-                          <img src={t.utente.immagineProfilo} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
+                        {riga.utente.immagineProfilo ? (
+                          <img src={riga.utente.immagineProfilo} alt="" className="w-7 h-7 rounded-full object-cover shrink-0" />
                         ) : (
                           <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                                style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-                            {t.utente.nome?.charAt(0)?.toUpperCase()}
+                            {riga.utente.nome?.charAt(0)?.toUpperCase()}
                           </div>
                         )}
                         <span className={`text-sm flex-1 truncate ${isMio ? 'font-bold text-[var(--accent)]' : ''}`}>
-                          {t.utente.nome} {isMio ? '(tu)' : ''}
+                          {riga.utente.nome} {isMio ? t('gamification.tu') : ''}
                         </span>
-                        <span className="text-sm font-bold text-[var(--successo)]">{formattaPeso(t.pesoMax)} kg</span>
+                        <span className="text-sm font-bold text-[var(--successo)]">{formattaPeso(riga.pesoMax)} kg</span>
                       </div>
                     );
                   })}
@@ -270,8 +276,8 @@ export default function Gamification() {
                 </div>
               ) : profiloPubblico?.errore ? (
                 <div className="p-8 text-center">
-                  <p className="text-sm text-[var(--testo-terziario)]">Profilo non disponibile.</p>
-                  <button onClick={() => setProfiloPubblico(null)} className="btn-secondario mt-4 text-sm">Chiudi</button>
+                  <p className="text-sm text-[var(--testo-terziario)]">{t('gamification.profiloNonDisponibile')}</p>
+                  <button onClick={() => setProfiloPubblico(null)} className="btn-secondario mt-4 text-sm">{t('comune.chiudi')}</button>
                 </div>
               ) : (
                 <>
@@ -293,10 +299,10 @@ export default function Gamification() {
                     <h2 className="text-xl font-bold">{profiloPubblico.nome}</h2>
                     <div className="flex items-center justify-center gap-2 mt-1">
                       <span className={`badge ${RUOLI[profiloPubblico.ruolo]?.colore || 'accent'}`}>
-                        {RUOLI[profiloPubblico.ruolo]?.label || profiloPubblico.ruolo}
+                        {RUOLI[profiloPubblico.ruolo]?.label ? t(RUOLI[profiloPubblico.ruolo].label) : profiloPubblico.ruolo}
                       </span>
                       <span className="text-xs text-[var(--testo-terziario)]">
-                        Lvl {profiloPubblico.livello?.livello} · {profiloPubblico.livello?.nome}
+                        {t('gamification.livelloNome', { livello: profiloPubblico.livello?.livello, nome: profiloPubblico.livello?.nome })}
                       </span>
                     </div>
                     <p className="text-lg font-bold testo-gradient mt-2">{profiloPubblico.puntiEsperienza} XP</p>
@@ -310,7 +316,7 @@ export default function Gamification() {
                     {/* Personal data */}
                     {(profiloPubblico.palestra || profiloPubblico.obiettivoFitness || profiloPubblico.pesoKg || profiloPubblico.altezzaCm || profiloPubblico.dataNascita) && (
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">Informazioni</p>
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">{t('gamification.informazioni')}</p>
                         <div className="flex flex-col gap-1.5">
                           {profiloPubblico.palestra && (
                             <div className="flex items-center gap-2 text-sm">
@@ -337,19 +343,19 @@ export default function Gamification() {
                     {/* Statistics */}
                     {profiloPubblico.statistiche && (
                       <div>
-                        <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">Statistiche</p>
+                        <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">{t('gamification.statistiche')}</p>
                         <div className="grid grid-cols-3 gap-2">
                           <div className="bg-[var(--bg-terziario)] rounded-lg p-3 text-center">
                             <p className="text-lg font-bold">{profiloPubblico.statistiche.sessioni}</p>
-                            <p className="text-[10px] text-[var(--testo-terziario)]">Sessioni</p>
+                            <p className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.sessioni')}</p>
                           </div>
                           <div className="bg-[var(--bg-terziario)] rounded-lg p-3 text-center">
                             <p className="text-lg font-bold">{formattaNumero(profiloPubblico.statistiche.volume)}</p>
-                            <p className="text-[10px] text-[var(--testo-terziario)]">Volume kg</p>
+                            <p className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.volumeKg')}</p>
                           </div>
                           <div className="bg-[var(--bg-terziario)] rounded-lg p-3 text-center">
                             <p className="text-lg font-bold">{formattaDurata(profiloPubblico.statistiche.durata)}</p>
-                            <p className="text-[10px] text-[var(--testo-terziario)]">Tempo</p>
+                            <p className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.tempo')}</p>
                           </div>
                         </div>
                       </div>
@@ -359,14 +365,14 @@ export default function Gamification() {
                     {profiloPubblico.schedeGlobali?.length > 0 && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">
-                          Schede pubbliche ({profiloPubblico.schedeGlobali.length})
+                          {t('gamification.schedePubbliche', { count: profiloPubblico.schedeGlobali.length })}
                         </p>
                         <div className="flex flex-col gap-1.5">
                           {profiloPubblico.schedeGlobali.map(s => (
                             <div key={s.id} className="flex items-center gap-2 p-2 rounded-lg bg-[var(--bg-terziario)]">
                               <span>📋</span>
                               <span className="text-sm font-medium flex-1 truncate">{s.titolo}</span>
-                              <span className="text-[10px] text-[var(--testo-terziario)]">{s._count?.esercizi || 0} es.</span>
+                              <span className="text-[10px] text-[var(--testo-terziario)]">{t('gamification.eserciziBreve', { count: s._count?.esercizi || 0 })}</span>
                             </div>
                           ))}
                         </div>
@@ -377,7 +383,7 @@ export default function Gamification() {
                     {profiloPubblico.record?.length > 0 && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">
-                          Record personali ({profiloPubblico.record.length})
+                          {t('gamification.recordPersonali', { count: profiloPubblico.record.length })}
                         </p>
                         <div className="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto no-scrollbar">
                           {profiloPubblico.record.map(r => (
@@ -396,7 +402,7 @@ export default function Gamification() {
                      !profiloPubblico.schedeGlobali?.length && !profiloPubblico.record?.length &&
                      !profiloPubblico.pesoKg && !profiloPubblico.altezzaCm && !profiloPubblico.dataNascita && (
                       <p className="text-sm text-[var(--testo-terziario)] text-center py-4">
-                        Questo utente ha reso privato il suo profilo.
+                        {t('gamification.profiloPrivato')}
                       </p>
                     )}
                   </div>
@@ -411,27 +417,27 @@ export default function Gamification() {
       {mostraReset && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card p-6 max-w-sm w-full border border-[var(--pericolo)] text-center">
-            <h2 className="text-2xl font-bold text-[var(--pericolo)] mb-2">Azzerare i progressi?</h2>
+            <h2 className="text-2xl font-bold text-[var(--pericolo)] mb-2">{t('gamification.reset.titolo')}</h2>
             <p className="text-sm text-[var(--testo-secondario)] mb-4">
-              Perderai tutti i tuoi badge e il tuo livello, ricominciando da zero. Digita <strong>AZZERA</strong> per confermare.
+              <Testo t="gamification.reset.avviso" valori={{ parola: parolaConferma }} componenti={{ b: <strong /> }} />
             </p>
             <input 
               type="text" 
               value={confermaReset} 
               onChange={e => setConfermaReset(e.target.value)}
-              placeholder="AZZERA"
+              placeholder={parolaConferma}
               className="w-full bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-lg p-2 mb-4 text-center text-[var(--pericolo)] font-bold focus:border-[var(--pericolo)] outline-none"
             />
             <div className="flex gap-2">
               <button onClick={() => { setMostraReset(false); setConfermaReset(''); }} className="flex-1 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:bg-[var(--bordo)]">
-                Annulla
+                {t('comune.annulla')}
               </button>
               <button 
                 onClick={eseguiReset} 
-                disabled={confermaReset !== 'AZZERA' || avviandoReset}
+                disabled={confermaReset !== parolaConferma || avviandoReset}
                 className="flex-1 py-2 rounded-lg bg-[var(--pericolo)] text-white disabled:opacity-50"
               >
-                {avviandoReset ? 'Reset...' : 'Conferma'}
+                {avviandoReset ? t('gamification.reset.inCorso') : t('comune.conferma')}
               </button>
             </div>
           </motion.div>

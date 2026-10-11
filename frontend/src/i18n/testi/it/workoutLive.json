@@ -1,0 +1,117 @@
+{
+  "unAttimo": "Un attimo...",
+  "usa": "Usa",
+  "proposta": {
+    "sali": "📈 Proposta per oggi · si sale",
+    "resta": "🎯 Proposta per oggi",
+    "scarico": "🔄 Proposta per oggi · scarico"
+  },
+  "riepilogo": {
+    "titolo": "Allenamento completato!",
+    "senzaRete": "📴 Sei senza rete: l'allenamento è salvato sul telefono e lo invio appena torna la connessione. I record li trovi poi nelle Statistiche.",
+    "serieCompletate": "Serie completate",
+    "volumeTotale": "Volume totale",
+    "nuoviRecord": "🏆 Nuovi Record!",
+    "tornaDashboard": "Torna alla Dashboard",
+    "rimastoAperto": "Era rimasto aperto: l'ho fatto finire all'ultima serie, alle {ora}.",
+    "riprendi": "↩️ Ho chiuso per sbaglio, riprendi",
+    "riprendiEntro": "Puoi riprendere l'allenamento entro {minuti} minuti, anche dallo Storico."
+  },
+  "serieCorrente": "Serie {numero} / {totale}",
+  "nessunEsercizio": "Nessun esercizio nella scheda",
+  "tornaAlleSchede": "Torna alle schede",
+  "barra": {
+    "esercizioNumero": "Esercizio {numero}/{totale} ▾",
+    "schermoAttivo": "🔒 Schermo attivo",
+    "termina": "Termina",
+    "codaFerma_one": "📴 Senza rete: {count} serie salvata sul telefono, le invio appena torna la connessione",
+    "codaFerma_other": "📴 Senza rete: {count} serie salvate sul telefono, le invio appena torna la connessione"
+  },
+  "recupero": {
+    "titolo": "Recupero",
+    "titoloMaiuscolo": "RECUPERO",
+    "prossimo": "Prossimo: {nome}",
+    "ariaTimer": "Recupero: {tempo}",
+    "salta": "Salta",
+    "saltaRecupero": "Salta recupero →",
+    "schermoBloccato": "A schermo bloccato non suona: <link>attiva le notifiche</link> per l'avviso di fine recupero.",
+    "prossimaSerie": "Prossima: Serie {numero} di {totale}",
+    "prossimoEsercizio": "Prossimo Esercizio: {nome}",
+    "fineAllenamento": "Prossima Azione: Fine Allenamento",
+    "notifica": "{nome} · serie {numero}"
+  },
+  "tempoAllenamento": "Tempo Allenamento",
+  "esercizio": {
+    "inclinazione": "incl {valore}%",
+    "livello": "liv {valore}",
+    "riepilogoSerie": "{serie} × {rep} · {secondi}s rec."
+  },
+  "video": {
+    "mostra": "Vedi come si esegue",
+    "nascondi": "Nascondi video"
+  },
+  "serieFatte": {
+    "riscaldamento": "🔥 Riscaldamento",
+    "serie": "Serie {numero} ✓",
+    "livello": "(Liv. {livello})"
+  },
+  "drop": {
+    "etichetta": "↳ Drop",
+    "ripetizioniBreve": "rip.",
+    "ariaPeso": "Peso del drop {numero}",
+    "ariaRipetizioni": "Ripetizioni del drop {numero}",
+    "ariaTogli": "Togli il drop {numero}",
+    "incompleto": "Scrivi peso e ripetizioni del drop, o toglilo",
+    "aggiungi": "↘ Aggiungi un drop set"
+  },
+  "riferimento": {
+    "ultimaVolta": "Ultima volta · {data}",
+    "minuti": "{minuti} min",
+    "minutiLivello": "{minuti} min · liv. {livello}",
+    "corpoLibero": "Corpo libero"
+  },
+  "rampa": "🔥 Riscaldamento verso {peso} kg · tocca un passo quando l'hai fatto",
+  "campi": {
+    "durata": "Durata (minuti)",
+    "resistenza": "Resistenza / Liv.",
+    "peso": "Peso (kg)",
+    "ripetizioni": "Ripetizioni",
+    "rpe": "RPE (sforzo percepito)"
+  },
+  "dischi": {
+    "perLato": "🏋️ Per lato: <b>{dischi}</b>",
+    "mancano": "mancano {kg} kg"
+  },
+  "azioni": {
+    "serieCompletata": "✓ Serie Completata",
+    "serieCompletataConDrop_one": "✓ Serie Completata + drop",
+    "serieCompletataConDrop_other": "✓ Serie Completata + {count} drop",
+    "riscaldamento": "🔥 Registra come riscaldamento (non conta fra le serie)",
+    "saltaSerie": "⏭ Salta Serie",
+    "cambiaEsercizio": "🔄 Cambia Esercizio",
+    "vai": "Vai →",
+    "completaAllenamento": "🏆 Completa Allenamento"
+  },
+  "eserciziDaFare_one": "{count} esercizio da fare",
+  "eserciziDaFare_other": "{count} esercizi da fare",
+  "selettore": {
+    "titolo": "Seleziona Esercizio",
+    "completato": "Completato",
+    "serieComplete_one": "{fatte}/{count} serie — completato",
+    "serieComplete_other": "{fatte}/{count} serie — completato",
+    "inCorso": "In corso",
+    "serieFatte_one": "{fatte}/{count} serie fatte",
+    "serieFatte_other": "{fatte}/{count} serie fatte",
+    "cardio": "Cardio",
+    "aggiungiExtra": "➕ Aggiungi Esercizio Extra"
+  },
+  "ricerca": {
+    "titolo": "Aggiungi Esercizio",
+    "cerca": "Cerca esercizio...",
+    "preferito": "Preferito",
+    "varie": "Varie",
+    "mostraAltri": "Mostra altri ({numero})",
+    "nessunoTrovato": "Nessun esercizio trovato",
+    "caricamento": "Caricamento esercizi..."
+  }
+}

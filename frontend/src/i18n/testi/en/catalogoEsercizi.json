@@ -1,0 +1,55 @@
+{
+  "titolo": "Exercise catalog",
+  "conteggio_one": "{numero} exercise",
+  "conteggio_other": "{numero} exercises",
+  "conteggioFiltrati_one": "{numero} exercise (filtered from {totale})",
+  "conteggioFiltrati_other": "{numero} exercises (filtered from {totale})",
+  "totali_one": "{numero} exercise in total",
+  "totali_other": "{numero} exercises in total",
+  "cerca": "Search exercise, muscle, equipment...",
+  "tuttiMuscoli": "All muscles",
+  "rimuoviTuttiFiltri": "Clear all filters",
+  "rimuoviFiltri": "Clear filters",
+  "preferiti": "⭐ Favorites",
+  "preferitiConteggio": "⭐ Favorites ({numero})",
+  "nessunEsercizio": "No exercises found",
+  "nessunPreferito": "No favorites yet: tap the star next to an exercise",
+  "provaFiltri": "Try changing your search filters",
+  "aggiungiPreferiti": "Add to favorites",
+  "togliPreferiti": "Remove from favorites",
+  "video": "Video: {nome}",
+  "muscoliSecondari": "Secondary muscles",
+  "etichetta": {
+    "difficolta": "Difficulty",
+    "regione": "Region",
+    "meccanica": "Mechanics",
+    "movimento": "Movement",
+    "lateralita": "Laterality",
+    "postura": "Posture",
+    "forza": "Force",
+    "tipo": "Type"
+  },
+  "difficolta": {
+    "tutte": "All difficulties",
+    "Principiante": "Beginner",
+    "Novizio": "Novice",
+    "Intermedio": "Intermediate",
+    "Avanzato": "Advanced",
+    "Esperto": "Expert",
+    "Master": "Master",
+    "Gran Master": "Grandmaster",
+    "Leggendario": "Legendary"
+  },
+  "regione": {
+    "tutte": "All regions",
+    "Parte Superiore": "Upper body",
+    "Parte Inferiore": "Lower body",
+    "Core": "Core",
+    "Tutto il Corpo": "Full body"
+  },
+  "meccanica": {
+    "tutte": "All mechanics",
+    "Composto": "Compound",
+    "Isolamento": "Isolation"
+  }
+}

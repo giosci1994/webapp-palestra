@@ -1,7 +1,17 @@
 {
-  "versione": "1.3.1",
+  "versione": "1.4.0",
   "build": "2026-10-11",
   "changelog": [
+    {
+      "versione": "1.4.0",
+      "data": "2026-10-11",
+      "modifiche": [
+        "L'app parla inglese: segue la lingua del telefono, e da Profilo → Lingua puoi sceglierla tu (la scelta resta sul tuo account)",
+        "Date e numeri nel formato della tua lingua",
+        "Nel catalogo trovi muscoli e attrezzi anche col nome inglese",
+        "Correzioni ai testi: \"1 esercizio\", \"1 sessione\" e simili al singolare"
+      ]
+    },
     {
       "versione": "1.3.1",
       "data": "2026-10-11",

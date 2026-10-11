@@ -1,0 +1,55 @@
+{
+  "titolo": "Catalogo Esercizi",
+  "conteggio_one": "{numero} esercizio",
+  "conteggio_other": "{numero} esercizi",
+  "conteggioFiltrati_one": "{numero} esercizio (filtrato da {totale})",
+  "conteggioFiltrati_other": "{numero} esercizi (filtrati da {totale})",
+  "totali_one": "{numero} esercizio totale",
+  "totali_other": "{numero} esercizi totali",
+  "cerca": "Cerca esercizio, muscolo, attrezzatura...",
+  "tuttiMuscoli": "Tutti i muscoli",
+  "rimuoviTuttiFiltri": "Rimuovi tutti i filtri",
+  "rimuoviFiltri": "Rimuovi filtri",
+  "preferiti": "⭐ Preferiti",
+  "preferitiConteggio": "⭐ Preferiti ({numero})",
+  "nessunEsercizio": "Nessun esercizio trovato",
+  "nessunPreferito": "Non hai ancora preferiti: tocca la stella accanto a un esercizio",
+  "provaFiltri": "Prova a modificare i filtri di ricerca",
+  "aggiungiPreferiti": "Aggiungi ai preferiti",
+  "togliPreferiti": "Togli dai preferiti",
+  "video": "Video: {nome}",
+  "muscoliSecondari": "Muscoli secondari",
+  "etichetta": {
+    "difficolta": "Difficoltà",
+    "regione": "Regione",
+    "meccanica": "Meccanica",
+    "movimento": "Movimento",
+    "lateralita": "Lateralità",
+    "postura": "Postura",
+    "forza": "Forza",
+    "tipo": "Tipo"
+  },
+  "difficolta": {
+    "tutte": "Tutte le difficoltà",
+    "Principiante": "Principiante",
+    "Novizio": "Novizio",
+    "Intermedio": "Intermedio",
+    "Avanzato": "Avanzato",
+    "Esperto": "Esperto",
+    "Master": "Master",
+    "Gran Master": "Gran Master",
+    "Leggendario": "Leggendario"
+  },
+  "regione": {
+    "tutte": "Tutte le regioni",
+    "Parte Superiore": "Parte Superiore",
+    "Parte Inferiore": "Parte Inferiore",
+    "Core": "Core",
+    "Tutto il Corpo": "Tutto il Corpo"
+  },
+  "meccanica": {
+    "tutte": "Tutte le meccaniche",
+    "Composto": "Composto",
+    "Isolamento": "Isolamento"
+  }
+}

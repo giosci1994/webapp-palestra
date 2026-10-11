@@ -1,0 +1,31 @@
+{
+  "stati": {
+    "IN_ATTESA": "In attesa",
+    "APPROVATO": "Approvato",
+    "RIFIUTATO": "Rifiutato"
+  },
+  "confermaElimina": "Elimina questo esercizio?",
+  "motivoRifiuto": "Motivo del rifiuto (opzionale):",
+  "titolo": "📚 Gestione Esercizi",
+  "nelCatalogo_one": "{count} esercizio nel catalogo",
+  "nelCatalogo_other": "{count} esercizi nel catalogo",
+  "nuovo": "＋ Nuovo",
+  "suggerimentiUtenti": "Suggerimenti dagli utenti",
+  "nomeEsercizio": "Nome esercizio",
+  "gruppoPrimario": "Gruppo primario",
+  "gruppoSecondario": "Gruppo secondario (opz.)",
+  "attrezzatura": "Attrezzatura (opz.)",
+  "attrezzaturaSuggerita": "💬 Attrezzatura suggerita dall'utente: \"{attrezzatura}\"",
+  "note": "📝 Note: \"{descrizione}\"",
+  "descrizione": "Descrizione (opz.)",
+  "linkVideo": "Link video (opz.)",
+  "approvaEAggiungi": "✅ Approva e aggiungi al catalogo",
+  "suggerimentiGestiti": "Suggerimenti già gestiti ({numero})",
+  "da": "da {nome}",
+  "nomeEsercizioObbligatorio": "Nome esercizio *",
+  "gruppoPrimarioObbligatorio": "Gruppo primario *",
+  "crea": "Crea",
+  "cercaEsercizio": "🔍 Cerca esercizio...",
+  "tuttiIGruppi": "Tutti i gruppi",
+  "mostraAltri": "Mostra altri ({numero})"
+}

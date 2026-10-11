@@ -1,0 +1,11 @@
+{
+  "titolo": "Sets per week by muscle",
+  "descrizione": "Average over {numero} weeks. Sets where the muscle works as a secondary count as half. The 10–20 sets usually recommended for muscle growth are highlighted.",
+  "descrizioneUnaSettimana": "Average for the week. Sets where the muscle works as a secondary count as half. The 10–20 sets usually recommended for muscle growth are highlighted.",
+  "nessunaSerie": "No sets logged in this period.",
+  "serie_one": "{numero} set",
+  "serie_other": "{numero} sets",
+  "dettaglioRiga": "{nome}: {settimanali} per week. In the period: {periodo}.",
+  "dettaglioRigaConIndirette": "{nome}: {settimanali} per week. In the period: {periodo}, {indirette} from exercises where it works as a secondary muscle.",
+  "senzaSerie": "No sets in the period: {gruppi}."
+}

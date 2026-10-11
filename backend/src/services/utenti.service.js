@@ -8,6 +8,7 @@ import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../ut
 import argon2 from 'argon2';
 import logger from '../utils/logger.js';
 import { chiudiAltreSessioni } from './autenticazione.service.js';
+import { leggiLingua } from '../utils/lingue.js';
 
 /**
  * Gets the list of all users (SuperAdmin only).
@@ -144,6 +145,7 @@ export async function ottieniProfilo(utenteId) {
       profiloCompletato: true,
       gamificationAttiva: true,
       ruoloRichiesto: true,
+      lingua: true,
       palestra: { select: { id: true, nomeCatena: true, citta: true, nazione: true } }
     }
   });
@@ -160,7 +162,7 @@ export async function aggiornaProfilo(utenteId, dati) {
   const campiConsentiti = [
     'nome', 'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm',
     'genere', 'bio', 'obiettivoFitness', 'preferenzeVisibilita',
-    'gamificationAttiva', 'palestraId'
+    'gamificationAttiva', 'palestraId', 'lingua'
   ];
 
   const datiAggiornamento = {};
@@ -175,6 +177,8 @@ export async function aggiornaProfilo(utenteId, dati) {
         datiAggiornamento[campo] = parseInt(dati[campo]);
       } else if (campo === 'palestraId') {
         datiAggiornamento[campo] = dati[campo] ? parseInt(dati[campo]) : null;
+      } else if (campo === 'lingua') {
+        datiAggiornamento[campo] = leggiLingua(dati[campo]);
       } else {
         datiAggiornamento[campo] = dati[campo];
       }
@@ -212,6 +216,7 @@ export async function aggiornaProfilo(utenteId, dati) {
       obiettivoFitness: true,
       preferenzeVisibilita: true,
       gamificationAttiva: true,
+      lingua: true,
       palestra: { select: { id: true, nomeCatena: true, citta: true, nazione: true } }
     }
   });

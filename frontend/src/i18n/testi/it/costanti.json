@@ -1,0 +1,32 @@
+{
+  "recupero": {
+    "recupero": "In recupero",
+    "recuperoDettaglio": "< 48 ore",
+    "pronto": "Pronto",
+    "prontoDettaglio": "2-14 giorni",
+    "trascurato": "Trascurato",
+    "trascuratoDettaglio": "> 14 giorni"
+  },
+  "livelli": {
+    "BASE": "Base",
+    "INTERMEDIO": "Intermedio",
+    "AVANZATO": "Avanzato"
+  },
+  "ruoli": {
+    "UTENTE": "Utente",
+    "PERSONAL_TRAINER": "Personal Trainer",
+    "SUPERADMIN": "Super Admin"
+  },
+  "rpe": {
+    "1": "Riscaldamento",
+    "2": "Molto leggero",
+    "3": "Leggero",
+    "4": "Moderato",
+    "5": "Medio",
+    "6": "Un po' faticoso",
+    "7": "Faticoso",
+    "8": "Molto faticoso",
+    "9": "Quasi al massimo",
+    "10": "Massimale"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "nomeFileScheda": "plan",
+  "downloadFallito": "Download failed",
+  "tornaAlleSchede": "← Back to plans",
+  "modifica": "✏️ Edit",
+  "clonaTitolo": "Save an editable personal copy",
+  "clono": "Cloning…",
+  "clona": "⧉ Clone",
+  "scaricaWordTitolo": "Download as a Word file to read it offline",
+  "preparo": "Preparing…",
+  "mostraMeno": "Show less",
+  "mostraTutto": "Show more",
+  "creataDa_one": "Created by {nome} · {count} exercise",
+  "creataDa_other": "Created by {nome} · {count} exercises",
+  "inclinazione": "incl {valore}%",
+  "livelloResistenza": "lvl {valore}",
+  "riscaldamento": "warm-up",
+  "cardio": "Cardio",
+  "recupero": "{secondi}s rest",
+  "iniziaAllenamento": "🏋️ Start workout"
+}

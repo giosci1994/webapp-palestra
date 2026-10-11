@@ -5,6 +5,7 @@
 
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
+import { useLingua } from '../../hooks/useLingua.js';
 
 function caricaImmagine(src) {
   return new Promise((risolvi, rifiuta) => {
@@ -32,6 +33,7 @@ async function ritagliaEComprimi(src, pixelCrop, dimensione = 400, qualita = 0.8
 }
 
 export default function RitaglioFoto({ immagine, onAnnulla, onConferma }) {
+  const { t } = useLingua();
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [pixels, setPixels] = useState(null);
@@ -46,7 +48,7 @@ export default function RitaglioFoto({ immagine, onAnnulla, onConferma }) {
       const base64 = await ritagliaEComprimi(immagine, pixels);
       onConferma(base64);
     } catch {
-      alert('Errore durante il ritaglio della foto');
+      alert(t('ritaglioFoto.errore'));
     } finally {
       setElaborando(false);
     }
@@ -56,7 +58,7 @@ export default function RitaglioFoto({ immagine, onAnnulla, onConferma }) {
     <div className="fixed inset-0 z-[120] bg-black/85 flex items-center justify-center p-4"
          style={{ paddingTop: 'calc(16px + var(--safe-top))', paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
       <div className="glass-card w-full max-w-sm p-card-inner flex flex-col gap-4">
-        <h3 className="font-bold text-lg text-center">Ritaglia la foto</h3>
+        <h3 className="font-bold text-lg text-center">{t('ritaglioFoto.titolo')}</h3>
         <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-black">
           <Cropper
             image={immagine}
@@ -71,16 +73,16 @@ export default function RitaglioFoto({ immagine, onAnnulla, onConferma }) {
           />
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-[var(--testo-terziario)] shrink-0">Zoom</span>
+          <span className="text-xs text-[var(--testo-terziario)] shrink-0">{t('ritaglioFoto.zoom')}</span>
           <input type="range" min={1} max={3} step={0.01} value={zoom}
                  onChange={e => setZoom(Number(e.target.value))}
                  className="flex-1 accent-[var(--accent)]" />
         </div>
-        <p className="text-[10px] text-[var(--testo-terziario)] text-center">Trascina per spostare, usa lo zoom per inquadrare. La foto verrà ridotta automaticamente.</p>
+        <p className="text-[10px] text-[var(--testo-terziario)] text-center">{t('ritaglioFoto.istruzioni')}</p>
         <div className="flex gap-3">
-          <button onClick={onAnnulla} className="btn-secondario flex-1">Annulla</button>
+          <button onClick={onAnnulla} className="btn-secondario flex-1">{t('comune.annulla')}</button>
           <button onClick={conferma} disabled={elaborando} className="btn-primario flex-1 disabled:opacity-50">
-            {elaborando ? 'Elaboro…' : 'Conferma'}
+            {elaborando ? t('ritaglioFoto.elaborazione') : t('comune.conferma')}
           </button>
         </div>
       </div>

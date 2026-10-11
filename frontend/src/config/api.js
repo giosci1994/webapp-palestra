@@ -3,6 +3,8 @@
 // Fetch wrapper with automatic JWT handling
 // ============================================
 
+import { linguaCorrente, traduci } from '../i18n/index.js';
+
 const BASE_URL = '/api/v1';
 
 let accessToken = null;
@@ -49,6 +51,8 @@ export async function apiChiamata(percorso, opzioni = {}) {
     method: metodo,
     headers: {
       'Content-Type': 'application/json',
+      // The app's language, for the server's messages
+      'Accept-Language': linguaCorrente(),
       ...headers
     },
     credentials: 'include', // For the refresh token cookie
@@ -86,7 +90,7 @@ export async function apiChiamata(percorso, opzioni = {}) {
       // We don't let a cryptic error through ("Token di accesso mancante"):
       // we notify the app (redirect to login) and stop with a clear error.
       if (onSessioneScaduta) onSessioneScaduta();
-      const err = new Error('Sessione scaduta. Accedi di nuovo per continuare.');
+      const err = new Error(traduci('api.sessioneScaduta'));
       err.codice = 'SESSIONE_SCADUTA';
       err.stato = 401;
       throw err;
@@ -104,20 +108,20 @@ export async function apiChiamata(percorso, opzioni = {}) {
     await risposta.text();
     if (!risposta.ok) {
       if (risposta.status === 429) {
-        throw new Error('Troppe richieste o IP temporaneamente bloccato dai sistemi di sicurezza.');
+        throw new Error(traduci('api.troppeRichieste'));
       } else if (risposta.status === 403) {
-        throw new Error('Accesso negato. Il traffico potrebbe essere stato bloccato dal firewall.');
+        throw new Error(traduci('api.accessoNegato'));
       } else {
-        throw new Error(`Errore del server (${risposta.status}). Riprova più tardi.`);
+        throw new Error(traduci('api.erroreServerCodice', { codice: risposta.status }));
       }
     } else {
       // 200 OK response but not JSON
-      throw new Error('Risposta dal server non valida (formato non supportato).');
+      throw new Error(traduci('api.rispostaNonValida'));
     }
   }
 
   if (!risposta.ok) {
-    const errore = new Error(dati.messaggio || 'Errore del server');
+    const errore = new Error(dati.messaggio || traduci('api.erroreServer'));
     errore.codice = dati.codice;
     errore.stato = risposta.status;
     errore.dettagli = dati.dettagli;
@@ -176,7 +180,10 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
 
   const esegui = () => fetch(`${BASE_URL}${percorso}`, {
     method: 'GET',
-    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+    headers: {
+      'Accept-Language': linguaCorrente(),
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` })
+    },
     credentials: 'include'
   });
 
@@ -186,14 +193,14 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
     const nuovoToken = await tentaRefresh();
     if (!nuovoToken) {
       if (onSessioneScaduta) onSessioneScaduta();
-      throw new Error('Sessione scaduta. Accedi di nuovo per continuare.');
+      throw new Error(traduci('api.sessioneScaduta'));
     }
     accessToken = nuovoToken;
     risposta = await esegui();
   }
 
   if (!risposta.ok) {
-    throw new Error(`Download non riuscito (errore ${risposta.status})`);
+    throw new Error(traduci('api.downloadFallito', { codice: risposta.status }));
   }
 
   // The name suggested by the server wins over the fallback one

@@ -1,0 +1,38 @@
+{
+  "inCorso": "Workout in progress",
+  "inProgramma": "Scheduled for today",
+  "ultimaVolta": "last time {minuti} min",
+  "altriOggi": "Also today: {titoli}",
+  "riprendi": "Resume workout",
+  "iniziaScheda": "Start plan",
+  "piuTardi": "Later",
+  "saltaOggi": "Skip today",
+  "salto": "Skipping…",
+  "rimandaADomani": "Postpone to tomorrow",
+  "sposto": "Moving…",
+  "errori": {
+    "spostamento": "Could not move it",
+    "salto": "Could not mark it as skipped"
+  },
+  "quando": {
+    "adessoMigliore": "Right now is the best time",
+    "vaiVerso": "Go around {ora}",
+    "adesso": "Now",
+    "nellaFascia": "Within the hours you usually train ({da}–{a})",
+    "ora": "now",
+    "adessoMeno": "If you're already at the gym, it's even quieter right now ({livello}%).",
+    "strisciaAria": "Expected crowd today from {da} to {a}",
+    "strisciaAriaConsigliata": "Expected crowd today from {da} to {a}: {ora} recommended"
+  },
+  "affollamento": {
+    "adessoPoca": "Right now it's quiet · {livello}%",
+    "adessoMedia": "Right now moderately busy · {livello}%",
+    "adessoMolta": "Right now very busy · {livello}%",
+    "abitualePoca": "Usually quiet at this hour · {livello}%",
+    "abitualeMedia": "Usually moderately busy at this hour · {livello}%",
+    "abitualeMolta": "Usually very busy at this hour · {livello}%",
+    "consigliatoPoca": "Usually quiet · {livello}%",
+    "consigliatoMedia": "Usually moderately busy · {livello}%",
+    "consigliatoMolta": "Usually very busy · {livello}%"
+  }
+}

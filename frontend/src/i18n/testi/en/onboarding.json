@@ -1,0 +1,87 @@
+{
+  "passi": {
+    "tipo": { "titolo": "Account type", "desc": "How do you want to use GymMaster?" },
+    "foto": { "titolo": "Profile photo", "desc": "Add a photo (optional)" },
+    "dati": { "titolo": "About you", "desc": "Date of birth and gender" },
+    "misure": { "titolo": "Measurements", "desc": "Your current weight and height" },
+    "obiettivo": { "titolo": "Goal", "desc": "What's your fitness goal?" },
+    "pro1": { "titolo": "Introduction", "desc": "Bio and specialties" },
+    "pro2": { "titolo": "Experience", "desc": "Qualifications, rates and contact details" },
+    "privacy": { "titolo": "Privacy & consent", "desc": "Personalize your experience" }
+  },
+  "specializzazioni": {
+    "ipertrofia": "Hypertrophy/Mass",
+    "dimagrimento": "Weight loss",
+    "forza": "Strength",
+    "funzionale": "Functional",
+    "riabilitazione": "Rehabilitation",
+    "preparazioneAtletica": "Athletic conditioning",
+    "posturale": "Postural",
+    "bodybuilding": "Bodybuilding",
+    "crossTraining": "Cross training",
+    "senior": "Seniors",
+    "prePostParto": "Pre/postnatal",
+    "mobilita": "Mobility"
+  },
+  "obiettivi": {
+    "massa": { "titolo": "Muscle mass", "desc": "Build size and strength" },
+    "definizione": { "titolo": "Get lean", "desc": "Lose fat, tone up" },
+    "forza": { "titolo": "Strength", "desc": "Lift heavier" },
+    "resistenza": { "titolo": "Endurance", "desc": "Cardio and stamina" },
+    "salute": { "titolo": "Health", "desc": "General wellbeing" },
+    "altro": { "titolo": "Other", "desc": "A custom goal" }
+  },
+  "tipo": {
+    "utente": { "titolo": "Member", "desc": "Train, track your progress and reach your goals" },
+    "personalTrainer": { "titolo": "Personal Trainer", "desc": "Manage clients, create plans and appointments" },
+    "avvisoPT": "Your Personal Trainer request will be sent to the administrator for approval. In the meantime you can use the app as a member."
+  },
+  "foto": {
+    "alt": "Profile",
+    "carica": "Upload photo",
+    "istruzioni": "Upload a photo and you'll be able to crop it. JPG, PNG, WebP",
+    "rimuovi": "Remove photo"
+  },
+  "dati": {
+    "dataNascita": "Date of birth",
+    "genere": "Gender",
+    "maschio": "Male",
+    "femmina": "Female",
+    "altro": "Other"
+  },
+  "misure": {
+    "peso": "Weight (kg)",
+    "altezza": "Height (cm)",
+    "bmi": "Your BMI"
+  },
+  "pro": {
+    "bio": "Professional bio",
+    "bioPlaceholder": "Introduce yourself to future clients: who you are, your approach, the results you get…",
+    "specializzazioni": "Specialties",
+    "anniEsperienza": "Years of experience",
+    "tariffa": "Approximate rate",
+    "tariffaPlaceholder": "e.g. €30/session",
+    "certificazioni": "Certifications / Qualifications",
+    "certificazioniPlaceholder": "e.g. Sport Science degree, ISSA CPT, NASM-CPT…",
+    "contatto": "Public contact <opz>(optional)</opz>",
+    "contattoPlaceholder": "email, phone or website"
+  },
+  "privacy": {
+    "visibilita": "Profile visibility",
+    "visibilitaDesc": "Choose what other users can see about you",
+    "palestra": "Gym",
+    "peso": "Weight",
+    "altezza": "Height",
+    "eta": "Age",
+    "obiettivo": "Fitness goal",
+    "statistiche": "Workout stats",
+    "record": "Personal records",
+    "gamification": "Gamification",
+    "gamificationDesc": "XP, levels, leaderboards and badges",
+    "consensoTermini": "I have read and accept the <termini>Terms and Conditions</termini> *",
+    "consensoPrivacy": "I have read and accept the <privacy>Privacy Policy</privacy> *"
+  },
+  "erroreConsensi": "You must accept the Terms and the Privacy Policy to continue",
+  "erroreSalvataggio": "Could not save your profile",
+  "completaProfilo": "Complete profile"
+}

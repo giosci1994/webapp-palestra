@@ -1,0 +1,13 @@
+{
+  "titolo": "Activity over the last year",
+  "descrizione": "One square per day: the lighter it is, the more sets you completed.",
+  "allenamenti": "Workouts",
+  "giorniAttivi": "Active days",
+  "tocca": "Tap a day for details.",
+  "meno": "Less",
+  "piu": "More",
+  "riposo": "{data}: rest day",
+  "giornoAttivo": "{data}: {allenamenti}, {serie}",
+  "nAllenamenti_one": "{numero} workout",
+  "nAllenamenti_other": "{numero} workouts"
+}

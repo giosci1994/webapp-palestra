@@ -4,6 +4,8 @@
 // ============================================
 
 import { useAuth } from '../contesti/AuthContesto.jsx';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
 import { api, scaricaFile } from '../config/api.js';
 import { RUOLI } from '../utils/costanti.js';
 import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
@@ -18,20 +20,33 @@ import {
   Pencil, Download, Smartphone, Monitor, KeyRound, Bell
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
+import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
 
-const OBIETTIVI = ['Massa Muscolare', 'Definizione', 'Resistenza', 'Salute Generale', 'Perdita Peso'];
-const GENERI = [{ v: 'M', l: 'Maschile' }, { v: 'F', l: 'Femminile' }, { v: 'Altro', l: 'Altro' }];
+// `v` is the value saved on the account, `chiave` the translation key of its label
+const OBIETTIVI = [
+  { v: 'Massa Muscolare', chiave: 'profilo.obiettivi.massaMuscolare' },
+  { v: 'Definizione', chiave: 'profilo.obiettivi.definizione' },
+  { v: 'Resistenza', chiave: 'profilo.obiettivi.resistenza' },
+  { v: 'Salute Generale', chiave: 'profilo.obiettivi.saluteGenerale' },
+  { v: 'Perdita Peso', chiave: 'profilo.obiettivi.perditaPeso' }
+];
+const GENERI = [
+  { v: 'M', chiave: 'profilo.generi.M' },
+  { v: 'F', chiave: 'profilo.generi.F' },
+  { v: 'Altro', chiave: 'profilo.generi.Altro' }
+];
 const VIS_DEFAULT = { palestra: true, peso: false, altezza: false, eta: false, obiettivo: true, statistiche: false, record: true };
 
+// `chiave` is the translation key of the tab's name
 const TABS = [
-  { id: 'profilo', label: 'Profilo', icona: User },
-  { id: 'notifiche', label: 'Notifiche', icona: Bell },
-  { id: 'privacy', label: 'Privacy', icona: Shield },
-  { id: 'pt', label: 'Personal Trainer', icona: Dumbbell },
-  { id: 'sicurezza', label: 'Sicurezza', icona: Lock },
-  { id: 'fatturazione', label: 'Fatturazione', icona: CreditCard },
-  { id: 'legale', label: 'Legal & Compliance', icona: FileText },
-  { id: 'elimina', label: 'Elimina Account', icona: Trash2 },
+  { id: 'profilo', chiave: 'profilo.tab.profilo', icona: User },
+  { id: 'notifiche', chiave: 'profilo.tab.notifiche', icona: Bell },
+  { id: 'privacy', chiave: 'profilo.tab.privacy', icona: Shield },
+  { id: 'pt', chiave: 'profilo.tab.pt', icona: Dumbbell },
+  { id: 'sicurezza', chiave: 'profilo.tab.sicurezza', icona: Lock },
+  { id: 'fatturazione', chiave: 'profilo.tab.fatturazione', icona: CreditCard },
+  { id: 'legale', chiave: 'profilo.tab.legale', icona: FileText },
+  { id: 'elimina', chiave: 'profilo.tab.elimina', icona: Trash2 },
 ];
 
 /**
@@ -48,17 +63,18 @@ function Toggle({ attivo, onClick }) {
 }
 
 export default function Profilo() {
+  const { t } = useLingua();
   const { utente, logout, aggiornaUtente } = useAuth();
   const [richiedendoPT, setRichiedendoPT] = useState(false);
   const [fotoDaRitagliare, setFotoDaRitagliare] = useState(null);
   const fileRef = useRef(null);
   // The visible tabs; the initial one can be picked from the address,
   // for example /profilo?tab=sicurezza
-  const tabVisibili = TABS.filter(t => t.id !== 'pt' || utente?.ruolo === 'UTENTE');
+  const tabVisibili = TABS.filter(tab => tab.id !== 'pt' || utente?.ruolo === 'UTENTE');
   const [parametri] = useSearchParams();
   const [tabAttivo, setTabAttivo] = useState(() => {
     const richiesta = parametri.get('tab');
-    return tabVisibili.some(t => t.id === richiesta) ? richiesta : 'profilo';
+    return tabVisibili.some(tab => tab.id === richiesta) ? richiesta : 'profilo';
   });
 
   // Profile data form
@@ -129,7 +145,7 @@ export default function Profilo() {
     try {
       await scaricaFile('/utenti/esportazione', 'gymmaster-dati.json');
     } catch (err) {
-      setErroreDati(err?.message || 'Download non riuscito');
+      setErroreDati(err?.message || t('profilo.esportazione.errore'));
     } finally {
       setScaricandoDati(false);
     }
@@ -184,7 +200,7 @@ export default function Profilo() {
       if (dati.palestraId === '') dati.palestraId = null;
       const r = await api.patch('/utenti/profilo', dati);
       aggiornaUtente(r.dati);
-      setMsgSalvataggio('✅ Salvato!');
+      setMsgSalvataggio(t('profilo.dati.salvato'));
       if (!extra.immagineProfilo) {
         setModificaAbilitata(false);
       }
@@ -233,12 +249,12 @@ export default function Profilo() {
       const risposta = await startRegistration({ optionsJSON: sfida.opzioni });
       await api.post('/auth/passkey/registrazione/verifica', { id: sfida.id, risposta });
       setPasswordPasskey('');
-      setMsgPasskey({ testo: 'Passkey aggiunta: la prossima volta puoi entrare senza password.', tipo: 'ok' });
+      setMsgPasskey({ testo: t('profilo.passkey.aggiunta'), tipo: 'ok' });
       caricaPasskey();
     } catch (err) {
       const messaggio = {
-        NotAllowedError: 'Operazione annullata sul dispositivo.',
-        InvalidStateError: 'Questo dispositivo ha già una passkey per GymMaster.'
+        NotAllowedError: t('profilo.passkey.annullata'),
+        InvalidStateError: t('profilo.passkey.giaPresente')
       }[err?.name] || err.message;
       setMsgPasskey({ testo: messaggio, tipo: 'err' });
     } finally {
@@ -247,7 +263,7 @@ export default function Profilo() {
   };
 
   const eliminaPasskey = async (id) => {
-    if (!confirm('Eliminare questa passkey? Per entrare da quel dispositivo servirà di nuovo la password.')) return;
+    if (!confirm(t('profilo.passkey.confermaElimina'))) return;
     try { await api.delete(`/auth/passkey/${id}`); }
     catch (err) { setMsgPasskey({ testo: err.message, tipo: 'err' }); }
     caricaPasskey();
@@ -279,12 +295,12 @@ export default function Profilo() {
 
   const cambiaPw = async () => {
     setPwMsg({ testo: '', tipo: '' });
-    if (pwForm.nuova !== pwForm.conferma) return setPwMsg({ testo: 'Le password non corrispondono', tipo: 'err' });
-    if (pwForm.nuova.length < 8) return setPwMsg({ testo: 'Minimo 8 caratteri', tipo: 'err' });
+    if (pwForm.nuova !== pwForm.conferma) return setPwMsg({ testo: t('profilo.password.nonCorrispondono'), tipo: 'err' });
+    if (pwForm.nuova.length < 8) return setPwMsg({ testo: t('profilo.password.minimo'), tipo: 'err' });
     try {
       setPwSalvando(true);
       const r = await api.post('/utenti/cambia-password', { vecchiaPassword: pwForm.vecchia, nuovaPassword: pwForm.nuova });
-      setPwMsg({ testo: r.messaggio || 'Password aggiornata con successo!', tipo: 'ok' });
+      setPwMsg({ testo: r.messaggio || t('profilo.password.aggiornata'), tipo: 'ok' });
       setPwForm({ vecchia: '', nuova: '', conferma: '' });
       // The change signed out the other devices
       if (sessioni) caricaSessioni();
@@ -293,11 +309,11 @@ export default function Profilo() {
   };
 
   const eseguiReset = async () => {
-    if (confermaReset !== 'CONFERMO') return;
+    if (confermaReset !== t('profilo.reset.frase')) return;
     try {
       setAvviandoReset(true);
       await api.post('/utenti/reset-statistiche');
-      alert('Statistiche azzerate!'); window.location.reload();
+      alert(t('profilo.reset.fatto')); window.location.reload();
     } catch (err) { alert(err.message); }
     finally { setAvviandoReset(false); setMostraReset(false); setConfermaReset(''); }
   };
@@ -334,7 +350,7 @@ export default function Profilo() {
           <div className="relative flex items-center gap-5">
             <div className="relative group cursor-pointer shrink-0" onClick={() => fileRef.current?.click()}>
               {avatarPreview ? (
-                <img src={avatarPreview} alt="Avatar" className="w-20 h-20 rounded-2xl object-cover border-2 border-[var(--accent)] shadow-lg" />
+                <img src={avatarPreview} alt={t('profilo.avatar')} className="w-20 h-20 rounded-2xl object-cover border-2 border-[var(--accent)] shadow-lg" />
               ) : (
                 <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold"
                      style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
@@ -353,8 +369,8 @@ export default function Profilo() {
                 <p className="text-xs text-[var(--testo-terziario)] flex items-center gap-1 mt-0.5"><Building size={11} /> {utente.palestra.nomeCatena} — {utente.palestra.citta}</p>
               )}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className={`badge ${ruoloInfo.colore}`}>{ruoloInfo.label}</span>
-                <span className="text-[10px] text-[var(--testo-terziario)]">Dal {formattaData(utente?.dataRegistrazione)}</span>
+                <span className={`badge ${ruoloInfo.colore}`}>{t(ruoloInfo.label)}</span>
+                <span className="text-[10px] text-[var(--testo-terziario)]">{t('profilo.dal', { data: formattaData(utente?.dataRegistrazione) })}</span>
               </div>
             </div>
             <div className="text-center shrink-0 hidden sm:block">
@@ -368,13 +384,13 @@ export default function Profilo() {
         <div style={{ paddingTop: '0px', paddingBottom: '25px', width: '100%' }}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ background: 'var(--vetro)', border: '1px solid var(--vetro-bordo)', padding: '10px', borderRadius: '32px', boxShadow: 'var(--ombra-card)' }}>
             {/* The tabs are icons only: the name is for screen reader users and as a tooltip */}
-            <div className="flex items-center gap-2 flex-1" role="tablist" aria-label="Sezioni del profilo">
+            <div className="flex items-center gap-2 flex-1" role="tablist" aria-label={t('profilo.sezioni')}>
               {tabVisibili.map((tab) => (
                 <button key={tab.id}
                   role="tab"
                   aria-selected={tabAttivo === tab.id}
-                  aria-label={tab.label}
-                  title={tab.label}
+                  aria-label={t(tab.chiave)}
+                  title={t(tab.chiave)}
                   onClick={() => { setTabAttivo(tab.id); caricaTab(tab.id); }}
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
@@ -397,10 +413,10 @@ export default function Profilo() {
             {/* LOGOUT BUTTON (RIGHT SIDE) */}
             <div className="border-l border-[var(--vetro-bordo)] pl-2 shrink-0">
               <button 
-                onClick={(e) => { e.preventDefault(); if (window.confirm('Sei sicuro di voler uscire?')) logout(); }}
+                onClick={(e) => { e.preventDefault(); if (window.confirm(t('profilo.esci.conferma'))) logout(); }}
                 className="flex items-center justify-center py-2.5 px-5 rounded-[14px] transition-all duration-300 text-[var(--testo-terziario)] hover:text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)]"
-                title="Esci dall'account"
-                aria-label="Esci dall'account"
+                title={t('profilo.esci.titolo')}
+                aria-label={t('profilo.esci.titolo')}
               >
                 <LogOut size={20} />
               </button>
@@ -416,7 +432,7 @@ export default function Profilo() {
             <motion.div key="profilo" className="flex flex-col gap-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)] flex items-center justify-between">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><User size={20} className="text-[var(--accent)]" /> Dati Personali</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><User size={20} className="text-[var(--accent)]" /> {t('profilo.dati.titolo')}</h3>
                   <button
                     type="button"
                     onClick={() => setModificaAbilitata(!modificaAbilitata)}
@@ -425,89 +441,91 @@ export default function Profilo() {
                         ? 'bg-[var(--accent-dim)] text-[var(--accent)] scale-110 shadow-sm border border-[var(--accent)]/20'
                         : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[var(--bg-terziario)] border border-transparent'
                     }`}
-                    title={modificaAbilitata ? "Disabilita modifiche" : "Abilita modifiche"}
+                    title={modificaAbilitata ? t('profilo.dati.disabilitaModifiche') : t('profilo.dati.abilitaModifiche')}
                   >
                     <Pencil size={18} />
                   </button>
                 </div>
                 <div className="p-card-inner flex flex-col gap-4">
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1">Nome</label>
-                    <input type="text" value={form.nome} onChange={e => setForm(p => ({...p, nome: e.target.value}))} className="campo-input" placeholder="Il tuo nome" disabled={!modificaAbilitata} />
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.nome')}</label>
+                    <input type="text" value={form.nome} onChange={e => setForm(p => ({...p, nome: e.target.value}))} className="campo-input" placeholder={t('profilo.dati.nomePlaceholder')} disabled={!modificaAbilitata} />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">Data di nascita</label>
+                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.dataNascita')}</label>
                       <input type="date" value={form.dataNascita} onChange={e => setForm(p => ({...p, dataNascita: e.target.value}))} className="campo-input" disabled={!modificaAbilitata} />
                     </div>
                     <div>
-                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">Genere</label>
+                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.genere')}</label>
                       <select value={form.genere} onChange={e => setForm(p => ({...p, genere: e.target.value}))} className="campo-input" disabled={!modificaAbilitata}>
                         <option value="">—</option>
-                        {GENERI.map(g => <option key={g.v} value={g.v}>{g.l}</option>)}
+                        {GENERI.map(g => <option key={g.v} value={g.v}>{t(g.chiave)}</option>)}
                       </select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">Peso (kg)</label>
+                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.peso')}</label>
                       <input type="number" value={form.pesoKg} onChange={e => setForm(p => ({...p, pesoKg: e.target.value}))} className="campo-input" placeholder="75" step="0.1" min="0" inputMode="decimal" disabled={!modificaAbilitata} />
                     </div>
                     <div>
-                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">Altezza (cm)</label>
+                      <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.altezza')}</label>
                       <input type="number" value={form.altezzaCm} onChange={e => setForm(p => ({...p, altezzaCm: e.target.value}))} className="campo-input" placeholder="175" min="0" inputMode="numeric" disabled={!modificaAbilitata} />
                     </div>
                   </div>
                   <Link to="/composizione" className="flex items-center justify-between px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] hover:bg-[var(--accent-dim)] transition-colors group">
-                    <span className="text-sm font-semibold flex items-center gap-2">📊 Composizione corporea <span className="text-xs font-normal text-[var(--testo-terziario)]">peso, grasso, muscolo…</span></span>
+                    <span className="text-sm font-semibold flex items-center gap-2">{t('profilo.dati.composizione')} <span className="text-xs font-normal text-[var(--testo-terziario)]">{t('profilo.dati.composizioneDettaglio')}</span></span>
                     <span className="text-[var(--testo-terziario)] group-hover:text-[var(--accent)] transition-colors">→</span>
                   </Link>
 
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1"><Building size={12} className="inline mr-1" />Palestra</label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1"><Building size={12} className="inline mr-1" />{t('profilo.dati.palestra')}</label>
                     <select value={form.palestraId} onChange={e => setForm(p => ({...p, palestraId: e.target.value}))} className="campo-input" disabled={!modificaAbilitata}>
-                      <option value="">Nessuna palestra</option>
+                      <option value="">{t('profilo.dati.nessunaPalestra')}</option>
                       {listaPalestre.map(p => <option key={p.id} value={p.id}>{p.nomeCatena} — {p.indirizzo}, {p.citta}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1">Obiettivo Fitness</label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.obiettivo')}</label>
                     <select value={form.obiettivoFitness} onChange={e => setForm(p => ({...p, obiettivoFitness: e.target.value}))} className="campo-input" disabled={!modificaAbilitata}>
-                      <option value="">Seleziona...</option>
-                      {OBIETTIVI.map(o => <option key={o} value={o}>{o}</option>)}
+                      <option value="">{t('profilo.dati.seleziona')}</option>
+                      {OBIETTIVI.map(o => <option key={o.v} value={o.v}>{t(o.chiave)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-[var(--testo-terziario)] mb-1">Bio <span className="text-[var(--testo-terziario)]">({(form.bio || '').length}/200)</span></label>
+                    <label className="block text-xs text-[var(--testo-terziario)] mb-1">{t('profilo.dati.bio')} <span className="text-[var(--testo-terziario)]">({(form.bio || '').length}/200)</span></label>
                     <textarea value={form.bio} onChange={e => setForm(p => ({...p, bio: e.target.value.slice(0, 200)}))}
-                              className="campo-input min-h-[60px] resize-none" placeholder="Qualcosa su di te..." rows="2" disabled={!modificaAbilitata} />
+                              className="campo-input min-h-[60px] resize-none" placeholder={t('profilo.dati.bioPlaceholder')} rows="2" disabled={!modificaAbilitata} />
                   </div>
                   <div className="flex items-center gap-3 pt-6 pb-2">
                     <button onClick={() => salvaProfilo()} disabled={!modificaAbilitata || salvando}
-                            className="btn-primario flex-1 py-3 disabled:opacity-40">{salvando ? 'Salvataggio...' : '💾 Salva Modifiche'}</button>
+                            className="btn-primario flex-1 py-3 disabled:opacity-40">{salvando ? t('profilo.dati.salvataggio') : t('profilo.dati.salva')}</button>
                     {msgSalvataggio && <span className="text-sm font-medium">{msgSalvataggio}</span>}
                   </div>
                 </div>
               </div>
 
+              <SceltaLingua />
+
               {/* Professional account: become a Personal Trainer (standard users only) */}
               {utente?.ruolo === 'UTENTE' && (
                 <div className="glass-card overflow-hidden">
                   <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                    <h3 className="font-bold text-lg flex items-center gap-2"><Dumbbell size={20} className="text-[var(--accent)]" /> Account professionale</h3>
+                    <h3 className="font-bold text-lg flex items-center gap-2"><Dumbbell size={20} className="text-[var(--accent)]" /> {t('profilo.professionale.titolo')}</h3>
                   </div>
                   <div className="p-card-inner">
                     {utente?.ruoloRichiesto === 'PERSONAL_TRAINER' ? (
                       <div className="flex items-center gap-4 p-card-inner rounded-[var(--raggio-md)] bg-[var(--avviso-dim)] border border-[var(--avviso)]">
                         <span className="text-3xl">⏳</span>
                         <div>
-                          <p className="font-bold text-sm">Richiesta in attesa</p>
-                          <p className="text-xs text-[var(--testo-secondario)]">Un amministratore valuterà a breve la tua richiesta di diventare Personal Trainer.</p>
+                          <p className="font-bold text-sm">{t('profilo.richiestaInAttesa')}</p>
+                          <p className="text-xs text-[var(--testo-secondario)]">{t('profilo.professionale.inAttesaDettaglio')}</p>
                         </div>
                       </div>
                     ) : (
                       <>
-                        <p className="text-sm text-[var(--testo-secondario)] mb-4">Sei un professionista del fitness? Richiedi il ruolo di <b>Personal Trainer</b> per gestire clienti, creare schede pubbliche e apparire tra i PT scopribili dagli utenti.</p>
+                        <p className="text-sm text-[var(--testo-secondario)] mb-4"><Testo t="profilo.professionale.invito" componenti={{ b: <b /> }} /></p>
                         <button
                           onClick={async () => {
                             try {
@@ -519,7 +537,7 @@ export default function Profilo() {
                           disabled={richiedendoPT}
                           className="btn-primario w-full disabled:opacity-50"
                         >
-                          {richiedendoPT ? 'Invio richiesta…' : '🏋️ Diventa Personal Trainer'}
+                          {richiedendoPT ? t('profilo.professionale.invio') : t('profilo.professionale.diventa')}
                         </button>
                       </>
                     )}
@@ -541,18 +559,18 @@ export default function Profilo() {
             <motion.div key="privacy" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Shield size={20} className="text-[var(--accent)]" /> Visibilità Profilo</h3>
-                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Scegli quali informazioni mostrare agli altri utenti</p>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Shield size={20} className="text-[var(--accent)]" /> {t('profilo.privacy.visibilitaTitolo')}</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">{t('profilo.privacy.visibilitaDescrizione')}</p>
                 </div>
                 <div className="p-card-inner flex flex-col gap-2">
                   {[
-                    { campo: 'palestra', label: 'Mostra palestra', icona: '🏢' },
-                    { campo: 'peso', label: 'Mostra peso', icona: '⚖️' },
-                    { campo: 'altezza', label: 'Mostra altezza', icona: '📏' },
-                    { campo: 'eta', label: 'Mostra età', icona: '🎂' },
-                    { campo: 'obiettivo', label: 'Mostra obiettivo fitness', icona: '🎯' },
-                    { campo: 'statistiche', label: 'Mostra statistiche allenamenti', icona: '📊' },
-                    { campo: 'record', label: 'Mostra record personali', icona: '🏆' },
+                    { campo: 'palestra', label: t('profilo.privacy.mostra.palestra'), icona: '🏢' },
+                    { campo: 'peso', label: t('profilo.privacy.mostra.peso'), icona: '⚖️' },
+                    { campo: 'altezza', label: t('profilo.privacy.mostra.altezza'), icona: '📏' },
+                    { campo: 'eta', label: t('profilo.privacy.mostra.eta'), icona: '🎂' },
+                    { campo: 'obiettivo', label: t('profilo.privacy.mostra.obiettivo'), icona: '🎯' },
+                    { campo: 'statistiche', label: t('profilo.privacy.mostra.statistiche'), icona: '📊' },
+                    { campo: 'record', label: t('profilo.privacy.mostra.record'), icona: '🏆' },
                   ].map(({ campo, label, icona }) => (
                     <div key={campo} className="flex items-center justify-between px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
                       <span className="text-sm flex items-center gap-2">{icona} {label}</span>
@@ -564,11 +582,11 @@ export default function Profilo() {
               {/* Gamification */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles size={20} className="text-amber-400" /> Gamification</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles size={20} className="text-amber-400" /> {t('profilo.privacy.gamification')}</h3>
                 </div>
                 <div className="p-card-inner">
                   <div className="flex items-center justify-between px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
-                    <span className="text-sm flex items-center gap-2">✨ Partecipa a classifiche e badge</span>
+                    <span className="text-sm flex items-center gap-2">{t('profilo.privacy.gamificationPartecipa')}</span>
                     <Toggle attivo={gamificationAttiva} onClick={async () => {
                       const nv = !gamificationAttiva; setGamificationAttiva(nv);
                       try { const r = await api.patch('/utenti/profilo', { gamificationAttiva: nv }); aggiornaUtente(r.dati); }
@@ -576,19 +594,19 @@ export default function Profilo() {
                     }} />
                   </div>
                   <p className="text-[10px] text-[var(--testo-terziario)] mt-2 px-1">
-                    {gamificationAttiva ? 'Punti esperienza, livelli e classifiche sono attivi.' : 'Gamification disattivata — non apparirai nelle classifiche. Puoi riattivare in qualsiasi momento.'}
+                    {gamificationAttiva ? t('profilo.privacy.gamificationAttiva') : t('profilo.privacy.gamificationDisattivata')}
                   </p>
                 </div>
               </div>
               {/* Your data */}
               <div className="glass-card overflow-hidden mt-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Download size={20} className="text-[var(--accent)]" /> I tuoi dati</h3>
-                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Una copia di tutto ciò che GymMaster conserva su di te: profilo, schede, allenamenti, record, misurazioni e messaggi. È un file JSON, che puoi aprire con qualunque programma o portare in un'altra app.</p>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Download size={20} className="text-[var(--accent)]" /> {t('profilo.esportazione.titolo')}</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">{t('profilo.esportazione.descrizione')}</p>
                 </div>
                 <div className="p-card-inner">
                   <button onClick={scaricaDati} disabled={scaricandoDati} className="btn-primario w-full disabled:opacity-50">
-                    {scaricandoDati ? 'Preparo il file…' : 'Scarica i miei dati'}
+                    {scaricandoDati ? t('profilo.esportazione.preparazione') : t('profilo.esportazione.scarica')}
                   </button>
                   {erroreDati && <p className="text-xs text-[var(--pericolo)] mt-2">{erroreDati}</p>}
                 </div>
@@ -601,30 +619,30 @@ export default function Profilo() {
             <motion.div key="pt" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Dumbbell size={20} className="text-[var(--accent)]" /> Il tuo Personal Trainer</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Dumbbell size={20} className="text-[var(--accent)]" /> {t('profilo.pt.titolo')}</h3>
                 </div>
                 <div className="p-card-inner">
                   {mioPT === undefined ? (
                     <div className="flex justify-center py-8"><div className="w-8 h-8 border-2 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" /></div>
                   ) : mioPT === null ? (
                     <div>
-                      <p className="text-sm text-[var(--testo-secondario)] mb-4">Non sei iscritto presso nessun Personal Trainer.</p>
+                      <p className="text-sm text-[var(--testo-secondario)] mb-4">{t('profilo.pt.nonIscritto')}</p>
                       {!mostraListaPT ? (
                         <button onClick={async () => {
                           setMostraListaPT(true);
                           try { const r = await api.get('/utenti/personal-trainers'); setListaTrainers(r.dati || []); } catch { setListaTrainers([]); }
-                        }} className="btn-primario text-sm !py-2">🔍 Cerca un Personal Trainer</button>
+                        }} className="btn-primario text-sm !py-2">{t('profilo.pt.cerca')}</button>
                       ) : (
                         <div className="flex flex-col gap-3">
                           {listaTrainers.length > 0 && (
                             <div>
                               <textarea value={messaggioPT} onChange={e => setMessaggioPT(e.target.value)} maxLength={500} rows={2}
-                                        className="campo-input text-sm resize-none" placeholder="Messaggio per il PT (facoltativo): obiettivi, disponibilità…" />
-                              <p className="text-[10px] text-[var(--testo-terziario)] mt-1 px-1">Arriva al PT che scegli, insieme alla richiesta.</p>
+                                        className="campo-input text-sm resize-none" placeholder={t('profilo.pt.messaggioPlaceholder')} />
+                              <p className="text-[10px] text-[var(--testo-terziario)] mt-1 px-1">{t('profilo.pt.messaggioNota')}</p>
                             </div>
                           )}
                           {listaTrainers.length === 0 ? (
-                            <p className="text-sm text-[var(--testo-terziario)]">Nessun PT disponibile al momento.</p>
+                            <p className="text-sm text-[var(--testo-terziario)]">{t('profilo.pt.nessuno')}</p>
                           ) : listaTrainers.map(pt => (
                             <div key={pt.id} className="flex items-center gap-3 px-card-inner py-4 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] border border-[var(--bordo)]">
                               <Link to={`/trainer/${pt.id}`} className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80 transition-opacity">
@@ -634,17 +652,17 @@ export default function Profilo() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-bold text-sm truncate">{pt.nome}</p>
-                                  <p className="text-xs text-[var(--testo-terziario)]">{pt._count?.clientiComePT || 0} clienti · {pt._count?.schedeCreate || 0} schede</p>
+                                  <p className="text-xs text-[var(--testo-terziario)]">{t('profilo.pt.clienti', { count: pt._count?.clientiComePT || 0 })} · {t('profilo.pt.schede', { count: pt._count?.schedeCreate || 0 })}</p>
                                   {pt.bio && <p className="text-xs text-[var(--testo-secondario)] mt-0.5 line-clamp-1">{pt.bio}</p>}
                                 </div>
                               </Link>
                               <button onClick={async () => {
                                 try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: messaggioPT.trim() || null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); setMessaggioPT(''); }
                                 catch (err) { alert(err.message); } finally { setInviandoPT(false); }
-                              }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent)] text-white shrink-0">Iscriviti</button>
+                              }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent)] text-white shrink-0">{t('profilo.pt.iscriviti')}</button>
                             </div>
                           ))}
-                          <button onClick={() => setMostraListaPT(false)} className="text-xs text-[var(--testo-terziario)] mt-1">← Chiudi</button>
+                          <button onClick={() => setMostraListaPT(false)} className="text-xs text-[var(--testo-terziario)] mt-1">← {t('comune.chiudi')}</button>
                         </div>
                       )}
                     </div>
@@ -652,13 +670,13 @@ export default function Profilo() {
                     <div className="flex items-center gap-4 p-card-inner rounded-[var(--raggio-md)] bg-[var(--avviso-dim)] border border-[var(--avviso)]">
                       <span className="text-3xl">⏳</span>
                       <div className="flex-1">
-                        <p className="font-bold text-sm">Richiesta in attesa</p>
-                        <p className="text-xs text-[var(--testo-secondario)]">In attesa di risposta da {mioPT.trainer?.nome}</p>
+                        <p className="font-bold text-sm">{t('profilo.richiestaInAttesa')}</p>
+                        <p className="text-xs text-[var(--testo-secondario)]">{t('profilo.pt.attesaRisposta', { nome: mioPT.trainer?.nome })}</p>
                       </div>
                       <button onClick={async () => {
-                        if (!confirm('Annullare la richiesta?')) return;
+                        if (!confirm(t('profilo.pt.confermaAnnullaRichiesta'))) return;
                         try { await api.delete('/utenti/iscrizione-pt'); setMioPT(null); } catch (err) { alert(err.message); }
-                      }} className="text-xs text-[var(--pericolo)] font-bold">Annulla</button>
+                      }} className="text-xs text-[var(--pericolo)] font-bold">{t('comune.annulla')}</button>
                     </div>
                   ) : (
                     <div>
@@ -669,14 +687,14 @@ export default function Profilo() {
                         </div>
                         <div className="flex-1">
                           <p className="font-bold text-lg">{mioPT.trainer?.nome}</p>
-                          <p className="text-xs text-[var(--testo-secondario)]">{mioPT.trainer?._count?.clientiComePT || 0} clienti</p>
+                          <p className="text-xs text-[var(--testo-secondario)]">{t('profilo.pt.clienti', { count: mioPT.trainer?._count?.clientiComePT || 0 })}</p>
                         </div>
-                        <span className="badge successo">Attivo</span>
+                        <span className="badge successo">{t('profilo.pt.attivo')}</span>
                       </div>
                       <button onClick={async () => {
-                        if (!confirm('Terminare il rapporto con il tuo PT?')) return;
+                        if (!confirm(t('profilo.pt.confermaTermina'))) return;
                         try { await api.delete('/utenti/iscrizione-pt'); setMioPT(null); } catch (err) { alert(err.message); }
-                      }} className="text-xs text-[var(--pericolo)] hover:underline mt-3 block">Termina iscrizione</button>
+                      }} className="text-xs text-[var(--pericolo)] hover:underline mt-3 block">{t('profilo.pt.termina')}</button>
                     </div>
                   )}
                 </div>
@@ -690,26 +708,26 @@ export default function Profilo() {
               {/* Password change */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Lock size={20} className="text-[var(--accent)]" /> Cambia Password</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Lock size={20} className="text-[var(--accent)]" /> {t('profilo.password.titolo')}</h3>
                 </div>
                 <div className="p-card-inner flex flex-col gap-3">
-                  <input type="password" value={pwForm.vecchia} onChange={e => setPwForm(p => ({...p, vecchia: e.target.value}))} className="campo-input" placeholder="Password attuale" autoComplete="current-password" />
-                  <input type="password" value={pwForm.nuova} onChange={e => setPwForm(p => ({...p, nuova: e.target.value}))} className="campo-input" placeholder="Nuova password (min 8 caratteri)" autoComplete="new-password" />
-                  <input type="password" value={pwForm.conferma} onChange={e => setPwForm(p => ({...p, conferma: e.target.value}))} className="campo-input" placeholder="Conferma nuova password" autoComplete="new-password" />
+                  <input type="password" value={pwForm.vecchia} onChange={e => setPwForm(p => ({...p, vecchia: e.target.value}))} className="campo-input" placeholder={t('profilo.password.attuale')} autoComplete="current-password" />
+                  <input type="password" value={pwForm.nuova} onChange={e => setPwForm(p => ({...p, nuova: e.target.value}))} className="campo-input" placeholder={t('profilo.password.nuova')} autoComplete="new-password" />
+                  <input type="password" value={pwForm.conferma} onChange={e => setPwForm(p => ({...p, conferma: e.target.value}))} className="campo-input" placeholder={t('profilo.password.conferma')} autoComplete="new-password" />
                   {pwMsg.testo && <p className={`text-sm font-medium ${pwMsg.tipo === 'ok' ? 'text-[var(--successo)]' : 'text-[var(--pericolo)]'}`}>{pwMsg.testo}</p>}
                   <button onClick={cambiaPw} disabled={pwSalvando || !pwForm.vecchia || !pwForm.nuova || !pwForm.conferma}
-                          className="btn-secondario disabled:opacity-50">{pwSalvando ? 'Aggiornamento...' : '🔑 Aggiorna Password'}</button>
-                  <p className="text-[10px] text-[var(--testo-terziario)] px-1">Cambiando password gli altri dispositivi vengono scollegati.</p>
+                          className="btn-secondario disabled:opacity-50">{pwSalvando ? t('profilo.password.aggiornamento') : t('profilo.password.aggiorna')}</button>
+                  <p className="text-[10px] text-[var(--testo-terziario)] px-1">{t('profilo.password.nota')}</p>
                 </div>
               </div>
               {/* Connected devices */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Smartphone size={20} className="text-[var(--accent)]" /> Dispositivi collegati</h3>
-                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Dove sei entrato con il tuo account. Se non riconosci un dispositivo, scollegalo e cambia la password.</p>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Smartphone size={20} className="text-[var(--accent)]" /> {t('profilo.dispositivi.titolo')}</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">{t('profilo.dispositivi.descrizione')}</p>
                 </div>
                 <div className="p-card-inner flex flex-col gap-2">
-                  {sessioni === null && <p className="text-sm text-[var(--testo-terziario)]">Caricamento…</p>}
+                  {sessioni === null && <p className="text-sm text-[var(--testo-terziario)]">{t('comune.caricamento')}</p>}
                   {sessioni?.map(s => (
                     <div key={s.famiglia} className="flex items-center justify-between gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
                       <div className="flex items-center gap-3 min-w-0">
@@ -718,19 +736,19 @@ export default function Profilo() {
                           : <Monitor size={18} className="shrink-0 text-[var(--testo-secondario)]" />}
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">
-                            {s.dispositivo || 'Dispositivo sconosciuto'}
-                            {s.corrente && <span className="ml-2 text-[10px] font-bold text-[var(--accent)]">QUESTO</span>}
+                            {s.dispositivo || t('profilo.dispositivi.sconosciuto')}
+                            {s.corrente && <span className="ml-2 text-[10px] font-bold text-[var(--accent)]">{t('profilo.dispositivi.questo')}</span>}
                           </p>
-                          <p className="text-[11px] text-[var(--testo-terziario)]">Entrato il {formattaData(s.iniziataIl)} · ultima attività {formattaDataRelativa(s.ultimoUso)}</p>
+                          <p className="text-[11px] text-[var(--testo-terziario)]">{t('profilo.dispositivi.dettaglio', { data: formattaData(s.iniziataIl), ultimoUso: formattaDataRelativa(s.ultimoUso) })}</p>
                         </div>
                       </div>
                       {!s.corrente && (
-                        <button onClick={() => scollegaDispositivo(s.famiglia)} className="btn-secondario text-sm !py-1.5 shrink-0">Esci</button>
+                        <button onClick={() => scollegaDispositivo(s.famiglia)} className="btn-secondario text-sm !py-1.5 shrink-0">{t('profilo.dispositivi.esci')}</button>
                       )}
                     </div>
                   ))}
                   {sessioni?.some(s => !s.corrente) && (
-                    <button onClick={scollegaAltri} className="btn-secondario text-sm mt-1">Esci da tutti gli altri dispositivi</button>
+                    <button onClick={scollegaAltri} className="btn-secondario text-sm mt-1">{t('profilo.dispositivi.esciAltri')}</button>
                   )}
                   {erroreSessioni && <p className="text-xs text-[var(--pericolo)]">{erroreSessioni}</p>}
                 </div>
@@ -738,35 +756,37 @@ export default function Profilo() {
               {/* Passkeys */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><KeyRound size={20} className="text-[var(--accent)]" /> Passkey</h3>
-                  <p className="text-xs text-[var(--testo-terziario)] mt-1">Entra con l'impronta, il volto o il PIN del dispositivo invece della password. La password resta valida.</p>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><KeyRound size={20} className="text-[var(--accent)]" /> {t('profilo.passkey.titolo')}</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">{t('profilo.passkey.descrizione')}</p>
                 </div>
                 <div className="p-card-inner flex flex-col gap-2">
-                  {passkey?.length === 0 && <p className="text-sm text-[var(--testo-terziario)]">Nessuna passkey per ora.</p>}
+                  {passkey?.length === 0 && <p className="text-sm text-[var(--testo-terziario)]">{t('profilo.passkey.nessuna')}</p>}
                   {passkey?.map(p => (
                     <div key={p.id} className="flex items-center justify-between gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {p.nome || 'Passkey'}
-                          {p.sincronizzata && <span className="ml-2 text-[10px] text-[var(--testo-terziario)]">sincronizzata</span>}
+                          {p.nome || t('profilo.passkey.nomePredefinito')}
+                          {p.sincronizzata && <span className="ml-2 text-[10px] text-[var(--testo-terziario)]">{t('profilo.passkey.sincronizzata')}</span>}
                         </p>
                         <p className="text-[11px] text-[var(--testo-terziario)]">
-                          Aggiunta il {formattaData(p.creataIl)} · {p.ultimoUso ? `usata ${formattaDataRelativa(p.ultimoUso)}` : 'mai usata'}
+                          {p.ultimoUso
+                            ? t('profilo.passkey.aggiuntaUsata', { data: formattaData(p.creataIl), ultimoUso: formattaDataRelativa(p.ultimoUso) })
+                            : t('profilo.passkey.aggiuntaMaiUsata', { data: formattaData(p.creataIl) })}
                         </p>
                       </div>
-                      <button onClick={() => eliminaPasskey(p.id)} className="btn-secondario text-sm !py-1.5 shrink-0">Elimina</button>
+                      <button onClick={() => eliminaPasskey(p.id)} className="btn-secondario text-sm !py-1.5 shrink-0">{t('comune.elimina')}</button>
                     </div>
                   ))}
                   {passkeySupportate ? (
                     <div className="flex flex-col gap-2 mt-1">
                       <input type="password" value={passwordPasskey} onChange={e => setPasswordPasskey(e.target.value)}
-                             className="campo-input" placeholder="Password attuale, per aggiungere una passkey" autoComplete="current-password" />
+                             className="campo-input" placeholder={t('profilo.passkey.passwordPlaceholder')} autoComplete="current-password" />
                       <button onClick={aggiungiPasskey} disabled={!passwordPasskey || aggiungendoPasskey} className="btn-secondario disabled:opacity-50">
-                        {aggiungendoPasskey ? 'Segui le istruzioni del dispositivo…' : '🔑 Aggiungi una passkey'}
+                        {aggiungendoPasskey ? t('profilo.passkey.istruzioni') : t('profilo.passkey.aggiungi')}
                       </button>
                     </div>
                   ) : (
-                    <p className="text-xs text-[var(--testo-terziario)]">Questo browser non supporta le passkey.</p>
+                    <p className="text-xs text-[var(--testo-terziario)]">{t('profilo.passkey.nonSupportate')}</p>
                   )}
                   {msgPasskey.testo && (
                     <p className={`text-xs ${msgPasskey.tipo === 'ok' ? 'text-[var(--successo)]' : 'text-[var(--pericolo)]'}`}>{msgPasskey.testo}</p>
@@ -776,59 +796,59 @@ export default function Profilo() {
               {/* Telegram bot */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2">📲 Bot Telegram</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2">{t('profilo.telegram.titolo')}</h3>
                 </div>
                 <div className="p-card-inner flex flex-col gap-3">
                   <p className="text-sm text-[var(--testo-secondario)]">
-                    Collega il tuo account al bot Telegram per leggere le tue schede e crearne di nuove parlando con l'assistente direttamente in chat.
+                    {t('profilo.telegram.descrizione')}
                   </p>
                   {telegram?.collegato ? (
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-[var(--successo)]">✅ Account collegato</span>
+                      <span className="text-sm font-medium text-[var(--successo)]">{t('profilo.telegram.collegato')}</span>
                       <button onClick={scollegaTelegram} disabled={tgLoading}
                               className="btn-secondario text-sm disabled:opacity-50" style={{ borderColor: 'var(--pericolo)', color: 'var(--pericolo)' }}>
-                        {tgLoading ? '...' : 'Scollega'}
+                        {tgLoading ? '...' : t('profilo.telegram.scollega')}
                       </button>
                     </div>
                   ) : telegramCodice ? (
                     <div className="flex flex-col gap-2">
-                      <p className="text-sm text-[var(--testo-secondario)]">Apri il bot e invia questo codice (valido 10 minuti):</p>
+                      <p className="text-sm text-[var(--testo-secondario)]">{t('profilo.telegram.invia')}</p>
                       <div className="text-2xl font-mono font-bold text-center tracking-[0.3em] text-[var(--accent)] bg-[var(--bg-terziario)] rounded-lg py-3">
                         {telegramCodice.codice}
                       </div>
                       {telegramCodice.deepLink && (
                         <a href={telegramCodice.deepLink} target="_blank" rel="noreferrer"
                            className="btn-primario text-center flex items-center justify-center gap-2">
-                          <ExternalLink size={16} /> Apri il bot e collega
+                          <ExternalLink size={16} /> {t('profilo.telegram.apri')}
                         </a>
                       )}
                       <button onClick={generaCodiceTelegram} disabled={tgLoading}
-                              className="text-xs text-[var(--testo-terziario)] underline self-center">Genera nuovo codice</button>
+                              className="text-xs text-[var(--testo-terziario)] underline self-center">{t('profilo.telegram.nuovoCodice')}</button>
                     </div>
                   ) : (
                     <button onClick={generaCodiceTelegram} disabled={tgLoading}
-                            className="btn-secondario disabled:opacity-50">{tgLoading ? 'Generazione...' : '🔗 Collega Telegram'}</button>
+                            className="btn-secondario disabled:opacity-50">{tgLoading ? t('profilo.telegram.generazione') : t('profilo.telegram.collega')}</button>
                   )}
                 </div>
               </div>
               {/* Statistics reset */}
               <div className="glass-card overflow-hidden border border-[var(--pericolo-dim)]">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg text-[var(--pericolo)] flex items-center gap-2"><AlertCircle size={20} /> Gestione Dati</h3>
+                  <h3 className="font-bold text-lg text-[var(--pericolo)] flex items-center gap-2"><AlertCircle size={20} /> {t('profilo.reset.titolo')}</h3>
                 </div>
                 <div className="p-card-inner">
-                  <p className="text-sm text-[var(--testo-secondario)] mb-4">Azzera tutte le tue statistiche (sessioni e record). Le schede verranno mantenute.</p>
+                  <p className="text-sm text-[var(--testo-secondario)] mb-4">{t('profilo.reset.descrizione')}</p>
                   {!mostraReset ? (
-                    <button onClick={() => setMostraReset(true)} className="btn-secondario text-sm" style={{ borderColor: 'var(--pericolo)', color: 'var(--pericolo)' }}>⚠️ Resetta Statistiche</button>
+                    <button onClick={() => setMostraReset(true)} className="btn-secondario text-sm" style={{ borderColor: 'var(--pericolo)', color: 'var(--pericolo)' }}>{t('profilo.reset.resetta')}</button>
                   ) : (
                     <div className="flex flex-col gap-3">
-                      <p className="text-xs text-[var(--testo-terziario)]">Digita <strong>CONFERMO</strong> per procedere.</p>
-                      <input type="text" value={confermaReset} onChange={e => setConfermaReset(e.target.value)} placeholder="CONFERMO"
+                      <p className="text-xs text-[var(--testo-terziario)]"><Testo t="profilo.reset.istruzione" valori={{ frase: t('profilo.reset.frase') }} componenti={{ strong: <strong /> }} /></p>
+                      <input type="text" value={confermaReset} onChange={e => setConfermaReset(e.target.value)} placeholder={t('profilo.reset.frase')}
                              className="campo-input text-center text-[var(--pericolo)] font-bold" />
                       <div className="flex gap-2">
-                        <button onClick={() => { setMostraReset(false); setConfermaReset(''); }} className="flex-1 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">Annulla</button>
-                        <button onClick={eseguiReset} disabled={confermaReset !== 'CONFERMO' || avviandoReset}
-                                className="flex-1 py-2 rounded-lg bg-[var(--pericolo)] text-white disabled:opacity-50">{avviandoReset ? 'Reset...' : 'Resetta'}</button>
+                        <button onClick={() => { setMostraReset(false); setConfermaReset(''); }} className="flex-1 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">{t('comune.annulla')}</button>
+                        <button onClick={eseguiReset} disabled={confermaReset !== t('profilo.reset.frase') || avviandoReset}
+                                className="flex-1 py-2 rounded-lg bg-[var(--pericolo)] text-white disabled:opacity-50">{avviandoReset ? t('profilo.reset.inCorso') : t('profilo.reset.conferma')}</button>
                       </div>
                     </div>
                   )}
@@ -842,12 +862,12 @@ export default function Profilo() {
             <motion.div key="fatturazione" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} className="text-[var(--accent)]" /> Fatturazione</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} className="text-[var(--accent)]" /> {t('profilo.fatturazione.titolo')}</h3>
                 </div>
                 <div className="p-12 text-center">
                   <div className="w-16 h-16 rounded-2xl bg-[var(--accent-dim)] flex items-center justify-center text-3xl mx-auto mb-4">🚧</div>
-                  <h4 className="font-bold text-lg mb-2">In Lavorazione</h4>
-                  <p className="text-sm text-[var(--testo-terziario)] max-w-xs mx-auto">Questa sezione è attualmente in fase di sviluppo. Sarà disponibile a breve con funzionalità di fatturazione e gestione abbonamenti.</p>
+                  <h4 className="font-bold text-lg mb-2">{t('profilo.fatturazione.inLavorazione')}</h4>
+                  <p className="text-sm text-[var(--testo-terziario)] max-w-xs mx-auto">{t('profilo.fatturazione.descrizione')}</p>
                 </div>
               </div>
             </motion.div>
@@ -859,13 +879,13 @@ export default function Profilo() {
               {/* Legal documents */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><FileText size={20} className="text-[var(--accent)]" /> Documenti Legali</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><FileText size={20} className="text-[var(--accent)]" /> {t('profilo.legale.documentiTitolo')}</h3>
                 </div>
                 <div className="flex flex-col">
                   {[
-                    { label: 'Termini e Condizioni', link: '/termini', icona: '📄' },
-                    { label: 'Informativa sulla Privacy', link: '/privacy', icona: '🔐' },
-                    { label: 'Cookie Policy', link: '/cookie-policy', icona: '🍪' },
+                    { label: t('profilo.legale.termini'), link: '/termini', icona: '📄' },
+                    { label: t('profilo.legale.privacy'), link: '/privacy', icona: '🔐' },
+                    { label: t('profilo.legale.cookie'), link: '/cookie-policy', icona: '🍪' },
                   ].map((doc, i, arr) => (
                     <a key={i} href={doc.link} target="_blank" rel="noopener noreferrer"
                        className={`flex items-center justify-between px-card-inner border-b border-[var(--bordo-light)] last:border-0 hover:bg-[var(--bg-terziario)] transition-colors group py-5 ${i === arr.length - 1 ? 'card-list-ultimo' : ''}`}>
@@ -878,12 +898,12 @@ export default function Profilo() {
               {/* App info */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2">🏋️ Info Applicazione</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2">{t('profilo.legale.infoTitolo')}</h3>
                 </div>
                 <div className="p-card-inner flex flex-col gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-card-inner py-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)] gap-1 sm:gap-4">
-                    <span className="text-xs font-semibold text-[var(--testo-primario)]">Versione</span>
-                    <span className="text-xs text-[var(--testo-secondario)] text-left sm:text-right">App v{__APP_VERSION__} · Server v{infoApp?.versione || '...'} · Build {infoApp?.build || '...'}</span>
+                    <span className="text-xs font-semibold text-[var(--testo-primario)]">{t('profilo.legale.versione')}</span>
+                    <span className="text-xs text-[var(--testo-secondario)] text-left sm:text-right">{t('profilo.legale.versioneValori', { app: __APP_VERSION__, server: infoApp?.versione || '...', build: infoApp?.build || '...' })}</span>
                   </div>
                   {infoApp?.nodeVersion && (
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-card-inner py-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)] gap-1 sm:gap-4">
@@ -902,11 +922,11 @@ export default function Profilo() {
                     <a href="https://github.com/giosci1994/" target="_blank" rel="noopener noreferrer"
                        className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] hover:bg-[rgba(255,255,255,0.08)] transition-all group cursor-pointer">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--bordo)] group-hover:border-[var(--accent)] transition-colors shadow-lg">
-                        <img src="https://github.com/giosci1994.png" alt="Developer" className="w-full h-full object-cover" />
+                        <img src="https://github.com/giosci1994.png" alt={t('profilo.legale.sviluppatore')} className="w-full h-full object-cover" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold group-hover:text-[var(--accent)] transition-colors">giosci1994</p>
-                        <p className="text-[10px] text-[var(--testo-terziario)]">Sviluppatore & Creatore</p>
+                        <p className="text-[10px] text-[var(--testo-terziario)]">{t('profilo.legale.sviluppatoreRuolo')}</p>
                       </div>
                       <svg className="w-5 h-5 text-[var(--testo-terziario)] group-hover:text-[var(--testo-primario)] transition-colors shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
@@ -923,36 +943,36 @@ export default function Profilo() {
             <motion.div key="elimina" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden border border-[var(--pericolo)]">
                 <div className="p-card-inner border-b border-[var(--pericolo-dim)]">
-                  <h3 className="font-bold text-lg text-[var(--pericolo)] flex items-center gap-2"><Trash2 size={20} /> Elimina Account</h3>
+                  <h3 className="font-bold text-lg text-[var(--pericolo)] flex items-center gap-2"><Trash2 size={20} /> {t('profilo.elimina.titolo')}</h3>
                 </div>
                 <div className="p-card-inner">
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-[var(--pericolo-dim)] mb-4">
                     <AlertCircle size={20} className="text-[var(--pericolo)] shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-bold text-[var(--pericolo)]">Attenzione: questa azione è irreversibile</p>
-                      <p className="text-xs text-[var(--testo-secondario)] mt-1">Eliminando il tuo account perderai definitivamente tutti i tuoi dati: schede, allenamenti, statistiche, messaggi e progressi. Questa azione non può essere annullata.</p>
+                      <p className="text-sm font-bold text-[var(--pericolo)]">{t('profilo.elimina.attenzione')}</p>
+                      <p className="text-xs text-[var(--testo-secondario)] mt-1">{t('profilo.elimina.attenzioneDettaglio')}</p>
                     </div>
                   </div>
                   <button onClick={scaricaDati} disabled={scaricandoDati}
                           className="btn-secondario text-sm w-full flex items-center justify-center gap-2 mb-1 disabled:opacity-50">
-                    <Download size={16} /> {scaricandoDati ? 'Preparo il file…' : 'Prima scarica una copia dei tuoi dati'}
+                    <Download size={16} /> {scaricandoDati ? t('profilo.esportazione.preparazione') : t('profilo.esportazione.scaricaPrima')}
                   </button>
                   {erroreDati && <p className="text-xs text-[var(--pericolo)] mb-1">{erroreDati}</p>}
-                  <p className="text-xs text-[var(--testo-terziario)] mt-3 mb-3">Per procedere, scrivi <strong>ELIMINA IL MIO ACCOUNT</strong> nel campo sottostante.</p>
-                  <input type="text" value={confermaElimina} onChange={e => setConfermaElimina(e.target.value)} placeholder="ELIMINA IL MIO ACCOUNT"
+                  <p className="text-xs text-[var(--testo-terziario)] mt-3 mb-3"><Testo t="profilo.elimina.istruzione" valori={{ frase: t('profilo.elimina.frase') }} componenti={{ strong: <strong /> }} /></p>
+                  <input type="text" value={confermaElimina} onChange={e => setConfermaElimina(e.target.value)} placeholder={t('profilo.elimina.frase')}
                          className="campo-input text-center text-[var(--pericolo)] font-bold mb-3" />
 
-                  <p className="text-xs text-[var(--testo-terziario)] mb-2">Conferma con la tua password.</p>
+                  <p className="text-xs text-[var(--testo-terziario)] mb-2">{t('profilo.elimina.password')}</p>
                   <input type="password" value={passwordElimina} onChange={e => setPasswordElimina(e.target.value)}
-                         autoComplete="current-password" placeholder="Password"
+                         autoComplete="current-password" placeholder={t('profilo.elimina.passwordPlaceholder')}
                          className="campo-input mb-3" />
 
                   {erroreElimina && (
                     <p className="text-xs text-[var(--pericolo)] mb-3">{erroreElimina}</p>
                   )}
                   <div className="flex gap-3">
-                    <button onClick={() => { setConfermaElimina(''); setPasswordElimina(''); setErroreElimina(''); }} className="flex-1 py-2.5 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium">Annulla</button>
-                    <button disabled={confermaElimina !== 'ELIMINA IL MIO ACCOUNT' || !passwordElimina || eliminando}
+                    <button onClick={() => { setConfermaElimina(''); setPasswordElimina(''); setErroreElimina(''); }} className="flex-1 py-2.5 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium">{t('comune.annulla')}</button>
+                    <button disabled={confermaElimina !== t('profilo.elimina.frase') || !passwordElimina || eliminando}
                             onClick={async () => {
                               setErroreElimina('');
                               setEliminando(true);
@@ -963,12 +983,12 @@ export default function Profilo() {
                                 // the API with the token of a deleted user.
                                 logout();
                               } catch (err) {
-                                setErroreElimina(err?.message || 'Eliminazione non riuscita');
+                                setErroreElimina(err?.message || t('profilo.elimina.errore'));
                                 setEliminando(false);
                               }
                             }}
                             className="flex-1 py-2.5 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
-                      {eliminando ? 'Eliminazione...' : '🗑️ Elimina Definitivamente'}
+                      {eliminando ? t('profilo.elimina.inCorso') : t('profilo.elimina.definitivo')}
                     </button>
                   </div>
                 </div>

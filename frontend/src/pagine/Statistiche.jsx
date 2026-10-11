@@ -5,21 +5,23 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '../config/api.js';
+import { useLingua } from '../hooks/useLingua.js';
 import SezioneCorpo from '../componenti/specifici/SezioneCorpo.jsx';
 import SeriePerMuscolo from '../componenti/specifici/SeriePerMuscolo.jsx';
 import FrequenzaSettimanale from '../componenti/specifici/FrequenzaSettimanale.jsx';
 import AttivitaAnnuale from '../componenti/specifici/AttivitaAnnuale.jsx';
 import IndicatoriPeriodo from '../componenti/specifici/IndicatoriPeriodo.jsx';
 
-// Selectable periods
+// Selectable periods; label is a translation key
 const PERIODI = [
-  { id: 7, label: '7g' },
-  { id: 30, label: '30g' },
-  { id: 90, label: '3m' },
-  { id: 365, label: '1a' }
+  { id: 7, label: 'statistiche.periodo.7' },
+  { id: 30, label: 'statistiche.periodo.30' },
+  { id: 90, label: 'statistiche.periodo.90' },
+  { id: 365, label: 'statistiche.periodo.365' }
 ];
 
 export default function Statistiche() {
+  const { t } = useLingua();
   const [riepilogo, setRiepilogo] = useState(null);
   // Two periods of daily data: the current one and the previous one, for the comparison
   const [giorniDoppi, setGiorniDoppi] = useState([]);
@@ -52,7 +54,7 @@ export default function Statistiche() {
         setFrequenza(freq.dati || []);
         setAttivita(att.dati || []);
       })
-      .catch(err => console.error('Errore caricamento statistiche:', err))
+      .catch(err => console.error('Error loading statistics:', err))
       .finally(() => { if (!annullato) setCaricatoPer(periodo); });
     return () => { annullato = true; };
   }, [periodo]);
@@ -68,7 +70,7 @@ export default function Statistiche() {
   return (
     <div className="py-2">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-        <h1 className="text-2xl font-bold">Statistiche</h1>
+        <h1 className="text-2xl font-bold">{t('statistiche.titolo')}</h1>
         <div className="flex items-center bg-[var(--bg-terziario)] p-1 rounded-xl border border-[var(--bordo-light)]">
           {PERIODI.map(p => (
             <button key={p.id} onClick={() => setPeriodo(p.id)}
@@ -77,7 +79,7 @@ export default function Statistiche() {
                         ? 'bg-[var(--accent)] text-white shadow-md' 
                         : 'text-[var(--testo-secondario)] hover:text-white hover:bg-[rgba(255,255,255,0.05)]'
                     }`}>
-              {p.label}
+              {t(p.label)}
             </button>
           ))}
         </div>

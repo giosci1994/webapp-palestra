@@ -1,0 +1,12 @@
+{
+  "titolo": "🏢 Gestione Palestre",
+  "nuova": "＋ Nuova",
+  "confermaElimina": "Elimina questa palestra?",
+  "nomeCatena": "Nome Catena *",
+  "citta": "Città *",
+  "indirizzo": "Indirizzo *",
+  "nazione": "Nazione",
+  "googlePlaceId": "Google Place ID (opzionale — per affluenza)",
+  "crea": "Crea",
+  "affluenzaAttiva": "· 📊 Affluenza attiva"
+}

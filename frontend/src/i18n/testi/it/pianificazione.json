@@ -1,0 +1,34 @@
+{
+  "titolo": "Pianificazione",
+  "pianificaSettimana": "Pianifica la settimana",
+  "stati": {
+    "pianificato": "Da fare",
+    "completato": "Completato",
+    "saltato": "Saltato"
+  },
+  "nessunAllenamento": "Nessun allenamento programmato in questo giorno.",
+  "assegnatoDa": "Assegnato da {nome}",
+  "rimuoviDalCalendario": "Rimuovi dal calendario",
+  "inizia": "Inizia",
+  "piuUnGiorno": "+1 giorno",
+  "piuUnaSettimana": "+1 settimana",
+  "segnaCompletato": "Segna come completato",
+  "segnaSaltato": "Segna come saltato",
+  "spostaAl": "Sposta al",
+  "aggiungiAQuestoGiorno": "Aggiungi a questo giorno",
+  "scegliScheda": "Scegli una scheda…",
+  "descrizioneSettimana": "Assegna ogni scheda al suo giorno: la distribuzione viene ripetuta per le settimane indicate.",
+  "togliRiga": "Togli questa riga",
+  "aggiungiGiorno": "Aggiungi un altro giorno",
+  "aPartireDal": "A partire dal",
+  "perQuanteSettimane": "Per quante settimane",
+  "pianifico": "Pianifico…",
+  "mettiInCalendario": "Metti in calendario",
+  "errori": {
+    "caricamento": "Impossibile caricare il calendario",
+    "operazione": "Operazione non riuscita",
+    "programmaScheda": "Impossibile programmare la scheda",
+    "giaTuttiInCalendario": "Nessun nuovo allenamento: erano già tutti in calendario.",
+    "creaPianificazione": "Impossibile creare la pianificazione"
+  }
+}

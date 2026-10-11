@@ -1,0 +1,27 @@
+{
+  "titolo": "Phone notifications",
+  "descrizione": "They reach you even when the app is closed. With the app open they stay in the bell, no duplicates.",
+  "cosaArriva": {
+    "recupero": "When your rest ends, even with the screen locked",
+    "chat": "Chat messages",
+    "promemoria": "Reminders for your scheduled workouts",
+    "campanella": "Everything that shows up in the bell"
+  },
+  "avvisoIphone": "On iPhone, notifications only work with GymMaster on your Home Screen: in Safari tap Share → “Add to Home Screen”, then open the app from there.",
+  "avvisoBrowser": "This browser doesn't support push notifications.",
+  "avvisoServer": "Push notifications aren't enabled on the server yet.",
+  "avvisoBloccate": "You've blocked notifications for GymMaster: turn them back on in your browser settings (the padlock next to the address → Notifications), then come back here.",
+  "controllo": "Checking notifications on this device…",
+  "attive": "✅ On for this device",
+  "prova": "Test",
+  "disattiva": "Turn off",
+  "attendi": "One moment…",
+  "attiva": "Turn on notifications",
+  "esito": {
+    "attivate": "Notifications are on for this device.",
+    "disattivate": "This device no longer receives notifications.",
+    "provaInviata": "Test notification sent: it should arrive in a moment.",
+    "provaNessunDispositivo": "No device reached: try turning notifications off and on again.",
+    "erroreGenerico": "Operation failed"
+  }
+}

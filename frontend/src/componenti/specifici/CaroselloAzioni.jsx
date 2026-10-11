@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { useLingua } from '../../hooks/useLingua.js';
 
 const DURATA_SLIDE = 6000;
 
@@ -34,6 +35,7 @@ const DURATA_SLIDE = 6000;
  * only their opacity (and a small sideways shift) changes.
  */
 export default function CaroselloAzioni({ slide = [] }) {
+  const { t } = useLingua();
   const [indice, setIndice] = useState(0);
   const [inPausa, setInPausa] = useState(false);
   const timer = useRef(null);
@@ -139,7 +141,7 @@ export default function CaroselloAzioni({ slide = [] }) {
           <button
             type="button"
             onClick={() => vaiA(attuale - 1)}
-            aria-label="Slide precedente"
+            aria-label={t('caroselloAzioni.precedente')}
             className="p-1 rounded-full text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors"
           >
             <ChevronLeft size={16} />
@@ -151,7 +153,7 @@ export default function CaroselloAzioni({ slide = [] }) {
                 key={s.id}
                 type="button"
                 onClick={() => vaiA(i)}
-                aria-label={`Vai a: ${s.titolo}`}
+                aria-label={t('caroselloAzioni.vaiA', { titolo: s.titolo })}
                 aria-current={i === attuale}
                 className="h-1.5 rounded-full transition-all duration-300"
                 style={{
@@ -166,7 +168,7 @@ export default function CaroselloAzioni({ slide = [] }) {
           <button
             type="button"
             onClick={() => vaiA(attuale + 1)}
-            aria-label="Slide successiva"
+            aria-label={t('caroselloAzioni.successiva')}
             className="p-1 rounded-full text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors"
           >
             <ChevronRight size={16} />

@@ -1,0 +1,18 @@
+{
+  "titolo": "Weekly frequency",
+  "descrizione": "Workouts per week over the last 12.",
+  "nessunDato": "No data available.",
+  "questaSettimana": "This week",
+  "mediaSettimana": "Weekly average",
+  "settimanaDal": "Week of {data}",
+  "suProgrammati_one": "of {numero} scheduled",
+  "suProgrammati_other": "of {numero} scheduled",
+  "fatti_one": "{numero} workout done",
+  "fatti_other": "{numero} workouts done",
+  "programmati_one": "{numero} scheduled",
+  "programmati_other": "{numero} scheduled",
+  "fattiSuProgrammati": "{fatti} out of {programmati}",
+  "legendaFatti": "Done",
+  "legendaProgrammati": "Scheduled",
+  "ora": "Now"
+}

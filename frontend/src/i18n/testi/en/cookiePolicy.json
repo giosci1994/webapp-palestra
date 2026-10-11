@@ -1,0 +1,41 @@
+{
+  "tornaApp": "Back to the app",
+  "titolo": "Cookie Policy",
+  "ultimoAggiornamento": "Last updated: 11 May 2026",
+  "cosaSono": {
+    "titolo": "1. What Cookies Are",
+    "testo": "Cookies are small text files that are stored on your device when you visit a website. They are used to improve the browsing experience and to ensure that certain features work."
+  },
+  "utilizzati": {
+    "titolo": "2. Cookies Used",
+    "colonnaNome": "Name",
+    "colonnaTipo": "Type",
+    "colonnaFinalita": "Purpose",
+    "colonnaDurata": "Duration",
+    "tipoNecessario": "Necessary",
+    "refreshToken": {
+      "finalita": "Authentication — keeps the user session",
+      "durata": "7 days"
+    },
+    "cookieConsent": {
+      "finalita": "Stores the user's cookie preferences",
+      "durata": "1 year"
+    }
+  },
+  "terzeParti": {
+    "titolo": "3. Third-Party Cookies",
+    "testo": "GymMaster <b>does not use</b> profiling, tracking or third-party cookies. We do not use Google Analytics, Facebook Pixel or other tracking services."
+  },
+  "gestione": {
+    "titolo": "4. How to Manage Cookies",
+    "intro": "You can manage your cookie preferences at any time:",
+    "banner": "Through the cookie banner in the application",
+    "browser": "By changing your browser settings",
+    "cancellazione": "By deleting the cookies stored by the browser",
+    "nota": "<b>Note:</b> disabling necessary cookies may impair the operation of the application (for example, it will not be possible to keep the login session active)."
+  },
+  "baseGiuridica": {
+    "titolo": "5. Legal Basis",
+    "testo": "Strictly necessary cookies are processed on the basis of legitimate interest (Art. 6(1)(f) GDPR). For any non-essential cookies, the user's explicit consent will be requested (Art. 6(1)(a) GDPR)."
+  }
+}

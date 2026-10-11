@@ -1,0 +1,32 @@
+{
+  "salva": "Save",
+  "annulla": "Cancel",
+  "chiudi": "Close",
+  "elimina": "Delete",
+  "modifica": "Edit",
+  "conferma": "Confirm",
+  "indietro": "Back",
+  "avanti": "Next",
+  "fatto": "Done",
+  "caricamento": "Loading…",
+  "salvataggio": "Saving…",
+  "riprova": "Try again",
+  "cerca": "Search",
+  "si": "Yes",
+  "no": "No",
+  "oppure": "or",
+  "tutti": "All",
+  "nessuno": "None",
+  "errore": "Something went wrong",
+  "erroreCaricamento": "Could not load the data",
+  "tempo": {
+    "adesso": "now",
+    "minutiFa": "{count} min ago",
+    "oreFa": "{count}h ago",
+    "giorniFa": "{count}d ago"
+  },
+  "esercizi_one": "{count} exercise",
+  "esercizi_other": "{count} exercises",
+  "serie_one": "{count} set",
+  "serie_other": "{count} sets"
+}

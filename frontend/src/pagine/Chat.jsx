@@ -9,9 +9,11 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
 import { RUOLI } from '../utils/costanti.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Chat() {
+  const { t } = useLingua();
   const { utente } = useAuth();
   const [conversazioni, setConversazioni] = useState([]);
   const [richieste, setRichieste] = useState([]);
@@ -49,7 +51,7 @@ export default function Chat() {
       await api.post('/chat/contatti/richiesta', { destinatarioId });
       setMostraCerca(false);
       setRicerca('');
-      alert('Richiesta di contatto inviata! ✉️');
+      alert(t('chat.richiestaInviata'));
     } catch (err) {
       alert(err.message);
     }
@@ -76,14 +78,14 @@ export default function Chat() {
       <div className="sticky top-0 z-40 bg-[var(--bg-primario)] pt-4 pb-4 border-b border-[var(--bordo)] mb-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Chat</h1>
+            <h1 className="text-2xl font-bold">{t('chat.titolo')}</h1>
             <p className="text-sm text-[var(--testo-secondario)] mt-1">
-              {conversazioni.length} conversazioni
-              {richieste.length > 0 && ` · ${richieste.length} richieste`}
+              {t('chat.conversazioni', { count: conversazioni.length })}
+              {richieste.length > 0 && ` · ${t('chat.richieste', { count: richieste.length })}`}
             </p>
           </div>
           <button onClick={() => setMostraCerca(!mostraCerca)} className="btn-primario shadow-lg">
-            ＋ Nuovo contatto
+            {t('chat.nuovoContatto')}
           </button>
         </div>
         
@@ -93,13 +95,13 @@ export default function Chat() {
                   className={`px-4 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all ${
                     tab === 'chat' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
-            💬 Chat
+            {t('chat.tabChat')}
           </button>
           <button onClick={() => setTab('richieste')}
                   className={`px-4 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all relative ${
                     tab === 'richieste' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
-            ✉️ Richieste
+            {t('chat.tabRichieste')}
             {richieste.length > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--pericolo)] text-white text-xs flex items-center justify-center font-bold">
                 {richieste.length}
@@ -116,7 +118,7 @@ export default function Chat() {
                       className="mb-4 overflow-hidden shrink-0">
             <div className="glass-card p-card-inner">
               <input type="text" value={ricerca} onChange={e => cercaUtenti(e.target.value)}
-                     className="campo-input mb-3" placeholder="🔍 Cerca per nome o email..." autoFocus />
+                     className="campo-input mb-3" placeholder={t('chat.cercaUtente')} autoFocus />
               {risultatiRicerca.length > 0 && (
                 <div className="flex flex-col gap-1">
                   {risultatiRicerca.map(u => (
@@ -129,19 +131,19 @@ export default function Chat() {
                         <div>
                           <p className="font-medium text-sm">{u.nome}</p>
                           <span className={`badge ${RUOLI[u.ruolo]?.colore || 'accent'} text-[10px]`}>
-                            {RUOLI[u.ruolo]?.label}
+                            {RUOLI[u.ruolo] && t(RUOLI[u.ruolo].label)}
                           </span>
                         </div>
                       </div>
                       <button onClick={() => inviaRichiesta(u.id)} className="btn-primario text-xs py-1.5 px-3">
-                        Contatta
+                        {t('chat.contatta')}
                       </button>
                     </div>
                   ))}
                 </div>
               )}
               {ricerca.length >= 2 && risultatiRicerca.length === 0 && (
-                <p className="text-center text-sm text-[var(--testo-terziario)] py-2">Nessun utente trovato</p>
+                <p className="text-center text-sm text-[var(--testo-terziario)] py-2">{t('chat.nessunUtente')}</p>
               )}
             </div>
           </motion.div>
@@ -159,9 +161,9 @@ export default function Chat() {
         conversazioni.length === 0 ? (
           <div className="glass-card p-card-inner text-center">
             <div className="text-4xl mb-3">💬</div>
-            <p className="text-[var(--testo-secondario)]">Nessuna conversazione</p>
+            <p className="text-[var(--testo-secondario)]">{t('chat.nessunaConversazione')}</p>
             <p className="text-xs text-[var(--testo-terziario)] mt-1">
-              Cerca un utente per iniziare a chattare
+              {t('chat.cercaPerIniziare')}
             </p>
           </div>
         ) : (
@@ -184,7 +186,7 @@ export default function Chat() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className={`font-semibold text-sm truncate ${nonLetto ? 'text-white' : ''}`}>
-                          {altro?.nome || 'Utente'}
+                          {altro?.nome || t('chat.utente')}
                         </p>
                         {altro?.ruolo === 'PERSONAL_TRAINER' && (
                           <span className="badge avviso text-[9px]">PT</span>
@@ -192,7 +194,7 @@ export default function Chat() {
                       </div>
                       {ultimoMsg && (
                         <p className={`text-xs truncate mt-0.5 ${nonLetto ? 'text-[var(--testo-primario)] font-medium' : 'text-[var(--testo-terziario)]'}`}>
-                          {ultimoMsg.mittenteId === utente.id ? 'Tu: ' : ''}{ultimoMsg.contenuto}
+                          {ultimoMsg.mittenteId === utente.id ? t('chat.tu') : ''}{ultimoMsg.contenuto}
                         </p>
                       )}
                     </div>
@@ -215,7 +217,7 @@ export default function Chat() {
         richieste.length === 0 ? (
           <div className="glass-card p-card-inner text-center">
             <div className="text-4xl mb-3">✉️</div>
-            <p className="text-[var(--testo-secondario)]">Nessuna richiesta in attesa</p>
+            <p className="text-[var(--testo-secondario)]">{t('chat.nessunaRichiesta')}</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
@@ -229,17 +231,17 @@ export default function Chat() {
                 <div className="flex-1">
                   <p className="font-medium text-sm">{r.mittente?.nome}</p>
                   <p className="text-xs text-[var(--testo-terziario)]">
-                    Vuole contattarti · {formattaDataRelativa(r.dataRichiesta)}
+                    {t('chat.vuoleContattarti', { data: formattaDataRelativa(r.dataRichiesta) })}
                   </p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => rispondiRichiesta(r.id, 'ACCETTATA')}
                           className="btn-primario text-xs py-1.5 px-3" style={{ background: 'var(--successo)' }}>
-                    Accetta
+                    {t('chat.accetta')}
                   </button>
                   <button onClick={() => rispondiRichiesta(r.id, 'RIFIUTATA')}
                           className="btn-secondario text-xs py-1.5 px-3">
-                    Rifiuta
+                    {t('chat.rifiuta')}
                   </button>
                 </div>
               </motion.div>

@@ -8,19 +8,27 @@
 // chosen period and did not say whether you are improving.
 
 import { ArrowUp, ArrowDown } from 'lucide-react';
+import { useLingua } from '../../hooks/useLingua.js';
+import { localeCorrente } from '../../i18n/index.js';
 import { formattaNumero } from '../../utils/formattatori.js';
 
 const GIORNO = 86400000;
 
-const NOMI_PERIODO = { 7: ['Ultimi 7 giorni', '7'], 30: ['Ultimi 30 giorni', '30'], 90: ['Ultimi 3 mesi', '3'], 365: ['Ultimi 12 mesi', '12'] };
+// Per period: translation keys for the title and for "compared with the previous ones"
+const NOMI_PERIODO = {
+  7: ['indicatoriPeriodo.periodo.titolo7', 'indicatoriPeriodo.periodo.confronto7'],
+  30: ['indicatoriPeriodo.periodo.titolo30', 'indicatoriPeriodo.periodo.confronto30'],
+  90: ['indicatoriPeriodo.periodo.titolo90', 'indicatoriPeriodo.periodo.confronto90'],
+  365: ['indicatoriPeriodo.periodo.titolo365', 'indicatoriPeriodo.periodo.confronto365']
+};
 
 function dataBreve(ms) {
-  return new Date(ms).toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+  return new Date(ms).toLocaleDateString(localeCorrente(), { day: 'numeric', month: 'short' });
 }
 
 /** Readable volume: kg up to 10,000, then tonnes. */
 function formattaVolume(kg) {
-  if (kg >= 10000) return `${(kg / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} t`;
+  if (kg >= 10000) return `${(kg / 1000).toLocaleString(localeCorrente(), { maximumFractionDigits: 1 })} t`;
   return `${formattaNumero(Math.round(kg))} kg`;
 }
 
@@ -57,8 +65,9 @@ function somma(secchi, campo, attuale) {
 
 /** Arrow and value of the change; `buona` says whether going up is good (null: neutral). */
 function Variazione({ differenza, testo, buona = true }) {
+  const { t } = useLingua();
   if (differenza == null) return null;
-  if (differenza === 0) return <span className="text-xs text-[var(--testo-terziario)]">invariato</span>;
+  if (differenza === 0) return <span className="text-xs text-[var(--testo-terziario)]">{t('indicatoriPeriodo.invariato')}</span>;
   const su = differenza > 0;
   const esito = buona == null ? null : su === buona;
   const colore = esito == null ? 'var(--testo-secondario)' : esito ? 'var(--successo)' : 'var(--pericolo)';
@@ -67,15 +76,15 @@ function Variazione({ differenza, testo, buona = true }) {
     <span className="text-xs font-semibold inline-flex items-center gap-0.5" style={{ color: colore }}>
       <Icona size={12} strokeWidth={2.5} aria-hidden="true" />
       {testo}
-      <span className="sr-only"> {su ? 'in più' : 'in meno'} rispetto al periodo precedente</span>
+      <span className="sr-only"> {su ? t('indicatoriPeriodo.inPiu') : t('indicatoriPeriodo.inMeno')}</span>
     </span>
   );
 }
 
-/** Percentage change; from nothing a percentage makes no sense, so it says "da 0" (from 0). */
-function percentuale(attuale, precedente) {
+/** Percentage change; from nothing a percentage makes no sense, so it says "from 0". */
+function percentuale(attuale, precedente, t) {
   if (!attuale && !precedente) return { differenza: null };
-  if (!precedente) return { differenza: attuale, testo: 'da 0' };
+  if (!precedente) return { differenza: attuale, testo: t('indicatoriPeriodo.daZero') };
   const p = Math.round(((attuale - precedente) / precedente) * 100);
   return { differenza: p, testo: `${Math.abs(p)}%` };
 }
@@ -124,36 +133,39 @@ function Indicatore({ etichetta, valore, variazione, children }) {
  * @param {{settimaneDiFila?: number, ultimeSettimane?: boolean[]}} [p.riepilogo]
  */
 export default function IndicatoriPeriodo({ giorni, periodo, adesso, riepilogo }) {
+  const { t } = useLingua();
   const secchi = dividiInSecchi(giorni, periodo, adesso);
-  const [titolo, quanti] = NOMI_PERIODO[periodo] || [`Ultimi ${periodo} giorni`, String(periodo)];
+  const [chiaveTitolo, chiaveConfronto] = NOMI_PERIODO[periodo] || ['indicatoriPeriodo.periodo.titoloAltro', 'indicatoriPeriodo.periodo.confrontoAltro'];
+  const titolo = t(chiaveTitolo, { giorni: periodo });
+  const confronto = t(chiaveConfronto, { giorni: periodo });
 
   const sessioni = [somma(secchi, 'sessioni', false), somma(secchi, 'sessioni', true)];
   const volume = [somma(secchi, 'volume', false), somma(secchi, 'volume', true)];
   const durata = [somma(secchi, 'durata', false), somma(secchi, 'durata', true)];
   const media = sessioni.map((n, i) => (n ? Math.round(durata[i] / n) : null));
 
-  const varVolume = percentuale(volume[1], volume[0]);
+  const varVolume = percentuale(volume[1], volume[0], t);
   const settimane = riepilogo?.ultimeSettimane || [];
   const attive = settimane.filter(Boolean).length;
 
   return (
-    <section className="glass-card overflow-hidden" aria-label="Indicatori del periodo">
+    <section className="glass-card overflow-hidden" aria-label={t('indicatoriPeriodo.ariaIndicatori')}>
       <div className="px-4 pt-3 pb-2 flex items-baseline justify-between gap-3 flex-wrap border-b border-[var(--bordo)]">
         <h2 className="text-sm font-semibold text-[var(--testo-primario)]">{titolo}</h2>
-        <p className="text-xs text-[var(--testo-terziario)]">rispetto ai {quanti} precedenti</p>
+        <p className="text-xs text-[var(--testo-terziario)]">{confronto}</p>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 [&>*]:border-[var(--bordo)] [&>*:nth-child(odd)]:border-r lg:[&>*]:border-r lg:[&>*:last-child]:border-r-0 [&>*:nth-child(-n+2)]:border-b lg:[&>*]:border-b-0">
         <Indicatore
-          etichetta="Allenamenti"
+          etichetta={t('indicatoriPeriodo.allenamenti')}
           valore={sessioni[1]}
           variazione={<Variazione differenza={sessioni[1] || sessioni[0] ? sessioni[1] - sessioni[0] : null} testo={Math.abs(sessioni[1] - sessioni[0])} />}
         >
-          <MiniBarre secchi={secchi} valore={s => s.sessioni} descrivi={v => `${v} allenament${v === 1 ? 'o' : 'i'}`} />
+          <MiniBarre secchi={secchi} valore={s => s.sessioni} descrivi={v => t('indicatoriPeriodo.allenamentiN', { count: v })} />
         </Indicatore>
 
         <Indicatore
-          etichetta="Volume sollevato"
+          etichetta={t('indicatoriPeriodo.volume')}
           valore={formattaVolume(volume[1])}
           variazione={<Variazione differenza={varVolume.differenza} testo={varVolume.testo} />}
         >
@@ -161,25 +173,25 @@ export default function IndicatoriPeriodo({ giorni, periodo, adesso, riepilogo }
         </Indicatore>
 
         <Indicatore
-          etichetta="Durata media"
+          etichetta={t('indicatoriPeriodo.durataMedia')}
           valore={media[1] != null ? `${media[1]} min` : '—'}
           // Lasting longer is neither good nor bad: neutral change
           variazione={media[1] != null && media[0] != null
             ? <Variazione differenza={media[1] - media[0]} testo={`${Math.abs(media[1] - media[0])} min`} buona={null} />
             : null}
         >
-          <MiniBarre secchi={secchi} valore={s => (s.sessioni ? Math.round(s.durata / s.sessioni) : null)} descrivi={v => `${v} min di media`} />
+          <MiniBarre secchi={secchi} valore={s => (s.sessioni ? Math.round(s.durata / s.sessioni) : null)} descrivi={v => t('indicatoriPeriodo.minutiDiMedia', { valore: v })} />
         </Indicatore>
 
         <Indicatore
-          etichetta="Settimane di fila"
+          etichetta={t('indicatoriPeriodo.settimaneDiFila')}
           valore={riepilogo?.settimaneDiFila ?? '—'}
         >
-          <div className="flex gap-[3px] h-7 items-end" role="img" aria-label={`Ultime 12 settimane: ${attive} con almeno un allenamento`}>
+          <div className="flex gap-[3px] h-7 items-end" role="img" aria-label={t('indicatoriPeriodo.ariaUltimeSettimane', { attive })}>
             {settimane.map((attiva, i) => (
               <span
                 key={i}
-                title={i === settimane.length - 1 ? 'Questa settimana' : `${settimane.length - 1 - i} settimane fa`}
+                title={i === settimane.length - 1 ? t('indicatoriPeriodo.questaSettimana') : t('indicatoriPeriodo.settimaneFa', { count: settimane.length - 1 - i })}
                 className="flex-1 h-3 rounded-[2px]"
                 style={{ background: attiva ? 'var(--accent)' : 'var(--testo-terziario)', opacity: attiva ? 1 : 0.3 }}
               />

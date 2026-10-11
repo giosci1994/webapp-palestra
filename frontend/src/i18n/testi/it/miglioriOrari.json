@@ -1,0 +1,10 @@
+{
+  "titolo": "Quando andare",
+  "oreLibereOggi": "Oggi, le ore più libere",
+  "riempimento": "Circa {livello}% di riempimento",
+  "contro": "Contro una media di {media}% nella giornata.",
+  "nessunaRilevazione": "Nessuna rilevazione per oggi.",
+  "giornoTranquillo": "Il giorno più tranquillo della settimana è <b>{giorno}</b>.",
+  "rilevazioni_one": "Su {count} rilevazione, fascia {da}:00–{a}:00.",
+  "rilevazioni_other": "Su {count} rilevazioni, fascia {da}:00–{a}:00."
+}

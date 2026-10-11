@@ -11,7 +11,7 @@ GymMaster is a gym web app you host on your own server with Docker. Members log 
 
 It is a PWA: it goes on the home screen like an app, sends notifications even when closed and updates itself when a new version comes out.
 
-> **Language:** the interface is in Italian today. English, picked from the phone's language, is on the way.
+> **Languages:** English and Italian. The app follows the phone's language and can be switched in Profile. Adding a language takes a folder of JSON files: see [docs/translations.md](docs/translations.md).
 
 Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.io/webapp-palestra/).
 
@@ -177,6 +177,7 @@ The app version is in [`version.json`](version.json), with the changes written f
 - [`docs/features/`](docs/features/): [authentication](docs/features/authentication.md), [chat](docs/features/chat.md), [AI assistant](docs/features/ai-assistant.md), [profile](docs/features/profile.md), [workout history](docs/features/workout-history.md), [last time and load suggestion](docs/features/last-time-and-load-suggestion.md)
 - [`docs/offline-and-sessions.md`](docs/offline-and-sessions.md): staying signed in on the phone and training offline
 - [`docs/exercise-catalogue.md`](docs/exercise-catalogue.md): where the exercise catalogue comes from and how to update it
+- [`docs/translations.md`](docs/translations.md): how the app picks its language, and how to add one
 - [`docs/ui-spacing.md`](docs/ui-spacing.md): spacing and safe-area rules of the interface
 - [`backend/prisma/schema.prisma`](backend/prisma/schema.prisma): the data model, with comments
 

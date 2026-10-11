@@ -1,0 +1,63 @@
+{
+  "tornaApp": "Torna all'app",
+  "titolo": "Informativa sulla Privacy",
+  "ultimoAggiornamento": "Ultimo aggiornamento: 11 maggio 2026",
+  "titolare": {
+    "titolo": "1. Titolare del Trattamento",
+    "nome": "Giovanni — Progetto open-source GymMaster",
+    "contatto": "Contatto: <link>github.com/giosci1994</link>"
+  },
+  "datiRaccolti": {
+    "titolo": "2. Dati Raccolti",
+    "intro": "Raccogliamo le seguenti categorie di dati personali:",
+    "registrazione": "<b>Dati di registrazione:</b> nome, indirizzo email, password (hash crittografico)",
+    "profilo": "<b>Dati del profilo:</b> foto profilo, data di nascita, sesso, peso, altezza, obiettivo fitness",
+    "allenamento": "<b>Dati di allenamento:</b> sessioni, esercizi, serie, ripetizioni, carichi, record personali",
+    "tecnici": "<b>Dati tecnici:</b> indirizzo IP, tipo di browser, cookie tecnici di sessione",
+    "comunicazione": "<b>Dati di comunicazione:</b> messaggi nella chat interna"
+  },
+  "baseGiuridica": {
+    "titolo": "3. Base Giuridica e Finalità",
+    "intro": "Il trattamento dei dati è basato su:",
+    "consenso": "<b>Consenso (Art. 6(1)(a) GDPR):</b> per funzionalità opzionali come gamification, visibilità profilo, statistiche condivise",
+    "contratto": "<b>Esecuzione del contratto (Art. 6(1)(b) GDPR):</b> per l'erogazione del servizio (gestione account, allenamenti, comunicazioni)",
+    "interesse": "<b>Interesse legittimo (Art. 6(1)(f) GDPR):</b> per sicurezza, prevenzione abusi, miglioramento del servizio"
+  },
+  "conservazione": {
+    "titolo": "4. Conservazione dei Dati",
+    "intro": "I dati personali vengono conservati per la durata necessaria alle finalità per cui sono stati raccolti:",
+    "account": "Dati account: fino alla cancellazione dell'account",
+    "allenamento": "Dati di allenamento: fino alla cancellazione dell'account o su richiesta",
+    "chat": "Messaggi chat: secondo le impostazioni di retention configurate dall'utente (default: 7 giorni)",
+    "log": "Log tecnici: massimo 90 giorni"
+  },
+  "diritti": {
+    "titolo": "5. Diritti dell'Utente",
+    "intro": "Ai sensi del Regolamento UE 2016/679 (GDPR), hai il diritto di:",
+    "accesso": "<b>Accesso:</b> ottenere conferma del trattamento e copia dei tuoi dati",
+    "rettifica": "<b>Rettifica:</b> correggere dati inesatti o incompleti",
+    "cancellazione": "<b>Cancellazione:</b> richiedere la cancellazione dei tuoi dati (\"diritto all'oblio\")",
+    "limitazione": "<b>Limitazione:</b> limitare il trattamento in determinate circostanze",
+    "portabilita": "<b>Portabilità:</b> ricevere i tuoi dati in formato strutturato e leggibile",
+    "opposizione": "<b>Opposizione:</b> opporti al trattamento basato su interesse legittimo",
+    "revoca": "<b>Revoca del consenso:</b> revocare il consenso in qualsiasi momento",
+    "esercizio": "Una copia completa dei tuoi dati, in formato JSON, puoi scaricarla tu stesso in qualsiasi momento da <b>Profilo → Privacy → I tuoi dati</b>; dal Profilo puoi anche eliminare l'account. Per esercitare gli altri diritti, contattaci tramite il profilo GitHub sopra indicato."
+  },
+  "sicurezza": {
+    "titolo": "6. Sicurezza",
+    "intro": "Implementiamo misure tecniche e organizzative adeguate per proteggere i tuoi dati:",
+    "password": "Crittografia delle password con Argon2id",
+    "https": "Connessioni HTTPS criptate",
+    "jwt": "Token JWT con rotazione automatica",
+    "rateLimiting": "Rate limiting e protezione anti-brute-force",
+    "helmet": "Helmet.js per la protezione degli header HTTP"
+  },
+  "trasferimento": {
+    "titolo": "7. Trasferimento Dati",
+    "testo": "I dati sono archiviati su server self-hosted nell'Unione Europea. Non trasferiamo dati personali verso paesi terzi al di fuori dello Spazio Economico Europeo (SEE)."
+  },
+  "modifiche": {
+    "titolo": "8. Modifiche",
+    "testo": "Ci riserviamo il diritto di aggiornare questa informativa. Le modifiche saranno comunicate tramite l'applicazione. L'uso continuato del servizio dopo la notifica costituisce accettazione delle modifiche."
+  }
+}

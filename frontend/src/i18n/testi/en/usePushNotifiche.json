@@ -1,0 +1,5 @@
+{
+  "serviceWorkerInattivo": "The service worker isn't running: reload the page and try again",
+  "servizioNonRisponde": "the browser's notification service isn't responding",
+  "attivazioneFallita": "The browser couldn't turn on notifications ({motivo}). Try again in a moment."
+}

@@ -5,7 +5,8 @@
 // ============================================
 
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { nomeEsercizio, nomeEsercizioOriginale} from '../utils/formattatori.js';
+import { nomeEsercizio, nomeEsercizioOriginale, nomeGruppo, nomeAttrezzatura, formattaNumero } from '../utils/formattatori.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { api } from '../config/api.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
@@ -19,31 +20,51 @@ import {
 import SuggerisciEsercizio from '../componenti/specifici/SuggerisciEsercizio.jsx';
 
 // --- Constants for the filters ---
+// The values are the Italian ones stored with the exercises (they are what is
+// compared); the text shown comes from the translation files, see
+// valoreTradotto() and etichettaOpzione() below.
 const DIFFICULTY_OPTIONS = [
-  { value: '', label: 'Tutte le difficoltà' },
-  { value: 'Principiante', label: '🟢 Principiante' },
-  { value: 'Novizio', label: '🔵 Novizio' },
-  { value: 'Intermedio', label: '🟡 Intermedio' },
-  { value: 'Avanzato', label: '🟠 Avanzato' },
-  { value: 'Esperto', label: '🔴 Esperto' },
-  { value: 'Master', label: '⚫ Master' },
-  { value: 'Gran Master', label: '💎 Gran Master' },
-  { value: 'Leggendario', label: '👑 Leggendario' },
+  { value: '' },
+  { value: 'Principiante', emoji: '🟢' },
+  { value: 'Novizio', emoji: '🔵' },
+  { value: 'Intermedio', emoji: '🟡' },
+  { value: 'Avanzato', emoji: '🟠' },
+  { value: 'Esperto', emoji: '🔴' },
+  { value: 'Master', emoji: '⚫' },
+  { value: 'Gran Master', emoji: '💎' },
+  { value: 'Leggendario', emoji: '👑' },
 ];
 
 const BODY_REGION_OPTIONS = [
-  { value: '', label: 'Tutte le regioni' },
-  { value: 'Parte Superiore', label: '💪 Parte Superiore' },
-  { value: 'Parte Inferiore', label: '🦵 Parte Inferiore' },
-  { value: 'Core', label: '🧱 Core' },
-  { value: 'Tutto il Corpo', label: '🏋️ Tutto il Corpo' },
+  { value: '' },
+  { value: 'Parte Superiore', emoji: '💪' },
+  { value: 'Parte Inferiore', emoji: '🦵' },
+  { value: 'Core', emoji: '🧱' },
+  { value: 'Tutto il Corpo', emoji: '🏋️' },
 ];
 
 const MECHANICS_OPTIONS = [
-  { value: '', label: 'Tutte le meccaniche' },
-  { value: 'Composto', label: '🔗 Composto' },
-  { value: 'Isolamento', label: '🎯 Isolamento' },
+  { value: '' },
+  { value: 'Composto', emoji: '🔗' },
+  { value: 'Isolamento', emoji: '🎯' },
 ];
+
+/**
+ * A stored value ("Principiante", "Parte Superiore", "Composto") in the
+ * current language; one without a translation shows as it is.
+ * `gruppo` is the part of the translation file it lives in.
+ */
+function valoreTradotto(t, gruppo, valore) {
+  const chiave = `catalogoEsercizi.${gruppo}.${valore}`;
+  const testo = t(chiave);
+  return testo === chiave ? valore : testo;
+}
+
+/** What a filter option shows: emoji and name, or "All…" for the empty one */
+function etichettaOpzione(t, gruppo, opzione) {
+  if (!opzione.value) return t(`catalogoEsercizi.${gruppo}.tutte`);
+  return `${opzione.emoji} ${valoreTradotto(t, gruppo, opzione.value)}`;
+}
 
 const DIFFICULTY_COLORS = {
   'Principiante': { bg: 'rgba(16, 185, 129, 0.15)', text: '#10B981' },
@@ -77,6 +98,7 @@ function getYouTubeEmbedUrl(url) {
 
 // --- VideoPlayer component ---
 function VideoPlayer({ url, nome }) {
+  const { t } = useLingua();
   const embedUrl = getYouTubeEmbedUrl(url);
   
   if (!embedUrl) return null;
@@ -85,7 +107,7 @@ function VideoPlayer({ url, nome }) {
     <div className="relative w-full rounded-[var(--raggio-md)] overflow-hidden bg-black" style={{ paddingBottom: '56.25%' }}>
       <iframe
         src={embedUrl}
-        title={`Video: ${nome}`}
+        title={t('catalogoEsercizi.video', { nome })}
         className="absolute inset-0 w-full h-full"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
@@ -97,6 +119,7 @@ function VideoPlayer({ url, nome }) {
 
 // --- Expanded Exercise Card component ---
 function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito }) {
+  const { t } = useLingua();
   const gruppo = GRUPPI_MUSCOLARI[esercizio.gruppoMuscoloPrimario];
   const diffColor = DIFFICULTY_COLORS[esercizio.difficulty] || { bg: 'rgba(100,100,100,0.15)', text: '#94A3B8' };
   
@@ -127,11 +150,11 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
             <p className="text-[11px] text-[var(--testo-terziario)] truncate italic">{nomeEsercizioOriginale(esercizio)}</p>
           )}
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span className="text-[11px] text-[var(--testo-terziario)]">{esercizio.gruppoMuscoloPrimario}</span>
+            <span className="text-[11px] text-[var(--testo-terziario)]">{nomeGruppo(esercizio.gruppoMuscoloPrimario)}</span>
             {esercizio.attrezzatura && (
               <>
                 <span className="text-[var(--testo-terziario)] text-[8px]">•</span>
-                <span className="text-[11px] text-[var(--testo-terziario)]">{esercizio.attrezzatura.nome}</span>
+                <span className="text-[11px] text-[var(--testo-terziario)]">{nomeAttrezzatura(esercizio.attrezzatura.nome)}</span>
               </>
             )}
           </div>
@@ -141,7 +164,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
         {esercizio.difficulty && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 hidden sm:inline-block"
                 style={{ background: diffColor.bg, color: diffColor.text }}>
-            {esercizio.difficulty}
+            {valoreTradotto(t, 'difficolta', esercizio.difficulty)}
           </span>
         )}
 
@@ -158,8 +181,8 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
       <button
         onClick={onPreferito}
         aria-pressed={preferito}
-        aria-label={preferito ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}
-        title={preferito ? 'Togli dai preferiti' : 'Aggiungi ai preferiti'}
+        aria-label={preferito ? t('catalogoEsercizi.togliPreferiti') : t('catalogoEsercizi.aggiungiPreferiti')}
+        title={preferito ? t('catalogoEsercizi.togliPreferiti') : t('catalogoEsercizi.aggiungiPreferiti')}
         className={`shrink-0 pl-2 pr-5 flex items-center transition-colors hover:bg-[var(--bg-terziario)] ${preferito ? 'text-[#EAB308]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)]'}`}
       >
         <Star size={18} fill={preferito ? 'currentColor' : 'none'} />
@@ -187,28 +210,28 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
               {/* Info Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
                 {esercizio.difficulty && (
-                  <InfoBadge label="Difficoltà" value={esercizio.difficulty} color={diffColor} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.difficolta')} value={valoreTradotto(t, 'difficolta', esercizio.difficulty)} color={diffColor} />
                 )}
                 {esercizio.bodyRegion && (
-                  <InfoBadge label="Regione" value={esercizio.bodyRegion} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.regione')} value={valoreTradotto(t, 'regione', esercizio.bodyRegion)} />
                 )}
                 {esercizio.mechanics && (
-                  <InfoBadge label="Meccanica" value={esercizio.mechanics} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.meccanica')} value={valoreTradotto(t, 'meccanica', esercizio.mechanics)} />
                 )}
                 {esercizio.movementPattern && (
-                  <InfoBadge label="Movimento" value={esercizio.movementPattern} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.movimento')} value={esercizio.movementPattern} />
                 )}
                 {esercizio.laterality && (
-                  <InfoBadge label="Lateralità" value={esercizio.laterality} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.lateralita')} value={esercizio.laterality} />
                 )}
                 {esercizio.posture && (
-                  <InfoBadge label="Postura" value={esercizio.posture} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.postura')} value={esercizio.posture} />
                 )}
                 {esercizio.forceType && esercizio.forceType !== 'Unsorted*' && (
-                  <InfoBadge label="Forza" value={esercizio.forceType} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.forza')} value={esercizio.forceType} />
                 )}
                 {esercizio.classification && esercizio.classification !== 'Unsorted*' && (
-                  <InfoBadge label="Tipo" value={esercizio.classification} />
+                  <InfoBadge label={t('catalogoEsercizi.etichetta.tipo')} value={esercizio.classification} />
                 )}
               </div>
 
@@ -217,8 +240,11 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
                 <div className="mt-3 flex items-start gap-2">
                   <Target size={14} className="text-[var(--testo-terziario)] mt-0.5 shrink-0" />
                   <div>
-                    <span className="text-[11px] text-[var(--testo-terziario)] block">Muscoli secondari</span>
-                    <span className="text-xs text-[var(--testo-secondario)]">{esercizio.gruppoMuscoloSecondario}</span>
+                    <span className="text-[11px] text-[var(--testo-terziario)] block">{t('catalogoEsercizi.muscoliSecondari')}</span>
+                    <span className="text-xs text-[var(--testo-secondario)]">
+                      {/* Stored as a list of groups separated by commas */}
+                      {esercizio.gruppoMuscoloSecondario.split(',').map(g => nomeGruppo(g.trim())).join(', ')}
+                    </span>
                   </div>
                 </div>
               )}
@@ -249,6 +275,7 @@ function InfoBadge({ label, value, color }) {
 const PAGE_SIZE = 30;
 
 export default function CatalogoEsercizi() {
+  const { t } = useLingua();
   const [esercizi, setEsercizi] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
   const [ricerca, setRicerca] = useState('');
@@ -330,10 +357,11 @@ export default function CatalogoEsercizi() {
             <Dumbbell size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Catalogo Esercizi</h1>
+            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{t('catalogoEsercizi.titolo')}</h1>
             <p className="text-sm text-[var(--testo-terziario)]">
-              {eserciziFiltrati.length.toLocaleString('it-IT')} esercizi
-              {filtriAttivi > 0 && ` (filtrati da ${esercizi.length.toLocaleString('it-IT')})`}
+              {filtriAttivi > 0
+                ? t('catalogoEsercizi.conteggioFiltrati', { count: eserciziFiltrati.length, numero: formattaNumero(eserciziFiltrati.length), totale: formattaNumero(esercizi.length) })
+                : t('catalogoEsercizi.conteggio', { count: eserciziFiltrati.length, numero: formattaNumero(eserciziFiltrati.length) })}
             </p>
           </div>
         </div>
@@ -350,7 +378,7 @@ export default function CatalogoEsercizi() {
               value={ricerca}
               onChange={e => setRicerca(e.target.value)}
               className="campo-input pl-10 pr-8"
-              placeholder="Cerca esercizio, muscolo, attrezzatura..."
+              placeholder={t('catalogoEsercizi.cerca')}
             />
             {ricerca && (
               <button onClick={() => setRicerca('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--testo-terziario)] hover:text-[var(--testo-primario)]">
@@ -384,34 +412,34 @@ export default function CatalogoEsercizi() {
             >
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
                 <select value={filtroGruppo} onChange={e => setFiltroGruppo(e.target.value)} className="campo-input text-sm">
-                  <option value="">Tutti i muscoli</option>
+                  <option value="">{t('catalogoEsercizi.tuttiMuscoli')}</option>
                   {gruppiUnici.map(g => (
-                    <option key={g} value={g}>{GRUPPI_MUSCOLARI[g]?.emoji || '💪'} {g}</option>
+                    <option key={g} value={g}>{GRUPPI_MUSCOLARI[g]?.emoji || '💪'} {nomeGruppo(g)}</option>
                   ))}
                 </select>
 
                 <select value={filtroDifficulty} onChange={e => setFiltroDifficulty(e.target.value)} className="campo-input text-sm">
                   {DIFFICULTY_OPTIONS.map(d => (
-                    <option key={d.value} value={d.value}>{d.label}</option>
+                    <option key={d.value} value={d.value}>{etichettaOpzione(t, 'difficolta', d)}</option>
                   ))}
                 </select>
 
                 <select value={filtroRegion} onChange={e => setFiltroRegion(e.target.value)} className="campo-input text-sm">
                   {BODY_REGION_OPTIONS.map(r => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
+                    <option key={r.value} value={r.value}>{etichettaOpzione(t, 'regione', r)}</option>
                   ))}
                 </select>
 
                 <select value={filtroMechanics} onChange={e => setFiltroMechanics(e.target.value)} className="campo-input text-sm">
                   {MECHANICS_OPTIONS.map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
+                    <option key={m.value} value={m.value}>{etichettaOpzione(t, 'meccanica', m)}</option>
                   ))}
                 </select>
               </div>
 
               {filtriAttivi > 0 && (
                 <button onClick={resetFiltri} className="mt-2 text-xs text-[var(--accent)] hover:underline flex items-center gap-1">
-                  <X size={12} /> Rimuovi tutti i filtri
+                  <X size={12} /> {t('catalogoEsercizi.rimuoviTuttiFiltri')}
                 </button>
               )}
             </motion.div>
@@ -430,7 +458,7 @@ export default function CatalogoEsercizi() {
               : 'bg-[var(--bg-terziario)] border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--bordo-hover)]'
           }`}
         >
-          ⭐ Preferiti{preferiti.size > 0 && ` (${preferiti.size})`}
+          {preferiti.size > 0 ? t('catalogoEsercizi.preferitiConteggio', { numero: preferiti.size }) : t('catalogoEsercizi.preferiti')}
         </button>
         {BODY_REGION_OPTIONS.filter(r => r.value).map(region => (
           <button
@@ -442,7 +470,7 @@ export default function CatalogoEsercizi() {
                 : 'bg-[var(--bg-terziario)] border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--bordo-hover)]'
             }`}
           >
-            {region.label}
+            {etichettaOpzione(t, 'regione', region)}
           </button>
         ))}
       </div>
@@ -455,14 +483,14 @@ export default function CatalogoEsercizi() {
       ) : eserciziFiltrati.length === 0 ? (
         <div className="text-center py-16">
           <Dumbbell size={48} className="mx-auto mb-4 text-[var(--testo-terziario)]" />
-          <p className="text-lg font-semibold text-[var(--testo-secondario)]">Nessun esercizio trovato</p>
+          <p className="text-lg font-semibold text-[var(--testo-secondario)]">{t('catalogoEsercizi.nessunEsercizio')}</p>
           <p className="text-sm text-[var(--testo-terziario)] mt-1">
             {soloPreferiti && preferiti.size === 0
-              ? 'Non hai ancora preferiti: tocca la stella accanto a un esercizio'
-              : 'Prova a modificare i filtri di ricerca'}
+              ? t('catalogoEsercizi.nessunPreferito')
+              : t('catalogoEsercizi.provaFiltri')}
           </p>
           <button onClick={resetFiltri} className="mt-4 text-sm text-[var(--accent)] hover:underline">
-            Rimuovi filtri
+            {t('catalogoEsercizi.rimuoviFiltri')}
           </button>
         </div>
       ) : (
@@ -490,7 +518,7 @@ export default function CatalogoEsercizi() {
           {/* Final counter */}
           {restanti === 0 && eserciziFiltrati.length > 0 && (
             <p className="text-center text-xs text-[var(--testo-terziario)] mt-6 pb-4">
-              {eserciziFiltrati.length.toLocaleString('it-IT')} esercizi totali
+              {t('catalogoEsercizi.totali', { count: eserciziFiltrati.length, numero: formattaNumero(eserciziFiltrati.length) })}
             </p>
           )}
         </>

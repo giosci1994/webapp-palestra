@@ -1,0 +1,14 @@
+{
+  "erroreCaricamento": "Impossibile caricare l'andamento.",
+  "caricamento": "Carico l'andamento…",
+  "serveAltroAllenamento": "Serve almeno un altro allenamento con questo esercizio per vedere l'andamento.",
+  "carico": "Carico",
+  "massimaleStimato": "Massimale stimato",
+  "massimale": "Massimale",
+  "unitaRip": "rip.",
+  "serieMigliore": "Serie migliore: <b>{valore}</b>",
+  "massimaleStimatoValore": "Massimale stimato: <b>{valore}</b>",
+  "massimaleValore": "🏆 Massimale: <b>{valore}</b>",
+  "ripetizioni": "Ripetizioni: <b>{valore}</b>",
+  "durata": "Durata: <b>{valore}</b>"
+}

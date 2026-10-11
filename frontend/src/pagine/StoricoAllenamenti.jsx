@@ -6,7 +6,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
-import { formattaData, formattaDurata, nomeEsercizio, eCardioNelloStorico } from '../utils/formattatori.js';
+import { useLingua } from '../hooks/useLingua.js';
+import { formattaData, formattaDurata, nomeEsercizio, nomeGruppo, eCardioNelloStorico } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
 import { diLavoro } from '../utils/tipiSerie.js';
 import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
@@ -21,6 +22,7 @@ const riprendibile = (sessione) => sessione.dataFine && Date.now() - new Date(se
 const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MINUTI;
 
 export default function StoricoAllenamenti() {
+  const { t } = useLingua();
   const [sessioni, setSessioni] = useState([]);
   const [pagina, setPagina] = useState(1);
   const [paginazione, setPaginazione] = useState(null);
@@ -86,13 +88,13 @@ export default function StoricoAllenamenti() {
       setSessioni(risposta.dati || []);
       setPaginazione(risposta.paginazione || null);
     })
-    .catch(err => console.error('Errore caricamento storico:', err))
+    .catch(err => console.error('Error loading history:', err))
     .finally(() => setCaricatoPer(query)), [query]);
 
   useEffect(() => { caricaStorico(); }, [caricaStorico]);
 
   const eliminaSessione = async (id) => {
-    if (!confirm('Sei sicuro di voler eliminare questa sessione? I dati saranno persi.')) return;
+    if (!confirm(t('storicoAllenamenti.eliminaConferma'))) return;
     try {
       setEliminando(id);
       await api.delete(`/sessioni/${id}`);
@@ -117,18 +119,19 @@ export default function StoricoAllenamenti() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Storico Allenamenti</h1>
+          <h1 className="text-2xl font-bold">{t('storicoAllenamenti.titolo')}</h1>
           <p className="text-[var(--testo-secondario)] text-sm mt-1">
-            Rivedi i dettagli di ogni sessione passata
-            {paginazione && ` · ${paginazione.totale} sessioni totali`}
+            {paginazione
+              ? t('storicoAllenamenti.sottotitoloConTotale', { count: paginazione.totale })
+              : t('storicoAllenamenti.sottotitolo')}
           </p>
         </div>
         <button
           onClick={() => setMostraPassato(true)}
-          title="Registra una seduta gia' svolta, anche senza connessione sul momento"
+          title={t('storicoAllenamenti.giaFattoTitolo')}
           className="shrink-0 py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
         >
-          ＋ Già fatto
+          {t('storicoAllenamenti.giaFatto')}
         </button>
       </div>
 
@@ -150,7 +153,7 @@ export default function StoricoAllenamenti() {
             backgroundPosition: 'right 12px center'
           }}
         >
-          <option value="">Tutte le schede</option>
+          <option value="">{t('storicoAllenamenti.tutteLeSchede')}</option>
           {schedeDisponibili.map(s => (
             <option key={s.id} value={s.id}>{s.titolo}</option>
           ))}
@@ -166,10 +169,10 @@ export default function StoricoAllenamenti() {
         <div className="glass-card p-8 text-center">
           <div className="text-4xl mb-3">📜</div>
           <p className="text-[var(--testo-secondario)]">
-            {schedaFiltro ? 'Nessuna sessione trovata per questa scheda' : 'Nessun allenamento completato ancora'}
+            {schedaFiltro ? t('storicoAllenamenti.vuotoConFiltro') : t('storicoAllenamenti.vuoto')}
           </p>
           <p className="text-xs text-[var(--testo-terziario)] mt-2">
-            Completa un allenamento per vederlo qui
+            {t('storicoAllenamenti.vuotoSuggerimento')}
           </p>
         </div>
       ) : (
@@ -208,28 +211,28 @@ export default function StoricoAllenamenti() {
                 <div className="grid grid-cols-3 gap-2">
                   <div
                     className="flex items-center gap-2 p-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)]"
-                    title={durataSospetta(sessione) ? 'Durata insolita: forse è rimasto aperto. Apri il dettaglio per correggerla' : undefined}
+                    title={durataSospetta(sessione) ? t('storicoAllenamenti.durataInsolitaTitolo') : undefined}
                   >
                     <span className="text-sm">{durataSospetta(sessione) ? '⚠️' : '⏱'}</span>
                     <div>
                       <p className="text-sm font-bold" style={durataSospetta(sessione) ? { color: 'var(--avviso)' } : undefined}>
                         {formattaDurata(sessione.durataMinuti)}
                       </p>
-                      <p className="text-[10px] text-[var(--testo-terziario)]">Durata</p>
+                      <p className="text-[10px] text-[var(--testo-terziario)]">{t('storicoAllenamenti.durata')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)]">
                     <span className="text-sm">📦</span>
                     <div>
                       <p className="text-sm font-bold">{formattaPeso(sessione.volumeTotaleKg)} kg</p>
-                      <p className="text-[10px] text-[var(--testo-terziario)]">Volume</p>
+                      <p className="text-[10px] text-[var(--testo-terziario)]">{t('storicoAllenamenti.volume')}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-[var(--raggio-sm)] bg-[var(--bg-terziario)]">
                     <span className="text-sm">💪</span>
                     <div>
                       <p className="text-sm font-bold">{sessione.esercizi.length}</p>
-                      <p className="text-[10px] text-[var(--testo-terziario)]">Esercizi</p>
+                      <p className="text-[10px] text-[var(--testo-terziario)]">{t('storicoAllenamenti.esercizi')}</p>
                     </div>
                   </div>
                 </div>
@@ -251,7 +254,7 @@ export default function StoricoAllenamenti() {
                 {/* Detail arrow */}
                 <div className="text-right mt-2">
                   <span className="text-xs font-semibold text-[var(--accent)] group-hover:text-[var(--accent-hover)]">
-                    Vedi dettagli →
+                    {t('storicoAllenamenti.vediDettagli')}
                   </span>
                 </div>
               </motion.div>
@@ -266,7 +269,7 @@ export default function StoricoAllenamenti() {
                 disabled={pagina <= 1}
                 className="px-4 py-2 rounded-[var(--raggio-md)] text-sm font-medium bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                ← Prec.
+                {t('storicoAllenamenti.precedente')}
               </button>
               <span className="text-sm text-[var(--testo-secondario)] px-3">
                 {pagina} / {paginazione.pagine}
@@ -276,7 +279,7 @@ export default function StoricoAllenamenti() {
                 disabled={pagina >= paginazione.pagine}
                 className="px-4 py-2 rounded-[var(--raggio-md)] text-sm font-medium bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                Succ. →
+                {t('storicoAllenamenti.successiva')}
               </button>
             </div>
           )}
@@ -313,11 +316,11 @@ export default function StoricoAllenamenti() {
                     onClick={() => setInModifica(true)}
                     className="h-8 px-3 flex items-center gap-1.5 rounded-full text-xs font-semibold bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
                   >
-                    ✏️ Modifica
+                    {t('storicoAllenamenti.modifica')}
                   </button>
                   <button
                     onClick={() => setSessioneAperta(null)}
-                    aria-label="Chiudi"
+                    aria-label={t('comune.chiudi')}
                     className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors"
                   >
                     ✕
@@ -335,15 +338,15 @@ export default function StoricoAllenamenti() {
                     ) : (
                       <p className="text-lg font-bold testo-gradient">{formattaDurata(sessioneAperta.durataMinuti)}</p>
                     )}
-                    <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">Durata</p>
+                    <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">{t('storicoAllenamenti.durata')}</p>
                   </div>
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-center">
                     <p className="text-lg font-bold testo-gradient">{formattaPeso(sessioneAperta.volumeTotaleKg)} kg</p>
-                    <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">Volume</p>
+                    <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">{t('storicoAllenamenti.volume')}</p>
                   </div>
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-center">
                     <p className="text-lg font-bold testo-gradient">{sessioneAperta.serieCompletate}</p>
-                    <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">Serie</p>
+                    <p className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wide">{t('storicoAllenamenti.serie')}</p>
                   </div>
                 </div>
 
@@ -352,9 +355,9 @@ export default function StoricoAllenamenti() {
                   <div className="flex items-center gap-3 p-3 rounded-[var(--raggio-md)] border border-[var(--avviso)]/40 bg-[var(--avviso-dim)]">
                     <span className="text-lg">⚠️</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold" style={{ color: 'var(--avviso)' }}>Durata insolita</p>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--avviso)' }}>{t('storicoAllenamenti.durataInsolita')}</p>
                       <p className="text-xs text-[var(--testo-secondario)] mt-0.5">
-                        Forse è rimasto aperto dopo la fine: così falsa le tue statistiche.
+                        {t('storicoAllenamenti.durataInsolitaSpiegazione')}
                       </p>
                     </div>
                     <button
@@ -362,7 +365,7 @@ export default function StoricoAllenamenti() {
                       className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold text-black transition-opacity hover:opacity-90"
                       style={{ background: 'var(--avviso)' }}
                     >
-                      Correggi
+                      {t('storicoAllenamenti.correggi')}
                     </button>
                   </div>
                 )}
@@ -370,7 +373,7 @@ export default function StoricoAllenamenti() {
                 {/* Final notes */}
                 {sessioneAperta.noteFinali && (
                   <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] border-l-3 border-[var(--accent)]">
-                    <p className="text-xs text-[var(--testo-terziario)] mb-1">📝 Note</p>
+                    <p className="text-xs text-[var(--testo-terziario)] mb-1">{t('storicoAllenamenti.note')}</p>
                     <p className="text-sm">{sessioneAperta.noteFinali}</p>
                   </div>
                 )}
@@ -378,7 +381,7 @@ export default function StoricoAllenamenti() {
                 {/* Exercise list with set details */}
                 <div className="flex flex-col gap-3">
                   <h4 className="text-xs font-semibold text-[var(--testo-terziario)] uppercase tracking-wider">
-                    Dettaglio Esercizi
+                    {t('storicoAllenamenti.dettaglioEsercizi')}
                   </h4>
 
                   {sessioneAperta.esercizi.map((es, idx) => {
@@ -407,7 +410,7 @@ export default function StoricoAllenamenti() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm truncate">{nomeEsercizio(es.esercizio)}</p>
                             <p className="text-[10px] text-[var(--testo-terziario)]">
-                              {es.esercizio.gruppoMuscoloPrimario} · {es.serie.filter(diLavoro).length} serie
+                              {t('storicoAllenamenti.gruppoESerie', { gruppo: nomeGruppo(es.esercizio.gruppoMuscoloPrimario), count: es.serie.filter(diLavoro).length })}
                             </p>
                           </div>
                         </div>
@@ -416,16 +419,16 @@ export default function StoricoAllenamenti() {
                         <div className="px-4 pb-3 pt-2">
                           {/* Table header */}
                           <div className={`grid ${isCardio ? 'grid-cols-3' : 'grid-cols-4'} gap-1 mb-1`}>
-                            <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">Serie</span>
+                            <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.serie')}</span>
                             {isCardio ? (
                               <>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">Durata</span>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">Livello</span>
+                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.durata')}</span>
+                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.livello')}</span>
                               </>
                             ) : (
                               <>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">Peso</span>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">Rep</span>
+                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.peso')}</span>
+                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.rip')}</span>
                                 <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">RPE</span>
                               </>
                             )}
@@ -440,7 +443,7 @@ export default function StoricoAllenamenti() {
                               }`}
                             >
                               <span className="text-sm text-center text-[var(--testo-secondario)]"
-                                    title={serie.tipo === 'RISCALDAMENTO' ? 'Riscaldamento' : serie.tipo === 'DROP' ? `Drop della serie ${serie.serieNumero}` : undefined}>
+                                    title={serie.tipo === 'RISCALDAMENTO' ? t('storicoAllenamenti.riscaldamento') : serie.tipo === 'DROP' ? t('storicoAllenamenti.dropDellaSerie', { numero: serie.serieNumero }) : undefined}>
                                 {serie.tipo === 'RISCALDAMENTO' ? '🔥' : serie.tipo === 'DROP' ? '↳' : serie.serieNumero}
                               </span>
                               {isCardio ? (
@@ -480,7 +483,7 @@ export default function StoricoAllenamenti() {
                     disabled={riprendendo}
                     className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition-all disabled:opacity-50"
                   >
-                    {riprendendo ? 'Un attimo...' : '↩️ Ho chiuso per sbaglio, riprendi'}
+                    {riprendendo ? t('storicoAllenamenti.unAttimo') : t('storicoAllenamenti.riprendi')}
                   </button>
                 )}
 
@@ -492,10 +495,10 @@ export default function StoricoAllenamenti() {
                       disabled={salvandoScheda}
                       className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-[var(--accent)] bg-[var(--accent-dim)] hover:bg-[var(--accent)] hover:text-white transition-all disabled:opacity-50"
                     >
-                      {salvandoScheda ? 'Salvataggio...' : '📋 Salva come nuova scheda'}
+                      {salvandoScheda ? t('storicoAllenamenti.salvataggio') : t('storicoAllenamenti.salvaComeScheda')}
                     </button>
                     <p className="text-[11px] text-[var(--testo-terziario)] text-center mt-1.5">
-                      Gli esercizi fatti quel giorno, con le serie e le ripetizioni.
+                      {t('storicoAllenamenti.salvaComeSchedaSpiegazione')}
                     </p>
                   </div>
                 )}
@@ -506,7 +509,7 @@ export default function StoricoAllenamenti() {
                   disabled={eliminando === sessioneAperta.id}
                   className="mt-2 w-full py-3 rounded-[var(--raggio-md)] text-sm font-medium text-[var(--pericolo)] bg-[var(--pericolo-dim)] hover:bg-[var(--pericolo)] hover:text-white transition-all disabled:opacity-50"
                 >
-                  {eliminando === sessioneAperta.id ? 'Eliminazione...' : '🗑️ Elimina Sessione'}
+                  {eliminando === sessioneAperta.id ? t('storicoAllenamenti.eliminazione') : t('storicoAllenamenti.eliminaSessione')}
                 </button>
               </div>
             </motion.div>
@@ -523,7 +526,7 @@ export default function StoricoAllenamenti() {
               // Back to the detail, already with the corrected values
               setSessioneAperta(aggiornata);
               setInModifica(false);
-              mostraConferma('Allenamento aggiornato: statistiche e record ora tengono conto delle correzioni.');
+              mostraConferma(t('storicoAllenamenti.aggiornato'));
               // Reload: if the date changed, the place in the list changes too
               caricaStorico();
             }}
@@ -540,9 +543,7 @@ export default function StoricoAllenamenti() {
               setMostraPassato(false);
               const record = risposta?.recordPersonali?.length || 0;
               mostraConferma(
-                record === 0 ? 'Allenamento registrato nello storico.'
-                  : record === 1 ? 'Allenamento registrato — e hai un nuovo record personale!'
-                  : `Allenamento registrato — e hai ${record} nuovi record personali!`
+                record === 0 ? t('storicoAllenamenti.registrato') : t('storicoAllenamenti.registratoConRecord', { count: record })
               );
               setPagina(1);
               caricaStorico();

@@ -1,0 +1,31 @@
+{
+  "stati": {
+    "IN_ATTESA": "Pending",
+    "APPROVATO": "Approved",
+    "RIFIUTATO": "Rejected"
+  },
+  "confermaElimina": "Delete this exercise?",
+  "motivoRifiuto": "Reason for rejection (optional):",
+  "titolo": "📚 Exercise management",
+  "nelCatalogo_one": "{count} exercise in the catalog",
+  "nelCatalogo_other": "{count} exercises in the catalog",
+  "nuovo": "＋ New",
+  "suggerimentiUtenti": "Suggestions from users",
+  "nomeEsercizio": "Exercise name",
+  "gruppoPrimario": "Primary group",
+  "gruppoSecondario": "Secondary group (opt.)",
+  "attrezzatura": "Equipment (opt.)",
+  "attrezzaturaSuggerita": "💬 Equipment suggested by the user: \"{attrezzatura}\"",
+  "note": "📝 Notes: \"{descrizione}\"",
+  "descrizione": "Description (opt.)",
+  "linkVideo": "Video link (opt.)",
+  "approvaEAggiungi": "✅ Approve and add to the catalog",
+  "suggerimentiGestiti": "Suggestions already handled ({numero})",
+  "da": "by {nome}",
+  "nomeEsercizioObbligatorio": "Exercise name *",
+  "gruppoPrimarioObbligatorio": "Primary group *",
+  "crea": "Create",
+  "cercaEsercizio": "🔍 Search exercises…",
+  "tuttiIGruppi": "All groups",
+  "mostraAltri": "Show more ({numero})"
+}

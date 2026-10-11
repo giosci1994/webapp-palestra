@@ -1,0 +1,22 @@
+{
+  "confermaElimina": "Delete this story?",
+  "titolo": "✨ What's new management",
+  "nuova": "＋ New",
+  "scegliEmoji": "Pick an emoji",
+  "titoloCampo": "Title *",
+  "sottotitolo": "Subtitle",
+  "punti": "Bullet points",
+  "descrizionePunto": "Bullet point text",
+  "rimuovi": "Remove",
+  "nuovoPunto": "＋ Bullet point",
+  "ctaTesto": "Button text (e.g. Connect Telegram)",
+  "ctaRotta": "Button destination (e.g. /profilo)",
+  "colore1": "Color 1",
+  "colore2": "Color 2",
+  "ordine": "Order",
+  "attiva": "Active",
+  "crea": "Create",
+  "nessuna": "No stories yet. Create one! ✨",
+  "sottotitoloOrdine": "{sottotitolo} · order {ordine}",
+  "nascosta": "Hidden"
+}

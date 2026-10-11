@@ -1,0 +1,8 @@
+{
+  "motivo": {
+    "sali": "Every set at the top of the range (last time {fatte} reps at {peso} kg): go up {incremento} kg",
+    "scarico": "{volte} times in a row under {min} reps at {peso} kg: deload by 10% and build back up",
+    "restaSottoForbice": "Same weight (last time {fatte} reps at {peso} kg): aim for at least {min} reps on every set",
+    "restaUnaInPiu": "Same weight, one more rep (last time {fatte} reps at {peso} kg): once every set reaches {max}, go up"
+  }
+}

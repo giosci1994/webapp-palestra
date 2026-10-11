@@ -1,0 +1,11 @@
+{
+  "titolo": "Find a personal trainer",
+  "sottotitolo": "Pick a professional and follow plans tailored to your goals.",
+  "cercaPlaceholder": "Search by name…",
+  "nessunPT": "No personal trainers available right now.",
+  "nessunRisultato": "No results for your search.",
+  "clienti_one": "{count} client",
+  "clienti_other": "{count} clients",
+  "schede_one": "{count} plan",
+  "schede_other": "{count} plans"
+}

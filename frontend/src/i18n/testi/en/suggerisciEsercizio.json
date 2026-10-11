@@ -1,0 +1,21 @@
+{
+  "stato": {
+    "IN_ATTESA": "Pending",
+    "APPROVATO": "Approved",
+    "RIFIUTATO": "Rejected"
+  },
+  "nonTrovi": "Can't find an exercise?",
+  "suggerisciNuovo": "Suggest a new one to the administrator",
+  "inviata": "Suggestion sent!",
+  "inviataDescrizione": "The administrator will review your suggestion and let you know the outcome.",
+  "suggerisciAltro": "Suggest another",
+  "proponi": "Suggest a new exercise",
+  "nomeEsercizio": "Exercise name *",
+  "gruppoPrimario": "Primary muscle group *",
+  "gruppoSecondario": "Secondary muscle group",
+  "attrezzatura": "Equipment (e.g. dumbbells, cables, pull-up bar...)",
+  "descrizione": "Description or notes (optional)",
+  "invioInCorso": "Sending...",
+  "invia": "📤 Send suggestion",
+  "tuoiSuggerimenti": "Your suggestions ({numero})"
+}

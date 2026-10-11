@@ -8,12 +8,14 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api, scaricaFile } from '../config/api.js';
 import { LIVELLI } from '../utils/costanti.js';
-import { formattaData } from '../utils/formattatori.js';
+import { formattaData, nomeGruppo } from '../utils/formattatori.js';
+import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
 
 
 export default function SchedeAllenamento() {
+  const { t } = useLingua();
   const { utente } = useAuth();
   const [schede, setSchede] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
@@ -47,10 +49,10 @@ export default function SchedeAllenamento() {
       const titolo = titoloDocumento.trim();
       const percorso = `/schede/docx?ids=${selezionate.join(',')}` +
         (titolo ? `&titolo=${encodeURIComponent(titolo)}` : '');
-      await scaricaFile(percorso, `${titolo || 'programma'}.docx`);
+      await scaricaFile(percorso, `${titolo || t('schedeAllenamento.nomeFileProgramma')}.docx`);
       chiudiSelezione();
     } catch (err) {
-      setErroreDownload(err?.message || 'Download non riuscito');
+      setErroreDownload(err?.message || t('schedeAllenamento.downloadFallito'));
     } finally {
       setScaricando(false);
     }
@@ -69,7 +71,7 @@ export default function SchedeAllenamento() {
   }, []);
 
   const eliminaScheda = async (id) => {
-    if (!confirm('Sei sicuro di voler eliminare questa scheda?')) return;
+    if (!confirm(t('schedeAllenamento.confermaElimina'))) return;
     try {
       await api.delete(`/schede/${id}`);
       setSchede(prev => prev.filter(s => s.id !== id));
@@ -118,23 +120,23 @@ export default function SchedeAllenamento() {
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold">Gestione Schede</h1>
+          <h1 className="text-2xl font-bold">{t('schedeAllenamento.titolo')}</h1>
           <p className="text-[var(--testo-secondario)] text-sm mt-1">
-            Crea, modifica e gestisci le tue schede di allenamento ({schede.length} totali)
+            {t('schedeAllenamento.sottotitolo', { totale: schede.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {!modalitaSelezione && (
             <button
               onClick={() => setModalitaSelezione(true)}
-              title="Unisci piu' schede in un unico documento Word"
+              title={t('schedeAllenamento.unisciSchede')}
               className="text-sm font-semibold px-3 py-2 rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondary,var(--testo-secondario))] hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors"
             >
               ⬇ Word
             </button>
           )}
           <button onClick={() => setMostraCrea(true)} className="btn-primario">
-            ＋ Nuova Scheda
+            {t('schedeAllenamento.nuovaScheda')}
           </button>
         </div>
       </div>
@@ -147,16 +149,16 @@ export default function SchedeAllenamento() {
             className="overflow-hidden mb-4"
           >
             <div className="glass-card p-card-inner">
-              <p className="text-sm font-bold mb-1">Esporta in Word</p>
+              <p className="text-sm font-bold mb-1">{t('schedeAllenamento.esportaWord')}</p>
               <p className="text-xs text-[var(--testo-secondario)] mb-3">
-                Tocca le schede da includere: diventeranno Sessione 1, 2, 3… nell'ordine in cui le scegli.
+                {t('schedeAllenamento.esportaIstruzioni')}
               </p>
               <div className="flex items-center gap-2 flex-wrap">
                 <input
                   type="text"
                   value={titoloDocumento}
                   onChange={e => setTitoloDocumento(e.target.value)}
-                  placeholder="Titolo del documento (facoltativo)"
+                  placeholder={t('schedeAllenamento.titoloDocumento')}
                   className="campo-input flex-1 min-w-[200px] text-sm"
                 />
                 <button
@@ -164,10 +166,12 @@ export default function SchedeAllenamento() {
                   disabled={selezionate.length === 0 || scaricando}
                   className="btn-primario text-sm disabled:opacity-50"
                 >
-                  {scaricando ? 'Preparo…' : `Scarica ${selezionate.length || ''}`}
+                  {scaricando
+                    ? t('schedeAllenamento.preparo')
+                    : selezionate.length ? t('schedeAllenamento.scaricaConteggio', { numero: selezionate.length }) : t('schedeAllenamento.scarica')}
                 </button>
                 <button onClick={chiudiSelezione} className="text-sm px-3 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">
-                  Annulla
+                  {t('comune.annulla')}
                 </button>
               </div>
               {erroreDownload && <p className="text-xs text-[var(--pericolo)] mt-2">{erroreDownload}</p>}
@@ -179,9 +183,9 @@ export default function SchedeAllenamento() {
       {/* Category filter tab */}
       <div className="schede-tab-container">
         {[
-          { id: 'tutte', label: 'Tutte', icona: '📋' },
-          { id: 'mie', label: 'Le mie', icona: '👤' },
-          { id: 'globali', label: 'Globali', icona: '🌍' }
+          { id: 'tutte', label: t('schedeAllenamento.tab.tutte'), icona: '📋' },
+          { id: 'mie', label: t('schedeAllenamento.tab.mie'), icona: '👤' },
+          { id: 'globali', label: t('schedeAllenamento.tab.globali'), icona: '🌍' }
         ].map(f => (
           <button key={f.id}
             onClick={() => setFiltro(f.id)}
@@ -200,7 +204,7 @@ export default function SchedeAllenamento() {
             type="text"
             value={ricercaNome}
             onChange={e => setRicercaNome(e.target.value)}
-            placeholder="Cerca per nome..."
+            placeholder={t('schedeAllenamento.cercaPerNome')}
             className="schede-filtro-input"
           />
           {ricercaNome && (
@@ -213,8 +217,8 @@ export default function SchedeAllenamento() {
           onChange={e => setFiltroGruppo(e.target.value)}
           className="schede-filtro-select"
         >
-          <option value="">Tutti i muscoli</option>
-          {gruppiDisponibili.map(g => <option key={g} value={g}>{g}</option>)}
+          <option value="">{t('schedeAllenamento.tuttiMuscoli')}</option>
+          {gruppiDisponibili.map(g => <option key={g} value={g}>{nomeGruppo(g)}</option>)}
         </select>
 
         <select
@@ -222,10 +226,10 @@ export default function SchedeAllenamento() {
           onChange={e => setFiltroDifficolta(e.target.value)}
           className="schede-filtro-select"
         >
-          <option value="">Tutte le difficoltà</option>
-          <option value="BASE">Base</option>
-          <option value="INTERMEDIO">Intermedio</option>
-          <option value="AVANZATO">Avanzato</option>
+          <option value="">{t('schedeAllenamento.tutteDifficolta')}</option>
+          <option value="BASE">{t(LIVELLI.BASE.label)}</option>
+          <option value="INTERMEDIO">{t(LIVELLI.INTERMEDIO.label)}</option>
+          <option value="AVANZATO">{t(LIVELLI.AVANZATO.label)}</option>
         </select>
 
         {filtriAttivi && (
@@ -233,7 +237,7 @@ export default function SchedeAllenamento() {
             onClick={() => { setRicercaNome(''); setFiltroGruppo(''); setFiltroDifficolta(''); }}
             className="schede-filtro-reset"
           >
-            ✕ Reset
+            {t('schedeAllenamento.reset')}
           </button>
         )}
       </div>
@@ -247,11 +251,13 @@ export default function SchedeAllenamento() {
         <div className="glass-card p-8 text-center">
           <div className="text-4xl mb-3">📋</div>
           <p className="text-[var(--testo-secondario)]">
-            {filtriAttivi ? 'Nessuna scheda corrisponde ai filtri' : (filtro === 'mie' ? 'Non hai ancora creato schede' : 'Nessuna scheda trovata')}
+            {filtriAttivi
+              ? t('schedeAllenamento.nessunaCorrispondenza')
+              : (filtro === 'mie' ? t('schedeAllenamento.nessunaSchedaCreata') : t('schedeAllenamento.nessunaScheda'))}
           </p>
           {!filtriAttivi && (
             <button onClick={() => setMostraCrea(true)} className="btn-primario mt-4">
-              Crea la tua prima scheda
+              {t('schedeAllenamento.creaPrimaScheda')}
             </button>
           )}
         </div>
@@ -280,7 +286,7 @@ export default function SchedeAllenamento() {
                       style={selezionate.includes(scheda.id)
                         ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
                         : { borderColor: 'var(--bordo-light)', color: 'var(--testo-terziario)' }}
-                      aria-label={selezionate.includes(scheda.id) ? 'Selezionata' : 'Non selezionata'}
+                      aria-label={selezionate.includes(scheda.id) ? t('schedeAllenamento.selezionata') : t('schedeAllenamento.nonSelezionata')}
                     >
                       {selezionate.includes(scheda.id) ? selezionate.indexOf(scheda.id) + 1 : ''}
                     </span>
@@ -294,20 +300,20 @@ export default function SchedeAllenamento() {
                     )}
                   </div>
                   {scheda.visibilita === 'GLOBALE' && (
-                    <span className="badge accent ml-2 shrink-0">Globale</span>
+                    <span className="badge accent ml-2 shrink-0">{t('schedeAllenamento.globale')}</span>
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex flex-wrap gap-2">
                   <span className={`badge ${LIVELLI[scheda.livello]?.colore || 'accent'}`}>
-                    {LIVELLI[scheda.livello]?.label || scheda.livello}
+                    {LIVELLI[scheda.livello] ? t(LIVELLI[scheda.livello].label) : scheda.livello}
                   </span>
                   <span className="text-xs text-[var(--testo-terziario)]">
-                    {scheda.esercizi?.length || 0} esercizi
+                    {t('comune.esercizi', { count: scheda.esercizi?.length || 0 })}
                   </span>
                   <span className="text-xs text-[var(--testo-terziario)]">
-                    •  {scheda._count?.sessioni || 0} sessioni
+                    •  {t('schedeAllenamento.sessioni', { count: scheda._count?.sessioni || 0 })}
                   </span>
                 </div>
 
@@ -316,7 +322,7 @@ export default function SchedeAllenamento() {
                   <div className="flex flex-wrap gap-1">
                     {[...new Set(scheda.esercizi.map(e => e.esercizio?.gruppoMuscoloPrimario))].filter(Boolean).slice(0, 4).map(g => (
                       <span key={g} className="text-xs px-2 py-0.5 rounded-full bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">
-                        {g}
+                        {nomeGruppo(g)}
                       </span>
                     ))}
                   </div>
@@ -325,19 +331,19 @@ export default function SchedeAllenamento() {
                 {/* Footer */}
                 <div className="flex items-center justify-between mt-auto pt-2 border-t border-[var(--bordo)]">
                   <span className="text-xs text-[var(--testo-terziario)]">
-                    di {scheda.creatore?.nome} · {formattaData(scheda.creatoIl)}
+                    {t('schedeAllenamento.creatoDa', { nome: scheda.creatore?.nome ?? '', data: formattaData(scheda.creatoIl) })}
                   </span>
                   <div className="flex gap-2">
                     {!modalitaSelezione && scheda.creatoreId === utente.id && (
                       <button onClick={() => eliminaScheda(scheda.id)}
                         className="text-xs text-[var(--pericolo)] opacity-0 group-hover:opacity-100 transition-opacity">
-                        Elimina
+                        {t('comune.elimina')}
                       </button>
                     )}
                     {!modalitaSelezione && (
                       <Link to={`/schede/${scheda.id}`}
                         className="text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)]">
-                        Dettagli →
+                        {t('schedeAllenamento.dettagli')}
                       </Link>
                     )}
                   </div>

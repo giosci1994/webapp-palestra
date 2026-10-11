@@ -1,0 +1,23 @@
+{
+  "suggerimenti": {
+    "push": "Suggest a push workout for intermediates",
+    "panca": "My bench is taken, what can I do instead?",
+    "progressi": "Analyze my recent progress",
+    "nutrizione": "Tips for post-workout nutrition",
+    "gambe": "Exercises to strengthen the legs without squats",
+    "carichi": "How should I increase the weights progressively?"
+  },
+  "erroreComunicazione": "Error communicating with GymBot. Try again.",
+  "conversazioneRipresa": "📂 Conversation resumed. Write a message to continue!",
+  "sottotitolo": "AI fitness assistant · Powered by Gemini",
+  "storico": "📂 History",
+  "nuova": "＋ New",
+  "conversazioniPrecedenti": "Previous conversations",
+  "nessunaConversazione": "No past conversations",
+  "conversazione": "Conversation",
+  "benvenuto": "Hi! I'm GymBot",
+  "benvenutoDescrizione": "Your personal fitness assistant. Ask me for advice on training, nutrition, load progression and much more!",
+  "staPensando": "GymBot is thinking...",
+  "chiedi": "Ask GymBot...",
+  "avvertenza": "GymBot can make mistakes. See a professional for medical advice."
+}

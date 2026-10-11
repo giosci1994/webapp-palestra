@@ -1,0 +1,191 @@
+{
+  "tab": {
+    "profilo": "Profilo",
+    "notifiche": "Notifiche",
+    "privacy": "Privacy",
+    "pt": "Personal Trainer",
+    "sicurezza": "Sicurezza",
+    "fatturazione": "Fatturazione",
+    "legale": "Legal & Compliance",
+    "elimina": "Elimina Account"
+  },
+  "sezioni": "Sezioni del profilo",
+  "avatar": "Avatar",
+  "dal": "Dal {data}",
+  "esci": {
+    "conferma": "Sei sicuro di voler uscire?",
+    "titolo": "Esci dall'account"
+  },
+  "richiestaInAttesa": "Richiesta in attesa",
+  "dati": {
+    "titolo": "Dati Personali",
+    "abilitaModifiche": "Abilita modifiche",
+    "disabilitaModifiche": "Disabilita modifiche",
+    "nome": "Nome",
+    "nomePlaceholder": "Il tuo nome",
+    "dataNascita": "Data di nascita",
+    "genere": "Genere",
+    "peso": "Peso (kg)",
+    "altezza": "Altezza (cm)",
+    "composizione": "📊 Composizione corporea",
+    "composizioneDettaglio": "peso, grasso, muscolo…",
+    "palestra": "Palestra",
+    "nessunaPalestra": "Nessuna palestra",
+    "obiettivo": "Obiettivo Fitness",
+    "seleziona": "Seleziona...",
+    "bio": "Bio",
+    "bioPlaceholder": "Qualcosa su di te...",
+    "salvataggio": "Salvataggio...",
+    "salva": "💾 Salva Modifiche",
+    "salvato": "✅ Salvato!"
+  },
+  "generi": {
+    "M": "Maschile",
+    "F": "Femminile",
+    "Altro": "Altro"
+  },
+  "obiettivi": {
+    "massaMuscolare": "Massa Muscolare",
+    "definizione": "Definizione",
+    "resistenza": "Resistenza",
+    "saluteGenerale": "Salute Generale",
+    "perditaPeso": "Perdita Peso"
+  },
+  "professionale": {
+    "titolo": "Account professionale",
+    "inAttesaDettaglio": "Un amministratore valuterà a breve la tua richiesta di diventare Personal Trainer.",
+    "invito": "Sei un professionista del fitness? Richiedi il ruolo di <b>Personal Trainer</b> per gestire clienti, creare schede pubbliche e apparire tra i PT scopribili dagli utenti.",
+    "invio": "Invio richiesta…",
+    "diventa": "🏋️ Diventa Personal Trainer"
+  },
+  "privacy": {
+    "visibilitaTitolo": "Visibilità Profilo",
+    "visibilitaDescrizione": "Scegli quali informazioni mostrare agli altri utenti",
+    "mostra": {
+      "palestra": "Mostra palestra",
+      "peso": "Mostra peso",
+      "altezza": "Mostra altezza",
+      "eta": "Mostra età",
+      "obiettivo": "Mostra obiettivo fitness",
+      "statistiche": "Mostra statistiche allenamenti",
+      "record": "Mostra record personali"
+    },
+    "gamification": "Gamification",
+    "gamificationPartecipa": "✨ Partecipa a classifiche e badge",
+    "gamificationAttiva": "Punti esperienza, livelli e classifiche sono attivi.",
+    "gamificationDisattivata": "Gamification disattivata — non apparirai nelle classifiche. Puoi riattivare in qualsiasi momento."
+  },
+  "esportazione": {
+    "titolo": "I tuoi dati",
+    "descrizione": "Una copia di tutto ciò che GymMaster conserva su di te: profilo, schede, allenamenti, record, misurazioni e messaggi. È un file JSON, che puoi aprire con qualunque programma o portare in un'altra app.",
+    "scarica": "Scarica i miei dati",
+    "scaricaPrima": "Prima scarica una copia dei tuoi dati",
+    "preparazione": "Preparo il file…",
+    "errore": "Download non riuscito"
+  },
+  "pt": {
+    "titolo": "Il tuo Personal Trainer",
+    "nonIscritto": "Non sei iscritto presso nessun Personal Trainer.",
+    "cerca": "🔍 Cerca un Personal Trainer",
+    "messaggioPlaceholder": "Messaggio per il PT (facoltativo): obiettivi, disponibilità…",
+    "messaggioNota": "Arriva al PT che scegli, insieme alla richiesta.",
+    "nessuno": "Nessun PT disponibile al momento.",
+    "clienti_one": "{count} cliente",
+    "clienti_other": "{count} clienti",
+    "schede_one": "{count} scheda",
+    "schede_other": "{count} schede",
+    "iscriviti": "Iscriviti",
+    "attesaRisposta": "In attesa di risposta da {nome}",
+    "confermaAnnullaRichiesta": "Annullare la richiesta?",
+    "attivo": "Attivo",
+    "termina": "Termina iscrizione",
+    "confermaTermina": "Terminare il rapporto con il tuo PT?"
+  },
+  "password": {
+    "titolo": "Cambia Password",
+    "attuale": "Password attuale",
+    "nuova": "Nuova password (min 8 caratteri)",
+    "conferma": "Conferma nuova password",
+    "aggiorna": "🔑 Aggiorna Password",
+    "aggiornamento": "Aggiornamento...",
+    "nota": "Cambiando password gli altri dispositivi vengono scollegati.",
+    "nonCorrispondono": "Le password non corrispondono",
+    "minimo": "Minimo 8 caratteri",
+    "aggiornata": "Password aggiornata con successo!"
+  },
+  "dispositivi": {
+    "titolo": "Dispositivi collegati",
+    "descrizione": "Dove sei entrato con il tuo account. Se non riconosci un dispositivo, scollegalo e cambia la password.",
+    "sconosciuto": "Dispositivo sconosciuto",
+    "questo": "QUESTO",
+    "dettaglio": "Entrato il {data} · ultima attività {ultimoUso}",
+    "esci": "Esci",
+    "esciAltri": "Esci da tutti gli altri dispositivi"
+  },
+  "passkey": {
+    "titolo": "Passkey",
+    "descrizione": "Entra con l'impronta, il volto o il PIN del dispositivo invece della password. La password resta valida.",
+    "nessuna": "Nessuna passkey per ora.",
+    "nomePredefinito": "Passkey",
+    "sincronizzata": "sincronizzata",
+    "aggiuntaUsata": "Aggiunta il {data} · usata {ultimoUso}",
+    "aggiuntaMaiUsata": "Aggiunta il {data} · mai usata",
+    "passwordPlaceholder": "Password attuale, per aggiungere una passkey",
+    "aggiungi": "🔑 Aggiungi una passkey",
+    "istruzioni": "Segui le istruzioni del dispositivo…",
+    "nonSupportate": "Questo browser non supporta le passkey.",
+    "aggiunta": "Passkey aggiunta: la prossima volta puoi entrare senza password.",
+    "annullata": "Operazione annullata sul dispositivo.",
+    "giaPresente": "Questo dispositivo ha già una passkey per GymMaster.",
+    "confermaElimina": "Eliminare questa passkey? Per entrare da quel dispositivo servirà di nuovo la password."
+  },
+  "telegram": {
+    "titolo": "📲 Bot Telegram",
+    "descrizione": "Collega il tuo account al bot Telegram per leggere le tue schede e crearne di nuove parlando con l'assistente direttamente in chat.",
+    "collegato": "✅ Account collegato",
+    "scollega": "Scollega",
+    "invia": "Apri il bot e invia questo codice (valido 10 minuti):",
+    "apri": "Apri il bot e collega",
+    "nuovoCodice": "Genera nuovo codice",
+    "generazione": "Generazione...",
+    "collega": "🔗 Collega Telegram"
+  },
+  "reset": {
+    "titolo": "Gestione Dati",
+    "descrizione": "Azzera tutte le tue statistiche (sessioni e record). Le schede verranno mantenute.",
+    "resetta": "⚠️ Resetta Statistiche",
+    "istruzione": "Digita <strong>{frase}</strong> per procedere.",
+    "frase": "CONFERMO",
+    "inCorso": "Reset...",
+    "conferma": "Resetta",
+    "fatto": "Statistiche azzerate!"
+  },
+  "fatturazione": {
+    "titolo": "Fatturazione",
+    "inLavorazione": "In Lavorazione",
+    "descrizione": "Questa sezione è attualmente in fase di sviluppo. Sarà disponibile a breve con funzionalità di fatturazione e gestione abbonamenti."
+  },
+  "legale": {
+    "documentiTitolo": "Documenti Legali",
+    "termini": "Termini e Condizioni",
+    "privacy": "Informativa sulla Privacy",
+    "cookie": "Cookie Policy",
+    "infoTitolo": "🏋️ Info Applicazione",
+    "versione": "Versione",
+    "versioneValori": "App v{app} · Server v{server} · Build {build}",
+    "sviluppatore": "Developer",
+    "sviluppatoreRuolo": "Sviluppatore & Creatore"
+  },
+  "elimina": {
+    "titolo": "Elimina Account",
+    "attenzione": "Attenzione: questa azione è irreversibile",
+    "attenzioneDettaglio": "Eliminando il tuo account perderai definitivamente tutti i tuoi dati: schede, allenamenti, statistiche, messaggi e progressi. Questa azione non può essere annullata.",
+    "istruzione": "Per procedere, scrivi <strong>{frase}</strong> nel campo sottostante.",
+    "frase": "ELIMINA IL MIO ACCOUNT",
+    "password": "Conferma con la tua password.",
+    "passwordPlaceholder": "Password",
+    "inCorso": "Eliminazione...",
+    "definitivo": "🗑️ Elimina Definitivamente",
+    "errore": "Eliminazione non riuscita"
+  }
+}

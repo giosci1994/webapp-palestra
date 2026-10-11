@@ -53,6 +53,11 @@ describe('cerca', () => {
     expect(nomi('bench press')).toEqual(['Panca Piana con Manubri', 'Panca Piana con Bilanciere']);
   });
 
+  it('finds muscles and equipment by their English names too', () => {
+    expect(nomi('hamstrings').sort()).toEqual(['Stacco Rumeno con Bilanciere', 'Stacco Rumeno con Due Manubri', 'Stacco da Terra con Bilanciere']);
+    expect(nomi('chest dumbbells')).toEqual(['Panca Piana con Manubri']);
+  });
+
   it('una parola a meta\', il plurale e gli accenti non contano', () => {
     expect(nomi('affon')).toEqual(['Affondo in Avanti con Manubri']);
     expect(nomi('affondi')).toEqual(['Affondo in Avanti con Manubri']);

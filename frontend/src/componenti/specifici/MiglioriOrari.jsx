@@ -7,8 +7,17 @@ import { useState, useEffect } from 'react';
 import { Clock, TrendingDown } from 'lucide-react';
 import { api } from '../../config/api.js';
 import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
+import Testo from '../../i18n/Testo.jsx';
+import { localeCorrente } from '../../i18n/index.js';
+import { useLingua } from '../../hooks/useLingua.js';
+import { lunediDi } from '../../utils/formattatori.js';
 
-const GIORNI = ['lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+/** Name of a weekday in the current language, with Monday = 0 */
+function nomeGiorno(indice) {
+  const giorno = lunediDi(new Date());
+  giorno.setDate(giorno.getDate() + indice);
+  return new Intl.DateTimeFormat(localeCorrente(), { weekday: 'long' }).format(giorno);
+}
 
 /** Day index with Monday = 0, consistent with the rest of the app. */
 function oggiIndice() {
@@ -22,6 +31,7 @@ function colorePerLivello(livello) {
 }
 
 export default function MiglioriOrari({ palestraId }) {
+  const { t } = useLingua();
   const [dati, setDati] = useState(null);
   // The gym of the loaded data: until it is the current one, it is still loading
   const [caricatoPer, setCaricatoPer] = useState(null);
@@ -46,12 +56,12 @@ export default function MiglioriOrari({ palestraId }) {
   const piuTranquillo = dati.giornoPiuTranquillo;
 
   return (
-    <SezioneCollassabile chiave="quando-andare" titolo="Quando andare" Icona={Clock}>
+    <SezioneCollassabile chiave="quando-andare" titolo={t('miglioriOrari.titolo')} Icona={Clock}>
       <div className="p-card-inner pt-4">
         {diOggi ? (
           <>
             <p className="text-xs text-[var(--testo-terziario)] uppercase tracking-wide font-bold mb-2">
-              Oggi, le ore più libere
+              {t('miglioriOrari.oreLibereOggi')}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               {diOggi.migliori.map(m => (
@@ -59,31 +69,35 @@ export default function MiglioriOrari({ palestraId }) {
                   key={m.ora}
                   className="px-3 py-1.5 rounded-[var(--raggio-sm)] text-sm font-bold border"
                   style={{ borderColor: colorePerLivello(m.livello), color: colorePerLivello(m.livello) }}
-                  title={`Circa ${m.livello}% di riempimento`}
+                  title={t('miglioriOrari.riempimento', { livello: m.livello })}
                 >
                   {String(m.ora).padStart(2, '0')}:00
                 </span>
               ))}
             </div>
             <p className="text-xs text-[var(--testo-secondario)] mt-2">
-              Contro una media di {diOggi.media}% nella giornata.
+              {t('miglioriOrari.contro', { media: diOggi.media })}
             </p>
           </>
         ) : (
-          <p className="text-sm text-[var(--testo-terziario)]">Nessuna rilevazione per oggi.</p>
+          <p className="text-sm text-[var(--testo-terziario)]">{t('miglioriOrari.nessunaRilevazione')}</p>
         )}
 
         {piuTranquillo != null && piuTranquillo !== oggi && (
           <div className="mt-4 pt-3 border-t border-[var(--bordo-light)] flex items-start gap-2">
             <TrendingDown size={16} className="text-[var(--testo-secondario)] mt-0.5 shrink-0" />
             <p className="text-xs text-[var(--testo-secondario)]">
-              Il giorno più tranquillo della settimana è <span className="font-bold text-[var(--testo-primario)]">{GIORNI[piuTranquillo]}</span>.
+              <Testo
+                t="miglioriOrari.giornoTranquillo"
+                valori={{ giorno: nomeGiorno(piuTranquillo) }}
+                componenti={{ b: <span className="font-bold text-[var(--testo-primario)]" /> }}
+              />
             </p>
           </div>
         )}
 
         <p className="text-[10px] text-[var(--testo-terziario)] mt-3">
-          Su {dati.rilevazioni} rilevazioni, fascia {dati.fascia.da}:00–{dati.fascia.a}:00.
+          {t('miglioriOrari.rilevazioni', { count: dati.rilevazioni, da: dati.fascia.da, a: dati.fascia.a })}
         </p>
       </div>
     </SezioneCollassabile>
