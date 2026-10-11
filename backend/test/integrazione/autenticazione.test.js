@@ -75,6 +75,8 @@ describe('login', () => {
     const risposta = await login(utente.email);
     assert.equal(risposta.stato, 401);
     assert.match(risposta.corpo.messaggio, /^Verifica la tua email/);
+    // The app shows "resend the email" by this code, whatever the language
+    assert.equal(risposta.corpo.codice, 'EMAIL_NON_VERIFICATA');
   });
 
   it('"Ricorda dispositivo" fa durare la sessione 30 giorni invece di 7', async () => {

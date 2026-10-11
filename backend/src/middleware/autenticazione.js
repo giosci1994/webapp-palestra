@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { linguaSupportata } from '../i18n/index.js';
 
 /**
  * JWT authentication middleware.
@@ -40,6 +41,8 @@ export async function verificaToken(req, res, next) {
         stato: true,
         palestraId: true,
         chatRetentionGiorni: true,
+        lingua: true,
+        linguaApp: true,
         ...(payload.famiglia && {
           refreshTokens: { where: { famiglia: payload.famiglia, revocato: false }, select: { id: true }, take: 1 }
         })
@@ -62,6 +65,14 @@ export async function verificaToken(req, res, next) {
           ? 'Il tuo account è stato sospeso'
           : 'Il tuo account è in attesa di approvazione'
       );
+    }
+
+    // The app's language, remembered for the messages sent outside a request
+    // (push, reminders). It changes rarely: a write only when it does
+    if (req.lingua && linguaSupportata(req.headers['accept-language']) && datiUtente.linguaApp !== req.lingua) {
+      prisma.utente.update({ where: { id: utente.id }, data: { linguaApp: req.lingua } })
+        .catch(err => logger.warn({ utenteId: utente.id, err: err.message }, 'Lingua dell\'app non salvata'));
+      datiUtente.linguaApp = req.lingua;
     }
 
     // Attach the user to the request, with the session it comes from

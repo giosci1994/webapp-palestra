@@ -15,6 +15,7 @@ import { inizializzaSocket } from './socket/indice.js';
 import router from './routes/indice.js';
 import logger from './utils/logger.js';
 import { ErroreApp } from './utils/errori.js';
+import { linguaRichiesta } from './i18n/index.js';
 
 const AMBIENTE = process.env.AMBIENTE || 'sviluppo';
 
@@ -47,6 +48,10 @@ export function creaServer() {
       next();
     });
   }
+
+  // --- Language of the request (Accept-Language), kept for the whole request.
+  // After the body parsers: their callbacks would lose it ---
+  app.use(linguaRichiesta);
 
   // --- Mount the API routes ---
   app.use('/api/v1', router);

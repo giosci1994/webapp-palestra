@@ -63,7 +63,7 @@ export default function Login() {
       vaiDopoAccesso(await login(email, password, ricordaDispositivo));
     } catch (err) {
       setErroreLocale(err.message || t('login.erroreLogin'));
-      if ((err.message || '').includes('Verifica la tua email')) setMostraReinvio(true);
+      if (err.codice === 'EMAIL_NON_VERIFICATA') setMostraReinvio(true);
     } finally {
       setCaricamento(false);
     }

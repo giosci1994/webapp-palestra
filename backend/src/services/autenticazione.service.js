@@ -270,7 +270,7 @@ export async function apriSessione(utente, { ricordaDispositivo = false, disposi
 
   // Email not verified (only if verification is on): block access
   if (utente.emailVerificata === false) {
-    throw new ErroreNonAutenticato('Verifica la tua email prima di accedere. Controlla la posta (anche lo spam).');
+    throw new ErroreNonAutenticato('Verifica la tua email prima di accedere. Controlla la posta (anche lo spam).', 'EMAIL_NON_VERIFICATA');
   }
 
   // Generate the tokens — longer lifetime if "remember device" is on

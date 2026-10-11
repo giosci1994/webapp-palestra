@@ -1,0 +1,8 @@
+{
+  "validazione": "Dati della richiesta non validi",
+  "nonAutenticato": "Autenticazione richiesta",
+  "nonAutorizzato": "Non hai i permessi per questa azione",
+  "nonTrovato": "Risorsa non trovata",
+  "conflitto": "Risorsa già esistente",
+  "troppeRichieste": "Troppe richieste, riprova più tardi"
+}
