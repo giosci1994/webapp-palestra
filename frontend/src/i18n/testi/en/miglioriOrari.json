@@ -1,0 +1,10 @@
+{
+  "titolo": "When to go",
+  "oreLibereOggi": "Today, the quietest hours",
+  "riempimento": "About {livello}% full",
+  "contro": "Compared with a daily average of {media}%.",
+  "nessunaRilevazione": "No readings for today.",
+  "giornoTranquillo": "The quietest day of the week is <b>{giorno}</b>.",
+  "rilevazioni_one": "Based on {count} reading, {da}:00–{a}:00 window.",
+  "rilevazioni_other": "Based on {count} readings, {da}:00–{a}:00 window."
+}

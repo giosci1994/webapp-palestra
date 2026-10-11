@@ -21,8 +21,18 @@ import MiglioriOrari from '../componenti/specifici/MiglioriOrari.jsx';
 import Calendario from '../componenti/comuni/Calendario.jsx';
 import SezioneCollassabile from '../componenti/comuni/SezioneCollassabile.jsx';
 import { useTelefono } from '../hooks/useMediaQuery.js';
+import { useLingua } from '../hooks/useLingua.js';
+import { localeCorrente } from '../i18n/index.js';
+
+// The tab ids are compared in the code; what is shown for each is a translation key
+const ETICHETTE_TAB = {
+  'attività': 'dashboard.tab.attivita',
+  'statistiche': 'dashboard.tab.statistiche',
+  'il mio PT': 'dashboard.tab.ilMioPt'
+};
 
 export default function Dashboard() {
+  const { t } = useLingua();
   const { utente, isAdmin } = useAuth();
   const naviga = useNavigate();
   
@@ -119,7 +129,7 @@ export default function Dashboard() {
 
       setConsiglio(resConsiglio.dati || null);
     })
-    .catch(err => console.error('Errore caricamento dashboard:', err))
+    .catch(err => console.error('Error loading the dashboard:', err))
     .finally(() => setCaricamento(false)), [palestraId, caricaAffluenza]);
 
   useEffect(() => {
@@ -131,7 +141,7 @@ export default function Dashboard() {
       const res = await api.get('/utenti/mio-pt/dashboard');
       if (res.dati) setPtDashboard(res.dati);
     } catch (err) {
-      console.error('Errore caricamento dati PT:', err);
+      console.error('Error loading the personal trainer data:', err);
     }
   };
 
@@ -149,7 +159,7 @@ export default function Dashboard() {
       setBanner(nuovoBanner);
       setEditBanner(false);
     } catch {
-      alert("Errore salvataggio banner");
+      alert(t('dashboard.banner.erroreSalvataggio'));
     }
   };
 
@@ -167,14 +177,14 @@ export default function Dashboard() {
   const eliminaSessione = async (id, e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!window.confirm("Sei sicuro di voler eliminare questa attività?")) return;
+    if (!window.confirm(t('dashboard.confermaEliminaAttivita'))) return;
     try {
       await api.delete(`/sessioni/${id}`);
       setSessioniRecenti(prev => prev.filter(s => s.id !== id));
       // We reload the data to update the calendar and the statistics
       caricaDati();
     } catch (err) {
-      alert(err.response?.data?.errore || "Errore durante l'eliminazione");
+      alert(err.response?.data?.errore || t('dashboard.erroreEliminazione'));
     }
   };
 
@@ -197,7 +207,7 @@ export default function Dashboard() {
 
 
   const ora = new Date().getHours();
-  const saluto = ora < 12 ? 'Buongiorno' : ora < 18 ? 'Buon pomeriggio' : 'Buonasera';
+  const saluto = ora < 12 ? t('dashboard.saluto.mattina') : ora < 18 ? t('dashboard.saluto.pomeriggio') : t('dashboard.saluto.sera');
 
   if (caricamento) {
     return (
@@ -236,17 +246,17 @@ export default function Dashboard() {
     ...(senzaPT && !isAdmin && utente?.ruolo !== 'PERSONAL_TRAINER' ? [{
       id: 'trova-pt',
       Icona: Dumbbell,
-      titolo: 'Vuoi una guida esperta?',
-      sottotitolo: 'Trova un Personal Trainer e allenati con schede su misura.',
-      etichetta: 'Trova un PT',
+      titolo: t('dashboard.slide.trovaPt.titolo'),
+      sottotitolo: t('dashboard.slide.trovaPt.sottotitolo'),
+      etichetta: t('dashboard.slide.trovaPt.etichetta'),
       a: '/trova-pt'
     }] : []),
     ...(messaggiNonLetti > 0 ? [{
       id: 'messaggi',
       Icona: MessageCircle,
-      titolo: messaggiNonLetti === 1 ? 'Hai 1 messaggio non letto' : `Hai ${messaggiNonLetti} messaggi non letti`,
-      sottotitolo: 'Apri la chat per leggerli e rispondere.',
-      etichetta: 'Apri la chat',
+      titolo: t('dashboard.slide.messaggi.titolo', { count: messaggiNonLetti }),
+      sottotitolo: t('dashboard.slide.messaggi.sottotitolo'),
+      etichetta: t('dashboard.slide.messaggi.etichetta'),
       a: '/chat'
     }] : []),
     // "Inizia scheda" (start plan) goes through "Allenati ora", with the plan
@@ -255,9 +265,9 @@ export default function Dashboard() {
     ...(consiglio ? [{
       id: 'consiglio-ai',
       Icona: consiglio.motivo === 'oggi' ? CalendarClock : Bot,
-      titolo: consiglio.scheda?.titolo || 'Oggi recupero',
+      titolo: consiglio.scheda?.titolo || t('dashboard.slide.consiglio.oggiRecupero'),
       sottotitolo: consiglio.testo,
-      etichetta: consiglio.scheda ? 'Inizia scheda' : 'Vedi il recupero',
+      etichetta: consiglio.scheda ? t('dashboard.slide.consiglio.iniziaScheda') : t('dashboard.slide.consiglio.vediRecupero'),
       a: consiglio.scheda ? `/allenamento?scheda=${consiglio.scheda.id}` : '/statistiche'
     }] : [])
   ];
@@ -269,7 +279,7 @@ export default function Dashboard() {
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-20 relative">
         <div className="absolute -top-20 -left-20 w-64 h-64 bg-[var(--accent)] rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 relative z-10">
-          {saluto}, <br className="md:hidden" /><span className="testo-gradient">{utente?.nome?.split(' ')[0]}</span>
+          {saluto} <br className="md:hidden" /><span className="testo-gradient">{utente?.nome?.split(' ')[0]}</span>
         </h1>
       </motion.div>
 
@@ -298,13 +308,13 @@ export default function Dashboard() {
                       value={tempBannerTesto}
                       onChange={(e) => setTempBannerTesto(e.target.value)}
                       className="flex-1 bg-black/20 border border-[var(--bordo-light)] rounded px-4 py-3 text-base md:text-lg outline-none focus:border-[var(--accent)]"
-                      placeholder="Inserisci il testo del banner..."
+                      placeholder={t('dashboard.banner.placeholder')}
                       autoFocus
                     />
                   ) : (
                     <span className={`text-base md:text-xl font-medium flex-1 ${banner.visibile ? 'text-[var(--testo-primario)]' : 'text-[var(--testo-terziario)]'}`}>
-                      {banner.testo || (isAdmin ? "Nessun testo. Clicca la matita per modificare." : "")}
-                      {!banner.visibile && isAdmin && " (Attualmente Nascosto)"}
+                      {banner.testo || (isAdmin ? t('dashboard.banner.vuoto') : "")}
+                      {!banner.visibile && isAdmin && ` ${t('dashboard.banner.nascosto')}`}
                     </span>
                   )}
                 </div>
@@ -314,10 +324,10 @@ export default function Dashboard() {
                   <div className="flex gap-2 shrink-0">
                     {editBanner ? (
                       <>
-                        <button onClick={() => salvaBanner(true)} className="p-1.5 bg-[var(--successo-dim)] text-[var(--successo)] rounded hover:bg-[var(--successo)] hover:text-white transition-colors" title="Salva e Mostra">
+                        <button onClick={() => salvaBanner(true)} className="p-1.5 bg-[var(--successo-dim)] text-[var(--successo)] rounded hover:bg-[var(--successo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaMostra')}>
                           <Check size={16} />
                         </button>
-                        <button onClick={() => salvaBanner(false)} className="p-1.5 bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded hover:bg-[var(--pericolo)] hover:text-white transition-colors" title="Salva e Nascondi">
+                        <button onClick={() => salvaBanner(false)} className="p-1.5 bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded hover:bg-[var(--pericolo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaNascondi')}>
                           <X size={16} />
                         </button>
                       </>
@@ -360,7 +370,7 @@ export default function Dashboard() {
                 
                 <div className="relative z-10 flex items-center justify-center gap-2">
                   <IconaTab size={18} className={`shrink-0 transition-transform duration-300 ${tabAttivo === tab ? 'text-[var(--accent)]' : ''}`} />
-                  {tab}
+                  {t(ETICHETTE_TAB[tab])}
                 </div>
               </button>
             );
@@ -383,17 +393,17 @@ export default function Dashboard() {
             <div className="flex flex-col gap-8">
               
               {/* Train and manage plans */}
-              <SezioneCollassabile chiave="allenati" titolo="Allenati e gestisci schede" Icona={Activity}>
+              <SezioneCollassabile chiave="allenati" titolo={t('dashboard.allenati.titolo')} Icona={Activity}>
                 <div className="flex flex-col">
                   {[
-                    { etichetta: 'Gestione Schede', icona: ClipboardList, link: '/schede' },
+                    { etichetta: t('dashboard.allenati.gestioneSchede'), icona: ClipboardList, link: '/schede' },
                     // The only way to the calendar from a phone: the mobile navigation
                     // bar has five fixed entries, and the sidebar with the
                     // "Pianificazione" entry only appears from md up.
-                    { etichetta: 'Pianifica Allenamenti', icona: CalendarClock, link: '/pianificazione' },
-                    { etichetta: 'Catalogo Esercizi', icona: Library, link: '/catalogo' },
-                    { etichetta: 'Storico Allenamenti', icona: History, link: '/storico' },
-                    { etichetta: 'Classifiche', icona: Trophy, link: '/gamification' }
+                    { etichetta: t('dashboard.allenati.pianificaAllenamenti'), icona: CalendarClock, link: '/pianificazione' },
+                    { etichetta: t('dashboard.allenati.catalogoEsercizi'), icona: Library, link: '/catalogo' },
+                    { etichetta: t('dashboard.allenati.storicoAllenamenti'), icona: History, link: '/storico' },
+                    { etichetta: t('dashboard.allenati.classifiche'), icona: Trophy, link: '/gamification' }
                   ].map((item, i, arr) => (
                     <Link key={i} to={item.link} className={`flex items-center justify-between px-card-inner border-b border-[var(--bordo-light)] last:border-0 hover:bg-[var(--bg-terziario)] transition-colors group py-5 ${i === arr.length - 1 ? 'card-list-ultimo' : ''}`}>
                       <div className="flex items-center gap-4">
@@ -407,7 +417,7 @@ export default function Dashboard() {
               </SezioneCollassabile>
 
               {/* Latest activity (Recent Workouts) */}
-              <SezioneCollassabile chiave="ultime-attivita" titolo="Ultime attività" Icona={History}>
+              <SezioneCollassabile chiave="ultime-attivita" titolo={t('dashboard.ultimeAttivita.titolo')} Icona={History}>
                 
                 <div className="text-center text-[var(--testo-terziario)] flex items-center justify-center">
                   {sessioniRecenti.slice(0,3).length > 0 ? (
@@ -415,13 +425,13 @@ export default function Dashboard() {
                       {sessioniRecenti.slice(0,3).map((sessione, sIdx, sArr) => (
                         <li key={sessione.id} className={`px-card-inner border-b border-[var(--bordo-light)] last:border-0 flex justify-between items-center group py-5 ${sIdx === sArr.length - 1 ? 'card-list-ultimo' : ''}`}>
                           <div>
-                            <p className="text-[var(--testo-primario)] font-medium text-base">{sessione.scheda?.titolo || 'Sessione Libera'}</p>
+                            <p className="text-[var(--testo-primario)] font-medium text-base">{sessione.scheda?.titolo || t('dashboard.ultimeAttivita.sessioneLibera')}</p>
                             <p className="text-xs text-[var(--testo-terziario)] mt-1">{formattaDataRelativa(sessione.dataInizio)}</p>
                           </div>
                           <button 
                             onClick={(e) => eliminaSessione(sessione.id, e)}
                             className="p-2 text-[var(--testo-terziario)] hover:text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)] rounded-full transition-colors"
-                            title="Elimina attività"
+                            title={t('dashboard.ultimeAttivita.elimina')}
                           >
                             <Trash2 size={18} />
                           </button>
@@ -434,11 +444,11 @@ export default function Dashboard() {
                         <Dumbbell size={26} className="text-[var(--accent)]" />
                       </div>
                       <div>
-                        <p className="font-semibold text-[var(--testo-primario)]">Ancora nessun allenamento</p>
-                        <p className="text-sm text-[var(--testo-terziario)] mt-1">Inizia da una scheda: comparirà qui.</p>
+                        <p className="font-semibold text-[var(--testo-primario)]">{t('dashboard.ultimeAttivita.vuotoTitolo')}</p>
+                        <p className="text-sm text-[var(--testo-terziario)] mt-1">{t('dashboard.ultimeAttivita.vuotoTesto')}</p>
                       </div>
                       <Link to="/schede" style={{ color: '#fff' }} className="mt-1 w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold transition-colors shadow-[var(--ombra-accent)]">
-                        Vai alle schede
+                        {t('dashboard.ultimeAttivita.vaiAlleSchede')}
                       </Link>
                     </div>
                   )}
@@ -454,7 +464,7 @@ export default function Dashboard() {
               <MiglioriOrari palestraId={utente?.palestraId || utente?.palestra?.id} />
 
               {/* Calendar: completed and scheduled workouts */}
-              <SezioneCollassabile chiave="calendario" titolo="Calendario" Icona={CalendarDays}>
+              <SezioneCollassabile chiave="calendario" titolo={t('dashboard.calendario.titolo')} Icona={CalendarDays}>
                 <div className="p-card-inner">
                   <Calendario
                     modo={modoCalendario}
@@ -465,14 +475,14 @@ export default function Dashboard() {
                   />
 
                   <div className="flex items-center gap-3 mt-5 pt-4 border-t border-[var(--bordo-light)] text-xs text-[var(--testo-terziario)] flex-wrap">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--pericolo)' }} /> Svolto</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} /> In programma</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--successo, #22c55e)' }} /> Completato</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--pericolo)' }} /> {t('dashboard.calendario.svolto')}</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} /> {t('dashboard.calendario.inProgramma')}</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--successo, #22c55e)' }} /> {t('dashboard.calendario.completato')}</span>
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-[var(--bordo-light)] flex items-center justify-between gap-3 text-sm">
-                    <Link to="/pianificazione" className="font-semibold text-[var(--accent)] hover:underline">Pianifica</Link>
-                    <Link to="/storico" className="font-semibold text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors">Storico →</Link>
+                    <Link to="/pianificazione" className="font-semibold text-[var(--accent)] hover:underline">{t('dashboard.calendario.pianifica')}</Link>
+                    <Link to="/storico" className="font-semibold text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors">{t('dashboard.calendario.storico')}</Link>
                   </div>
                 </div>
               </SezioneCollassabile>
@@ -483,9 +493,9 @@ export default function Dashboard() {
                   <div className="p-card-inner pb-4 flex items-center gap-3">
                     <Building size={22} className="text-[var(--accent)]" />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg">Affluenza</h3>
+                      <h3 className="font-bold text-lg">{t('dashboard.affluenza.titolo')}</h3>
                       <p className="text-[10px] text-[var(--testo-terziario)] truncate">
-                        {utente?.palestra?.nomeCatena || 'La tua palestra'}
+                        {utente?.palestra?.nomeCatena || t('dashboard.affluenza.latuaPalestra')}
                       </p>
                     </div>
                     {affluenza?.livelloColore && affluenza.livelloColore !== 'grigio' && (
@@ -568,7 +578,7 @@ export default function Dashboard() {
                               'bg-gray-400'
                             }`} />
                             <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--testo-terziario)]">In tempo reale</p>
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--testo-terziario)]">{t('dashboard.affluenza.tempoReale')}</p>
                               <p className={`text-sm font-semibold ${
                                 affluenza.livelloColore === 'verde' ? 'text-green-400' :
                                 affluenza.livelloColore === 'giallo' ? 'text-amber-400' :
@@ -581,14 +591,14 @@ export default function Dashboard() {
                         {/* Update timestamp */}
                         {affluenza.aggiornatoIl && (
                           <p className="text-[9px] text-[var(--testo-terziario)] mt-2 text-right">
-                            Aggiornato: {new Date(affluenza.aggiornatoIl).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            {t('dashboard.affluenza.aggiornato', { ora: new Date(affluenza.aggiornatoIl).toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
                           </p>
                         )}
                       </>
                     ) : (
                       <div className="text-center py-6">
-                        <p className="text-xs text-[var(--testo-terziario)]">Dati affluenza non disponibili</p>
-                        <p className="text-[10px] text-[var(--testo-terziario)] mt-1">Saranno aggiornati a breve</p>
+                        <p className="text-xs text-[var(--testo-terziario)]">{t('dashboard.affluenza.nonDisponibile')}</p>
+                        <p className="text-[10px] text-[var(--testo-terziario)] mt-1">{t('dashboard.affluenza.aggiornamentoBreve')}</p>
                       </div>
                     )}
                   </div>
@@ -628,7 +638,7 @@ export default function Dashboard() {
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <Users size={20} className="text-[var(--accent)]" />
-                  <h3 className="font-bold text-lg">Il tuo Personal Trainer</h3>
+                  <h3 className="font-bold text-lg">{t('dashboard.pt.titolo')}</h3>
                 </div>
                 <div className="p-6">
                   <div className="flex items-center gap-4">
@@ -640,7 +650,7 @@ export default function Dashboard() {
                     <div>
                       <p className="font-bold text-lg">{ptDashboard.trainer?.nome}</p>
                       <p className="text-xs text-[var(--testo-terziario)]">
-                        {ptDashboard.trainer?._count?.clientiComePT || 0} clienti · Iscritto da {ptDashboard.giorniIscritto} giorni
+                        {t('dashboard.pt.clienti', { count: ptDashboard.trainer?._count?.clientiComePT || 0 })} · {t('dashboard.pt.iscrittoDa', { count: ptDashboard.giorniIscritto ?? 0 })}
                       </p>
                       {ptDashboard.trainer?.bio && (
                         <p className="text-sm text-[var(--testo-secondario)] mt-2">{ptDashboard.trainer.bio}</p>
@@ -654,7 +664,7 @@ export default function Dashboard() {
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <Megaphone size={20} className="text-amber-400" />
-                  <h3 className="font-bold text-lg">Bacheca Annunci</h3>
+                  <h3 className="font-bold text-lg">{t('dashboard.pt.bacheca')}</h3>
                   {ptDashboard.annunci?.length > 0 && (
                     <span className="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {ptDashboard.annunci.length}
@@ -675,7 +685,7 @@ export default function Dashboard() {
                       <p className="text-sm text-[var(--testo-secondario)] leading-relaxed">{a.contenuto}</p>
                     </div>
                   )) : (
-                    <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">Nessun annuncio dal tuo PT</p>
+                    <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">{t('dashboard.pt.nessunAnnuncio')}</p>
                   )}
                 </div>
               </div>
@@ -684,7 +694,7 @@ export default function Dashboard() {
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <ClipboardList size={20} className="text-[var(--accent)]" />
-                  <h3 className="font-bold text-lg">Schede dal PT</h3>
+                  <h3 className="font-bold text-lg">{t('dashboard.pt.schede')}</h3>
                 </div>
                 <div className="divide-y divide-[var(--bordo-light)]">
                   {ptDashboard.schedeAssegnate?.length > 0 ? ptDashboard.schedeAssegnate.map((s, sIdx, sArr) => (
@@ -692,11 +702,11 @@ export default function Dashboard() {
                       <div>
                         <p className="font-semibold text-sm">{s.titolo}</p>
                         <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
-                          {s.esercizi?.length || 0} esercizi · {s._count?.sessioni || 0} sessioni completate
+                          {t('comune.esercizi', { count: s.esercizi?.length || 0 })} · {t('dashboard.pt.sessioniCompletate', { count: s._count?.sessioni || 0 })}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Link to={`/schede/${s.id}`} className="text-xs text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors">Dettagli</Link>
+                        <Link to={`/schede/${s.id}`} className="text-xs text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors">{t('dashboard.pt.dettagli')}</Link>
                         <button onClick={() => avviaAllenamento(s.id)} disabled={avviando}
                           className="p-2 rounded-lg bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors">
                           <PlayCircle size={18} />
@@ -704,7 +714,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                   )) : (
-                    <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">Nessuna scheda assegnata ancora</p>
+                    <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">{t('dashboard.pt.nessunaScheda')}</p>
                   )}
                 </div>
               </div>
@@ -717,7 +727,7 @@ export default function Dashboard() {
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <Calendar size={20} className="text-green-400" />
-                  <h3 className="font-bold text-lg">Appuntamenti</h3>
+                  <h3 className="font-bold text-lg">{t('dashboard.pt.appuntamenti')}</h3>
                 </div>
                 <div className="divide-y divide-[var(--bordo-light)]">
                   {ptDashboard.appuntamenti?.length > 0 ? ptDashboard.appuntamenti.map((a, i, arr) => {
@@ -726,14 +736,14 @@ export default function Dashboard() {
                     return (
                       <div key={a.id} className={`px-card-inner flex items-center gap-4 ${isProssimo ? 'bg-green-500/5' : ''} py-5 ${i === arr.length - 1 ? 'card-list-ultimo' : ''}`}>
                         <div className={`w-12 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${isProssimo ? 'bg-green-500/20 text-green-400' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'}`}>
-                          <span className="text-[10px] font-bold uppercase">{data.toLocaleDateString('it-IT', { month: 'short' })}</span>
+                          <span className="text-[10px] font-bold uppercase">{data.toLocaleDateString(localeCorrente(), { month: 'short' })}</span>
                           <span className="text-lg font-extrabold leading-none">{data.getDate()}</span>
                         </div>
                         <div className="min-w-0">
                           <p className="font-semibold text-sm truncate">{a.titolo}</p>
                           <p className="text-xs text-[var(--testo-terziario)]">
                             <Clock size={10} className="inline mr-1" />
-                            {data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            {data.toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' })}
                             {a.durataMinuti && ` · ${a.durataMinuti} min`}
                           </p>
                           {a.note && <p className="text-xs text-[var(--testo-terziario)] mt-1 truncate">{a.note}</p>}
@@ -741,7 +751,7 @@ export default function Dashboard() {
                       </div>
                     );
                   }) : (
-                    <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">Nessun appuntamento in programma</p>
+                    <p className="p-card-inner text-center text-sm text-[var(--testo-terziario)]">{t('dashboard.pt.nessunAppuntamento')}</p>
                   )}
                 </div>
               </div>
@@ -750,14 +760,14 @@ export default function Dashboard() {
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
                   <BarChart3 size={20} className="text-purple-400" />
-                  <h3 className="font-bold text-lg">Riepilogo</h3>
+                  <h3 className="font-bold text-lg">{t('dashboard.pt.riepilogo')}</h3>
                 </div>
                 <div className="p-card-inner grid grid-cols-2 gap-4">
                   {[
-                    { label: 'Giorni iscritto', value: ptDashboard.giorniIscritto, icon: <CalendarHeart size={22} className="mx-auto text-[var(--accent)]" /> },
-                    { label: 'Schede ricevute', value: ptDashboard.statistiche?.schedeAssegnate || 0, icon: <FileText size={22} className="mx-auto text-blue-400" /> },
-                    { label: 'Appuntamenti fatti', value: ptDashboard.statistiche?.appuntamentiCompletati || 0, icon: <CheckCircle size={22} className="mx-auto text-green-400" /> },
-                    { label: 'Prossimi appuntamenti', value: ptDashboard.statistiche?.appuntamentiFuturi || 0, icon: <CalendarClock size={22} className="mx-auto text-orange-400" /> },
+                    { label: t('dashboard.pt.giorniIscritto'), value: ptDashboard.giorniIscritto, icon: <CalendarHeart size={22} className="mx-auto text-[var(--accent)]" /> },
+                    { label: t('dashboard.pt.schedeRicevute'), value: ptDashboard.statistiche?.schedeAssegnate || 0, icon: <FileText size={22} className="mx-auto text-blue-400" /> },
+                    { label: t('dashboard.pt.appuntamentiFatti'), value: ptDashboard.statistiche?.appuntamentiCompletati || 0, icon: <CheckCircle size={22} className="mx-auto text-green-400" /> },
+                    { label: t('dashboard.pt.prossimiAppuntamenti'), value: ptDashboard.statistiche?.appuntamentiFuturi || 0, icon: <CalendarClock size={22} className="mx-auto text-orange-400" /> },
                   ].map((stat, i) => (
                     <div key={i} className="text-center p-4 rounded-xl bg-[var(--bg-terziario)] border border-[var(--bordo-light)]">
                       <span className="block mb-2">{stat.icon}</span>

@@ -15,19 +15,34 @@ import Spinner from '../componenti/comuni/Spinner.jsx';
 import Calendario from '../componenti/comuni/Calendario.jsx';
 import { aStringaData as aStringa, lunediDi } from '../utils/formattatori.js';
 import { useTelefono } from '../hooks/useMediaQuery.js';
+import { useLingua } from '../hooks/useLingua.js';
+import { localeCorrente, traduci } from '../i18n/index.js';
 
-const GIORNI_NOMI = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+/** Names of the weekdays in the current language, Monday first and capitalised */
+function nomiGiorni() {
+  const lingua = localeCorrente();
+  const formato = new Intl.DateTimeFormat(lingua, { weekday: 'long' });
+  const lunedi = lunediDi(new Date());
+  return Array.from({ length: 7 }, (_, i) => {
+    const giorno = new Date(lunedi);
+    giorno.setDate(lunedi.getDate() + i);
+    const nome = formato.format(giorno);
+    return nome.charAt(0).toLocaleUpperCase(lingua) + nome.slice(1);
+  });
+}
 
+// etichetta is a translation key: show it with t()
 const STATI = {
-  PIANIFICATO: { etichetta: 'Da fare', colore: 'var(--accent)' },
-  COMPLETATO: { etichetta: 'Completato', colore: 'var(--successo, #22c55e)' },
-  SALTATO: { etichetta: 'Saltato', colore: 'var(--testo-terziario)' }
+  PIANIFICATO: { etichetta: 'pianificazione.stati.pianificato', colore: 'var(--accent)' },
+  COMPLETATO: { etichetta: 'pianificazione.stati.completato', colore: 'var(--successo, #22c55e)' },
+  SALTATO: { etichetta: 'pianificazione.stati.saltato', colore: 'var(--testo-terziario)' }
 };
 
 /** The calendar period as a key: "2026-09-28|2026-11-08" */
 const chiavePeriodo = ({ da, a }) => `${da}|${a}`;
 
 export default function Pianificazione() {
+  const { t } = useLingua();
   // On a phone the monthly grid squeezes the days too much: there we start from
   // the week. Until the user picks one explicitly, the view follows the screen
   // width; after the choice it stays the one they wanted.
@@ -75,7 +90,8 @@ export default function Pianificazione() {
         setSchede(resSchede.dati || []);
         setErrore('');
       })
-      .catch(err => setErrore(err?.message || 'Impossibile caricare il calendario'))
+      // traduci, not t: the callback must not change with the language (it would reload the calendar)
+      .catch(err => setErrore(err?.message || traduci('pianificazione.errori.caricamento')))
       .finally(() => setCaricatoPer(chiavePeriodo(periodo)));
   }, [intervallo]);
 
@@ -92,7 +108,7 @@ export default function Pianificazione() {
       await fn();
       await carica();
     } catch (err) {
-      setErrore(err?.message || 'Operazione non riuscita');
+      setErrore(err?.message || t('pianificazione.errori.operazione'));
     }
   };
 
@@ -112,14 +128,14 @@ export default function Pianificazione() {
     <div className="py-2">
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <CalendarClock size={26} className="text-[var(--accent)]" /> Pianificazione
+          <CalendarClock size={26} className="text-[var(--accent)]" /> {t('pianificazione.titolo')}
         </h1>
         <button
           type="button"
           onClick={() => setPannelloPiano(v => !v)}
           className="py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)] flex items-center gap-2"
         >
-          <Plus size={16} /> Pianifica la settimana
+          <Plus size={16} /> {t('pianificazione.pianificaSettimana')}
         </button>
       </div>
 
@@ -160,7 +176,7 @@ export default function Pianificazione() {
             <div className="flex items-center gap-4 mt-6 pt-4 border-t border-[var(--bordo-light)] text-xs text-[var(--testo-terziario)] flex-wrap">
               {Object.entries(STATI).map(([k, v]) => (
                 <span key={k} className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full" style={{ background: v.colore }} /> {v.etichetta}
+                  <span className="w-2 h-2 rounded-full" style={{ background: v.colore }} /> {t(v.etichetta)}
                 </span>
               ))}
             </div>
@@ -170,12 +186,12 @@ export default function Pianificazione() {
           <div className="glass-card p-card-inner flex flex-col">
             <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
               <CalendarDays size={20} className="text-[var(--testo-secondario)]" />
-              {new Date(`${giornoScelto}T00:00:00`).toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })}
+              {new Date(`${giornoScelto}T00:00:00`).toLocaleDateString(localeCorrente(), { weekday: 'long', day: 'numeric', month: 'long' })}
             </h3>
 
             {delGiornoScelto.length === 0 ? (
               <p className="text-sm text-[var(--testo-terziario)] mt-4">
-                Nessun allenamento programmato in questo giorno.
+                {t('pianificazione.nessunAllenamento')}
               </p>
             ) : (
               <div className="flex flex-col gap-3 mt-4">
@@ -184,12 +200,12 @@ export default function Pianificazione() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-bold text-sm truncate">{a.scheda.titolo}</p>
-                        <p className="text-xs" style={{ color: STATI[a.stato].colore }}>{STATI[a.stato].etichetta}</p>
+                        <p className="text-xs" style={{ color: STATI[a.stato].colore }}>{t(STATI[a.stato].etichetta)}</p>
                         {a.creatoDa?.ruolo === 'PERSONAL_TRAINER' && (
-                          <p className="text-xs text-[var(--testo-terziario)] mt-0.5">Assegnato da {a.creatoDa.nome}</p>
+                          <p className="text-xs text-[var(--testo-terziario)] mt-0.5">{t('pianificazione.assegnatoDa', { nome: a.creatoDa.nome })}</p>
                         )}
                       </div>
-                      <button onClick={() => elimina(a)} aria-label="Rimuovi dal calendario" className="p-1.5 rounded text-[var(--testo-terziario)] hover:text-[var(--pericolo)] transition-colors shrink-0">
+                      <button onClick={() => elimina(a)} aria-label={t('pianificazione.rimuoviDalCalendario')} className="p-1.5 rounded text-[var(--testo-terziario)] hover:text-[var(--pericolo)] transition-colors shrink-0">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -199,28 +215,28 @@ export default function Pianificazione() {
                           the session did not exist and the user ended up in "Gestione schede"
                           (plan management). "Allenati ora" opens the plan ready to start instead. */}
                       <Link to={`/allenamento?scheda=${a.scheda.id}`} style={{ color: '#fff' }} className="py-1.5 px-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
-                        <PlayCircle size={14} /> Inizia
+                        <PlayCircle size={14} /> {t('pianificazione.inizia')}
                       </Link>
                       <button onClick={() => rimanda(a, 1)} className="py-1.5 px-3 text-xs font-semibold rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--bg-terziario)] transition-colors">
-                        +1 giorno
+                        {t('pianificazione.piuUnGiorno')}
                       </button>
                       <button onClick={() => rimanda(a, 7)} className="py-1.5 px-3 text-xs font-semibold rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--bg-terziario)] transition-colors">
-                        +1 settimana
+                        {t('pianificazione.piuUnaSettimana')}
                       </button>
                       {a.stato !== 'COMPLETATO' && (
-                        <button onClick={() => cambiaStato(a, 'COMPLETATO')} aria-label="Segna come completato" className="p-1.5 rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--successo,#22c55e)] transition-colors">
+                        <button onClick={() => cambiaStato(a, 'COMPLETATO')} aria-label={t('pianificazione.segnaCompletato')} className="p-1.5 rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--successo,#22c55e)] transition-colors">
                           <Check size={14} />
                         </button>
                       )}
                       {a.stato !== 'SALTATO' && (
-                        <button onClick={() => cambiaStato(a, 'SALTATO')} aria-label="Segna come saltato" className="p-1.5 rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors">
+                        <button onClick={() => cambiaStato(a, 'SALTATO')} aria-label={t('pianificazione.segnaSaltato')} className="p-1.5 rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors">
                           <SkipForward size={14} />
                         </button>
                       )}
                     </div>
 
                     <label className="flex items-center gap-2 mt-3 text-xs text-[var(--testo-terziario)]">
-                      Sposta al
+                      {t('pianificazione.spostaAl')}
                       <input
                         type="date"
                         value={a.data}
@@ -248,6 +264,7 @@ export default function Pianificazione() {
 
 /** Schedule a single plan on the selected day. */
 function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
+  const { t } = useLingua();
   const [schedaId, setSchedaId] = useState('');
   const [inCorso, setInCorso] = useState(false);
 
@@ -259,7 +276,7 @@ function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
       setSchedaId('');
       onFatto();
     } catch (err) {
-      onErrore(err?.message || 'Impossibile programmare la scheda');
+      onErrore(err?.message || t('pianificazione.errori.programmaScheda'));
     } finally {
       setInCorso(false);
     }
@@ -267,14 +284,14 @@ function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
 
   return (
     <div className="mt-6 pt-4 border-t border-[var(--bordo-light)]">
-      <p className="text-xs font-bold text-[var(--testo-terziario)] mb-2 uppercase tracking-wide">Aggiungi a questo giorno</p>
+      <p className="text-xs font-bold text-[var(--testo-terziario)] mb-2 uppercase tracking-wide">{t('pianificazione.aggiungiAQuestoGiorno')}</p>
       <div className="flex items-center gap-2">
         <select
           value={schedaId}
           onChange={(e) => setSchedaId(e.target.value)}
           className="flex-1 min-w-0 bg-[var(--bg-terziario)] border border-[var(--bordo-light)] rounded-lg px-3 py-2 text-sm text-[var(--testo-primario)]"
         >
-          <option value="">Scegli una scheda…</option>
+          <option value="">{t('pianificazione.scegliScheda')}</option>
           {schede.map(s => <option key={s.id} value={s.id}>{s.titolo}</option>)}
         </select>
         <button
@@ -296,6 +313,7 @@ function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
  * weeks.
  */
 function PianificaSettimana({ schede, onFatto, onErrore }) {
+  const { t } = useLingua();
   const [voci, setVoci] = useState([{ schedaId: '', giornoSettimana: 0 }]);
   const [dataInizio, setDataInizio] = useState(aStringa(new Date()));
   const [settimane, setSettimane] = useState(4);
@@ -316,11 +334,11 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
         voci: pronte.map(v => ({ schedaId: Number(v.schedaId), giornoSettimana: Number(v.giornoSettimana) }))
       });
       if (res.dati?.creati === 0) {
-        onErrore('Nessun nuovo allenamento: erano già tutti in calendario.');
+        onErrore(t('pianificazione.errori.giaTuttiInCalendario'));
       }
       onFatto();
     } catch (err) {
-      onErrore(err?.message || 'Impossibile creare la pianificazione');
+      onErrore(err?.message || t('pianificazione.errori.creaPianificazione'));
     } finally {
       setInCorso(false);
     }
@@ -329,10 +347,10 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
   return (
     <div className="glass-card p-card-inner">
       <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
-        <ClipboardList size={20} className="text-[var(--accent)]" /> Pianifica la settimana
+        <ClipboardList size={20} className="text-[var(--accent)]" /> {t('pianificazione.pianificaSettimana')}
       </h3>
       <p className="text-xs text-[var(--testo-secondario)] mb-5">
-        Assegna ogni scheda al suo giorno: la distribuzione viene ripetuta per le settimane indicate.
+        {t('pianificazione.descrizioneSettimana')}
       </p>
 
       <div className="flex flex-col gap-2 mb-4">
@@ -343,7 +361,7 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
               onChange={(e) => aggiornaVoce(i, 'schedaId', e.target.value)}
               className="flex-1 min-w-0 bg-[var(--bg-terziario)] border border-[var(--bordo-light)] rounded-lg px-3 py-2 text-sm text-[var(--testo-primario)]"
             >
-              <option value="">Scegli una scheda…</option>
+              <option value="">{t('pianificazione.scegliScheda')}</option>
               {schede.map(s => <option key={s.id} value={s.id}>{s.titolo}</option>)}
             </select>
             <select
@@ -351,10 +369,10 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
               onChange={(e) => aggiornaVoce(i, 'giornoSettimana', e.target.value)}
               className="bg-[var(--bg-terziario)] border border-[var(--bordo-light)] rounded-lg px-3 py-2 text-sm text-[var(--testo-primario)] shrink-0"
             >
-              {GIORNI_NOMI.map((g, idx) => <option key={idx} value={idx}>{g}</option>)}
+              {nomiGiorni().map((g, idx) => <option key={idx} value={idx}>{g}</option>)}
             </select>
             {voci.length > 1 && (
-              <button type="button" onClick={() => setVoci(v => v.filter((_, idx) => idx !== i))} aria-label="Togli questa riga" className="p-2 rounded text-[var(--testo-terziario)] hover:text-[var(--pericolo)] transition-colors shrink-0">
+              <button type="button" onClick={() => setVoci(v => v.filter((_, idx) => idx !== i))} aria-label={t('pianificazione.togliRiga')} className="p-2 rounded text-[var(--testo-terziario)] hover:text-[var(--pericolo)] transition-colors shrink-0">
                 <X size={16} />
               </button>
             )}
@@ -367,12 +385,12 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
         onClick={() => setVoci(v => [...v, { schedaId: '', giornoSettimana: Math.min(6, v.length * 2) }])}
         className="text-xs font-semibold text-[var(--accent)] hover:underline mb-5 flex items-center gap-1"
       >
-        <Plus size={14} /> Aggiungi un altro giorno
+        <Plus size={14} /> {t('pianificazione.aggiungiGiorno')}
       </button>
 
       <div className="flex items-end gap-3 flex-wrap">
         <label className="text-xs text-[var(--testo-terziario)] flex flex-col gap-1">
-          A partire dal
+          {t('pianificazione.aPartireDal')}
           <input
             type="date"
             value={dataInizio}
@@ -381,7 +399,7 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
           />
         </label>
         <label className="text-xs text-[var(--testo-terziario)] flex flex-col gap-1">
-          Per quante settimane
+          {t('pianificazione.perQuanteSettimane')}
           <input
             type="number"
             min="1"
@@ -397,7 +415,7 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
           disabled={pronte.length === 0 || inCorso}
           className="py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
         >
-          {inCorso ? 'Pianifico…' : 'Metti in calendario'}
+          {inCorso ? t('pianificazione.pianifico') : t('pianificazione.mettiInCalendario')}
         </button>
       </div>
     </div>

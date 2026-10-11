@@ -10,24 +10,35 @@
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { aStringaData, lunediDi } from '../../utils/formattatori.js';
+import { localeCorrente } from '../../i18n/index.js';
+import { useLingua } from '../../hooks/useLingua.js';
 
-const GIORNI_BREVI = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+/** Initials of the weekdays in the current language, Monday first ("M T W T F S S") */
+function giorniBrevi() {
+  const formato = new Intl.DateTimeFormat(localeCorrente(), { weekday: 'narrow' });
+  const lunedi = lunediDi(new Date());
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(lunedi);
+    d.setDate(lunedi.getDate() + i);
+    return formato.format(d);
+  });
+}
 
 /**
  * Label of the period shown.
- * Short version for the phone: "settembre 2026" does not fit next to the
- * month/week selector and was cut to "Settembr…".
+ * Short version for the phone: "September 2026" does not fit next to the
+ * month/week selector and was cut to "Septemb…".
  */
 function etichetta(ancora, modo, breve = false) {
   if (modo === 'mese') {
-    return ancora.toLocaleString('it-IT', { month: breve ? 'short' : 'long', year: 'numeric' });
+    return ancora.toLocaleString(localeCorrente(), { month: breve ? 'short' : 'long', year: 'numeric' });
   }
   const inizio = lunediDi(ancora);
   const fine = new Date(inizio);
   fine.setDate(fine.getDate() + 6);
   const stessoMese = inizio.getMonth() === fine.getMonth();
-  const da = inizio.toLocaleDateString('it-IT', { day: 'numeric', ...(stessoMese ? {} : { month: 'short' }) });
-  const a = fine.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+  const da = inizio.toLocaleDateString(localeCorrente(), { day: 'numeric', ...(stessoMese ? {} : { month: 'short' }) });
+  const a = fine.toLocaleDateString(localeCorrente(), { day: 'numeric', month: 'short' });
   return `${da} – ${a}`;
 }
 
@@ -50,6 +61,7 @@ export default function Calendario({
   giornoSelezionato,
   onSelezionaGiorno,
 }) {
+  const { t } = useLingua();
   const scorri = (delta) => {
     const nuova = new Date(ancora);
     if (modo === 'mese') nuova.setMonth(nuova.getMonth() + delta);
@@ -85,7 +97,7 @@ export default function Calendario({
       <div className="flex items-center justify-between gap-2 mb-4 bg-[rgba(0,0,0,0.2)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
         <button
           onClick={() => scorri(-1)}
-          aria-label={modo === 'mese' ? 'Mese precedente' : 'Settimana precedente'}
+          aria-label={modo === 'mese' ? t('calendario.mesePrecedente') : t('calendario.settimanaPrecedente')}
           className="p-2 rounded hover:bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-white transition-colors shrink-0"
         >
           <ChevronLeft size={20} />
@@ -109,14 +121,14 @@ export default function Calendario({
                     ? { background: 'var(--accent)', color: '#fff' }
                     : { color: 'var(--testo-terziario)' }}
                 >
-                  {v === 'mese' ? 'Mese' : 'Sett.'}
+                  {v === 'mese' ? t('calendario.modoMese') : t('calendario.modoSettimana')}
                 </button>
               ))}
             </div>
           )}
           <button
             onClick={() => scorri(1)}
-            aria-label={modo === 'mese' ? 'Mese successivo' : 'Settimana successiva'}
+            aria-label={modo === 'mese' ? t('calendario.meseSuccessivo') : t('calendario.settimanaSuccessiva')}
             className="p-2 rounded hover:bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-white transition-colors"
           >
             <ChevronRight size={20} />
@@ -125,7 +137,7 @@ export default function Calendario({
       </div>
 
       <div className="grid grid-cols-7 gap-1.5">
-        {GIORNI_BREVI.map((g, i) => (
+        {giorniBrevi().map((g, i) => (
           <div key={i} className="text-center text-xs font-bold text-[var(--testo-terziario)] pb-1">{g}</div>
         ))}
 
@@ -152,7 +164,7 @@ export default function Calendario({
             <>
               {modo === 'settimana' && (
                 <span className="text-[10px] text-[var(--testo-terziario)] leading-none mb-0.5">
-                  {data.toLocaleDateString('it-IT', { month: 'short' })}
+                  {data.toLocaleDateString(localeCorrente(), { month: 'short' })}
                 </span>
               )}
               <span>{data.getDate()}</span>

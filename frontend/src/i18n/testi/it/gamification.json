@@ -1,0 +1,33 @@
+{
+  "azzeraXp": "Azzera XP",
+  "livello": "Livello {livello}",
+  "livelloBreve": "Lvl {livello}",
+  "livelloNome": "Lvl {livello} · {nome}",
+  "badge": "Badge",
+  "classifica": "Classifica",
+  "streak": "Streak",
+  "tab": {
+    "badge": "🏅 Badge",
+    "classifica": "🏆 Classifica",
+    "record": "🥇 Record"
+  },
+  "tu": "(tu)",
+  "nessunRecord": "Nessun record ancora registrato. Completa allenamenti per scalare la classifica!",
+  "profiloNonDisponibile": "Profilo non disponibile.",
+  "informazioni": "Informazioni",
+  "statistiche": "Statistiche",
+  "sessioni": "Sessioni",
+  "volumeKg": "Volume kg",
+  "tempo": "Tempo",
+  "schedePubbliche": "Schede pubbliche ({count})",
+  "eserciziBreve": "{count} es.",
+  "recordPersonali": "Record personali ({count})",
+  "profiloPrivato": "Questo utente ha reso privato il suo profilo.",
+  "reset": {
+    "parolaConferma": "AZZERA",
+    "titolo": "Azzerare i progressi?",
+    "avviso": "Perderai tutti i tuoi badge e il tuo livello, ricominciando da zero. Digita <b>{parola}</b> per confermare.",
+    "inCorso": "Reset...",
+    "riuscito": "Progressi azzerati con successo!"
+  }
+}

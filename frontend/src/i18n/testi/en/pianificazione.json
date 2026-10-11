@@ -1,0 +1,34 @@
+{
+  "titolo": "Schedule",
+  "pianificaSettimana": "Plan your week",
+  "stati": {
+    "pianificato": "To do",
+    "completato": "Completed",
+    "saltato": "Skipped"
+  },
+  "nessunAllenamento": "No workouts scheduled for this day.",
+  "assegnatoDa": "Assigned by {nome}",
+  "rimuoviDalCalendario": "Remove from calendar",
+  "inizia": "Start",
+  "piuUnGiorno": "+1 day",
+  "piuUnaSettimana": "+1 week",
+  "segnaCompletato": "Mark as completed",
+  "segnaSaltato": "Mark as skipped",
+  "spostaAl": "Move to",
+  "aggiungiAQuestoGiorno": "Add to this day",
+  "scegliScheda": "Choose a plan…",
+  "descrizioneSettimana": "Assign each plan to its day: the schedule is repeated for the number of weeks you choose.",
+  "togliRiga": "Remove this row",
+  "aggiungiGiorno": "Add another day",
+  "aPartireDal": "Starting from",
+  "perQuanteSettimane": "For how many weeks",
+  "pianifico": "Scheduling…",
+  "mettiInCalendario": "Add to calendar",
+  "errori": {
+    "caricamento": "Could not load the calendar",
+    "operazione": "Operation failed",
+    "programmaScheda": "Could not schedule the plan",
+    "giaTuttiInCalendario": "No new workouts: they were all already on the calendar.",
+    "creaPianificazione": "Could not create the schedule"
+  }
+}

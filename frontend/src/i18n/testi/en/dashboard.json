@@ -1,0 +1,93 @@
+{
+  "saluto": {
+    "mattina": "Good morning,",
+    "pomeriggio": "Good afternoon,",
+    "sera": "Good evening,"
+  },
+  "banner": {
+    "placeholder": "Enter the banner text…",
+    "vuoto": "No text. Click the pencil to edit.",
+    "nascosto": "(Currently hidden)",
+    "salvaMostra": "Save and show",
+    "salvaNascondi": "Save and hide",
+    "erroreSalvataggio": "Could not save the banner"
+  },
+  "confermaEliminaAttivita": "Are you sure you want to delete this activity?",
+  "erroreEliminazione": "Could not delete the activity",
+  "slide": {
+    "trovaPt": {
+      "titolo": "Want expert guidance?",
+      "sottotitolo": "Find a personal trainer and train with tailored plans.",
+      "etichetta": "Find a trainer"
+    },
+    "messaggi": {
+      "titolo_one": "You have {count} unread message",
+      "titolo_other": "You have {count} unread messages",
+      "sottotitolo": "Open the chat to read and reply.",
+      "etichetta": "Open chat"
+    },
+    "consiglio": {
+      "oggiRecupero": "Recovery day today",
+      "iniziaScheda": "Start plan",
+      "vediRecupero": "See recovery"
+    }
+  },
+  "tab": {
+    "attivita": "Activity",
+    "statistiche": "Statistics",
+    "ilMioPt": "My trainer"
+  },
+  "allenati": {
+    "titolo": "Train and manage plans",
+    "gestioneSchede": "Manage plans",
+    "pianificaAllenamenti": "Schedule workouts",
+    "catalogoEsercizi": "Exercise catalog",
+    "storicoAllenamenti": "Workout history",
+    "classifiche": "Leaderboards"
+  },
+  "ultimeAttivita": {
+    "titolo": "Latest activity",
+    "sessioneLibera": "Free workout",
+    "elimina": "Delete activity",
+    "vuotoTitolo": "No workouts yet",
+    "vuotoTesto": "Start from a plan: it will show up here.",
+    "vaiAlleSchede": "Go to plans"
+  },
+  "calendario": {
+    "titolo": "Calendar",
+    "svolto": "Done",
+    "inProgramma": "Scheduled",
+    "completato": "Completed",
+    "pianifica": "Schedule",
+    "storico": "History →"
+  },
+  "affluenza": {
+    "titolo": "Crowd level",
+    "latuaPalestra": "Your gym",
+    "tempoReale": "Live",
+    "aggiornato": "Updated: {ora}",
+    "nonDisponibile": "Crowd data not available",
+    "aggiornamentoBreve": "It will be updated soon"
+  },
+  "pt": {
+    "titolo": "Your personal trainer",
+    "clienti_one": "{count} client",
+    "clienti_other": "{count} clients",
+    "iscrittoDa_one": "Member for {count} day",
+    "iscrittoDa_other": "Member for {count} days",
+    "bacheca": "Announcements board",
+    "nessunAnnuncio": "No announcements from your trainer",
+    "schede": "Plans from your trainer",
+    "sessioniCompletate_one": "{count} workout completed",
+    "sessioniCompletate_other": "{count} workouts completed",
+    "dettagli": "Details",
+    "nessunaScheda": "No plans assigned yet",
+    "appuntamenti": "Appointments",
+    "nessunAppuntamento": "No upcoming appointments",
+    "riepilogo": "Summary",
+    "giorniIscritto": "Days as member",
+    "schedeRicevute": "Plans received",
+    "appuntamentiFatti": "Appointments done",
+    "prossimiAppuntamenti": "Upcoming appointments"
+  }
+}

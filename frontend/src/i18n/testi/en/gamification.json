@@ -1,0 +1,33 @@
+{
+  "azzeraXp": "Reset XP",
+  "livello": "Level {livello}",
+  "livelloBreve": "Lvl {livello}",
+  "livelloNome": "Lvl {livello} · {nome}",
+  "badge": "Badges",
+  "classifica": "Leaderboard",
+  "streak": "Streak",
+  "tab": {
+    "badge": "🏅 Badges",
+    "classifica": "🏆 Leaderboard",
+    "record": "🥇 Records"
+  },
+  "tu": "(you)",
+  "nessunRecord": "No records yet. Complete workouts to climb the leaderboard!",
+  "profiloNonDisponibile": "Profile not available.",
+  "informazioni": "Information",
+  "statistiche": "Statistics",
+  "sessioni": "Workouts",
+  "volumeKg": "Volume kg",
+  "tempo": "Time",
+  "schedePubbliche": "Public plans ({count})",
+  "eserciziBreve": "{count} ex.",
+  "recordPersonali": "Personal records ({count})",
+  "profiloPrivato": "This user has made their profile private.",
+  "reset": {
+    "parolaConferma": "RESET",
+    "titolo": "Reset your progress?",
+    "avviso": "You will lose all your badges and your level and start over from zero. Type <b>{parola}</b> to confirm.",
+    "inCorso": "Resetting…",
+    "riuscito": "Progress reset successfully!"
+  }
+}

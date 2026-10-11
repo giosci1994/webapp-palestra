@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../config/api.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useLingua } from '../../hooks/useLingua.js';
 
 const CHIAVE_VISTE = 'novita_viste';
 
@@ -32,6 +33,7 @@ function parsePunti(punti) {
  *   show), so the workout reminder does not overlap them
  */
 export default function NovitaStorie({ onOccupato }) {
+  const { t } = useLingua();
   const naviga = useNavigate();
   const [novita, setNovita] = useState([]);
   const [viste, setViste] = useState(leggiViste);
@@ -90,7 +92,7 @@ export default function NovitaStorie({ onOccupato }) {
       {/* Floating bubble */}
       <button
         onClick={() => apri(0)}
-        aria-label="Novità"
+        aria-label={t('novitaStorie.novita')}
         className="fixed z-40 right-4 bottom-[calc(88px+var(--safe-bottom))] md:bottom-6 w-12 h-12 rounded-full flex items-center justify-center shadow-[var(--ombra-modale)] active:scale-95 transition-transform"
         style={{ background: 'linear-gradient(135deg, #8b5cf6, #06b6d4)' }}
       >
@@ -140,7 +142,7 @@ export default function NovitaStorie({ onOccupato }) {
                 style={{ background: '#0c0c14', border: '1px solid rgba(255,255,255,0.08)' }}
               >
                 <div className="px-5 pt-6 pb-5 text-center relative" style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}>
-                  <span className="absolute top-3 right-3 text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.22)' }}>Novità</span>
+                  <span className="absolute top-3 right-3 text-[11px] font-semibold text-white px-2.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.22)' }}>{t('novitaStorie.badge')}</span>
                   {storia.immagine ? (
                     <img src={storia.immagine} alt="" className="w-16 h-16 rounded-[18px] mx-auto object-cover" />
                   ) : (
@@ -183,10 +185,10 @@ export default function NovitaStorie({ onOccupato }) {
               <div className="flex justify-between mt-2 px-1">
                 <button onClick={precedente} disabled={indice === 0}
                   className="text-white/70 disabled:opacity-25 flex items-center gap-1 text-sm py-2.5 pr-3">
-                  <ChevronLeft size={18} /> Indietro
+                  <ChevronLeft size={18} /> {t('comune.indietro')}
                 </button>
                 <button onClick={prossima} className="text-white/70 flex items-center gap-1 text-sm py-2.5 pl-3">
-                  {indice < novita.length - 1 ? 'Avanti' : 'Chiudi'} <ChevronRight size={18} />
+                  {indice < novita.length - 1 ? t('comune.avanti') : t('comune.chiudi')} <ChevronRight size={18} />
                 </button>
               </div>
             </div>

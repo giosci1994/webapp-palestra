@@ -1,0 +1,93 @@
+{
+  "saluto": {
+    "mattina": "Buongiorno,",
+    "pomeriggio": "Buon pomeriggio,",
+    "sera": "Buonasera,"
+  },
+  "banner": {
+    "placeholder": "Inserisci il testo del banner...",
+    "vuoto": "Nessun testo. Clicca la matita per modificare.",
+    "nascosto": "(Attualmente Nascosto)",
+    "salvaMostra": "Salva e Mostra",
+    "salvaNascondi": "Salva e Nascondi",
+    "erroreSalvataggio": "Errore salvataggio banner"
+  },
+  "confermaEliminaAttivita": "Sei sicuro di voler eliminare questa attività?",
+  "erroreEliminazione": "Errore durante l'eliminazione",
+  "slide": {
+    "trovaPt": {
+      "titolo": "Vuoi una guida esperta?",
+      "sottotitolo": "Trova un Personal Trainer e allenati con schede su misura.",
+      "etichetta": "Trova un PT"
+    },
+    "messaggi": {
+      "titolo_one": "Hai {count} messaggio non letto",
+      "titolo_other": "Hai {count} messaggi non letti",
+      "sottotitolo": "Apri la chat per leggerli e rispondere.",
+      "etichetta": "Apri la chat"
+    },
+    "consiglio": {
+      "oggiRecupero": "Oggi recupero",
+      "iniziaScheda": "Inizia scheda",
+      "vediRecupero": "Vedi il recupero"
+    }
+  },
+  "tab": {
+    "attivita": "attività",
+    "statistiche": "statistiche",
+    "ilMioPt": "il mio PT"
+  },
+  "allenati": {
+    "titolo": "Allenati e gestisci schede",
+    "gestioneSchede": "Gestione Schede",
+    "pianificaAllenamenti": "Pianifica Allenamenti",
+    "catalogoEsercizi": "Catalogo Esercizi",
+    "storicoAllenamenti": "Storico Allenamenti",
+    "classifiche": "Classifiche"
+  },
+  "ultimeAttivita": {
+    "titolo": "Ultime attività",
+    "sessioneLibera": "Sessione Libera",
+    "elimina": "Elimina attività",
+    "vuotoTitolo": "Ancora nessun allenamento",
+    "vuotoTesto": "Inizia da una scheda: comparirà qui.",
+    "vaiAlleSchede": "Vai alle schede"
+  },
+  "calendario": {
+    "titolo": "Calendario",
+    "svolto": "Svolto",
+    "inProgramma": "In programma",
+    "completato": "Completato",
+    "pianifica": "Pianifica",
+    "storico": "Storico →"
+  },
+  "affluenza": {
+    "titolo": "Affluenza",
+    "latuaPalestra": "La tua palestra",
+    "tempoReale": "In tempo reale",
+    "aggiornato": "Aggiornato: {ora}",
+    "nonDisponibile": "Dati affluenza non disponibili",
+    "aggiornamentoBreve": "Saranno aggiornati a breve"
+  },
+  "pt": {
+    "titolo": "Il tuo Personal Trainer",
+    "clienti_one": "{count} cliente",
+    "clienti_other": "{count} clienti",
+    "iscrittoDa_one": "Iscritto da {count} giorno",
+    "iscrittoDa_other": "Iscritto da {count} giorni",
+    "bacheca": "Bacheca Annunci",
+    "nessunAnnuncio": "Nessun annuncio dal tuo PT",
+    "schede": "Schede dal PT",
+    "sessioniCompletate_one": "{count} sessione completata",
+    "sessioniCompletate_other": "{count} sessioni completate",
+    "dettagli": "Dettagli",
+    "nessunaScheda": "Nessuna scheda assegnata ancora",
+    "appuntamenti": "Appuntamenti",
+    "nessunAppuntamento": "Nessun appuntamento in programma",
+    "riepilogo": "Riepilogo",
+    "giorniIscritto": "Giorni iscritto",
+    "schedeRicevute": "Schede ricevute",
+    "appuntamentiFatti": "Appuntamenti fatti",
+    "prossimiAppuntamenti": "Prossimi appuntamenti"
+  }
+}
