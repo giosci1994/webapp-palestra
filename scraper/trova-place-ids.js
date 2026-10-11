@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Trova Google Place IDs
-// Script una tantum per cercare Place ID
-// di tutte le palestre in DB
+// GymMaster — Find Google Place IDs
+// One-off script to look up the Place ID
+// of every gym in the DB
 // ============================================
 
 import { chromium } from 'playwright';
@@ -12,13 +12,13 @@ const prisma = new PrismaClient();
 const delay = (min, max) => new Promise(r => setTimeout(r, min + Math.random() * (max - min)));
 
 /**
- * Accetta cookie consent Google (redirect a consent.google.com)
+ * Accepts Google's cookie consent (redirect to consent.google.com)
  */
 async function accettaCookieGoogle(page) {
   try {
-    // Se siamo su consent.google.com, clicca "Accetta tutto"
+    // If we are on consent.google.com, click "Accetta tutto" (accept all)
     if (page.url().includes('consent.google.com')) {
-      // Cerca bottoni di accettazione in varie lingue
+      // Look for accept buttons in several languages
       const selettori = [
         'button:has-text("Accetta tutto")',
         'button:has-text("Accept all")',
@@ -36,10 +36,10 @@ async function accettaCookieGoogle(page) {
             await delay(2000, 3000);
             return true;
           }
-        } catch { /* prova prossimo selettore */ }
+        } catch { /* try the next selector */ }
       }
       
-      // Fallback: clicca qualsiasi bottone nel form
+      // Fallback: click any button in the form
       try {
         const buttons = page.locator('button[type="submit"], input[type="submit"]');
         const count = await buttons.count();
@@ -51,7 +51,7 @@ async function accettaCookieGoogle(page) {
       } catch {}
     }
     
-    // Anche su maps potrebbe apparire banner cookie overlay
+    // A cookie banner overlay might also appear on Maps
     try {
       const cookieBtn = page.locator('button:has-text("Accetta tutto"), button:has-text("Accept all"), button:has-text("Acceptér alle")');
       if (await cookieBtn.isVisible({ timeout: 1500 })) {
@@ -68,7 +68,7 @@ async function accettaCookieGoogle(page) {
 }
 
 /**
- * Cerca una palestra su Google Maps e estrae il Place ID dall'URL
+ * Searches for a gym on Google Maps and extracts the Place ID from the URL
  */
 async function cercaPlaceId(page, query) {
   try {
@@ -76,35 +76,35 @@ async function cercaPlaceId(page, query) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await delay(2000, 3000);
 
-    // Gestisci consent redirect
+    // Handle the consent redirect
     if (page.url().includes('consent.google.com')) {
       await accettaCookieGoogle(page);
-      // Dopo consent, Google dovrebbe redirect a Maps
+      // After consent, Google should redirect to Maps
       await page.waitForURL('**/maps/**', { timeout: 15000 }).catch(() => {});
       await delay(3000, 5000);
     }
 
-    // Gestisci cookie overlay su Maps
+    // Handle the cookie overlay on Maps
     await accettaCookieGoogle(page);
     await delay(2000, 4000);
 
-    // Controlla URL per Place ID
+    // Check the URL for a Place ID
     const currentUrl = page.url();
 
-    // Metodo 1: Place ID pattern !1s nel URL
+    // Method 1: Place ID pattern !1s in the URL
     const placeIdMatch = currentUrl.match(/!1s(0x[a-f0-9]+:0x[a-f0-9]+)/);
     if (placeIdMatch) return placeIdMatch[1];
 
-    // Metodo 2: ChIJ pattern
+    // Method 2: ChIJ pattern
     const chijMatch = currentUrl.match(/(ChIJ[A-Za-z0-9_-]+)/);
     if (chijMatch) return chijMatch[1];
 
-    // Metodo 3: Cerca nel contenuto pagina
+    // Method 3: search the page content
     const content = await page.content();
     const contentMatch = content.match(/"(ChIJ[A-Za-z0-9_-]+)"/);
     if (contentMatch) return contentMatch[1];
 
-    // Metodo 4: Se risultati multipli, clicca primo
+    // Method 4: if there are multiple results, click the first
     try {
       const primoRisultato = page.locator('a[href*="/maps/place/"]').first();
       if (await primoRisultato.isVisible({ timeout: 3000 })) {
@@ -119,7 +119,7 @@ async function cercaPlaceId(page, query) {
       }
     } catch {}
 
-    // Metodo 5: Place ID dal data attribute
+    // Method 5: Place ID from the data attribute
     try {
       const placeEl = await page.$('[data-place-id]');
       if (placeEl) {
@@ -164,13 +164,13 @@ async function main() {
 
   const page = await context.newPage();
 
-  // Pre-accetta cookie visitando Google Maps una volta
+  // Pre-accept cookies by visiting Google Maps once
   console.log('🍪 Accettazione cookie Google...');
   await page.goto('https://www.google.com/maps', { waitUntil: 'domcontentloaded', timeout: 30000 });
   await delay(2000, 3000);
   await accettaCookieGoogle(page);
   await delay(2000, 3000);
-  // Se ancora su consent, riprova
+  // If still on consent, try again
   if (page.url().includes('consent.google.com')) {
     await accettaCookieGoogle(page);
     await page.waitForURL('**/maps/**', { timeout: 15000 }).catch(() => {});

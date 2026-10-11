@@ -1,32 +1,32 @@
-# ATTENZIONE: la versione qui sotto e la dipendenza "playwright" in
-# scraper/package.json devono restare identiche. L'immagine base contiene i
-# binari del browser per quella specifica versione: se npm ne installa una
-# diversa, Playwright cerca un eseguibile che non esiste e lo scraper muore
-# all'avvio. Per aggiornare, cambiare ENTRAMBI nello stesso commit.
+# WARNING: the version below and the "playwright" dependency in
+# scraper/package.json must stay identical. The base image contains the
+# browser binaries for that specific version: if npm installs a different
+# one, Playwright looks for an executable that does not exist and the scraper
+# dies at startup. To upgrade, change BOTH in the same commit.
 FROM mcr.microsoft.com/playwright:v1.60.0-noble
 
 WORKDIR /app
 
-# Copia prisma schema dal backend (path relativo al context root del progetto)
+# Copy the prisma schema from the backend (path relative to the project root context)
 COPY backend/prisma/schema.prisma ./prisma/schema.prisma
 
-# Copia package files scraper (lockfile incluso: senza, npm risolverebbe le
-# versioni da capo a ogni build ed e' esattamente cosi' che Playwright era
-# finito alla 1.62 su un'immagine base 1.60)
+# Copy the scraper package files (lockfile included: without it, npm would
+# resolve the versions from scratch at every build, and that is exactly how
+# Playwright had ended up at 1.62 on a 1.60 base image)
 COPY scraper/package.json scraper/package-lock.json ./
 
-# Installa dipendenze esattamente come da lockfile
+# Install dependencies exactly as in the lockfile
 RUN npm ci
 
-# Genera Prisma client (dummy URL per validazione build-time)
+# Generate the Prisma client (dummy URL for build-time validation)
 RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma generate
 
-# Copia script scraper
+# Copy the scraper scripts
 COPY scraper/*.js ./
 
-# Cron: esegui scraper ogni 30 minuti + trim notturno del log (che altrimenti
-# cresce indefinitamente: era arrivato a 4.5 MB). Il trim scrive sullo stesso
-# inode cosi' il `tail -f` dell'entrypoint continua a funzionare.
+# Cron: run the scraper every 30 minutes + nightly trim of the log (which
+# otherwise grows forever: it had reached 4.5 MB). The trim writes to the same
+# inode so the entrypoint's `tail -f` keeps working.
 RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
 RUN printf '%s\n' \
       '*/30 * * * * cd /app && /usr/bin/node scraper-affluenza.js >> /var/log/scraper.log 2>&1' \
@@ -38,9 +38,9 @@ RUN touch /var/log/scraper.log
 COPY scraper/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Il container e' "sano" solo se cron e' vivo E il log si muove. Il guasto
-# precedente (cron mai partito, nessuno scraping per settimane) sarebbe stato
-# visibile subito: senza questo controllo il container risultava "Up" e basta.
+# The container is "healthy" only if cron is alive AND the log is moving. The
+# earlier failure (cron never started, no scraping for weeks) would have been
+# visible right away: without this check the container just showed "Up".
 HEALTHCHECK --interval=5m --timeout=15s --start-period=2m --retries=2 \
   CMD pgrep cron > /dev/null \
       && [ -n "$(find /var/log/scraper.log -mmin -45 2>/dev/null)" ] \
