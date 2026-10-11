@@ -1,0 +1,27 @@
+{
+  "menu": {
+    "dashboard": "Dashboard",
+    "schede": "Plans",
+    "pianificazione": "Schedule",
+    "catalogo": "Catalog",
+    "allenamento": "Workout",
+    "storico": "History",
+    "statistiche": "Statistics",
+    "chat": "Chat",
+    "assistente": "AI Coach",
+    "classifiche": "Leaderboards"
+  },
+  "admin": {
+    "utenti": "Users",
+    "palestre": "Gyms",
+    "esercizi": "Exercises",
+    "novita": "What's new"
+  },
+  "pt": {
+    "dashboard": "Trainer dashboard"
+  },
+  "sezioneAdmin": "Admin",
+  "sezionePT": "Personal Trainer",
+  "profilo": "Profile",
+  "esci": "Sign out"
+}

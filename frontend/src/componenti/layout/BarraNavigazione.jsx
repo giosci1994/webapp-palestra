@@ -5,18 +5,21 @@
 
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, ClipboardList, Dumbbell, MessageCircle, User } from 'lucide-react';
+import { useLingua } from '../../hooks/useLingua.js';
 
+// `chiave` is a translation key, shown with t() when rendering
 const TABS = [
-  { percorso: '/dashboard', Icona: Home, etichetta: 'Home' },
-  { percorso: '/schede', Icona: ClipboardList, etichetta: 'Schede' },
-  { percorso: '/allenamento', Icona: Dumbbell, etichetta: 'Allenamento', principale: true },
-  { percorso: '/chat', Icona: MessageCircle, etichetta: 'Chat' },
-  { percorso: '/profilo', Icona: User, etichetta: 'Profilo' }
+  { percorso: '/dashboard', Icona: Home, chiave: 'barraNavigazione.home' },
+  { percorso: '/schede', Icona: ClipboardList, chiave: 'barraNavigazione.schede' },
+  { percorso: '/allenamento', Icona: Dumbbell, chiave: 'barraNavigazione.allenamento', principale: true },
+  { percorso: '/chat', Icona: MessageCircle, chiave: 'barraNavigazione.chat' },
+  { percorso: '/profilo', Icona: User, chiave: 'barraNavigazione.profilo' }
 ];
 
 const HOME = '/dashboard';
 
 export default function BarraNavigazione() {
+  const { t } = useLingua();
   const { pathname } = useLocation();
 
   // The tabs must not pile up in the history: otherwise the "back" swipe
@@ -46,7 +49,7 @@ export default function BarraNavigazione() {
               key={tab.percorso}
               to={tab.percorso}
               replace={sostituisci(tab.percorso)}
-              aria-label={tab.etichetta}
+              aria-label={t(tab.chiave)}
               className={({ isActive }) =>
                 `flex items-center justify-center rounded-full transition-all duration-200 ${
                   tab.principale ? 'z-10' : 'p-2 min-w-[44px] min-h-[44px]'

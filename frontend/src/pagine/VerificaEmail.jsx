@@ -7,19 +7,22 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { motion } from 'framer-motion';
+import { useLingua } from '../hooks/useLingua.js';
 
 export default function VerificaEmail() {
+  const { t } = useLingua();
   const [params] = useSearchParams();
   const token = params.get('token');
   // Without a token in the link there is nothing to verify: error right away
   const [stato, setStato] = useState(token ? 'verifica' : 'errore'); // 'verifica' | 'ok' | 'errore'
-  const [messaggio, setMessaggio] = useState(token ? '' : 'Link di verifica non valido.');
+  // Message from the server, if any; the fallback texts are chosen when rendering so they follow the language
+  const [messaggio, setMessaggio] = useState('');
 
   useEffect(() => {
     if (!token) return;
     api.get(`/auth/verifica-email?token=${encodeURIComponent(token)}`)
-      .then(r => { setStato('ok'); setMessaggio(r.messaggio || 'Email verificata!'); })
-      .catch(err => { setStato('errore'); setMessaggio(err.message || 'Verifica non riuscita.'); });
+      .then(r => { setStato('ok'); setMessaggio(r.messaggio || ''); })
+      .catch(err => { setStato('errore'); setMessaggio(err.message || ''); });
   }, [token]);
 
   return (
@@ -36,23 +39,23 @@ export default function VerificaEmail() {
         {stato === 'verifica' && (
           <>
             <div className="w-12 h-12 border-4 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota mx-auto mb-4" />
-            <p className="text-[var(--testo-secondario)]">Verifica in corso…</p>
+            <p className="text-[var(--testo-secondario)]">{t('verificaEmail.inCorso')}</p>
           </>
         )}
         {stato === 'ok' && (
           <>
             <div className="text-5xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold mb-2">Email verificata!</h2>
-            <p className="text-[var(--testo-secondario)] mb-6">Il tuo account è attivo. Ora puoi accedere e iniziare ad allenarti.</p>
-            <Link to="/login" className="btn-primario inline-flex w-full justify-center">Vai al Login</Link>
+            <h2 className="text-2xl font-bold mb-2">{t('verificaEmail.emailVerificata')}</h2>
+            <p className="text-[var(--testo-secondario)] mb-6">{t('verificaEmail.accountAttivo')}</p>
+            <Link to="/login" className="btn-primario inline-flex w-full justify-center">{t('verificaEmail.vaiAlLogin')}</Link>
           </>
         )}
         {stato === 'errore' && (
           <>
             <div className="text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold mb-2">Verifica non riuscita</h2>
-            <p className="text-[var(--testo-secondario)] mb-6">{messaggio}</p>
-            <Link to="/login" className="btn-primario inline-flex w-full justify-center">Torna al Login</Link>
+            <h2 className="text-2xl font-bold mb-2">{t('verificaEmail.titoloErrore')}</h2>
+            <p className="text-[var(--testo-secondario)] mb-6">{messaggio || (token ? t('verificaEmail.verificaNonRiuscita') : t('verificaEmail.linkNonValido'))}</p>
+            <Link to="/login" className="btn-primario inline-flex w-full justify-center">{t('verificaEmail.tornaAlLogin')}</Link>
           </>
         )}
       </motion.div>

@@ -1,0 +1,17 @@
+{
+  "sottotitolo": "Sign in to start your workout",
+  "erroreAccessoPasskey": "Passkey sign-in failed",
+  "erroreLogin": "Could not sign in",
+  "reinviaVerifica": "Resend verification email",
+  "verificaReinviata": "✓ Verification email sent again (check your spam folder)",
+  "email": "Email",
+  "emailPlaceholder": "your@email.com",
+  "password": "Password",
+  "passwordDimenticata": "Forgot your password?",
+  "ricordaDispositivo": "Remember this device",
+  "ricordaDispositivoDettaglio": "Stay signed in for 30 days",
+  "accessoInCorso": "Signing in…",
+  "accedi": "Sign in",
+  "accediPasskey": "🔑 Sign in with a passkey",
+  "nessunAccount": "Don't have an account? <registrati>Sign up</registrati>"
+}

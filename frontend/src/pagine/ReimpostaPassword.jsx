@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { motion } from 'framer-motion';
+import { useLingua } from '../hooks/useLingua.js';
 
 const SFONDO = {
   background: 'linear-gradient(135deg, #0A0A0F 0%, #12121A 40%, #1A1A2E 100%)',
@@ -16,6 +17,7 @@ const SFONDO = {
 };
 
 export default function ReimpostaPassword() {
+  const { t } = useLingua();
   const [params] = useSearchParams();
   const token = params.get('token');
   const [password, setPassword] = useState('');
@@ -27,13 +29,13 @@ export default function ReimpostaPassword() {
   const submit = async (e) => {
     e.preventDefault();
     setErrore('');
-    if (password !== conferma) { setErrore('Le password non coincidono'); return; }
+    if (password !== conferma) { setErrore(t('reimpostaPassword.passwordNonCoincidono')); return; }
     setCaricamento(true);
     try {
       await api.post('/auth/reimposta-password', { token, password });
       setFatto(true);
     } catch (err) {
-      setErrore(err.message || 'Impossibile reimpostare la password');
+      setErrore(err.message || t('reimpostaPassword.erroreReset'));
     } finally {
       setCaricamento(false);
     }
@@ -46,45 +48,45 @@ export default function ReimpostaPassword() {
         {!token ? (
           <div className="text-center">
             <div className="text-5xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold mb-2">Link non valido</h2>
-            <p className="text-[var(--testo-secondario)] mb-6">Manca il token di reset. Richiedi un nuovo link.</p>
-            <Link to="/password-dimenticata" className="btn-primario inline-flex w-full justify-center">Richiedi nuovo link</Link>
+            <h2 className="text-2xl font-bold mb-2">{t('reimpostaPassword.linkNonValido')}</h2>
+            <p className="text-[var(--testo-secondario)] mb-6">{t('reimpostaPassword.tokenMancante')}</p>
+            <Link to="/password-dimenticata" className="btn-primario inline-flex w-full justify-center">{t('reimpostaPassword.richiediNuovoLink')}</Link>
           </div>
         ) : fatto ? (
           <div className="text-center">
             <div className="text-5xl mb-4">✅</div>
-            <h2 className="text-2xl font-bold mb-2">Password aggiornata!</h2>
-            <p className="text-[var(--testo-secondario)] mb-6">Ora puoi accedere con la nuova password.</p>
-            <Link to="/login" className="btn-primario inline-flex w-full justify-center">Vai al Login</Link>
+            <h2 className="text-2xl font-bold mb-2">{t('reimpostaPassword.passwordAggiornata')}</h2>
+            <p className="text-[var(--testo-secondario)] mb-6">{t('reimpostaPassword.passwordAggiornataDettaglio')}</p>
+            <Link to="/login" className="btn-primario inline-flex w-full justify-center">{t('reimpostaPassword.vaiAlLogin')}</Link>
           </div>
         ) : (
           <>
             <div className="text-center mb-8">
               <div className="text-5xl mb-3">🔑</div>
-              <h1 className="text-3xl font-extrabold testo-gradient">Nuova password</h1>
-              <p className="text-[var(--testo-secondario)] mt-1 text-sm">Scegli una nuova password per il tuo account.</p>
+              <h1 className="text-3xl font-extrabold testo-gradient">{t('reimpostaPassword.titolo')}</h1>
+              <p className="text-[var(--testo-secondario)] mt-1 text-sm">{t('reimpostaPassword.sottotitolo')}</p>
             </div>
             <form onSubmit={submit} className="flex flex-col gap-4">
               {errore && (
                 <div className="p-3 rounded-[var(--raggio-md)] text-sm" style={{ background: 'var(--pericolo-dim)', color: 'var(--pericolo)' }}>{errore}</div>
               )}
               <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Nuova password</label>
+                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('reimpostaPassword.nuovaPassword')}</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                       className="campo-input" placeholder="Min. 8 caratteri, 1 maiuscola, 1 numero" required minLength={8} autoComplete="new-password" autoFocus />
+                       className="campo-input" placeholder={t('reimpostaPassword.passwordPlaceholder')} required minLength={8} autoComplete="new-password" autoFocus />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Conferma password</label>
+                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('reimpostaPassword.confermaPassword')}</label>
                 <input type="password" value={conferma} onChange={e => setConferma(e.target.value)}
-                       className="campo-input" placeholder="Ripeti la password" required autoComplete="new-password" />
+                       className="campo-input" placeholder={t('reimpostaPassword.confermaPlaceholder')} required autoComplete="new-password" />
               </div>
               <button type="submit" disabled={caricamento}
                       className="btn-primario w-full justify-center disabled:opacity-50" style={{ padding: '14px 24px', fontSize: '1rem' }}>
-                {caricamento ? 'Salvataggio…' : 'Reimposta password'}
+                {caricamento ? t('comune.salvataggio') : t('reimpostaPassword.reimposta')}
               </button>
             </form>
             <p className="text-center mt-6 text-sm text-[var(--testo-secondario)]">
-              <Link to="/login" className="font-semibold">← Torna al Login</Link>
+              <Link to="/login" className="font-semibold">{t('reimpostaPassword.tornaAlLogin')}</Link>
             </p>
           </>
         )}

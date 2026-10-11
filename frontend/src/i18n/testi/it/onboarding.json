@@ -1,0 +1,87 @@
+{
+  "passi": {
+    "tipo": { "titolo": "Tipo Account", "desc": "Come vuoi usare GymMaster?" },
+    "foto": { "titolo": "Foto Profilo", "desc": "Aggiungi una foto (opzionale)" },
+    "dati": { "titolo": "Dati Personali", "desc": "Data di nascita e sesso" },
+    "misure": { "titolo": "Misure", "desc": "Peso e altezza attuali" },
+    "obiettivo": { "titolo": "Obiettivo", "desc": "Qual è il tuo obiettivo fitness?" },
+    "pro1": { "titolo": "Presentazione", "desc": "Bio e specializzazioni" },
+    "pro2": { "titolo": "Esperienza", "desc": "Qualifiche, tariffe e contatti" },
+    "privacy": { "titolo": "Privacy & Consensi", "desc": "Personalizza la tua esperienza" }
+  },
+  "specializzazioni": {
+    "ipertrofia": "Ipertrofia/Massa",
+    "dimagrimento": "Dimagrimento",
+    "forza": "Forza",
+    "funzionale": "Funzionale",
+    "riabilitazione": "Riabilitazione",
+    "preparazioneAtletica": "Preparazione atletica",
+    "posturale": "Posturale",
+    "bodybuilding": "Bodybuilding",
+    "crossTraining": "Cross training",
+    "senior": "Senior/Terza età",
+    "prePostParto": "Pre/Post parto",
+    "mobilita": "Mobilità"
+  },
+  "obiettivi": {
+    "massa": { "titolo": "Massa Muscolare", "desc": "Aumentare volume e forza" },
+    "definizione": { "titolo": "Definizione", "desc": "Ridurre grasso, tonificare" },
+    "forza": { "titolo": "Forza", "desc": "Massimizzare i carichi" },
+    "resistenza": { "titolo": "Resistenza", "desc": "Cardio e endurance" },
+    "salute": { "titolo": "Salute", "desc": "Benessere generale" },
+    "altro": { "titolo": "Altro", "desc": "Obiettivo personalizzato" }
+  },
+  "tipo": {
+    "utente": { "titolo": "Utente Privato", "desc": "Allena, traccia i progressi e raggiungi i tuoi obiettivi" },
+    "personalTrainer": { "titolo": "Personal Trainer", "desc": "Gestisci clienti, crea schede e appuntamenti" },
+    "avvisoPT": "La richiesta di ruolo Personal Trainer verrà inviata all'amministratore per l'approvazione. Nel frattempo potrai usare l'app come utente."
+  },
+  "foto": {
+    "alt": "Profilo",
+    "carica": "Carica foto",
+    "istruzioni": "Carica una foto: potrai ritagliarla. JPG, PNG, WebP",
+    "rimuovi": "Rimuovi foto"
+  },
+  "dati": {
+    "dataNascita": "Data di Nascita",
+    "genere": "Sesso",
+    "maschio": "Maschio",
+    "femmina": "Femmina",
+    "altro": "Altro"
+  },
+  "misure": {
+    "peso": "Peso (kg)",
+    "altezza": "Altezza (cm)",
+    "bmi": "Il tuo BMI"
+  },
+  "pro": {
+    "bio": "Bio professionale",
+    "bioPlaceholder": "Presentati ai futuri clienti: chi sei, il tuo approccio, i risultati che fai ottenere…",
+    "specializzazioni": "Specializzazioni",
+    "anniEsperienza": "Anni di esperienza",
+    "tariffa": "Tariffa indicativa",
+    "tariffaPlaceholder": "es. 30€/sessione",
+    "certificazioni": "Certificazioni / Qualifiche",
+    "certificazioniPlaceholder": "es. Laurea in Scienze Motorie, ISSA CPT, FIPE…",
+    "contatto": "Contatto pubblico <opz>(opzionale)</opz>",
+    "contattoPlaceholder": "email, telefono o sito web"
+  },
+  "privacy": {
+    "visibilita": "Visibilità Profilo",
+    "visibilitaDesc": "Scegli quali informazioni rendere visibili agli altri utenti",
+    "palestra": "Palestra",
+    "peso": "Peso",
+    "altezza": "Altezza",
+    "eta": "Età",
+    "obiettivo": "Obiettivo Fitness",
+    "statistiche": "Statistiche allenamenti",
+    "record": "Record personali",
+    "gamification": "Gamification",
+    "gamificationDesc": "Punti esperienza, livelli, classifiche e badge",
+    "consensoTermini": "Ho letto e accetto i <termini>Termini e Condizioni</termini> *",
+    "consensoPrivacy": "Ho letto e accetto l'<privacy>Informativa sulla Privacy</privacy> *"
+  },
+  "erroreConsensi": "Devi accettare i Termini e la Privacy Policy per continuare",
+  "erroreSalvataggio": "Errore durante il salvataggio",
+  "completaProfilo": "Completa Profilo"
+}

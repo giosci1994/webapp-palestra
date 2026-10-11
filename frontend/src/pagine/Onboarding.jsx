@@ -13,38 +13,54 @@ import {
   ChevronRight, ChevronLeft, Check, AlertCircle, Sparkles, Award, Briefcase
 } from 'lucide-react';
 import RitaglioFoto from '../componenti/comuni/RitaglioFoto.jsx';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
 
-// Specializations offered to Personal Trainers (chip picker)
+// Specializations offered to Personal Trainers (chip picker). `valore` is what
+// is saved on the profile (and compared); `chiave` is the translation key of
+// the label shown on the chip.
 const SPECIALIZZAZIONI_PRESET = [
-  'Ipertrofia/Massa', 'Dimagrimento', 'Forza', 'Funzionale', 'Riabilitazione',
-  'Preparazione atletica', 'Posturale', 'Bodybuilding', 'Cross training',
-  'Senior/Terza età', 'Pre/Post parto', 'Mobilità'
+  { valore: 'Ipertrofia/Massa', chiave: 'onboarding.specializzazioni.ipertrofia' },
+  { valore: 'Dimagrimento', chiave: 'onboarding.specializzazioni.dimagrimento' },
+  { valore: 'Forza', chiave: 'onboarding.specializzazioni.forza' },
+  { valore: 'Funzionale', chiave: 'onboarding.specializzazioni.funzionale' },
+  { valore: 'Riabilitazione', chiave: 'onboarding.specializzazioni.riabilitazione' },
+  { valore: 'Preparazione atletica', chiave: 'onboarding.specializzazioni.preparazioneAtletica' },
+  { valore: 'Posturale', chiave: 'onboarding.specializzazioni.posturale' },
+  { valore: 'Bodybuilding', chiave: 'onboarding.specializzazioni.bodybuilding' },
+  { valore: 'Cross training', chiave: 'onboarding.specializzazioni.crossTraining' },
+  { valore: 'Senior/Terza età', chiave: 'onboarding.specializzazioni.senior' },
+  { valore: 'Pre/Post parto', chiave: 'onboarding.specializzazioni.prePostParto' },
+  { valore: 'Mobilità', chiave: 'onboarding.specializzazioni.mobilita' }
 ];
 
 // Step definitions (config) and sequences per account type
+// (`titolo` and `desc` are translation keys, shown with t() when rendering)
 const PASSI = {
-  tipo:      { icona: User, titolo: 'Tipo Account', desc: 'Come vuoi usare GymMaster?' },
-  foto:      { icona: Camera, titolo: 'Foto Profilo', desc: 'Aggiungi una foto (opzionale)' },
-  dati:      { icona: Calendar, titolo: 'Dati Personali', desc: 'Data di nascita e sesso' },
-  misure:    { icona: Ruler, titolo: 'Misure', desc: 'Peso e altezza attuali' },
-  obiettivo: { icona: Target, titolo: 'Obiettivo', desc: 'Qual è il tuo obiettivo fitness?' },
-  pro1:      { icona: Award, titolo: 'Presentazione', desc: 'Bio e specializzazioni' },
-  pro2:      { icona: Briefcase, titolo: 'Esperienza', desc: 'Qualifiche, tariffe e contatti' },
-  privacy:   { icona: Shield, titolo: 'Privacy & Consensi', desc: 'Personalizza la tua esperienza' },
+  tipo:      { icona: User, titolo: 'onboarding.passi.tipo.titolo', desc: 'onboarding.passi.tipo.desc' },
+  foto:      { icona: Camera, titolo: 'onboarding.passi.foto.titolo', desc: 'onboarding.passi.foto.desc' },
+  dati:      { icona: Calendar, titolo: 'onboarding.passi.dati.titolo', desc: 'onboarding.passi.dati.desc' },
+  misure:    { icona: Ruler, titolo: 'onboarding.passi.misure.titolo', desc: 'onboarding.passi.misure.desc' },
+  obiettivo: { icona: Target, titolo: 'onboarding.passi.obiettivo.titolo', desc: 'onboarding.passi.obiettivo.desc' },
+  pro1:      { icona: Award, titolo: 'onboarding.passi.pro1.titolo', desc: 'onboarding.passi.pro1.desc' },
+  pro2:      { icona: Briefcase, titolo: 'onboarding.passi.pro2.titolo', desc: 'onboarding.passi.pro2.desc' },
+  privacy:   { icona: Shield, titolo: 'onboarding.passi.privacy.titolo', desc: 'onboarding.passi.privacy.desc' },
 };
 const SEQ_UTENTE = ['tipo', 'foto', 'dati', 'misure', 'obiettivo', 'privacy'];
 const SEQ_PT     = ['tipo', 'foto', 'dati', 'pro1', 'pro2', 'privacy'];
 
+// `label` and `desc` are translation keys, shown with t() when rendering
 const OBIETTIVI = [
-  { id: 'massa', label: 'Massa Muscolare', emoji: '💪', desc: 'Aumentare volume e forza' },
-  { id: 'definizione', label: 'Definizione', emoji: '🔥', desc: 'Ridurre grasso, tonificare' },
-  { id: 'forza', label: 'Forza', emoji: '🏋️', desc: 'Massimizzare i carichi' },
-  { id: 'resistenza', label: 'Resistenza', emoji: '🏃', desc: 'Cardio e endurance' },
-  { id: 'salute', label: 'Salute', emoji: '❤️', desc: 'Benessere generale' },
-  { id: 'altro', label: 'Altro', emoji: '✨', desc: 'Obiettivo personalizzato' },
+  { id: 'massa', label: 'onboarding.obiettivi.massa.titolo', emoji: '💪', desc: 'onboarding.obiettivi.massa.desc' },
+  { id: 'definizione', label: 'onboarding.obiettivi.definizione.titolo', emoji: '🔥', desc: 'onboarding.obiettivi.definizione.desc' },
+  { id: 'forza', label: 'onboarding.obiettivi.forza.titolo', emoji: '🏋️', desc: 'onboarding.obiettivi.forza.desc' },
+  { id: 'resistenza', label: 'onboarding.obiettivi.resistenza.titolo', emoji: '🏃', desc: 'onboarding.obiettivi.resistenza.desc' },
+  { id: 'salute', label: 'onboarding.obiettivi.salute.titolo', emoji: '❤️', desc: 'onboarding.obiettivi.salute.desc' },
+  { id: 'altro', label: 'onboarding.obiettivi.altro.titolo', emoji: '✨', desc: 'onboarding.obiettivi.altro.desc' },
 ];
 
 export default function Onboarding() {
+  const { t } = useLingua();
   const { utente, aggiornaUtente } = useAuth();
   const naviga = useNavigate();
   const fileInputRef = useRef(null);
@@ -118,7 +134,7 @@ export default function Onboarding() {
 
   const completaProfilo = async () => {
     if (!form.accettaToS || !form.accettaPrivacy) {
-      setErrore('Devi accettare i Termini e la Privacy Policy per continuare');
+      setErrore(t('onboarding.erroreConsensi'));
       return;
     }
     setCaricamento(true);
@@ -128,7 +144,7 @@ export default function Onboarding() {
       aggiornaUtente(risposta.dati);
       naviga('/dashboard', { replace: true });
     } catch (err) {
-      setErrore(err.message || 'Errore durante il salvataggio');
+      setErrore(err.message || t('onboarding.erroreSalvataggio'));
     } finally {
       setCaricamento(false);
     }
@@ -148,8 +164,8 @@ export default function Onboarding() {
         return (
           <div className="flex flex-col gap-4">
             {[
-              { val: 'UTENTE', label: 'Utente Privato', emoji: '🏋️', desc: 'Allena, traccia i progressi e raggiungi i tuoi obiettivi' },
-              { val: 'PERSONAL_TRAINER', label: 'Personal Trainer', emoji: '👨‍🏫', desc: 'Gestisci clienti, crea schede e appuntamenti' },
+              { val: 'UTENTE', label: t('onboarding.tipo.utente.titolo'), emoji: '🏋️', desc: t('onboarding.tipo.utente.desc') },
+              { val: 'PERSONAL_TRAINER', label: t('onboarding.tipo.personalTrainer.titolo'), emoji: '👨‍🏫', desc: t('onboarding.tipo.personalTrainer.desc') },
             ].map(tipo => (
               <button key={tipo.val} onClick={() => aggiorna('tipoAccount', tipo.val)}
                 className={`p-5 rounded-2xl border-2 text-left transition-all ${
@@ -174,8 +190,7 @@ export default function Onboarding() {
                 className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
                 <AlertCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-300">
-                  La richiesta di ruolo Personal Trainer verrà inviata all'amministratore per l'approvazione. 
-                  Nel frattempo potrai usare l'app come utente.
+                  {t('onboarding.tipo.avvisoPT')}
                 </p>
               </motion.div>
             )}
@@ -191,19 +206,19 @@ export default function Onboarding() {
               className="w-32 h-32 rounded-full border-3 border-dashed border-[var(--bordo)] hover:border-[var(--accent)] flex items-center justify-center cursor-pointer transition-colors overflow-hidden group"
             >
               {form.immagineProfilo ? (
-                <img src={form.immagineProfilo} alt="Profilo" className="w-full h-full object-cover" />
+                <img src={form.immagineProfilo} alt={t('onboarding.foto.alt')} className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center gap-1 text-[var(--testo-terziario)] group-hover:text-[var(--accent)] transition-colors">
                   <Camera size={28} />
-                  <span className="text-[10px]">Carica foto</span>
+                  <span className="text-[10px]">{t('onboarding.foto.carica')}</span>
                 </div>
               )}
             </div>
             <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={gestisciFoto} />
-            <p className="text-xs text-[var(--testo-terziario)] text-center">Carica una foto: potrai ritagliarla. JPG, PNG, WebP</p>
+            <p className="text-xs text-[var(--testo-terziario)] text-center">{t('onboarding.foto.istruzioni')}</p>
             {form.immagineProfilo && (
               <button onClick={() => aggiorna('immagineProfilo', null)}
-                className="text-xs text-[var(--pericolo)] hover:underline">Rimuovi foto</button>
+                className="text-xs text-[var(--pericolo)] hover:underline">{t('onboarding.foto.rimuovi')}</button>
             )}
           </div>
         );
@@ -213,17 +228,17 @@ export default function Onboarding() {
         return (
           <div className="flex flex-col gap-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Data di Nascita</label>
+              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.dati.dataNascita')}</label>
               <input type="date" value={form.dataNascita} onChange={e => aggiorna('dataNascita', e.target.value)}
                 className="campo-input" max={new Date().toISOString().split('T')[0]} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-3 text-[var(--testo-secondario)]">Sesso</label>
+              <label className="block text-sm font-medium mb-3 text-[var(--testo-secondario)]">{t('onboarding.dati.genere')}</label>
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { val: 'M', label: 'Maschio', emoji: '♂️' },
-                  { val: 'F', label: 'Femmina', emoji: '♀️' },
-                  { val: 'Altro', label: 'Altro', emoji: '⚧️' },
+                  { val: 'M', label: t('onboarding.dati.maschio'), emoji: '♂️' },
+                  { val: 'F', label: t('onboarding.dati.femmina'), emoji: '♀️' },
+                  { val: 'Altro', label: t('onboarding.dati.altro'), emoji: '⚧️' },
                 ].map(g => (
                   <button key={g.val} onClick={() => aggiorna('genere', g.val)}
                     className={`p-4 rounded-xl border-2 text-center transition-all ${
@@ -245,7 +260,7 @@ export default function Onboarding() {
         return (
           <div className="flex flex-col gap-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Peso (kg)</label>
+              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.misure.peso')}</label>
               <div className="relative">
                 <input type="number" value={form.pesoKg} onChange={e => aggiorna('pesoKg', e.target.value)}
                   className="campo-input pr-12" placeholder="75" min="30" max="300" step="0.1" />
@@ -253,7 +268,7 @@ export default function Onboarding() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Altezza (cm)</label>
+              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.misure.altezza')}</label>
               <div className="relative">
                 <input type="number" value={form.altezzaCm} onChange={e => aggiorna('altezzaCm', e.target.value)}
                   className="campo-input pr-12" placeholder="175" min="100" max="250" />
@@ -263,7 +278,7 @@ export default function Onboarding() {
             {form.pesoKg && form.altezzaCm && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="p-4 rounded-xl bg-[var(--accent-dim)] text-center">
-                <p className="text-xs text-[var(--testo-secondario)]">Il tuo BMI</p>
+                <p className="text-xs text-[var(--testo-secondario)]">{t('onboarding.misure.bmi')}</p>
                 <p className="text-2xl font-bold text-[var(--accent)]">
                   {(form.pesoKg / Math.pow(form.altezzaCm / 100, 2)).toFixed(1)}
                 </p>
@@ -284,8 +299,8 @@ export default function Onboarding() {
                     : 'border-[var(--bordo)] hover:border-[var(--testo-terziario)]'
                 }`}>
                 <span className="text-2xl block mb-1">{obj.emoji}</span>
-                <p className="text-xs font-bold">{obj.label}</p>
-                <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{obj.desc}</p>
+                <p className="text-xs font-bold">{t(obj.label)}</p>
+                <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{t(obj.desc)}</p>
               </button>
             ))}
           </div>
@@ -296,22 +311,22 @@ export default function Onboarding() {
         return (
           <div className="flex flex-col gap-5">
             <div>
-              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Bio professionale</label>
+              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.pro.bio')}</label>
               <textarea value={form.bio} onChange={e => aggiorna('bio', e.target.value.slice(0, 300))}
                 className="campo-input min-h-[90px] resize-none" rows="3"
-                placeholder="Presentati ai futuri clienti: chi sei, il tuo approccio, i risultati che fai ottenere…" />
+                placeholder={t('onboarding.pro.bioPlaceholder')} />
               <p className="text-[10px] text-[var(--testo-terziario)] mt-1 text-right">{(form.bio || '').length}/300</p>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-3 text-[var(--testo-secondario)]">Specializzazioni</label>
+              <label className="block text-sm font-medium mb-3 text-[var(--testo-secondario)]">{t('onboarding.pro.specializzazioni')}</label>
               <div className="flex flex-wrap gap-2">
-                {SPECIALIZZAZIONI_PRESET.map(s => {
+                {SPECIALIZZAZIONI_PRESET.map(({ valore: s, chiave }) => {
                   const sel = form.specializzazioni.includes(s);
                   return (
                     <button key={s} type="button"
                       onClick={() => aggiorna('specializzazioni', sel ? form.specializzazioni.filter(x => x !== s) : [...form.specializzazioni, s])}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${sel ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)]'}`}>
-                      {s}
+                      {t(chiave)}
                     </button>
                   );
                 })}
@@ -326,26 +341,28 @@ export default function Onboarding() {
           <div className="flex flex-col gap-5">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Anni di esperienza</label>
+                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.pro.anniEsperienza')}</label>
                 <input type="number" value={form.anniEsperienza} onChange={e => aggiorna('anniEsperienza', e.target.value)}
                   className="campo-input" placeholder="5" min="0" max="60" inputMode="numeric" />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Tariffa indicativa</label>
+                <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.pro.tariffa')}</label>
                 <input type="text" value={form.tariffaIndicativa} onChange={e => aggiorna('tariffaIndicativa', e.target.value)}
-                  className="campo-input" placeholder="es. 30€/sessione" />
+                  className="campo-input" placeholder={t('onboarding.pro.tariffaPlaceholder')} />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Certificazioni / Qualifiche</label>
+              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.pro.certificazioni')}</label>
               <textarea value={form.certificazioni} onChange={e => aggiorna('certificazioni', e.target.value.slice(0, 300))}
                 className="campo-input min-h-[60px] resize-none" rows="2"
-                placeholder="es. Laurea in Scienze Motorie, ISSA CPT, FIPE…" />
+                placeholder={t('onboarding.pro.certificazioniPlaceholder')} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Contatto pubblico <span className="text-[var(--testo-terziario)]">(opzionale)</span></label>
+              <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">
+                <Testo t="onboarding.pro.contatto" componenti={{ opz: <span className="text-[var(--testo-terziario)]" /> }} />
+              </label>
               <input type="text" value={form.contattoPubblico} onChange={e => aggiorna('contattoPubblico', e.target.value)}
-                className="campo-input" placeholder="email, telefono o sito web" />
+                className="campo-input" placeholder={t('onboarding.pro.contattoPlaceholder')} />
             </div>
           </div>
         );
@@ -357,18 +374,18 @@ export default function Onboarding() {
             {/* Profile visibility */}
             <div>
               <h3 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <Shield size={16} className="text-[var(--accent)]" /> Visibilità Profilo
+                <Shield size={16} className="text-[var(--accent)]" /> {t('onboarding.privacy.visibilita')}
               </h3>
-              <p className="text-xs text-[var(--testo-terziario)] mb-3">Scegli quali informazioni rendere visibili agli altri utenti</p>
+              <p className="text-xs text-[var(--testo-terziario)] mb-3">{t('onboarding.privacy.visibilitaDesc')}</p>
               <div className="flex flex-col gap-2">
                 {[
-                  { key: 'palestra', label: 'Palestra' },
-                  { key: 'peso', label: 'Peso' },
-                  { key: 'altezza', label: 'Altezza' },
-                  { key: 'eta', label: 'Età' },
-                  { key: 'obiettivo', label: 'Obiettivo Fitness' },
-                  { key: 'statistiche', label: 'Statistiche allenamenti' },
-                  { key: 'record', label: 'Record personali' },
+                  { key: 'palestra', label: t('onboarding.privacy.palestra') },
+                  { key: 'peso', label: t('onboarding.privacy.peso') },
+                  { key: 'altezza', label: t('onboarding.privacy.altezza') },
+                  { key: 'eta', label: t('onboarding.privacy.eta') },
+                  { key: 'obiettivo', label: t('onboarding.privacy.obiettivo') },
+                  { key: 'statistiche', label: t('onboarding.privacy.statistiche') },
+                  { key: 'record', label: t('onboarding.privacy.record') },
                 ].map(pref => (
                   <label key={pref.key} className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-[var(--bg-terziario)] transition-colors cursor-pointer">
                     <input type="checkbox"
@@ -389,9 +406,9 @@ export default function Onboarding() {
                   className="accent-[var(--accent)] w-4 h-4" />
                 <div>
                   <p className="text-sm font-bold flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-amber-400" /> Gamification
+                    <Sparkles size={14} className="text-amber-400" /> {t('onboarding.privacy.gamification')}
                   </p>
-                  <p className="text-[10px] text-[var(--testo-terziario)]">Punti esperienza, livelli, classifiche e badge</p>
+                  <p className="text-[10px] text-[var(--testo-terziario)]">{t('onboarding.privacy.gamificationDesc')}</p>
                 </div>
               </label>
             </div>
@@ -403,7 +420,8 @@ export default function Onboarding() {
                   onChange={e => aggiorna('accettaToS', e.target.checked)}
                   className="accent-[var(--accent)] w-4 h-4 mt-0.5" />
                 <span className="text-xs text-[var(--testo-secondario)]">
-                  Ho letto e accetto i <a href="/termini" target="_blank" className="text-[var(--accent)] hover:underline">Termini e Condizioni</a> *
+                  <Testo t="onboarding.privacy.consensoTermini"
+                         componenti={{ termini: <a href="/termini" target="_blank" className="text-[var(--accent)] hover:underline" /> }} />
                 </span>
               </label>
               <label className="flex items-start gap-3 cursor-pointer">
@@ -411,7 +429,8 @@ export default function Onboarding() {
                   onChange={e => aggiorna('accettaPrivacy', e.target.checked)}
                   className="accent-[var(--accent)] w-4 h-4 mt-0.5" />
                 <span className="text-xs text-[var(--testo-secondario)]">
-                  Ho letto e accetto l'<a href="/privacy" target="_blank" className="text-[var(--accent)] hover:underline">Informativa sulla Privacy</a> *
+                  <Testo t="onboarding.privacy.consensoPrivacy"
+                         componenti={{ privacy: <a href="/privacy" target="_blank" className="text-[var(--accent)] hover:underline" /> }} />
                 </span>
               </label>
             </div>
@@ -466,8 +485,8 @@ export default function Onboarding() {
               <Icona size={20} className="text-[var(--accent)]" />
             </div>
             <div>
-              <h2 className="font-bold text-lg">{stepInfo.titolo}</h2>
-              <p className="text-xs text-[var(--testo-terziario)]">{stepInfo.desc}</p>
+              <h2 className="font-bold text-lg">{t(stepInfo.titolo)}</h2>
+              <p className="text-xs text-[var(--testo-terziario)]">{t(stepInfo.desc)}</p>
             </div>
             <span className="ml-auto text-xs text-[var(--testo-terziario)]">{step + 1}/{STEP_TOTALI}</span>
           </div>
@@ -500,23 +519,23 @@ export default function Onboarding() {
           {step > 0 && (
             <button onClick={indietro}
               className="flex items-center gap-1 text-sm text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] transition-colors">
-              <ChevronLeft size={16} /> Indietro
+              <ChevronLeft size={16} /> {t('comune.indietro')}
             </button>
           )}
           <div className="flex-1" />
           {step < STEP_TOTALI - 1 ? (
             <button onClick={avanti}
               className="btn-primario text-sm !py-2.5 !px-6 flex items-center gap-1.5">
-              Avanti <ChevronRight size={16} />
+              {t('comune.avanti')} <ChevronRight size={16} />
             </button>
           ) : (
             <button onClick={completaProfilo}
               disabled={caricamento || !puoiAvanzare()}
               className="btn-primario text-sm !py-2.5 !px-6 flex items-center gap-1.5 disabled:opacity-50">
               {caricamento ? (
-                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full anima-ruota" /> Salvataggio...</>
+                <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full anima-ruota" /> {t('comune.salvataggio')}</>
               ) : (
-                <><Sparkles size={16} /> Completa Profilo</>
+                <><Sparkles size={16} /> {t('onboarding.completaProfilo')}</>
               )}
             </button>
           )}

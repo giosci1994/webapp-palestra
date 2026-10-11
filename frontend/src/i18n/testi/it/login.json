@@ -1,0 +1,17 @@
+{
+  "sottotitolo": "Accedi per iniziare il tuo allenamento",
+  "erroreAccessoPasskey": "Accesso con passkey non riuscito",
+  "erroreLogin": "Errore durante il login",
+  "reinviaVerifica": "Reinvia email di verifica",
+  "verificaReinviata": "✓ Email di verifica reinviata (controlla lo spam)",
+  "email": "Email",
+  "emailPlaceholder": "la-tua@email.com",
+  "password": "Password",
+  "passwordDimenticata": "Password dimenticata?",
+  "ricordaDispositivo": "Ricorda questo dispositivo",
+  "ricordaDispositivoDettaglio": "Resta connesso per 30 giorni",
+  "accessoInCorso": "Accesso in corso...",
+  "accedi": "Accedi",
+  "accediPasskey": "🔑 Accedi con una passkey",
+  "nessunAccount": "Non hai un account? <registrati>Registrati</registrati>"
+}

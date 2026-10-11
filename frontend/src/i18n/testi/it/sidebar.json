@@ -1,0 +1,27 @@
+{
+  "menu": {
+    "dashboard": "Dashboard",
+    "schede": "Schede",
+    "pianificazione": "Pianificazione",
+    "catalogo": "Catalogo",
+    "allenamento": "Allenamento",
+    "storico": "Storico",
+    "statistiche": "Statistiche",
+    "chat": "Chat",
+    "assistente": "AI Coach",
+    "classifiche": "Classifiche"
+  },
+  "admin": {
+    "utenti": "Utenti",
+    "palestre": "Palestre",
+    "esercizi": "Esercizi",
+    "novita": "Novità"
+  },
+  "pt": {
+    "dashboard": "Dashboard PT"
+  },
+  "sezioneAdmin": "Amministrazione",
+  "sezionePT": "Personal Trainer",
+  "profilo": "Profilo",
+  "esci": "Esci"
+}

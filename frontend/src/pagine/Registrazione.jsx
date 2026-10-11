@@ -8,8 +8,11 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { motion } from 'framer-motion';
 import FooterLegale from '../componenti/comuni/FooterLegale.jsx';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
 
 export default function Registrazione() {
+  const { t } = useLingua();
   const [form, setForm] = useState({ nome: '', email: '', password: '', palestraId: '' });
   const [consenso, setConsenso] = useState(false);
   const [palestre, setPalestre] = useState([]);
@@ -56,7 +59,7 @@ export default function Registrazione() {
         setSuccesso(true);
       }
     } catch (err) {
-      setErroreLocale(err.message || 'Errore durante la registrazione');
+      setErroreLocale(err.message || t('registrazione.erroreRegistrazione'));
     } finally {
       setCaricamento(false);
     }
@@ -80,12 +83,13 @@ export default function Registrazione() {
           {modoVerifica ? (
             <>
               <div className="text-5xl mb-4">📧</div>
-              <h2 className="text-2xl font-bold mb-2">Controlla la tua email</h2>
+              <h2 className="text-2xl font-bold mb-2">{t('registrazione.controllaEmail')}</h2>
               <p className="text-[var(--testo-secondario)] mb-6">
-                Ti abbiamo inviato un link di verifica a <b className="text-[var(--testo-primario)]">{form.email}</b>. Cliccalo per attivare l'account, poi accedi.
+                <Testo t="registrazione.linkVerificaInviato" valori={{ email: form.email }}
+                       componenti={{ b: <b className="text-[var(--testo-primario)]" /> }} />
               </p>
               <Link to="/login" className="btn-primario inline-flex w-full justify-center mb-3">
-                Vai al Login
+                {t('registrazione.vaiAlLogin')}
               </Link>
               <button
                 type="button"
@@ -95,18 +99,18 @@ export default function Registrazione() {
                 disabled={reinviato}
                 className="text-sm text-[var(--accent)] hover:underline disabled:opacity-60 disabled:no-underline"
               >
-                {reinviato ? '✓ Email reinviata (controlla anche lo spam)' : 'Non l\'hai ricevuta? Reinvia'}
+                {reinviato ? t('registrazione.emailReinviata') : t('registrazione.nonRicevuta')}
               </button>
             </>
           ) : (
             <>
               <div className="text-5xl mb-4">✅</div>
-              <h2 className="text-2xl font-bold mb-2">Registrazione completata!</h2>
+              <h2 className="text-2xl font-bold mb-2">{t('registrazione.registrazioneCompletata')}</h2>
               <p className="text-[var(--testo-secondario)] mb-6">
-                Il tuo account è pronto. Accedi e inizia ad allenarti!
+                {t('registrazione.accountPronto')}
               </p>
               <Link to="/login" className="btn-primario inline-flex">
-                Vai al Login
+                {t('registrazione.vaiAlLogin')}
               </Link>
             </>
           )}
@@ -132,9 +136,9 @@ export default function Registrazione() {
       >
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">🏋️</div>
-          <h1 className="text-3xl font-extrabold testo-gradient">Registrati</h1>
+          <h1 className="text-3xl font-extrabold testo-gradient">{t('registrazione.titolo')}</h1>
           <p className="text-[var(--testo-secondario)] mt-1 text-sm">
-            Crea il tuo account GymMaster
+            {t('registrazione.sottotitolo')}
           </p>
         </div>
 
@@ -151,31 +155,31 @@ export default function Registrazione() {
           )}
 
           <div>
-            <label htmlFor="nome" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Nome</label>
+            <label htmlFor="nome" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('registrazione.nome')}</label>
             <input id="nome" type="text" value={form.nome} onChange={aggiornaCampo('nome')}
-                   className="campo-input" placeholder="Il tuo nome" required autoFocus />
+                   className="campo-input" placeholder={t('registrazione.nomePlaceholder')} required autoFocus />
           </div>
 
           <div>
-            <label htmlFor="reg-email" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Email</label>
+            <label htmlFor="reg-email" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('registrazione.email')}</label>
             <input id="reg-email" type="email" value={form.email} onChange={aggiornaCampo('email')}
-                   className="campo-input" placeholder="la-tua@email.com" required autoComplete="email" />
+                   className="campo-input" placeholder={t('registrazione.emailPlaceholder')} required autoComplete="email" />
           </div>
 
           <div>
-            <label htmlFor="reg-password" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Password</label>
+            <label htmlFor="reg-password" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('registrazione.password')}</label>
             <input id="reg-password" type="password" value={form.password} onChange={aggiornaCampo('password')}
-                   className="campo-input" placeholder="Min. 8 caratteri, 1 maiuscola, 1 numero" required
+                   className="campo-input" placeholder={t('registrazione.passwordPlaceholder')} required
                    minLength={8} autoComplete="new-password" />
           </div>
 
           <div>
             <label htmlFor="palestra" className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">
-              Palestra <span className="text-[var(--testo-terziario)]">(opzionale)</span>
+              <Testo t="registrazione.palestraOpzionale" componenti={{ opz: <span className="text-[var(--testo-terziario)]" /> }} />
             </label>
             <select id="palestra" value={form.palestraId} onChange={aggiornaCampo('palestraId')}
                     className="campo-input">
-              <option value="">Seleziona la tua palestra</option>
+              <option value="">{t('registrazione.selezionaPalestra')}</option>
               {palestre.map(p => (
                 <option key={p.id} value={p.id}>{p.nomeCatena} — {p.indirizzo}, {p.citta}</option>
               ))}
@@ -186,7 +190,10 @@ export default function Registrazione() {
             <input type="checkbox" checked={consenso} onChange={e => setConsenso(e.target.checked)}
               className="accent-[var(--accent)] w-4 h-4 mt-0.5" required />
             <span className="text-xs text-[var(--testo-secondario)]">
-              Ho letto e accetto i <Link to="/termini" target="_blank" className="text-[var(--accent)] hover:underline">Termini e Condizioni</Link> e l'<Link to="/privacy" target="_blank" className="text-[var(--accent)] hover:underline">Informativa sulla Privacy</Link> *
+              <Testo t="registrazione.consenso" componenti={{
+                termini: <Link to="/termini" target="_blank" className="text-[var(--accent)] hover:underline" />,
+                privacy: <Link to="/privacy" target="_blank" className="text-[var(--accent)] hover:underline" />
+              }} />
             </span>
           </label>
 
@@ -196,15 +203,14 @@ export default function Registrazione() {
             {caricamento ? (
               <>
                 <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full anima-ruota" />
-                Registrazione...
+                {t('registrazione.registrazioneInCorso')}
               </>
-            ) : 'Registrati'}
+            ) : t('registrazione.registrati')}
           </button>
         </form>
 
         <p className="text-center mt-6 text-sm text-[var(--testo-secondario)]">
-          Hai già un account?{' '}
-          <Link to="/login" className="font-semibold">Accedi</Link>
+          <Testo t="registrazione.giaAccount" componenti={{ accedi: <Link to="/login" className="font-semibold" /> }} />
         </p>
 
         <FooterLegale />

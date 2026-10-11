@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../contesti/AuthContesto.jsx';
 import { useSocket } from '../../contesti/SocketContesto.jsx';
+import { useLingua } from '../../hooks/useLingua.js';
+import { RUOLI } from '../../utils/costanti.js';
 import { api } from '../../config/api.js';
 import CampanellaNotifiche from '../comuni/CampanellaNotifiche.jsx';
 import { motion } from 'framer-motion';
@@ -16,31 +18,33 @@ import {
   CalendarClock
 } from 'lucide-react';
 
+// Menu entries: `chiave` is a translation key, shown with t() when rendering
 const MENU_PRINCIPALE = [
-  { percorso: '/dashboard', Icona: Home, etichetta: 'Dashboard' },
-  { percorso: '/schede', Icona: ClipboardList, etichetta: 'Schede' },
-  { percorso: '/pianificazione', Icona: CalendarClock, etichetta: 'Pianificazione' },
-  { percorso: '/catalogo', Icona: Library, etichetta: 'Catalogo' },
-  { percorso: '/allenamento', Icona: Dumbbell, etichetta: 'Allenamento' },
-  { percorso: '/storico', Icona: History, etichetta: 'Storico' },
-  { percorso: '/statistiche', Icona: BarChart2, etichetta: 'Statistiche' },
-  { percorso: '/chat', Icona: MessageCircle, etichetta: 'Chat' },
-  { percorso: '/assistente', Icona: Bot, etichetta: 'AI Coach' },
-  { percorso: '/gamification', Icona: Trophy, etichetta: 'Classifiche' }
+  { percorso: '/dashboard', Icona: Home, chiave: 'sidebar.menu.dashboard' },
+  { percorso: '/schede', Icona: ClipboardList, chiave: 'sidebar.menu.schede' },
+  { percorso: '/pianificazione', Icona: CalendarClock, chiave: 'sidebar.menu.pianificazione' },
+  { percorso: '/catalogo', Icona: Library, chiave: 'sidebar.menu.catalogo' },
+  { percorso: '/allenamento', Icona: Dumbbell, chiave: 'sidebar.menu.allenamento' },
+  { percorso: '/storico', Icona: History, chiave: 'sidebar.menu.storico' },
+  { percorso: '/statistiche', Icona: BarChart2, chiave: 'sidebar.menu.statistiche' },
+  { percorso: '/chat', Icona: MessageCircle, chiave: 'sidebar.menu.chat' },
+  { percorso: '/assistente', Icona: Bot, chiave: 'sidebar.menu.assistente' },
+  { percorso: '/gamification', Icona: Trophy, chiave: 'sidebar.menu.classifiche' }
 ];
 
 const MENU_ADMIN = [
-  { percorso: '/admin/utenti', Icona: Users, etichetta: 'Utenti' },
-  { percorso: '/admin/palestre', Icona: Building, etichetta: 'Palestre' },
-  { percorso: '/admin/esercizi', Icona: BookOpen, etichetta: 'Esercizi', badgeKey: 'suggerimenti' },
-  { percorso: '/admin/novita', Icona: Sparkles, etichetta: 'Novità' }
+  { percorso: '/admin/utenti', Icona: Users, chiave: 'sidebar.admin.utenti' },
+  { percorso: '/admin/palestre', Icona: Building, chiave: 'sidebar.admin.palestre' },
+  { percorso: '/admin/esercizi', Icona: BookOpen, chiave: 'sidebar.admin.esercizi', badgeKey: 'suggerimenti' },
+  { percorso: '/admin/novita', Icona: Sparkles, chiave: 'sidebar.admin.novita' }
 ];
 
 const MENU_PT = [
-  { percorso: '/pt', Icona: UserCheck, etichetta: 'Dashboard PT' },
+  { percorso: '/pt', Icona: UserCheck, chiave: 'sidebar.pt.dashboard' },
 ];
 
 export default function Sidebar({ isCollapsed, setIsCollapsed }) {
+  const { t } = useLingua();
   const { utente, logout, isAdmin, isPT } = useAuth();
   const { on } = useSocket();
   const [badgeSuggerimenti, setBadgeSuggerimenti] = useState(0);
@@ -61,6 +65,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
     });
     return cleanup;
   }, [isAdmin, on]);
+
+  // The role under the name: its label in the current language, in lower case
+  const etichettaRuolo = RUOLI[utente?.ruolo] ? t(RUOLI[utente.ruolo].label).toLowerCase() : utente?.ruolo?.toLowerCase();
 
   const classeLink = ({ isActive }) =>
     `flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-5 px-6'} py-4 rounded-[var(--raggio-md)] transition-all duration-200 text-lg font-medium relative group ${
@@ -107,12 +114,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
         {MENU_PRINCIPALE.map((item) => {
           const { Icona } = item;
           return (
-            <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? item.etichetta : undefined}>
+            <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? t(item.chiave) : undefined}>
               <Icona size={28} className="text-white shrink-0" />
               
               {!isCollapsed && (
                 <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="whitespace-nowrap">
-                  {item.etichetta}
+                  {t(item.chiave)}
                 </motion.span>
               )}
             </NavLink>
@@ -127,20 +134,20 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                 <div className="w-full h-px bg-[var(--bordo-light)] my-2"></div>
               ) : (
                 <span className="text-xs font-semibold text-[var(--testo-terziario)] uppercase tracking-wider">
-                  Amministrazione
+                  {t('sidebar.sezioneAdmin')}
                 </span>
               )}
             </div>
             {MENU_ADMIN.map((item) => {
               const { Icona } = item;
               return (
-                <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? item.etichetta : undefined}>
+                <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? t(item.chiave) : undefined}>
                   <Icona size={28} className="text-white shrink-0" />
                   
                   {!isCollapsed && (
                     <>
                       <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 whitespace-nowrap">
-                        {item.etichetta}
+                        {t(item.chiave)}
                       </motion.span>
                       {item.badgeKey === 'suggerimenti' && badgeSuggerimenti > 0 && (
                         <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-bold bg-[var(--pericolo)] text-white animate-pulse">
@@ -171,18 +178,18 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                 <div className="w-full h-px bg-[var(--bordo-light)] my-2"></div>
               ) : (
                 <span className="text-xs font-semibold text-[var(--testo-terziario)] uppercase tracking-wider">
-                  Personal Trainer
+                  {t('sidebar.sezionePT')}
                 </span>
               )}
             </div>
             {MENU_PT.map((item) => {
               const { Icona } = item;
               return (
-                <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? item.etichetta : undefined}>
+                <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? t(item.chiave) : undefined}>
                   <Icona size={28} className="text-white shrink-0" />
                   {!isCollapsed && (
                     <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="whitespace-nowrap">
-                      {item.etichetta}
+                      {t(item.chiave)}
                     </motion.span>
                   )}
                 </NavLink>
@@ -194,7 +201,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
 
       {/* User profile at the bottom */}
       <div className={`p-6 border-t border-[var(--vetro-bordo)] bg-[rgba(0,0,0,0.2)] ${isCollapsed ? 'flex flex-col items-center gap-4' : ''}`}>
-        <NavLink to="/profilo" className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-4'} hover:bg-[var(--bg-terziario)] p-3 -m-3 rounded-[var(--raggio-md)] transition-colors group`} title={isCollapsed ? 'Profilo' : undefined}>
+        <NavLink to="/profilo" className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-4'} hover:bg-[var(--bg-terziario)] p-3 -m-3 rounded-[var(--raggio-md)] transition-colors group`} title={isCollapsed ? t('sidebar.profilo') : undefined}>
           <div className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-xl font-bold shadow-[var(--ombra-accent)]"
                style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
             {utente?.nome?.charAt(0)?.toUpperCase() || '?'}
@@ -203,16 +210,16 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           {!isCollapsed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 min-w-0">
               <p className="text-lg font-medium text-orange-500 group-hover:text-orange-400 truncate transition-colors">{utente?.nome}</p>
-              <p className="text-sm text-[var(--testo-terziario)]">{utente?.ruolo?.toLowerCase()}</p>
+              <p className="text-sm text-[var(--testo-terziario)]">{etichettaRuolo}</p>
             </motion.div>
           )}
         </NavLink>
         
         <button onClick={logout}
                 className={`w-full mt-6 flex items-center justify-center gap-3 py-3 rounded-[var(--raggio-md)] text-base text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)] transition-all ${isCollapsed ? 'px-0' : 'px-4'}`}
-                title={isCollapsed ? "Esci" : undefined}>
+                title={isCollapsed ? t('sidebar.esci') : undefined}>
           <LogOut size={22} className="shrink-0" /> 
-          {!isCollapsed && <span>Esci</span>}
+          {!isCollapsed && <span>{t('sidebar.esci')}</span>}
         </button>
       </div>
     </motion.aside>

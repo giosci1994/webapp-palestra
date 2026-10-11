@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { motion } from 'framer-motion';
+import { useLingua } from '../hooks/useLingua.js';
+import Testo from '../i18n/Testo.jsx';
 
 const SFONDO = {
   background: 'linear-gradient(135deg, #0A0A0F 0%, #12121A 40%, #1A1A2E 100%)',
@@ -16,6 +18,7 @@ const SFONDO = {
 };
 
 export default function PasswordDimenticata() {
+  const { t } = useLingua();
   const [email, setEmail] = useState('');
   const [inviato, setInviato] = useState(false);
   const [caricamento, setCaricamento] = useState(false);
@@ -35,29 +38,30 @@ export default function PasswordDimenticata() {
         {inviato ? (
           <div className="text-center">
             <div className="text-5xl mb-4">📧</div>
-            <h2 className="text-2xl font-bold mb-2">Controlla la tua email</h2>
+            <h2 className="text-2xl font-bold mb-2">{t('passwordDimenticata.controllaEmail')}</h2>
             <p className="text-[var(--testo-secondario)] mb-6">
-              Se <b className="text-[var(--testo-primario)]">{email}</b> è registrata, ti abbiamo inviato un link per reimpostare la password (valido 1 ora). Controlla anche lo spam.
+              <Testo t="passwordDimenticata.linkInviato" valori={{ email }}
+                     componenti={{ b: <b className="text-[var(--testo-primario)]" /> }} />
             </p>
-            <Link to="/login" className="btn-primario inline-flex w-full justify-center">Torna al Login</Link>
+            <Link to="/login" className="btn-primario inline-flex w-full justify-center">{t('passwordDimenticata.tornaAlLogin')}</Link>
           </div>
         ) : (
           <>
             <div className="text-center mb-8">
               <div className="text-5xl mb-3">🔑</div>
-              <h1 className="text-3xl font-extrabold testo-gradient">Password dimenticata</h1>
-              <p className="text-[var(--testo-secondario)] mt-1 text-sm">Inserisci la tua email: ti invieremo un link per reimpostarla.</p>
+              <h1 className="text-3xl font-extrabold testo-gradient">{t('passwordDimenticata.titolo')}</h1>
+              <p className="text-[var(--testo-secondario)] mt-1 text-sm">{t('passwordDimenticata.sottotitolo')}</p>
             </div>
             <form onSubmit={submit} className="flex flex-col gap-4">
               <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                     className="campo-input" placeholder="la-tua@email.com" required autoFocus autoComplete="email" />
+                     className="campo-input" placeholder={t('passwordDimenticata.emailPlaceholder')} required autoFocus autoComplete="email" />
               <button type="submit" disabled={caricamento}
                       className="btn-primario w-full justify-center disabled:opacity-50" style={{ padding: '14px 24px', fontSize: '1rem' }}>
-                {caricamento ? 'Invio…' : 'Invia link di reset'}
+                {caricamento ? t('passwordDimenticata.invioInCorso') : t('passwordDimenticata.inviaLink')}
               </button>
             </form>
             <p className="text-center mt-6 text-sm text-[var(--testo-secondario)]">
-              <Link to="/login" className="font-semibold">← Torna al Login</Link>
+              <Link to="/login" className="font-semibold">{t('passwordDimenticata.tornaAlLoginFreccia')}</Link>
             </p>
           </>
         )}

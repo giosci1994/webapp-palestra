@@ -6,8 +6,11 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Cookie, X } from 'lucide-react';
+import { useLingua } from '../../hooks/useLingua.js';
+import Testo from '../../i18n/Testo.jsx';
 
 export default function CookieBanner() {
+  const { t } = useLingua();
   const [visibile, setVisibile] = useState(false);
 
   useEffect(() => {
@@ -45,20 +48,19 @@ export default function CookieBanner() {
                 <Cookie size={20} className="text-[var(--accent)]" />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-sm mb-1 flex items-center gap-2">Informativa Cookie <Cookie size={16} className="text-[var(--testo-secondario)]" /></h3>
+                <h3 className="font-bold text-sm mb-1 flex items-center gap-2">{t('cookieBanner.titolo')} <Cookie size={16} className="text-[var(--testo-secondario)]" /></h3>
                 <p className="text-xs text-[var(--testo-secondario)] leading-relaxed">
-                  Utilizziamo solo cookie tecnici essenziali per il funzionamento dell'app (autenticazione e preferenze).
-                  Nessun cookie di profilazione o tracciamento.{' '}
-                  <Link to="/cookie-policy" className="text-[var(--accent)] hover:underline">Leggi la Cookie Policy</Link>
+                  <Testo t="cookieBanner.descrizione"
+                         componenti={{ link: <Link to="/cookie-policy" className="text-[var(--accent)] hover:underline" /> }} />
                 </p>
                 <div className="flex flex-wrap gap-2 mt-3">
                   <button onClick={accettaTutti}
                     className="btn-primario text-xs !py-2 !px-4">
-                    Accetta tutti
+                    {t('cookieBanner.accettaTutti')}
                   </button>
                   <button onClick={soloNecessari}
                     className="text-xs py-2 px-4 rounded-xl border border-[var(--bordo)] text-[var(--testo-secondario)] hover:bg-[var(--bg-terziario)] transition-colors">
-                    Solo necessari
+                    {t('cookieBanner.soloNecessari')}
                   </button>
                 </div>
               </div>
