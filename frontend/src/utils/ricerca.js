@@ -15,6 +15,8 @@
 // The best results come first: exact words, then word beginnings,
 // then typos; on a tie, the shorter names.
 
+import { traduci } from '../i18n/index.js';
+
 /** Lowercase, no accents, only letters and digits separated by spaces */
 export function normalizza(testo) {
   return String(testo ?? '')
@@ -193,10 +195,29 @@ export function preferitiPrima(elenco, preferiti) {
   return [...elenco.filter(e => preferiti.has(e.id)), ...elenco.filter(e => !preferiti.has(e.id))];
 }
 
-/** Exercise index: Italian and English name; with details also muscles and equipment */
+/** English name of a value stored in Italian (muscle group, equipment), if there is one */
+function inInglese(namespace, valore) {
+  if (!valore) return null;
+  const chiave = `${namespace}.${valore}`;
+  const testo = traduci(chiave, {}, 'en');
+  return testo === chiave ? null : testo;
+}
+
+/**
+ * Exercise index: Italian and English name; with details also muscles and
+ * equipment, in Italian as stored and in English, so "chest" finds "Petto"
+ */
 export function indicizzaEsercizi(esercizi, { conDettagli = false } = {}) {
+  const dettagli = e => {
+    const secondari = String(e.gruppoMuscoloSecondario || '').split(',').map(g => g.trim()).filter(Boolean);
+    return [
+      e.gruppoMuscoloPrimario, e.gruppoMuscoloSecondario, e.attrezzatura?.nome,
+      inInglese('gruppi', e.gruppoMuscoloPrimario), ...secondari.map(g => inInglese('gruppi', g)),
+      inInglese('attrezzi', e.attrezzatura?.nome)
+    ];
+  };
   return indicizza(esercizi, {
     principali: e => [e.nomeIt, e.nome],
-    secondari: conDettagli ? e => [e.gruppoMuscoloPrimario, e.gruppoMuscoloSecondario, e.attrezzatura?.nome] : undefined
+    secondari: conDettagli ? dettagli : undefined
   });
 }
