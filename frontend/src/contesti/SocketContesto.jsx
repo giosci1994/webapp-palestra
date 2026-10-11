@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Contesto Socket.io
-// Provider per connessione WebSocket globale
+// GymMaster — Socket.io context
+// Provider for the global WebSocket connection
 // ============================================
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -17,7 +17,7 @@ export function SocketProvider({ children }) {
 
   useEffect(() => {
     if (!autenticato) {
-      // Disconnetti se l'utente esce
+      // Disconnect if the user logs out
       if (socketRef.current) {
         socketRef.current.disconnect();
         socketRef.current = null;
@@ -29,7 +29,7 @@ export function SocketProvider({ children }) {
     const token = ottieniToken();
     if (!token) return;
 
-    // Connessione Socket.io
+    // Socket.io connection
     const socket = io(window.location.origin, {
       auth: { token },
       transports: ['websocket', 'polling'],
@@ -60,22 +60,23 @@ export function SocketProvider({ children }) {
     };
   }, [autenticato]);
 
-  // Stabili fra un render e l'altro: chi le mette fra le dipendenze di un
-  // effetto non si riscrive a ogni render
+  // Stable across renders: whoever puts them in an effect's dependencies
+  // does not re-run that effect on every render
   const emit = useCallback((evento, dati, callback) => {
     socketRef.current?.emit(evento, dati, callback);
   }, []);
 
-  // Cambia quando cambia la connessione, non a ogni render: chi si iscrive in
-  // un effetto che dipende da `on` (la campanella, la sidebar) si iscrive di
-  // nuovo quando il socket si collega, anche se al primo render non c'era.
-  // La pulizia toglie l'handler dal socket su cui e' stato messo, anche se nel
-  // frattempo ne e' nato un altro (nuovo login).
+  // Changes when the connection changes, not on every render: whoever
+  // subscribes in an effect that depends on `on` (the notification bell, the
+  // sidebar) subscribes again when the socket connects, even if it was not
+  // there on the first render. The cleanup removes the handler from the
+  // socket it was added to, even if another one was created in the meantime
+  // (new login).
   const on = useCallback((evento, handler) => {
     const socket = socketRef.current;
     socket?.on(evento, handler);
     return () => socket?.off(evento, handler);
-  }, [connesso]); // eslint-disable-line react-hooks/exhaustive-deps -- vedi sopra
+  }, [connesso]); // eslint-disable-line react-hooks/exhaustive-deps -- see above
 
   const valore = useMemo(() => ({ connesso, emit, on }), [connesso, emit, on]);
 

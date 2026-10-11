@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Catalogo Esercizi
-// Pagina consultazione completa del database
-// esercizi con video YouTube integrati
+// GymMaster — Exercise Catalog
+// Page for browsing the whole exercise database
+// with embedded YouTube videos
 // ============================================
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import SuggerisciEsercizio from '../componenti/specifici/SuggerisciEsercizio.jsx';
 
-// --- Costanti per i filtri ---
+// --- Constants for the filters ---
 const DIFFICULTY_OPTIONS = [
   { value: '', label: 'Tutte le difficoltà' },
   { value: 'Principiante', label: '🟢 Principiante' },
@@ -56,10 +56,10 @@ const DIFFICULTY_COLORS = {
   'Leggendario': { bg: 'rgba(234, 179, 8, 0.15)', text: '#EAB308' },
 };
 
-// --- Helper: converte URL YouTube in embed ---
+// --- Helper: converts a YouTube URL into an embed URL ---
 function getYouTubeEmbedUrl(url) {
   if (!url) return null;
-  // Formati supportati: youtu.be/ID, youtube.com/watch?v=ID
+  // Supported formats: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
   let videoId = null;
   try {
     if (url.includes('youtu.be/')) {
@@ -69,13 +69,13 @@ function getYouTubeEmbedUrl(url) {
     } else if (url.includes('youtube.com/embed/')) {
       videoId = url.split('embed/')[1]?.split(/[?&#]/)[0];
     }
-  } catch { /* URL non valido */ }
+  } catch { /* Invalid URL */ }
   
   if (!videoId) return null;
   return `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1`;
 }
 
-// --- Componente VideoPlayer ---
+// --- VideoPlayer component ---
 function VideoPlayer({ url, nome }) {
   const embedUrl = getYouTubeEmbedUrl(url);
   
@@ -95,7 +95,7 @@ function VideoPlayer({ url, nome }) {
   );
 }
 
-// --- Componente Card Esercizio Espanso ---
+// --- Expanded Exercise Card component ---
 function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito }) {
   const gruppo = GRUPPI_MUSCOLARI[esercizio.gruppoMuscoloPrimario];
   const diffColor = DIFFICULTY_COLORS[esercizio.difficulty] || { bg: 'rgba(100,100,100,0.15)', text: '#94A3B8' };
@@ -108,21 +108,21 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
       className={`glass-card overflow-hidden transition-all duration-300 ${isExpanded ? 'ring-1 ring-[var(--accent-glow)]' : ''}`}
     >
       <div className="flex items-stretch">
-      {/* Header clickable */}
+      {/* Clickable header */}
       <button
         onClick={onToggle}
         className="flex-1 min-w-0 flex items-center gap-3 pl-6 pr-2 py-4 text-left hover:bg-[var(--bg-terziario)] transition-colors"
       >
-        {/* Emoji gruppo */}
+        {/* Muscle group emoji */}
         <div className="w-10 h-10 rounded-[var(--raggio-sm)] flex items-center justify-center text-lg shrink-0"
              style={{ background: gruppo?.colore ? `${gruppo.colore}22` : 'var(--bg-terziario)' }}>
           {gruppo?.emoji || '💪'}
         </div>
 
-        {/* Nome e info */}
+        {/* Name and info */}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[var(--testo-primario)] truncate text-[0.95rem]">{nomeEsercizio(esercizio)}</p>
-          {/* Nome originale inglese: è quello che si cerca nei video tutorial */}
+          {/* Original English name: it is the one people search for in video tutorials */}
           {nomeEsercizioOriginale(esercizio) && (
             <p className="text-[11px] text-[var(--testo-terziario)] truncate italic">{nomeEsercizioOriginale(esercizio)}</p>
           )}
@@ -137,7 +137,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
           </div>
         </div>
 
-        {/* Badge difficoltà */}
+        {/* Difficulty badge */}
         {esercizio.difficulty && (
           <span className="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 hidden sm:inline-block"
                 style={{ background: diffColor.bg, color: diffColor.text }}>
@@ -154,7 +154,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
         {isExpanded ? <ChevronUp size={18} className="text-[var(--testo-terziario)] shrink-0" /> : <ChevronDown size={18} className="text-[var(--testo-terziario)] shrink-0" />}
       </button>
 
-      {/* Stella dei preferiti */}
+      {/* Favorites star */}
       <button
         onClick={onPreferito}
         aria-pressed={preferito}
@@ -166,7 +166,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
       </button>
       </div>
 
-      {/* Contenuto espanso */}
+      {/* Expanded content */}
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -212,7 +212,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
                 )}
               </div>
 
-              {/* Muscoli */}
+              {/* Muscles */}
               {esercizio.gruppoMuscoloSecondario && (
                 <div className="mt-3 flex items-start gap-2">
                   <Target size={14} className="text-[var(--testo-terziario)] mt-0.5 shrink-0" />
@@ -223,7 +223,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
                 </div>
               )}
 
-              {/* Descrizione */}
+              {/* Description */}
               {esercizio.descrizione && (
                 <p className="text-xs text-[var(--testo-terziario)] mt-3 italic">{esercizio.descrizione}</p>
               )}
@@ -235,7 +235,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
   );
 }
 
-// --- Badge Info ---
+// --- Info Badge ---
 function InfoBadge({ label, value, color }) {
   return (
     <div className="rounded-[var(--raggio-sm)] p-2 bg-[var(--bg-terziario)]">
@@ -245,7 +245,7 @@ function InfoBadge({ label, value, color }) {
   );
 }
 
-// --- Pagina Catalogo ---
+// --- Catalog page ---
 const PAGE_SIZE = 30;
 
 export default function CatalogoEsercizi() {
@@ -261,15 +261,15 @@ export default function CatalogoEsercizi() {
   const [mostraFiltri, setMostraFiltri] = useState(false);
   const loaderRef = useRef(null);
 
-  // Pagine caricate ed esercizio aperto valgono per i filtri con cui li hai
-  // scelti: cambiando un filtro si riparte dall'inizio, tutto chiuso. Mettere
-  // una stella non cambia i filtri, quindi non fa ripartire la lista.
+  // Loaded pages and the open exercise belong to the filters you picked them
+  // with: changing a filter starts over from the top, all closed. Adding a star
+  // does not change the filters, so it does not restart the list.
   const chiaveFiltri = [filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, ricerca].join('|');
   const [aperto, setAperto] = useState({ chiave: chiaveFiltri, id: null });
   const expandedId = aperto.chiave === chiaveFiltri ? aperto.id : null;
   const setExpandedId = id => setAperto({ chiave: chiaveFiltri, id });
 
-  // Caricamento dati
+  // Data loading
   useEffect(() => {
     api.get('/esercizi')
       .then(r => setEsercizi(r.dati || []))
@@ -277,10 +277,10 @@ export default function CatalogoEsercizi() {
       .finally(() => setCaricamento(false));
   }, []);
 
-  // Ricerca tollerante (utils/ricerca.js): l'indice si prepara una volta
+  // Typo-tolerant search (utils/ricerca.js): the index is built once
   const indiceRicerca = useMemo(() => indicizzaEsercizi(esercizi, { conDettagli: true }), [esercizi]);
 
-  // Filtri combinati; con una ricerca, i risultati in ordine di pertinenza
+  // Combined filters; with a search, the results in order of relevance
   const eserciziFiltrati = useMemo(() => {
     return cerca(indiceRicerca, ricerca).filter(e => {
       if (filtroGruppo && e.gruppoMuscoloPrimario !== filtroGruppo) return false;
@@ -292,7 +292,7 @@ export default function CatalogoEsercizi() {
     });
   }, [indiceRicerca, filtroGruppo, filtroDifficulty, filtroRegion, filtroMechanics, soloPreferiti, preferiti, ricerca]);
 
-  // Paginazione virtuale (carica PAGE_SIZE alla volta)
+  // Virtual pagination (loads PAGE_SIZE at a time)
   const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati, PAGE_SIZE, chiaveFiltri);
 
   // Infinite scroll
@@ -339,10 +339,10 @@ export default function CatalogoEsercizi() {
         </div>
       </motion.div>
 
-      {/* Barra ricerca + filtri */}
+      {/* Search bar + filters */}
       <div className="sticky top-0 z-20 pb-3 -mx-4 px-4 md:-mx-10 md:px-10" style={{ background: 'linear-gradient(to bottom, var(--bg-primario) 70%, transparent)' }}>
         <div className="flex gap-2 items-center">
-          {/* Ricerca */}
+          {/* Search */}
           <div className="flex-1 relative">
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--testo-terziario)]" />
             <input
@@ -359,7 +359,7 @@ export default function CatalogoEsercizi() {
             )}
           </div>
 
-          {/* Toggle Filtri */}
+          {/* Filters toggle */}
           <button
             onClick={() => setMostraFiltri(!mostraFiltri)}
             className={`shrink-0 p-3 rounded-[var(--raggio-md)] border transition-all ${mostraFiltri || filtriAttivi > 0 ? 'bg-[var(--accent-dim)] border-[var(--accent-glow)] text-[var(--accent)]' : 'bg-[var(--bg-terziario)] border-[var(--bordo)] text-[var(--testo-secondario)]'}`}
@@ -373,7 +373,7 @@ export default function CatalogoEsercizi() {
           </button>
         </div>
 
-        {/* Pannello Filtri */}
+        {/* Filters panel */}
         <AnimatePresence>
           {mostraFiltri && (
             <motion.div
@@ -419,7 +419,7 @@ export default function CatalogoEsercizi() {
         </AnimatePresence>
       </div>
 
-      {/* Quick Filters (chips regioni corpo) */}
+      {/* Quick Filters (body region chips) */}
       <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pb-1">
         <button
           onClick={() => setSoloPreferiti(!soloPreferiti)}
@@ -447,7 +447,7 @@ export default function CatalogoEsercizi() {
         ))}
       </div>
 
-      {/* Lista Esercizi */}
+      {/* Exercise list */}
       {caricamento ? (
         <div className="flex justify-center py-16">
           <div className="w-10 h-10 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
@@ -487,7 +487,7 @@ export default function CatalogoEsercizi() {
             </div>
           )}
 
-          {/* Counter finale */}
+          {/* Final counter */}
           {restanti === 0 && eserciziFiltrati.length > 0 && (
             <p className="text-center text-xs text-[var(--testo-terziario)] mt-6 pb-4">
               {eserciziFiltrati.length.toLocaleString('it-IT')} esercizi totali
@@ -496,7 +496,7 @@ export default function CatalogoEsercizi() {
         </>
       )}
 
-      {/* Suggerisci un esercizio mancante */}
+      {/* Suggest a missing exercise */}
       <div className="mt-8 pt-4">
         <SuggerisciEsercizio className="w-full" />
       </div>

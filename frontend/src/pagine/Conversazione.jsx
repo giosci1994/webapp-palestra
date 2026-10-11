@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Conversazione
-// Chat real-time con Socket.io
+// GymMaster — Conversation page
+// Real-time chat with Socket.io
 // ============================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -33,14 +33,14 @@ export default function Conversazione() {
 
   const conversazioneId = parseInt(id);
 
-  // Carica messaggi
+  // Load the messages
   useEffect(() => {
     const caricaMessaggi = async () => {
       try {
         const risposta = await api.get(`/chat/conversazioni/${id}/messaggi`);
         setMessaggi(risposta.dati?.messaggi || []);
 
-        // Carica info conversazione per il nome
+        // Load the conversation info for the name
         const convRisposta = await api.get('/chat/conversazioni');
         const conv = (convRisposta.dati || []).find(c => c.id === conversazioneId);
         if (conv) {
@@ -58,7 +58,7 @@ export default function Conversazione() {
     caricaMessaggi();
   }, [id, conversazioneId, utente.id]);
 
-  // Presenza reale dell'altro utente: richiede lo stato e ascolta i cambi
+  // Real presence of the other user: asks for the status and listens for changes
   useEffect(() => {
     if (!altroId) return;
     emit('presenza:richiedi', { utenteId: altroId });
@@ -70,12 +70,12 @@ export default function Conversazione() {
     return cleanup;
   }, [altroId, connesso, emit, on]);
 
-  // Adatta altezza alla tastiera mobile (Visual Viewport API)
+  // Fit the height to the mobile keyboard (Visual Viewport API)
   useEffect(() => {
     const handleResize = () => {
       if (window.visualViewport) {
         setViewportHeight(`${window.visualViewport.height}px`);
-        window.scrollTo(0, 0); // forza scroll in cima per iOS
+        window.scrollTo(0, 0); // force scroll to the top for iOS
       } else {
         setViewportHeight(`${window.innerHeight}px`);
       }
@@ -95,7 +95,7 @@ export default function Conversazione() {
     };
   }, []);
 
-  // Socket.io: entra nella room della conversazione e blocca scroll globale
+  // Socket.io: join the conversation's room and lock the global scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     
@@ -109,13 +109,13 @@ export default function Conversazione() {
     };
   }, [connesso, conversazioneId, emit]);
 
-  // Socket.io: ascolta nuovi messaggi
+  // Socket.io: listen for new messages
   useEffect(() => {
     if (!connesso) return;
 
     const cleanup1 = on('chat:nuovo_messaggio', ({ messaggio }) => {
       setMessaggi(prev => {
-        // Evita duplicati
+        // Avoid duplicates
         if (prev.some(m => m.id === messaggio.id)) return prev;
         return [...prev, messaggio];
       });
@@ -136,14 +136,14 @@ export default function Conversazione() {
     return () => { cleanup1(); cleanup2(); cleanup3(); };
   }, [connesso, utente.id, on]);
 
-  // Auto-scroll in fondo
+  // Auto-scroll to the bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messaggi, staScrivendo]);
 
-  // Invia messaggio
+  // Send a message
   const inviaMessaggio = useCallback(() => {
     const contenuto = testo.trim();
     if (!contenuto || !connesso) return;
@@ -159,7 +159,7 @@ export default function Conversazione() {
     inputRef.current?.focus();
   }, [testo, connesso, conversazioneId, emit]);
 
-  // Gestisci "sta scrivendo..."
+  // Handle "typing..."
   const gestisciInput = (e) => {
     setTesto(e.target.value);
     emit('chat:sta_scrivendo', { conversazioneId });
@@ -169,7 +169,7 @@ export default function Conversazione() {
     }, 2000);
   };
 
-  // Invio con Enter
+  // Send with Enter
   const gestisciTasto = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -177,7 +177,7 @@ export default function Conversazione() {
     }
   };
 
-  // Raggruppa messaggi per data
+  // Group messages by date
   const raggruppaPerData = (msgs) => {
     const gruppi = [];
     let dataCorrente = null;
@@ -231,7 +231,7 @@ export default function Conversazione() {
         </div>
       </div>
 
-      {/* Messaggi */}
+      {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-2 no-scrollbar">
         {elementiChat.map((el, i) => {
           if (el.tipo === 'data') {
@@ -270,7 +270,7 @@ export default function Conversazione() {
           );
         })}
 
-        {/* Indicatore "sta scrivendo" */}
+        {/* "Typing" indicator */}
         <AnimatePresence>
           {staScrivendo && (
             <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -287,7 +287,7 @@ export default function Conversazione() {
         </AnimatePresence>
       </div>
 
-      {/* Input messaggio */}
+      {/* Message input */}
       <div className="px-6 py-4 border-t border-[var(--bordo)] shrink-0"
            style={{ background: 'var(--bg-secondario)', paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
         <div className="flex items-end gap-2 relative">

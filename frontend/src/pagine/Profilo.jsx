@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Profilo (Restyling Completo)
-// Hero Card + Tab System (7 sezioni)
+// GymMaster — Profile page (Full Restyling)
+// Hero Card + Tab System (8 sections)
 // ============================================
 
 import { useAuth } from '../contesti/AuthContesto.jsx';
@@ -35,8 +35,8 @@ const TABS = [
 ];
 
 /**
- * Interruttore on/off. Fuori da Profilo: dichiarato dentro, a ogni render
- * sarebbe un componente nuovo, ricreato da capo, e il pallino non scorrerebbe.
+ * On/off switch. Outside Profilo: declared inside it, it would be a new
+ * component on every render, recreated from scratch, and the knob would not slide.
  */
 function Toggle({ attivo, onClick }) {
   return (
@@ -52,8 +52,8 @@ export default function Profilo() {
   const [richiedendoPT, setRichiedendoPT] = useState(false);
   const [fotoDaRitagliare, setFotoDaRitagliare] = useState(null);
   const fileRef = useRef(null);
-  // Le schede visibili; quella iniziale si puo' scegliere dall'indirizzo,
-  // per esempio /profilo?tab=sicurezza
+  // The visible tabs; the initial one can be picked from the address,
+  // for example /profilo?tab=sicurezza
   const tabVisibili = TABS.filter(t => t.id !== 'pt' || utente?.ruolo === 'UTENTE');
   const [parametri] = useSearchParams();
   const [tabAttivo, setTabAttivo] = useState(() => {
@@ -61,7 +61,7 @@ export default function Profilo() {
     return tabVisibili.some(t => t.id === richiesta) ? richiesta : 'profilo';
   });
 
-  // Form dati profilo
+  // Profile data form
   const [form, setForm] = useState({
     nome: '', bio: '', dataNascita: '', pesoKg: '', altezzaCm: '',
     genere: '', obiettivoFitness: '', palestraId: ''
@@ -73,17 +73,17 @@ export default function Profilo() {
   const [msgSalvataggio, setMsgSalvataggio] = useState('');
   const [modificaAbilitata, setModificaAbilitata] = useState(false);
 
-  // Cambio password
+  // Password change
   const [pwForm, setPwForm] = useState({ vecchia: '', nuova: '', conferma: '' });
   const [pwSalvando, setPwSalvando] = useState(false);
   const [pwMsg, setPwMsg] = useState({ testo: '', tipo: '' });
 
-  // Reset statistiche
+  // Statistics reset
   const [mostraReset, setMostraReset] = useState(false);
   const [confermaReset, setConfermaReset] = useState('');
   const [avviandoReset, setAvviandoReset] = useState(false);
 
-  // Info app
+  // App info
   const [infoApp, setInfoApp] = useState(null);
 
   // Telegram
@@ -98,31 +98,31 @@ export default function Profilo() {
   const [inviandoPT, setInviandoPT] = useState(false);
   const [messaggioPT, setMessaggioPT] = useState('');
 
-  // Dispositivi collegati (Sicurezza)
+  // Connected devices (Security)
   const [sessioni, setSessioni] = useState(null);
   const [erroreSessioni, setErroreSessioni] = useState('');
 
-  // Passkey (Sicurezza)
+  // Passkeys (Security)
   const [passkeySupportate] = useState(() => browserSupportsWebAuthn());
   const [passkey, setPasskey] = useState(null);
   const [passwordPasskey, setPasswordPasskey] = useState('');
   const [aggiungendoPasskey, setAggiungendoPasskey] = useState(false);
   const [msgPasskey, setMsgPasskey] = useState({ testo: '', tipo: '' });
 
-  // Esportazione dei dati (Privacy, e prima di eliminare l'account)
+  // Data export (Privacy, and before deleting the account)
   const [scaricandoDati, setScaricandoDati] = useState(false);
   const [erroreDati, setErroreDati] = useState('');
 
-  // Eliminazione account
+  // Account deletion
   const [confermaElimina, setConfermaElimina] = useState('');
   const [eliminando, setEliminando] = useState(false);
   const [passwordElimina, setPasswordElimina] = useState('');
   const [erroreElimina, setErroreElimina] = useState('');
 
-  // Palestre
+  // Gyms
   const [listaPalestre, setListaPalestre] = useState([]);
 
-  /** Scarica il file JSON con tutti i dati dell'account */
+  /** Download the JSON file with all the account's data */
   const scaricaDati = async () => {
     setErroreDati('');
     setScaricandoDati(true);
@@ -135,8 +135,8 @@ export default function Profilo() {
     }
   };
 
-  // Il modulo riparte dai dati dell'utente ogni volta che questi cambiano:
-  // si riallinea durante il render, senza un effetto e un render in piu'
+  // The form starts again from the user's data every time they change:
+  // it realigns during render, without an effect and an extra render
   const [utenteDelModulo, setUtenteDelModulo] = useState(null);
   if (utente && utente !== utenteDelModulo) {
     setUtenteDelModulo(utente);
@@ -158,14 +158,14 @@ export default function Profilo() {
     api.get('/palestre').then(r => setListaPalestre(r.dati || [])).catch(() => setListaPalestre([]));
   }, [utente]);
 
-  // --- Avatar (ritaglio manuale + compressione automatica) ---
+  // --- Avatar (manual crop + automatic compression) ---
   const gestisciImmagine = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => setFotoDaRitagliare(ev.target.result);
     reader.readAsDataURL(file);
-    e.target.value = ''; // consente di riselezionare lo stesso file
+    e.target.value = ''; // lets the user pick the same file again
   };
 
   const confermaRitaglio = (base64) => {
@@ -224,7 +224,7 @@ export default function Profilo() {
     .then(r => setPasskey(r.dati))
     .catch(err => { setMsgPasskey({ testo: err.message, tipo: 'err' }); setPasskey([]); });
 
-  /** Password, poi il gesto sul dispositivo (impronta, volto o PIN) */
+  /** Password, then the gesture on the device (fingerprint, face or PIN) */
   const aggiungiPasskey = async () => {
     setMsgPasskey({ testo: '', tipo: '' });
     setAggiungendoPasskey(true);
@@ -267,13 +267,13 @@ export default function Profilo() {
       .catch(() => setInfoApp({ versione: 'N/A', stack: {}, changelog: [] }));
   };
 
-  /** I dati che una scheda carica quando si apre */
+  /** The data a tab loads when it opens */
   const caricaTab = (id) => {
     if (id === 'legale') caricaInfoApp();
     if (id === 'sicurezza') { caricaTelegram(); caricaSessioni(); caricaPasskey(); }
   };
 
-  // Aperta da un link direttamente su una scheda: i suoi dati si caricano subito
+  // Opened from a link straight on a tab: its data loads right away
   const caricaTabIniziale = useEffectEvent(() => caricaTab(tabAttivo));
   useEffect(() => { caricaTabIniziale(); }, []);
 
@@ -286,7 +286,7 @@ export default function Profilo() {
       const r = await api.post('/utenti/cambia-password', { vecchiaPassword: pwForm.vecchia, nuovaPassword: pwForm.nuova });
       setPwMsg({ testo: r.messaggio || 'Password aggiornata con successo!', tipo: 'ok' });
       setPwForm({ vecchia: '', nuova: '', conferma: '' });
-      // Il cambio ha scollegato gli altri dispositivi
+      // The change signed out the other devices
       if (sessioni) caricaSessioni();
     } catch (err) { setPwMsg({ testo: err.message, tipo: 'err' }); }
     finally { setPwSalvando(false); }
@@ -323,7 +323,6 @@ export default function Profilo() {
 
   const ruoloInfo = RUOLI[utente?.ruolo] || RUOLI.UTENTE;
 
-  // === Toggle component riutilizzabile ===
   // === RENDER ===
   return (
     <div className="py-2 pb-24">
@@ -368,7 +367,7 @@ export default function Profilo() {
         {/* ═══ TABS ═══ */}
         <div style={{ paddingTop: '0px', paddingBottom: '25px', width: '100%' }}>
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ background: 'var(--vetro)', border: '1px solid var(--vetro-bordo)', padding: '10px', borderRadius: '32px', boxShadow: 'var(--ombra-card)' }}>
-            {/* Le schede sono solo icone: il nome per chi usa uno screen reader e come suggerimento */}
+            {/* The tabs are icons only: the name is for screen reader users and as a tooltip */}
             <div className="flex items-center gap-2 flex-1" role="tablist" aria-label="Sezioni del profilo">
               {tabVisibili.map((tab) => (
                 <button key={tab.id}
@@ -383,7 +382,7 @@ export default function Profilo() {
                       : 'px-5 text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]'
                   } ${tab.id === 'elimina' && tabAttivo !== tab.id ? '!text-[var(--pericolo)] opacity-70 hover:opacity-100' : ''}`}>
                   
-                  {/* Sfondo attivo animato */}
+                  {/* Animated active background */}
                   {tabAttivo === tab.id && (
                     <motion.div layoutId="profiloTabBg" className="absolute inset-0 bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-[14px] shadow-sm z-0" transition={{ type: "spring", stiffness: 300, damping: 25 }} />
                   )}
@@ -395,7 +394,7 @@ export default function Profilo() {
               ))}
             </div>
 
-            {/* PULSANTE LOGOUT (PARTE DESTRA) */}
+            {/* LOGOUT BUTTON (RIGHT SIDE) */}
             <div className="border-l border-[var(--vetro-bordo)] pl-2 shrink-0">
               <button 
                 onClick={(e) => { e.preventDefault(); if (window.confirm('Sei sicuro di voler uscire?')) logout(); }}
@@ -409,10 +408,10 @@ export default function Profilo() {
           </div>
         </div>
 
-        {/* ═══ CONTENUTO TAB ═══ */}
+        {/* ═══ TAB CONTENT ═══ */}
         <AnimatePresence mode="wait">
 
-          {/* TAB 1: PROFILO */}
+          {/* TAB 1: PROFILE */}
           {tabAttivo === 'profilo' && (
             <motion.div key="profilo" className="flex flex-col gap-6" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden">
@@ -491,7 +490,7 @@ export default function Profilo() {
                 </div>
               </div>
 
-              {/* Account professionale: diventa Personal Trainer (solo utenti standard) */}
+              {/* Professional account: become a Personal Trainer (standard users only) */}
               {utente?.ruolo === 'UTENTE' && (
                 <div className="glass-card overflow-hidden">
                   <div className="p-card-inner border-b border-[var(--bordo-light)]">
@@ -530,13 +529,14 @@ export default function Profilo() {
             </motion.div>
           )}
 
-          {/* TAB 2: PRIVACY */}
+          {/* TAB 2: NOTIFICATIONS */}
           {tabAttivo === 'notifiche' && (
             <motion.div key="notifiche" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <ImpostazioniNotifiche />
             </motion.div>
           )}
 
+          {/* TAB 3: PRIVACY */}
           {tabAttivo === 'privacy' && (
             <motion.div key="privacy" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden mb-6">
@@ -580,7 +580,7 @@ export default function Profilo() {
                   </p>
                 </div>
               </div>
-              {/* I tuoi dati */}
+              {/* Your data */}
               <div className="glass-card overflow-hidden mt-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2"><Download size={20} className="text-[var(--accent)]" /> I tuoi dati</h3>
@@ -596,7 +596,7 @@ export default function Profilo() {
             </motion.div>
           )}
 
-          {/* TAB 3: PERSONAL TRAINER */}
+          {/* TAB 4: PERSONAL TRAINER */}
           {tabAttivo === 'pt' && (
             <motion.div key="pt" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden">
@@ -684,10 +684,10 @@ export default function Profilo() {
             </motion.div>
           )}
 
-          {/* TAB 4: SICUREZZA */}
+          {/* TAB 5: SECURITY */}
           {tabAttivo === 'sicurezza' && (
             <motion.div key="sicurezza" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              {/* Cambio Password */}
+              {/* Password change */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2"><Lock size={20} className="text-[var(--accent)]" /> Cambia Password</h3>
@@ -702,7 +702,7 @@ export default function Profilo() {
                   <p className="text-[10px] text-[var(--testo-terziario)] px-1">Cambiando password gli altri dispositivi vengono scollegati.</p>
                 </div>
               </div>
-              {/* Dispositivi collegati */}
+              {/* Connected devices */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2"><Smartphone size={20} className="text-[var(--accent)]" /> Dispositivi collegati</h3>
@@ -735,7 +735,7 @@ export default function Profilo() {
                   {erroreSessioni && <p className="text-xs text-[var(--pericolo)]">{erroreSessioni}</p>}
                 </div>
               </div>
-              {/* Passkey */}
+              {/* Passkeys */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2"><KeyRound size={20} className="text-[var(--accent)]" /> Passkey</h3>
@@ -773,7 +773,7 @@ export default function Profilo() {
                   )}
                 </div>
               </div>
-              {/* Bot Telegram */}
+              {/* Telegram bot */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2">📲 Bot Telegram</h3>
@@ -811,7 +811,7 @@ export default function Profilo() {
                   )}
                 </div>
               </div>
-              {/* Reset Statistiche */}
+              {/* Statistics reset */}
               <div className="glass-card overflow-hidden border border-[var(--pericolo-dim)]">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg text-[var(--pericolo)] flex items-center gap-2"><AlertCircle size={20} /> Gestione Dati</h3>
@@ -837,7 +837,7 @@ export default function Profilo() {
             </motion.div>
           )}
 
-          {/* TAB 5: FATTURAZIONE */}
+          {/* TAB 6: BILLING */}
           {tabAttivo === 'fatturazione' && (
             <motion.div key="fatturazione" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden">
@@ -853,10 +853,10 @@ export default function Profilo() {
             </motion.div>
           )}
 
-          {/* TAB 6: LEGAL & COMPLIANCE */}
+          {/* TAB 7: LEGAL & COMPLIANCE */}
           {tabAttivo === 'legale' && (
             <motion.div key="legale" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-              {/* Documenti legali */}
+              {/* Legal documents */}
               <div className="glass-card overflow-hidden mb-6">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2"><FileText size={20} className="text-[var(--accent)]" /> Documenti Legali</h3>
@@ -875,7 +875,7 @@ export default function Profilo() {
                   ))}
                 </div>
               </div>
-              {/* Info App */}
+              {/* App info */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
                   <h3 className="font-bold text-lg flex items-center gap-2">🏋️ Info Applicazione</h3>
@@ -918,7 +918,7 @@ export default function Profilo() {
             </motion.div>
           )}
 
-          {/* TAB 7: ELIMINA ACCOUNT */}
+          {/* TAB 8: DELETE ACCOUNT */}
           {tabAttivo === 'elimina' && (
             <motion.div key="elimina" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
               <div className="glass-card overflow-hidden border border-[var(--pericolo)]">
@@ -958,9 +958,9 @@ export default function Profilo() {
                               setEliminando(true);
                               try {
                                 await api.delete('/utenti/account', { password: passwordElimina, conferma: 'ELIMINA' });
-                                // L'account non esiste piu': si esce dalla sessione
-                                // corrente, altrimenti l'app continuerebbe a chiamare
-                                // l'API con il token di un utente cancellato.
+                                // The account no longer exists: sign out of the
+                                // current session, otherwise the app would keep calling
+                                // the API with the token of a deleted user.
                                 logout();
                               } catch (err) {
                                 setErroreElimina(err?.message || 'Eliminazione non riuscita');

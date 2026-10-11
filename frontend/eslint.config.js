@@ -16,14 +16,14 @@ export default defineConfig([
     languageOptions: {
       globals: {
         ...globals.browser,
-        // Iniettata da Vite (vite.config.js, define): la versione dell'app
+        // Injected by Vite (vite.config.js, define): the app version
         __APP_VERSION__: 'readonly',
       },
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
-      // Il provider e il suo hook nello stesso file (useAuth, useSocket) sono
-      // lo schema dei contesti: il ricaricamento a caldo li gestisce comunque
+      // The provider and its hook in the same file (useAuth, useSocket) are
+      // the usual context pattern: hot reloading handles them anyway
       'react-refresh/only-export-components': ['error', { allowExportNames: ['useAuth', 'useSocket'] }],
     },
   },

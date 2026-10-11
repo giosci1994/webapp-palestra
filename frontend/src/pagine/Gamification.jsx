@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Gamification (v2)
-// Badge, Classifica XP, Classifica Record, Profilo Pubblico
+// GymMaster — Gamification page (v2)
+// Badges, XP Leaderboard, Records Leaderboard, Public Profile
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -20,7 +20,7 @@ export default function Gamification() {
   const [tab, setTab] = useState('badge');
   const [caricamento, setCaricamento] = useState(true);
 
-  // Profilo pubblico modale
+  // Public profile modal
   const [profiloPubblico, setProfiloPubblico] = useState(null);
   const [caricandoProfilo, setCaricandoProfilo] = useState(false);
 
@@ -76,11 +76,11 @@ export default function Gamification() {
 
   return (
     <div className="py-2 max-w-3xl">
-      {/* Hero Card - Livello */}
+      {/* Hero Card - Level */}
       <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
                   className="glass-card p-card-inner mb-6 text-center relative overflow-hidden">
         
-        {/* Pulsante Reset in alto a destra */}
+        {/* Reset button at the top right */}
         <button 
           onClick={() => setMostraReset(true)}
           className="absolute top-4 right-4 text-[10px] uppercase font-bold px-2 py-1 rounded bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo)] hover:text-white transition-colors z-10"
@@ -95,7 +95,7 @@ export default function Gamification() {
           <h1 className="text-2xl font-bold testo-gradient mb-1">{profilo?.livello?.nome}</h1>
           <p className="text-lg font-bold">{profilo?.xp} XP</p>
 
-          {/* Barra progresso */}
+          {/* Progress bar */}
           {profilo?.livello?.prossimo && (
             <div className="mt-4 max-w-xs mx-auto">
               <div className="flex justify-between text-[10px] text-[var(--testo-terziario)] mb-1">
@@ -119,7 +119,7 @@ export default function Gamification() {
         </div>
       </motion.div>
 
-      {/* Tabs — più visibili */}
+      {/* Tabs — more visible */}
       <div className="flex gap-3 mb-8 mt-2">
         {TABS.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)}
@@ -194,7 +194,7 @@ export default function Gamification() {
         </div>
       )}
 
-      {/* Classifica Record */}
+      {/* Records leaderboard */}
       {tab === 'record' && (
         <div className="flex flex-col gap-4">
           {classificaRecord.length === 0 ? (
@@ -209,7 +209,7 @@ export default function Gamification() {
                           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.04 }}
                           className="glass-card overflow-hidden">
-                {/* Header esercizio */}
+                {/* Exercise header */}
                 <div className="flex items-center gap-3 px-card-inner py-4 border-b border-[var(--bordo-light)]">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
                        style={{ background: (gruppo?.colore || '#6366F1') + '22', color: gruppo?.colore || '#6366F1' }}>
@@ -254,7 +254,7 @@ export default function Gamification() {
         </div>
       )}
 
-      {/* Modale Profilo Pubblico */}
+      {/* Public Profile modal */}
       <AnimatePresence>
         {(profiloPubblico || caricandoProfilo) && (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
@@ -275,7 +275,7 @@ export default function Gamification() {
                 </div>
               ) : (
                 <>
-                  {/* Header profilo */}
+                  {/* Profile header */}
                   <div className="relative px-card-inner py-6 text-center border-b border-[var(--bordo-light)]">
                     <button onClick={() => setProfiloPubblico(null)}
                             className="absolute top-3 right-3 w-8 h-8 rounded-full bg-[var(--bg-terziario)] flex items-center justify-center hover:bg-[var(--bordo)] transition-colors">
@@ -305,9 +305,9 @@ export default function Gamification() {
                     )}
                   </div>
 
-                  {/* Info condivise */}
+                  {/* Shared info */}
                   <div className="px-card-inner py-5 flex flex-col gap-3">
-                    {/* Dati personali */}
+                    {/* Personal data */}
                     {(profiloPubblico.palestra || profiloPubblico.obiettivoFitness || profiloPubblico.pesoKg || profiloPubblico.altezzaCm || profiloPubblico.dataNascita) && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">Informazioni</p>
@@ -334,7 +334,7 @@ export default function Gamification() {
                       </div>
                     )}
 
-                    {/* Statistiche */}
+                    {/* Statistics */}
                     {profiloPubblico.statistiche && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">Statistiche</p>
@@ -355,7 +355,7 @@ export default function Gamification() {
                       </div>
                     )}
 
-                    {/* Schede globali */}
+                    {/* Global plans */}
                     {profiloPubblico.schedeGlobali?.length > 0 && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">
@@ -373,7 +373,7 @@ export default function Gamification() {
                       </div>
                     )}
 
-                    {/* Record */}
+                    {/* Records */}
                     {profiloPubblico.record?.length > 0 && (
                       <div>
                         <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)] font-bold mb-2">
@@ -391,7 +391,7 @@ export default function Gamification() {
                       </div>
                     )}
 
-                    {/* Nessuna info condivisa */}
+                    {/* No shared info */}
                     {!profiloPubblico.palestra && !profiloPubblico.obiettivoFitness && !profiloPubblico.statistiche &&
                      !profiloPubblico.schedeGlobali?.length && !profiloPubblico.record?.length &&
                      !profiloPubblico.pesoKg && !profiloPubblico.altezzaCm && !profiloPubblico.dataNascita && (
@@ -407,7 +407,7 @@ export default function Gamification() {
         )}
       </AnimatePresence>
 
-      {/* Modale Reset */}
+      {/* Reset modal */}
       {mostraReset && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="glass-card p-6 max-w-sm w-full border border-[var(--pericolo)] text-center">

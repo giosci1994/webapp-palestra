@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Sidebar Desktop
-// Navigazione laterale fissa
+// GymMaster — Desktop sidebar
+// Fixed side navigation
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -77,8 +77,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
       style={{ background: 'var(--vetro)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
     >
       {/* Header / Logo */}
-      {/* Niente overflow-hidden: tagliava il pannello della campanella, che si
-          apre sotto l'intestazione. Lo sfondo sfumato ne occupa gia' l'area esatta. */}
+      {/* No overflow-hidden: it clipped the notification bell panel, which
+          opens below the header. The gradient background already fills that exact area. */}
       <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between px-6'} h-[88px] border-b border-[var(--vetro-bordo)] relative shrink-0`}>
         <div className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none" style={{ background: 'linear-gradient(135deg, var(--accent), transparent)' }}></div>
         
@@ -102,7 +102,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
         </div>
       </div>
 
-      {/* Menu principale */}
+      {/* Main menu */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto no-scrollbar">
         {MENU_PRINCIPALE.map((item) => {
           const { Icona } = item;
@@ -119,7 +119,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           );
         })}
 
-        {/* Sezione Admin */}
+        {/* Admin section */}
         {isAdmin && (
           <>
             <div className={`mt-4 mb-2 ${isCollapsed ? 'px-0 text-center' : 'px-4'}`}>
@@ -163,7 +163,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           </>
         )}
 
-        {/* Sezione PT */}
+        {/* Personal trainer section */}
         {isPT && (
           <>
             <div className={`mt-4 mb-2 ${isCollapsed ? 'px-0 text-center' : 'px-4'}`}>
@@ -192,7 +192,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
         )}
       </nav>
 
-      {/* Profilo utente in fondo */}
+      {/* User profile at the bottom */}
       <div className={`p-6 border-t border-[var(--vetro-bordo)] bg-[rgba(0,0,0,0.2)] ${isCollapsed ? 'flex flex-col items-center gap-4' : ''}`}>
         <NavLink to="/profilo" className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-4'} hover:bg-[var(--bg-terziario)] p-3 -m-3 rounded-[var(--raggio-md)] transition-colors group`} title={isCollapsed ? 'Profilo' : undefined}>
           <div className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-xl font-bold shadow-[var(--ombra-accent)]"

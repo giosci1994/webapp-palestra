@@ -1,12 +1,12 @@
 // ============================================
-// GymMaster — Formattatori
-// Date, numeri, durate
+// GymMaster — Formatters
+// Dates, numbers, durations
 // ============================================
 
 /**
- * Formatta una data ISO in formato italiano.
- * @param {string} data - Data ISO string
- * @param {boolean} conOra - Mostra anche l'ora
+ * Formats an ISO date in Italian format.
+ * @param {string} data - ISO date string
+ * @param {boolean} conOra - Also show the time
  */
 export function formattaData(data, conOra = false) {
   if (!data) return '—';
@@ -19,12 +19,12 @@ export function formattaData(data, conOra = false) {
   return new Date(data).toLocaleDateString('it-IT', opzioni);
 }
 
-/** "YYYY-MM-DD" da una data locale, senza passare per UTC (che sposterebbe il giorno). */
+/** "YYYY-MM-DD" from a local date, without going through UTC (which would shift the day). */
 export function aStringaData(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-/** Lunedì della settimana in cui cade la data, a mezzanotte locale. */
+/** Monday of the week the date falls in, at local midnight. */
 export function lunediDi(d) {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);
@@ -32,13 +32,13 @@ export function lunediDi(d) {
   return x;
 }
 
-/** "HH:MM" da una data locale, il formato dei campi <input type="time">. */
+/** "HH:MM" from a local date, the format of <input type="time"> fields. */
 export function aStringaOra(d) {
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
 /**
- * Formatta una data in formato relativo (es. "2 ore fa").
+ * Formats a date in relative form (e.g. "2 ore fa", 2 hours ago).
  */
 export function formattaDataRelativa(data) {
   if (!data) return '—';
@@ -56,7 +56,8 @@ export function formattaDataRelativa(data) {
 }
 
 /**
- * Formatta un numero con separatore delle migliaia.
+ * Formats a number the Italian way (it-IT): decimal comma, and a thousands
+ * separator from five digits up (1520, but 15.200).
  */
 export function formattaNumero(n) {
   if (n == null) return '0';
@@ -64,7 +65,7 @@ export function formattaNumero(n) {
 }
 
 /**
- * Formatta il peso (con decimali solo se necessario).
+ * Formats the weight (with decimals only when needed).
  */
 export function formattaPeso(kg) {
   if (kg == null) return '0';
@@ -72,7 +73,7 @@ export function formattaPeso(kg) {
 }
 
 /**
- * Formatta la durata in minuti in formato leggibile.
+ * Formats a duration in minutes in a readable form.
  */
 export function formattaDurata(minuti) {
   if (!minuti) return '—';
@@ -83,11 +84,11 @@ export function formattaDurata(minuti) {
 }
 
 /**
- * Nome dell'esercizio da mostrare.
+ * Name of the exercise to show.
  *
- * Il catalogo importato ha i nomi in inglese e `nomeIt` con la traduzione;
- * quello curato a mano ha già il nome italiano in `nome` e `nomeIt` vuoto.
- * Qui si sceglie sempre l'italiano quando c'è.
+ * The imported catalog has English names and `nomeIt` with the translation;
+ * the hand-curated one already has the Italian name in `nome` and an empty `nomeIt`.
+ * Here the Italian one is always chosen when there is one.
  */
 export function nomeEsercizio(esercizio) {
   if (!esercizio) return '';
@@ -95,18 +96,18 @@ export function nomeEsercizio(esercizio) {
 }
 
 /**
- * Un esercizio dello storico ({ esercizio, serie }) si mostra come cardio,
- * con minuti e livello al posto di peso e ripetizioni? Conta il gruppo, ma
- * anche come sono state registrate le serie: l'allenamento registra in minuti
- * anche gli esercizi fatti su un attrezzo cardio.
+ * Is an exercise from the history ({ esercizio, serie }) shown as cardio,
+ * with minutes and level instead of weight and reps? The muscle group counts,
+ * but so does how the sets were logged: the workout also logs in minutes the
+ * exercises done on a cardio machine.
  */
 export function eCardioNelloStorico({ esercizio, serie }) {
   return esercizio?.gruppoMuscoloPrimario?.toLowerCase() === 'cardio' || serie.some(s => s.durataMinuti > 0);
 }
 
 /**
- * Nome originale in inglese, da mostrare come riga secondaria.
- * Restituisce null quando coincide col nome principale, per non ripeterlo.
+ * Original English name, to show as a secondary line.
+ * Returns null when it matches the main name, so as not to repeat it.
  */
 export function nomeEsercizioOriginale(esercizio) {
   if (!esercizio?.nomeIt) return null;

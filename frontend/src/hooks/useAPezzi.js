@@ -1,14 +1,14 @@
 // ============================================
-// GymMaster — Liste lunghe a pezzi
+// GymMaster — Long lists in chunks
 // ============================================
 
 import { useState, useCallback } from 'react';
 
 /**
- * I primi `passo` elementi di un elenco, e la funzione per mostrarne altri.
- * Quando cambia `chiave` (di solito l'elenco stesso: un'altra ricerca, un
- * altro filtro) si riparte dai primi: il catalogo ha piu' di 3000 esercizi, e
- * disegnarli tutti a ogni tasto bloccava il telefono.
+ * The first `passo` items of a list, and the function to show more of them.
+ * When `chiave` changes (usually the list itself: another search, another
+ * filter) it starts again from the first ones: the catalog has more than 3000
+ * exercises, and drawing them all on every keystroke froze the phone.
  */
 export function useAPezzi(elenco, passo = 50, chiave = elenco) {
   const [stato, setStato] = useState({ chiave, quanti: passo });

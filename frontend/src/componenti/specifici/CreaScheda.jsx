@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Componente Creazione Scheda
-// Modale per creare una nuova scheda allenamento
+// GymMaster — Plan creation component
+// Modal to create a new workout plan
 // ============================================
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +13,7 @@ import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null }) {
-  const [step, setStep] = useState(1); // 1: info base, 2: aggiungi esercizi
+  const [step, setStep] = useState(1); // 1: basic info, 2: add exercises
   const [form, setForm] = useState(
     schedaEsistente 
       ? { titolo: schedaEsistente.titolo, descrizione: schedaEsistente.descrizione || '', livello: schedaEsistente.livello, visibilita: schedaEsistente.visibilita }
@@ -29,7 +29,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
           repTarget: es.repTarget,
           recuperoSecondi: es.recuperoSecondi,
           note: es.note || '',
-          // Campi cardio (preservati per le voci create dal bot)
+          // Cardio fields (kept for the entries created by the bot)
           riscaldamento: es.riscaldamento,
           durataMinuti: es.durataMinuti,
           velocitaKmh: es.velocitaKmh,
@@ -44,13 +44,13 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
   const [ricerca, setRicerca] = useState('');
   const [caricamento, setCaricamento] = useState(false);
 
-  // Carica catalogo esercizi
+  // Load the exercise catalog
   useEffect(() => {
     api.get('/esercizi').then(r => setEserciziCatalogo(r.dati || [])).catch(() => {});
   }, []);
 
-  // Ricerca tollerante (utils/ricerca.js): l'indice si prepara una volta.
-  // I preferiti dell'utente (stella nel catalogo) vengono per primi
+  // Tolerant search (utils/ricerca.js): the index is built once.
+  // The user's favorites (star in the catalog) come first
   const { preferiti } = usePreferiti();
   const indiceRicerca = useMemo(() => indicizzaEsercizi(eserciziCatalogo), [eserciziCatalogo]);
   const eserciziFiltrati = useMemo(
@@ -83,7 +83,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
     ));
   };
 
-  // Sposta esercizio su o giù nella lista
+  // Move an exercise up or down in the list
   const spostaEsercizio = (idx, direzione) => {
     setEserciziSelezionati(prev => {
       const nuovoIdx = idx + direzione;
@@ -163,10 +163,10 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
           <button onClick={onChiudi} className="text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] text-xl p-1">✕</button>
         </div>
 
-        {/* Contenuto */}
+        {/* Content */}
         <div className="flex-1 overflow-y-auto p-5">
           {step === 1 ? (
-            /* Step 1: Info base */
+            /* Step 1: Basic info */
             <div className="flex flex-col gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">Titolo *</label>
@@ -197,9 +197,9 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
               </div>
             </div>
           ) : (
-            /* Step 2: Aggiungi esercizi */
+            /* Step 2: Add exercises */
             <div className="flex flex-col gap-5">
-              {/* Esercizi selezionati */}
+              {/* Selected exercises */}
               {eserciziSelezionati.length > 0 && (
                 <div>
                   <h3 className="text-sm font-semibold text-[var(--testo-secondario)] mb-3">
@@ -217,9 +217,9 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                           className="esercizio-selezionato-card"
                         >
-                          {/* Riga nome esercizio */}
+                          {/* Exercise name row */}
                           <div className="esercizio-sel-header">
-                            {/* Frecce riordinamento */}
+                            {/* Reorder arrows */}
                             <div className="flex flex-col shrink-0">
                               <button
                                 onClick={() => spostaEsercizio(idx, -1)}
@@ -241,7 +241,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                                     title="Rimuovi esercizio">✕</button>
                           </div>
 
-                          {/* Riga parametri - MIGLIORATA */}
+                          {/* Parameters row - IMPROVED */}
                           <div className="esercizio-sel-parametri">
                             <div className="esercizio-param-gruppo">
                               <label className="esercizio-param-label">Serie</label>
@@ -262,8 +262,8 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                             </div>
                           </div>
 
-                          {/* Indicazione tecnica: correzioni posturali, tempi,
-                              esecuzione unilaterale. Facoltativa. */}
+                          {/* Technique note: posture corrections, tempo,
+                              one-sided execution. Optional. */}
                           <input
                             type="text"
                             value={es.note || ''}
@@ -278,7 +278,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                 </div>
               )}
 
-              {/* Filtro gruppo muscolare evidenziato */}
+              {/* Highlighted muscle group filter */}
               <div className="crea-scheda-filtro-gruppo">
                 <label className="text-sm font-semibold text-[var(--testo-primario)] mb-2 block">Filtra per gruppo muscolare</label>
                 <div className="crea-scheda-gruppi-wrap">
@@ -302,11 +302,11 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                 </div>
               </div>
 
-              {/* Barra ricerca */}
+              {/* Search bar */}
               <input type="text" value={ricerca} onChange={e => setRicerca(e.target.value)}
                      className="campo-input campo-ricerca" placeholder="🔍 Cerca esercizio..." />
 
-              {/* Catalogo esercizi */}
+              {/* Exercise catalog */}
               <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
                 {eserciziFiltrati.length === 0 ? (
                   <div className="text-center py-6 text-[var(--testo-terziario)]">Nessun esercizio trovato</div>

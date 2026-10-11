@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Novità in stile "storie"
-// Bolla fluttuante + visore swipe (stile Instagram).
-// Auto-apertura al primo avvio sulle novità non viste.
+// GymMaster — "What's new" as "stories"
+// Floating bubble + swipe viewer (Instagram style).
+// Opens by itself on first launch when there is unseen "what's new".
 // ============================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -16,7 +16,7 @@ function leggiViste() {
   try { return JSON.parse(localStorage.getItem(CHIAVE_VISTE) || '[]'); } catch { return []; }
 }
 function salvaViste(ids) {
-  try { localStorage.setItem(CHIAVE_VISTE, JSON.stringify(ids)); } catch { /* ignora */ }
+  try { localStorage.setItem(CHIAVE_VISTE, JSON.stringify(ids)); } catch { /* ignore */ }
 }
 
 function parsePunti(punti) {
@@ -27,9 +27,9 @@ function parsePunti(punti) {
 
 /**
  * @param {object} p
- * @param {(occupato: boolean) => void} [p.onOccupato] - avvisa quando le storie
- *   occupano lo schermo e quando lo liberano (anche se non c'era niente da
- *   mostrare), cosi' il promemoria dell'allenamento non ci si sovrappone
+ * @param {(occupato: boolean) => void} [p.onOccupato] - tells when the stories
+ *   take up the screen and when they free it (even if there was nothing to
+ *   show), so the workout reminder does not overlap them
  */
 export default function NovitaStorie({ onOccupato }) {
   const naviga = useNavigate();
@@ -39,7 +39,7 @@ export default function NovitaStorie({ onOccupato }) {
   const [indice, setIndice] = useState(0);
   const touchX = useRef(null);
 
-  // Letto da un ref: il genitore puo' passare ogni volta una funzione nuova
+  // Read from a ref: the parent may pass a new function every time
   const onOccupatoRef = useRef(onOccupato);
   useEffect(() => { onOccupatoRef.current = onOccupato; });
 
@@ -87,7 +87,7 @@ export default function NovitaStorie({ onOccupato }) {
 
   return (
     <>
-      {/* Bolla fluttuante */}
+      {/* Floating bubble */}
       <button
         onClick={() => apri(0)}
         aria-label="Novità"
@@ -121,7 +121,7 @@ export default function NovitaStorie({ onOccupato }) {
                 touchX.current = null;
               }}
             >
-              {/* Barrette di avanzamento (solo con più di una novità) */}
+              {/* Progress bars (only with more than one story) */}
               {novita.length > 1 && (
                 <div className="flex gap-1 mb-3 px-1">
                   {novita.map((_, i) => (
@@ -132,7 +132,7 @@ export default function NovitaStorie({ onOccupato }) {
                 </div>
               )}
 
-              {/* Card storia */}
+              {/* Story card */}
               <motion.div
                 key={storia.id}
                 initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
@@ -178,8 +178,8 @@ export default function NovitaStorie({ onOccupato }) {
                 </div>
               </motion.div>
 
-              {/* Indietro / avanti, su ogni schermo: e' l'unico comando per scorrere
-                  oltre allo swipe, che sul telefono non si scopre da soli */}
+              {/* Back / forward, on every screen: it is the only control to move on
+                  besides the swipe, which people don't discover by themselves on the phone */}
               <div className="flex justify-between mt-2 px-1">
                 <button onClick={precedente} disabled={indice === 0}
                   className="text-white/70 disabled:opacity-25 flex items-center gap-1 text-sm py-2.5 pr-3">

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { leggiForbice, incrementoPer, propostaCarico, FALLIMENTI_PRIMA_DELLO_SCARICO } from './progressione.js';
 
-/** Una seduta con le serie [peso, ripetizioni] */
+/** A session with the sets [weight, reps] */
 const seduta = (...serie) => ({ data: '2026-10-01', serie: serie.map(([pesoEffettivo, repEffettive]) => ({ pesoEffettivo, repEffettive })) });
 const proposta = (storico, altro = {}) => propostaCarico({ storico, serieTarget: 3, repTarget: '8-12', incremento: 2.5, ...altro });
 

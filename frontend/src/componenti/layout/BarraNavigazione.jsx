@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Barra Navigazione Mobile
-// Bottom navigation con 5 tab
+// GymMaster — Mobile navigation bar
+// Bottom navigation with 5 tabs
 // ============================================
 
 import { NavLink, useLocation } from 'react-router-dom';
@@ -19,14 +19,14 @@ const HOME = '/dashboard';
 export default function BarraNavigazione() {
   const { pathname } = useLocation();
 
-  // Le tab non devono impilarsi nella cronologia: altrimenti lo swipe
-  // "indietro" ripercorre a ritroso ogni scheda gia' aperta invece di
-  // riportare alla home, come fa qualsiasi app.
+  // The tabs must not pile up in the history: otherwise the "back" swipe
+  // walks back through every tab already opened instead of going back to
+  // the home, like any app does.
   //
-  // Regola: si accoda una sola voce, quella della home. Dalla home la tab
-  // scelta si accoda (indietro -> home); da qualsiasi altra pagina la tab
-  // sostituisce la voce corrente; la home sostituisce sempre.
-  // La cronologia resta cosi' [home] oppure [home, tab].
+  // Rule: only one entry is pushed, the home one. From the home the chosen
+  // tab is pushed (back -> home); from any other page the tab replaces the
+  // current entry; the home always replaces.
+  // So the history stays [home] or [home, tab].
   const sullaHome = pathname === HOME;
   const sostituisci = (percorso) => percorso === HOME || !sullaHome;
 

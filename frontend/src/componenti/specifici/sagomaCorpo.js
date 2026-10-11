@@ -1,9 +1,9 @@
 // ============================================
-// GymMaster — Sagoma del corpo per la mappa muscolare
+// GymMaster — Body outline for the muscle map
 // ============================================
 //
-// Poligoni (viewBox 0 0 100 200) tratti da react-body-highlighter 2.0.5,
-// https://github.com/GV79/react-body-highlighter — rilasciato con licenza MIT:
+// Polygons (viewBox 0 0 100 200) taken from react-body-highlighter 2.0.5,
+// https://github.com/GV79/react-body-highlighter — released under the MIT license:
 //
 //   Copyright (c) 2020 GV79
 //
@@ -25,10 +25,10 @@
 //   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //   SOFTWARE.
 //
-// Si copiano solo i dati: il componente della libreria non gestisce selezione
-// ne' accessibilita', ed e' fermo dal 2022.
-// Nota: nella libreria "adductor" sono gli adduttori (interno coscia) e
-// "abductors" gli abduttori (esterno anca).
+// Only the data is copied: the library's component handles neither selection
+// nor accessibility, and it has not been updated since 2022.
+// Note: in the library "adductor" are the adductors (inner thigh) and
+// "abductors" the abductors (outer hip).
 
 export const FRONTE = [
   { muscolo: "chest", punti: [

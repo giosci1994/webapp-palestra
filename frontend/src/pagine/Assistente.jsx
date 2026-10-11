@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Assistente AI (GymBot)
-// Chat con l'assistente fitness virtuale
+// GymMaster — AI Assistant page (GymBot)
+// Chat with the virtual fitness assistant
 // ============================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -8,7 +8,7 @@ import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Suggerimenti rapidi per l'utente
+// Quick suggestions for the user
 const SUGGERIMENTI = [
   { icona: '💪', testo: 'Suggerisci un allenamento push per intermedi' },
   { icona: '🔄', testo: 'Ho la panca occupata, cosa posso fare al suo posto?' },
@@ -29,7 +29,7 @@ export default function Assistente() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Carica storico conversazioni
+  // Load the conversation history
   useEffect(() => {
     api.get('/assistente/conversazioni')
       .then(r => setConversazioni(r.dati || []))
@@ -47,7 +47,7 @@ export default function Assistente() {
     const contenuto = (testoOverride || testo).trim();
     if (!contenuto || inAttesa) return;
 
-    // Aggiungi messaggio utente in locale subito
+    // Add the user's message locally right away
     const msgUtente = { ruolo: 'utente', contenuto, inviatoIl: new Date().toISOString() };
     setMessaggi(prev => [...prev, msgUtente]);
     setTesto('');
@@ -59,7 +59,7 @@ export default function Assistente() {
         conversazioneAiId: conversazioneAttiva
       });
 
-      // Aggiungi risposta assistente
+      // Add the assistant's reply
       const msgAssistente = {
         ruolo: 'assistente',
         contenuto: risposta.dati.risposta,
@@ -67,7 +67,7 @@ export default function Assistente() {
       };
       setMessaggi(prev => [...prev, msgAssistente]);
 
-      // Salva ID conversazione per i messaggi successivi
+      // Save the conversation ID for the following messages
       if (!conversazioneAttiva) {
         setConversazioneAttiva(risposta.dati.conversazioneAiId);
       }
@@ -93,17 +93,18 @@ export default function Assistente() {
 
   const caricaConversazione = async (convId) => {
     try {
-      // Carica i messaggi dal server (conversazioneAI ha i messaggi completi)
-      // Per ora facciamo una nuova richiesta per ottenere lo storico completo
+      // The old messages are not shown again: the list of conversations
+      // carries only the last one. The server keeps the history and passes it
+      // to Gemini, so the conversation goes on where it stopped.
       setConversazioneAttiva(convId);
-      setMessaggi([]); // Verrà riempito dal contesto della conv
+      setMessaggi([]);
       setMostraStorico(false);
 
-      // Recupera dettagli
+      // Fetch the details
       const risposta = await api.get('/assistente/conversazioni');
       const conv = (risposta.dati || []).find(c => c.id === convId);
       if (conv?.messaggi?.length > 0) {
-        // Il backend ritorna solo l'ultimo messaggio, avvisiamo l'utente
+        // The backend returns only the last message, so we tell the user
         setMessaggi([{
           ruolo: 'assistente',
           contenuto: '📂 Conversazione ripresa. Scrivi un messaggio per continuare!',
@@ -122,7 +123,7 @@ export default function Assistente() {
     }
   };
 
-  // Formatta il markdown semplice della risposta AI
+  // Format the simple markdown of the AI reply
   const formattaRisposta = (testo) => {
     return testo
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -159,7 +160,7 @@ export default function Assistente() {
         </div>
       </div>
 
-      {/* Storico panel */}
+      {/* History panel */}
       <AnimatePresence>
         {mostraStorico && (
           <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }}
@@ -192,9 +193,9 @@ export default function Assistente() {
         )}
       </AnimatePresence>
 
-      {/* Area messaggi */}
+      {/* Messages area */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 no-scrollbar">
-        {/* Benvenuto se nessun messaggio */}
+        {/* Welcome when there are no messages */}
         {messaggi.length === 0 && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                       className="flex flex-col items-center justify-center flex-1 py-8">
@@ -205,7 +206,7 @@ export default function Assistente() {
               nutrizione, progressione carichi e molto altro!
             </p>
 
-            {/* Suggerimenti rapidi */}
+            {/* Quick suggestions */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-lg">
               {SUGGERIMENTI.map((s, i) => (
                 <motion.button
@@ -224,7 +225,7 @@ export default function Assistente() {
           </motion.div>
         )}
 
-        {/* Messaggi */}
+        {/* Messages */}
         {messaggi.map((msg, i) => (
           <motion.div
             key={i}
@@ -256,7 +257,7 @@ export default function Assistente() {
           </motion.div>
         ))}
 
-        {/* Indicatore "sta pensando..." */}
+        {/* "Thinking..." indicator */}
         <AnimatePresence>
           {inAttesa && (
             <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
@@ -280,7 +281,7 @@ export default function Assistente() {
         </AnimatePresence>
       </div>
 
-      {/* Input messaggio */}
+      {/* Message input */}
       <div className="px-card-inner pt-3 pb-[calc(12px+var(--safe-bottom))] border-t border-[var(--bordo)] shrink-0" style={{ background: 'var(--bg-secondario)' }}>
         <div className="flex items-end gap-2">
           <textarea

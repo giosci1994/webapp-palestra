@@ -1,16 +1,16 @@
 // ============================================
-// GymMaster — Hook media query
+// GymMaster — Media query hook
 // ============================================
 
 import { useCallback, useSyncExternalStore } from 'react';
 
 /**
- * Segue una media query CSS e restituisce true quando è soddisfatta.
- * Serve a scegliere comportamenti diversi fra telefono e desktop senza
- * duplicare i componenti (es. calendario settimanale sotto i 768px).
+ * Follows a CSS media query and returns true when it matches.
+ * Used to pick different behaviors for phone and desktop without
+ * duplicating components (e.g. the weekly calendar below 768px).
  *
- * useSyncExternalStore e' il modo di React per leggere un valore che cambia
- * fuori da React: niente stato copiato e risincronizzato in un effetto.
+ * useSyncExternalStore is React's way to read a value that changes
+ * outside React: no state copied and re-synced in an effect.
  */
 export function useMediaQuery(query) {
   const iscriviti = useCallback((avvisa) => {
@@ -25,5 +25,5 @@ export function useMediaQuery(query) {
   return useSyncExternalStore(iscriviti, leggi, () => false);
 }
 
-/** true su schermi da telefono (sotto il breakpoint md di Tailwind). */
+/** true on phone-sized screens (below Tailwind's md breakpoint). */
 export const useTelefono = () => useMediaQuery('(max-width: 767px)');

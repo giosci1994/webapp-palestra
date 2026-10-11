@@ -1,25 +1,26 @@
 // ============================================
-// GymMaster — Progressione dei carichi
+// GymMaster — Load progression
 // ============================================
 //
-// Il peso da usare oggi, ricavato da come sono andate le ultime volte, con la
-// doppia progressione: si lavora in una forbice di ripetizioni ("8-12").
-// - Tutte le serie in cima alla forbice: il peso sale di un gradino e si
-//   riparte dal fondo.
-// - Se no, stesso peso, cercando una ripetizione in piu'.
-// - Tre volte di fila allo stesso peso senza arrivare nemmeno al fondo della
-//   forbice: si scarica del 10% e si risale.
-// Ogni proposta dice il perche'.
+// The weight to use today, worked out from how the last few times went, with
+// double progression: you work within a rep range ("8-12").
+// - All sets at the top of the range: the weight goes up one step and you
+//   start again from the bottom.
+// - Otherwise, same weight, going for one more rep.
+// - Three times in a row at the same weight without even reaching the bottom
+//   of the range: deload by 10% (rounded down to the equipment step, so a
+//   little more on heavy steps) and build back up.
+// Every suggestion says why.
 
 import { bilanciereDi } from './dischi.js';
 
-/** Quante volte di fila sotto la forbice, allo stesso peso, prima di scaricare */
+/** How many times in a row below the range, at the same weight, before deloading */
 export const FALLIMENTI_PRIMA_DELLO_SCARICO = 3;
 const SCARICO = 0.9;
 
 const kg = n => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
 
-/** "8-12" → { min: 8, max: 12 }; "10" o 10 → { min: 10, max: 10 }; altro → null */
+/** "8-12" → { min: 8, max: 12 }; "10" or 10 → { min: 10, max: 10 }; anything else → null */
 export function leggiForbice(repTarget) {
   const testo = String(repTarget ?? '').trim();
   const forbice = testo.match(/^(\d+)\s*[-–—]\s*(\d+)$/);
@@ -30,36 +31,36 @@ export function leggiForbice(repTarget) {
   return /^\d+$/.test(testo) && Number(testo) > 0 ? { min: Number(testo), max: Number(testo) } : null;
 }
 
-/** Il gradino di peso dell'attrezzo: i dischi piu' piccoli, i manubri, il pacco pesi */
+/** The equipment's weight step: the smallest plates, the dumbbells, the weight stack */
 export function incrementoPer(esercizio) {
   const attrezzatura = esercizio?.attrezzatura;
   const nome = attrezzatura?.nome || '';
-  if (bilanciereDi(esercizio)) return 2.5;        // due dischi da 1,25
+  if (bilanciereDi(esercizio)) return 2.5;        // two 1.25 plates
   if (/manubri/i.test(nome)) return 2;
   if (/kettlebell/i.test(nome)) return 4;
   if (['MACCHINE', 'CAVI'].includes(attrezzatura?.categoria)) return 5;
   return 2.5;
 }
 
-/** Peso e ripetizioni delle serie di lavoro: quelle al peso piu' alto della seduta */
+/** Weight and reps of the working sets: those at the session's highest weight */
 function serieDiLavoro(seduta) {
   const peso = Math.max(...seduta.serie.map(s => s.pesoEffettivo));
   return { peso, ripetizioni: seduta.serie.filter(s => s.pesoEffettivo === peso).map(s => s.repEffettive) };
 }
 
-/** Sotto la forbice: meno serie del previsto al peso di lavoro, o qualcuna sotto il minimo */
+/** Below the range: fewer sets than planned at the working weight, or some below the minimum */
 const sottoForbice = ({ ripetizioni }, serieTarget, { min }) =>
   ripetizioni.length < serieTarget || ripetizioni.slice(0, serieTarget).some(r => r < min);
 
 /**
  * @param {object} p
  * @param {{ data: string, serie: { pesoEffettivo: number, repEffettive: number }[] }[]} p.storico
- *   le ultime sedute dell'esercizio, dalla piu' recente, con le serie completate
+ *   the exercise's last sessions, most recent first, with the completed sets
  * @param {number} p.serieTarget
  * @param {string|number} p.repTarget
- * @param {number} p.incremento - il gradino di peso (incrementoPer)
+ * @param {number} p.incremento - the weight step (incrementoPer)
  * @returns {{ peso: number, ripetizioni: { min: number, max: number }, esito: 'sali'|'resta'|'scarico', motivo: string } | null}
- *   null se non c'e' niente da proporre: prima volta, corpo libero, ripetizioni senza forbice
+ *   null if there is nothing to suggest: first time, bodyweight, reps without a range
  */
 export function propostaCarico({ storico = [], serieTarget = 3, repTarget, incremento = 2.5 }) {
   const forbice = leggiForbice(repTarget);
@@ -81,7 +82,7 @@ export function propostaCarico({ storico = [], serieTarget = 3, repTarget, incre
   }
 
   if (sottoForbice(ultima, serieTarget, forbice)) {
-    // Le volte di fila sotto la forbice, allo stesso peso
+    // The times in a row below the range, at the same weight
     let difficili = 0;
     for (const seduta of sedute) {
       if (seduta.peso !== ultima.peso || !sottoForbice(seduta, serieTarget, forbice)) break;

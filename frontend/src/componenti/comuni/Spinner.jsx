@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Componente Spinner
-// Indicatore di caricamento
+// GymMaster — Spinner component
+// Loading indicator
 // ============================================
 
 export default function Spinner({ dimensione = 'md', className = '' }) {
@@ -20,7 +20,7 @@ export default function Spinner({ dimensione = 'md', className = '' }) {
   );
 }
 
-/** Spinner centrato a tutta pagina */
+/** Full-page centered spinner */
 export function SpinnerPagina() {
   return (
     <div className="flex items-center justify-center min-h-screen">

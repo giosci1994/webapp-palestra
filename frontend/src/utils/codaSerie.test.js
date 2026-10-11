@@ -3,7 +3,7 @@ import {
   accoda, leggiCoda, togliDallaCoda, esitoErrore, sessionePassataDa, inviaCoda, inviaOra, rispostaPer, ascoltaCoda
 } from './codaSerie.js';
 
-/** Un localStorage in memoria; `pieno` fa fallire ogni scrittura */
+/** An in-memory localStorage; `pieno` makes every write fail */
 function archivioFinto({ pieno = false } = {}) {
   const valori = new Map();
   return {
@@ -13,7 +13,7 @@ function archivioFinto({ pieno = false } = {}) {
   };
 }
 
-// La coda in memoria (archivio che non scrive) vale per utente: ogni test ne usa uno suo
+// The in-memory queue (storage that cannot write) is per user: every test uses its own user
 let ultimoUtente = 0;
 let utente;
 let archivio;
@@ -31,10 +31,10 @@ const serie = (ora, dati = {}, sessione = SESSIONE) => accoda(utente, {
 const termina = (ora, sessione = SESSIONE) =>
   accoda(utente, { tipo: 'completa', sessione, dati: { noteFinali: '' } }, archivio, alle(ora));
 
-/** Un errore come quelli di config/api.js: senza stato se la rete non c'e' */
+/** An error like the ones from config/api.js: no stato if there is no network */
 const errore = stato => Object.assign(new Error('errore'), stato ? { stato } : {});
 
-/** Un server finto: registra le chiamate e risponde con `risposta(percorso, opzioni)` */
+/** A fake server: records the calls and answers with `risposta(percorso, opzioni)` */
 function serverFinto(risposta = () => ({ successo: true })) {
   const chiamate = [];
   const chiama = vi.fn(async (percorso, opzioni) => {

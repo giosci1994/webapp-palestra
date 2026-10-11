@@ -1,19 +1,19 @@
 // ============================================
-// GymMaster — Hook Wake Lock
-// Mantiene lo schermo acceso durante il workout
-// Riacquisisce il lock automaticamente al ritorno
-// da un'altra app (visibilitychange)
+// GymMaster — Wake Lock hook
+// Keeps the screen on during the workout
+// Re-acquires the lock automatically when coming back
+// from another app (visibilitychange)
 // ============================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
- * Hook per la Screen Wake Lock API.
- * Mantiene lo schermo acceso durante l'uso in palestra.
+ * Hook for the Screen Wake Lock API.
+ * Keeps the screen on while the app is used at the gym.
  *
- * NOTA: Il browser rilascia automaticamente il wake lock quando
- * l'utente cambia app/tab. Questo hook lo riacquisisce
- * automaticamente quando l'utente torna nell'app.
+ * NOTE: The browser releases the wake lock automatically when
+ * the user switches app/tab. This hook re-acquires it
+ * automatically when the user comes back to the app.
  *
  * @returns {{ attivo, attiva, disattiva, supportato }}
  */
@@ -21,14 +21,14 @@ export function useWakeLock() {
   const [attivo, setAttivo] = useState(false);
   const [supportato] = useState(() => 'wakeLock' in navigator);
   const lockRef = useRef(null);
-  // Traccia se l'utente VUOLE il wake lock attivo.
-  // Separato da 'attivo' perché il browser rilascia il lock
-  // al cambio app, ma l'utente non ha chiesto di disattivarlo.
+  // Tracks whether the user WANTS the wake lock on.
+  // Separate from 'attivo' because the browser releases the lock
+  // on app switch, but the user did not ask to turn it off.
   const richiestoRef = useRef(false);
 
   const acquisiciLock = useCallback(async () => {
     if (!supportato) return;
-    // Non riacquisire se ne abbiamo già uno attivo
+    // Do not re-acquire if we already have an active one
     if (lockRef.current) return;
 
     try {
@@ -38,9 +38,9 @@ export function useWakeLock() {
       lockRef.current.addEventListener('release', () => {
         lockRef.current = null;
         setAttivo(false);
-        // NON modifichiamo richiestoRef qui:
-        // il release avviene automaticamente al cambio app,
-        // ma l'utente non ha chiesto di disattivare il lock
+        // We do NOT change richiestoRef here:
+        // the release happens automatically on app switch,
+        // but the user did not ask to turn the lock off
       });
     } catch (err) {
       console.warn('Wake Lock non disponibile:', err.message);
@@ -61,10 +61,10 @@ export function useWakeLock() {
     }
   }, []);
 
-  // Riattiva automaticamente quando l'utente torna nell'app
+  // Turn it back on automatically when the user comes back to the app
   useEffect(() => {
     const gestisciVisibilita = () => {
-      // Riacquisisce SOLO se l'utente aveva richiesto il lock
+      // Re-acquire ONLY if the user had asked for the lock
       if (document.visibilityState === 'visible' && richiestoRef.current) {
         acquisiciLock();
       }
@@ -74,7 +74,7 @@ export function useWakeLock() {
     return () => document.removeEventListener('visibilitychange', gestisciVisibilita);
   }, [acquisiciLock]);
 
-  // Cleanup: rilascia il lock quando il componente si smonta
+  // Cleanup: release the lock when the component unmounts
   useEffect(() => {
     return () => {
       richiestoRef.current = false;

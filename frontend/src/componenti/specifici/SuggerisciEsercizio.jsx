@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Componente Suggerisci Esercizio
-// Form per proporre nuovi esercizi al catalogo
+// GymMaster — Suggest exercise component
+// Form to propose new exercises for the catalog
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -8,7 +8,7 @@ import { api } from '../../config/api.js';
 import { GRUPPI_MUSCOLARI } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Badge di stato per i suggerimenti
+// Status badges for the suggestions
 const STATI_BADGE = {
   IN_ATTESA: { label: 'In attesa', classe: 'bg-[var(--avviso-dim)] text-[var(--avviso)]' },
   APPROVATO: { label: 'Approvato', classe: 'bg-[var(--successo-dim)] text-[var(--successo)]' },
@@ -29,7 +29,7 @@ export default function SuggerisciEsercizio({ className }) {
     descrizione: ''
   });
 
-  // Carica lo storico dei suggerimenti dell'utente
+  // Load the user's suggestion history
   useEffect(() => {
     if (aperto) {
       api.get('/suggerimenti-esercizi')
@@ -83,7 +83,7 @@ export default function SuggerisciEsercizio({ className }) {
         </motion.span>
       </motion.button>
 
-      {/* Contenuto espandibile */}
+      {/* Expandable content */}
       <AnimatePresence>
         {aperto && (
           <motion.div
@@ -95,7 +95,7 @@ export default function SuggerisciEsercizio({ className }) {
           >
             <div className="glass-card mt-2 p-5 border-t-2 border-[var(--accent)]">
               {successo ? (
-                /* Messaggio di conferma */
+                /* Confirmation message */
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -116,7 +116,7 @@ export default function SuggerisciEsercizio({ className }) {
                   </div>
                 </motion.div>
               ) : (
-                /* Form di suggerimento */
+                /* Suggestion form */
                 <div className="flex flex-col gap-3">
                   <h3 className="font-semibold text-sm text-[var(--testo-secondario)] flex items-center gap-2">
                     <span>📝</span> Proponi un nuovo esercizio
@@ -181,7 +181,7 @@ export default function SuggerisciEsercizio({ className }) {
                 </div>
               )}
 
-              {/* Storico suggerimenti */}
+              {/* Suggestion history */}
               {suggerimenti.length > 0 && (
                 <div className="mt-5 pt-4 border-t border-[var(--bordo)]">
                   <button

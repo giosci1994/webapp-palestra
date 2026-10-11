@@ -1,21 +1,21 @@
 // ============================================
-// GymMaster — Dischi da caricare sul bilanciere
+// GymMaster — Plates to load on the barbell
 // ============================================
 //
-// Scritto il peso totale di una serie col bilanciere, quali dischi mettere su
-// ciascun lato: niente conti a mente fra una serie e l'altra.
+// Once the total weight of a barbell set is entered, which plates to put on
+// each side: no mental math between one set and the next.
 
-/** Le barre del catalogo, riconosciute dal nome dell'attrezzatura, e il loro peso a vuoto */
+/** The catalog's bars, recognized by the equipment name, and their empty weight */
 export const BILANCIERI = [
   { schema: /olimpic/i, nome: 'bilanciere olimpico', peso: 20 },
   { schema: /\bez\b/i, nome: 'bilanciere EZ', peso: 10 },
   { schema: /trap bar|hex bar/i, nome: 'trap bar', peso: 25 }
 ];
 
-/** I dischi di una palestra, dal piu' pesante */
+/** A gym's plates, heaviest first */
 export const DISCHI = [25, 20, 15, 10, 5, 2.5, 1.25];
 
-/** Il bilanciere che usa l'esercizio, o null */
+/** The barbell the exercise uses, or null */
 export function bilanciereDi(esercizio) {
   const nome = esercizio?.attrezzatura?.nome || '';
   return BILANCIERI.find(b => b.schema.test(nome)) || null;
@@ -24,9 +24,10 @@ export function bilanciereDi(esercizio) {
 const arrotonda = n => Math.round(n * 1000) / 1000;
 
 /**
- * I dischi per ciascun lato, dal piu' pesante, per arrivare a `pesoTotale`.
- * Se non si arriva esattamente coi dischi a disposizione, `mancano` dice
- * quanti kg restano scoperti in totale. null se il peso non supera la barra.
+ * The plates for each side, heaviest first, to reach `pesoTotale`.
+ * If the available plates cannot reach it exactly, `mancano` says how
+ * many kg are left uncovered in total. null if the weight is not a number or
+ * does not exceed the bar.
  */
 export function dischiPerLato(pesoTotale, pesoBilanciere = 20, dischi = DISCHI) {
   const totale = Number(pesoTotale);
@@ -42,7 +43,7 @@ export function dischiPerLato(pesoTotale, pesoBilanciere = 20, dischi = DISCHI) 
   return { perLato, mancano: arrotonda(restante * 2) };
 }
 
-/** "2 × 20 + 2,5": dischi uguali raggruppati */
+/** "2 × 20 + 2,5": identical plates grouped */
 export function descriviDischi(perLato) {
   const gruppi = [];
   for (const disco of perLato) {

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Verifica Email
-// Landing del link inviato via email: conferma l'indirizzo tramite token.
+// GymMaster — Email Verification
+// Landing page of the link sent by email: confirms the address with a token.
 // ============================================
 
 import { useState, useEffect } from 'react';
@@ -11,7 +11,7 @@ import { motion } from 'framer-motion';
 export default function VerificaEmail() {
   const [params] = useSearchParams();
   const token = params.get('token');
-  // Senza token nel link non c'e' niente da verificare: errore subito
+  // Without a token in the link there is nothing to verify: error right away
   const [stato, setStato] = useState(token ? 'verifica' : 'errore'); // 'verifica' | 'ok' | 'errore'
   const [messaggio, setMessaggio] = useState(token ? '' : 'Link di verifica non valido.');
 

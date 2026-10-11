@@ -1,7 +1,7 @@
 // ============================================
-// GymMaster — Carosello Azioni
-// Banner scorrevole che raccoglie gli inviti contestuali della dashboard
-// (trova un PT, messaggi non letti, consiglio AI) in un'unica sezione.
+// GymMaster — Actions carousel
+// Sliding banner that gathers the dashboard's contextual prompts
+// (find a personal trainer, unread messages, AI tip) in a single section.
 // ============================================
 
 import { useState, useEffect, useRef } from 'react';
@@ -12,26 +12,26 @@ import { ChevronRight, ChevronLeft } from 'lucide-react';
 const DURATA_SLIDE = 6000;
 
 /**
- * Banner a scorrimento automatico.
+ * Auto-scrolling banner.
  *
- * Ogni slide e' { id, Icona, titolo, sottotitolo, etichetta, a?, onClick?, disabilitato? }:
- * con `a` diventa un Link, con `onClick` un bottone.
+ * Each slide is { id, Icona, titolo, sottotitolo, etichetta, a?, onClick?, disabilitato? }:
+ * with `a` it becomes a Link, with `onClick` a button.
  *
- * Il chiamante passa solo le slide pertinenti — se l'array e' vuoto il
- * componente non rende nulla, cosi' la dashboard non mostra un riquadro vuoto.
+ * The caller passes only the relevant slides — if the array is empty the
+ * component renders nothing, so the dashboard does not show an empty box.
  *
- * Le slide restano tutte montate, impilate nella stessa cella di griglia.
- * Prima si alternavano con AnimatePresence, e questo costava due cose:
+ * The slides all stay mounted, stacked in the same grid cell.
+ * They used to take turns with AnimatePresence, and that cost two things:
  *
- *  - l'altezza del banner seguiva quella della slide di turno (i sottotitoli
- *    hanno lunghezze diverse), quindi l'intera pagina si riassestava di
- *    qualche pixel ogni sei secondi;
- *  - la card veniva smontata e rimontata da capo a ogni giro, e con lei il
- *    suo livello di composizione `backdrop-filter`, che e' lo stesso effetto
- *    usato dalla barra di navigazione in basso.
+ *  - the banner's height followed the current slide's (the subtitles have
+ *    different lengths), so the whole page shifted by a few pixels every
+ *    six seconds;
+ *  - the card was unmounted and mounted again from scratch on every turn,
+ *    and with it its `backdrop-filter` compositing layer, which is the same
+ *    effect used by the bottom navigation bar.
  *
- * Impilate, le slide non cambiano mai ingombro e non vengono mai smontate:
- * si accende e si spegne solo l'opacita'.
+ * Stacked, the slides never change size and are never unmounted:
+ * only their opacity (and a small sideways shift) changes.
  */
 export default function CaroselloAzioni({ slide = [] }) {
   const [indice, setIndice] = useState(0);
@@ -40,9 +40,9 @@ export default function CaroselloAzioni({ slide = [] }) {
 
   const totale = slide.length;
 
-  // Se le slide cambiano (es. i messaggi diventano tutti letti) l'indice
-  // memorizzato puo' finire fuori dall'array: viene limitato qui, senza
-  // rimetterlo a posto con un effetto che farebbe un secondo render.
+  // If the slides change (e.g. the messages all become read) the stored
+  // index can end up outside the array: it is clamped here, instead of
+  // fixing it with an effect that would cause a second render.
   const attuale = totale > 0 ? Math.min(indice, totale - 1) : 0;
 
   useEffect(() => {
@@ -59,7 +59,7 @@ export default function CaroselloAzioni({ slide = [] }) {
     const { Icona } = s;
     return (
       <>
-        {/* Velatura d'accento: stessa cifra stilistica degli altri inviti */}
+        {/* Accent tint: same visual signature as the other prompts */}
         <div
           className="absolute inset-0 opacity-[0.07] pointer-events-none"
           style={{ background: 'linear-gradient(120deg, var(--accent), transparent 60%)' }}
@@ -94,9 +94,9 @@ export default function CaroselloAzioni({ slide = [] }) {
       onFocusCapture={() => setInPausa(true)}
       onBlurCapture={() => setInPausa(false)}
     >
-      {/* Finestra di ritaglio: lo scarto negativo lascia respirare l'ombra
-          della card, il ritaglio impedisce alla slide in movimento di
-          sbordare oltre il bordo dello schermo. */}
+      {/* Clipping window: the negative margin leaves room for the card's
+          shadow, the clipping keeps the moving slide from spilling past
+          the edge of the screen. */}
       <div className="-mx-2 -my-2 px-2 py-2 overflow-hidden">
         <div className="grid">
           {slide.map((s, i) => {
@@ -109,8 +109,8 @@ export default function CaroselloAzioni({ slide = [] }) {
                 animate={{ opacity: attiva ? 1 : 0, x: attiva ? 0 : (i < attuale ? -16 : 16) }}
                 transition={{ duration: 0.28, ease: 'easeOut' }}
                 style={{ pointerEvents: attiva ? 'auto' : 'none' }}
-                // Le slide nascoste restano nel DOM ma fuori da tastiera e
-                // lettori di schermo.
+                // Hidden slides stay in the DOM but out of reach of the
+                // keyboard and screen readers.
                 inert={!attiva || undefined}
                 drag={attiva && totale > 1 ? 'x' : false}
                 dragConstraints={{ left: 0, right: 0 }}
@@ -133,7 +133,7 @@ export default function CaroselloAzioni({ slide = [] }) {
         </div>
       </div>
 
-      {/* Indicatori: solo con piu' di una slide */}
+      {/* Indicators: only with more than one slide */}
       {totale > 1 && (
         <div className="flex items-center justify-center gap-3 mt-3">
           <button

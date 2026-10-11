@@ -4,7 +4,7 @@ import { normalizza, radice, distanza, cerca, indicizzaEsercizi, preferitiPrima 
 const esercizio = (nomeIt, nome, gruppoMuscoloPrimario = 'Petto', attrezzatura = null) =>
   ({ nomeIt, nome, gruppoMuscoloPrimario, attrezzatura: attrezzatura && { nome: attrezzatura } });
 
-// Un pezzo di catalogo vero
+// A piece of the real catalog
 const CATALOGO = [
   esercizio('Stacco Rumeno con Due Manubri', 'Double Dumbbell Romanian Deadlift', 'Femorali', 'Manubri (Set)'),
   esercizio('Stacco Rumeno con Bilanciere', 'Barbell Romanian Deadlift', 'Femorali', 'Bilanciere Olimpico'),
@@ -35,7 +35,7 @@ describe('normalizza, radice e distanza', () => {
     expect(distanza('panca', 'panca')).toBe(0);
     expect(distanza('pacna', 'panca')).toBe(1);
     expect(distanza('manubri', 'manbri')).toBe(1);
-    expect(distanza('squat', 'stacco', 1)).toBe(2); // oltre il massimo smette di contare
+    expect(distanza('squat', 'stacco', 1)).toBe(2); // beyond the maximum it stops counting
   });
 });
 

@@ -1,6 +1,6 @@
 // ============================================
 // GymMaster — Workout Live ("Azione")
-// Interfaccia mobile-first per allenamento
+// Mobile-first interface for the workout
 // ============================================
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -24,7 +24,7 @@ import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaData, nomeEsercizio} from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/** La proposta di carico per esito: etichetta e colori della scheda */
+/** The load proposal by outcome: label and colors of the card */
 const STILE_PROPOSTA = {
   sali: { etichetta: '📈 Proposta per oggi · si sale', colore: 'var(--successo)', bordo: 'var(--successo)', sfondo: 'var(--successo-dim)' },
   resta: { etichetta: '🎯 Proposta per oggi', colore: 'var(--accent)', bordo: 'var(--accent-glow)', sfondo: 'var(--accent-dim)' },
@@ -32,11 +32,11 @@ const STILE_PROPOSTA = {
 };
 const kg = n => n.toLocaleString('it-IT', { maximumFractionDigits: 2 });
 
-/** Quanto aspetta "Termina" che la coda parta, prima di mostrare il riepilogo senza rete */
+/** How long "Termina" (finish) waits for the queue to send, before showing the summary offline */
 const ATTESA_CHIUSURA_MS = 8000;
-/** Una serie parte di solito in un attimo: l'avviso solo per quelle ferme da qualche secondo */
+/** A set is usually sent in a moment: the warning only for those stuck for a few seconds */
 const CODA_FERMA_MS = 3000;
-/** Cosa serve alla coda di un allenamento (anche per ricrearlo, se sul server sparisce) */
+/** What the queue needs for a workout (also to recreate it, if it disappears on the server) */
 const perLaCoda = s => ({ id: s.id, schedaId: s.schedaId, dataInizio: s.dataInizio });
 
 export default function WorkoutLive() {
@@ -45,21 +45,21 @@ export default function WorkoutLive() {
   const naviga = useNavigate();
   const wakeLock = useWakeLock();
   const timer = useTimer();
-  // Con le push attive, la fine del recupero arriva anche a schermo bloccato
+  // With push notifications on, the end of the rest arrives even with the screen locked
   const push = usePushNotifiche();
   const avvisoRecuperoRef = useRef(false);
-  // Serie, salti e "Termina" passano dalla coda sul telefono (utils/codaSerie.js):
-  // partono subito se c'e' rete, se no appena torna
+  // Sets, skips and "Termina" go through the queue on the phone (utils/codaSerie.js):
+  // they are sent right away if there is a network, otherwise as soon as it is back
   const { utente } = useAuth();
   const utenteId = utente?.id;
   const coda = useCodaSerie(utenteId);
 
-  // --- Persistenza progressi in localStorage ---
-  // Chiave unica per sessione: sopravvive a tab kill / cambio app
+  // --- Progress persistence in localStorage ---
+  // Unique key per session: survives tab kill / app switch
   const CHIAVE_PROGRESSO = `gymmaster_workout_${id}`;
   const salvaTimeoutRef = useRef(null);
 
-  // Recupera stato salvato (se esiste): letto una volta sola, al primo render
+  // Restore the saved state (if any): read only once, on the first render
   const [ss] = useState(() => {
     try {
       const raw = localStorage.getItem(CHIAVE_PROGRESSO);
@@ -77,40 +77,40 @@ export default function WorkoutLive() {
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
   const [riprendendo, setRiprendendo] = useState(false);
   const [chiudendo, setChiudendo] = useState(false);
-  // "Termina" messo in coda: finche' e' li' l'allenamento e' chiuso solo sul
-  // telefono; partito, la risposta del server porta record e fine
+  // "Termina" queued: while it is there the workout is closed only on the
+  // phone; once sent, the server's response brings the records and the end
   const [idChiusura, setIdChiusura] = useState(null);
   const chiusura = useVoceInCoda(utenteId, idChiusura);
   const [mostraSelettoreEsercizi, setMostraSelettoreEsercizi] = useState(false);
   const [mostraRicercaEsercizi, setMostraRicercaEsercizi] = useState(false);
   const [catalogoEsercizi, setCatalogoEsercizi] = useState([]);
   const [ricercaTesto, setRicercaTesto] = useState('');
-  // Gli esercizi ripristinati da localStorage, altrimenti quelli della scheda
-  // (se la sessione arriva gia' dalla pagina precedente; se no, al caricamento)
+  // The exercises restored from localStorage, otherwise the plan's ones
+  // (if the session already comes from the previous page; if not, on load)
   const [eserciziLive, setEserciziLive] = useState(() =>
     ss?.eserciziLive?.length ? ss.eserciziLive : [...(location.state?.sessione?.scheda?.esercizi ?? [])]);
   const [caricamento, setCaricamento] = useState(!location.state?.sessione);
-  // Recupero avviato dall'ultima serie: e' attivo finche' il timer non arriva a
-  // zero (timerAttivo, ricavato dal timer senza un effetto che lo spenga)
+  // Rest started by the last set: it is active until the timer reaches zero
+  // (timerAttivo, derived from the timer without an effect that turns it off)
   const [recuperoAvviato, setRecuperoAvviato] = useState(false);
-  // Durata del recupero in corso: la barra di avanzamento non puo' usare quella
-  // dell'esercizio attuale, che dopo il passaggio automatico e' gia' il successivo
+  // Duration of the rest in progress: the progress bar cannot use the current
+  // exercise's one, which after the automatic switch is already the next one
   const [durataRecupero, setDurataRecupero] = useState(0);
-  // Recupero in cima alla schermata invece che al posto dei campi: dopo
-  // l'ultima serie si mostra gia' l'esercizio successivo, cosi' durante il
-  // recupero vedi cosa ti aspetta e puoi spostarti al macchinario.
+  // Rest at the top of the screen instead of in place of the fields: after the
+  // last set the next exercise is already shown, so during the rest you see
+  // what is coming and can move to the machine.
   const [recuperoInCima, setRecuperoInCima] = useState(false);
   const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
   const nuoviRecord = chiusura.risposta?.recordPersonali || [];
-  // Chiuso ore dopo l'ultima serie: il server lo fa finire li' (e non si riprende)
+  // Closed hours after the last set: the server makes it end there (and it cannot be resumed)
   const finitoAllUltimaSerie = chiusura.risposta?.dimenticata ? new Date(chiusura.risposta.dati.dataFine) : null;
   const [mostraVideo, setMostraVideo] = useState(false);
   const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
-  // Ultima volta che hai fatto ciascun esercizio, in qualsiasi scheda
+  // The last time you did each exercise, in any plan
   const [ultimiCarichi, setUltimiCarichi] = useState({});
-  // Un doppio tocco registrava la stessa serie due volte: dopo una serie i
-  // pulsanti riposano un attimo
+  // A double tap recorded the same set twice: after a set the buttons
+  // rest for a moment
   const inviandoRef = useRef(false);
   const [inviando, setInviando] = useState(false);
   const riposaUnAttimo = () => {
@@ -122,7 +122,7 @@ export default function WorkoutLive() {
     }, 600);
   };
 
-  /** Mette in coda una serie (fatta o saltata) e prova subito a mandarla */
+  /** Queue a set (done or skipped) and try to send it right away */
   const registraSerie = (dati) => {
     const voce = accoda(utenteId, { tipo: 'serie', sessione: perLaCoda(sessione), dati });
     inviaOra(utenteId).catch(err => console.error('Invio della serie:', err));
@@ -133,18 +133,18 @@ export default function WorkoutLive() {
     try {
       localStorage.setItem(CHIAVE_PROGRESSO, JSON.stringify(stato));
     } catch {
-      // localStorage pieno o non disponibile — ignora silenziosamente
+      // localStorage full or unavailable — ignore silently
     }
   }, [CHIAVE_PROGRESSO]);
   const statoAttuale = () => ({ esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio });
 
-  // --- Salva progressi in localStorage (debounce 500ms) ---
-  // Il ritardo serve solo a non scrivere a ogni tasto nei campi. Le serie
-  // registrate si salvano subito, in completaSerie/saltaSerie: se l'app viene
-  // chiusa in quel mezzo secondo, riaprendola la serie risulterebbe da fare e
-  // verrebbe registrata una seconda volta.
+  // --- Save progress in localStorage (500ms debounce) ---
+  // The delay only avoids writing on every keystroke in the fields. Recorded
+  // sets are saved right away, in completaSerie/saltaSerie: if the app were
+  // closed in that half second, on reopening the set would show as still to do
+  // and would be recorded a second time.
   useEffect(() => {
-    if (!id || mostraRiepilogo) return; // Non salvare dopo completamento
+    if (!id || mostraRiepilogo) return; // Do not save after completion
 
     if (salvaTimeoutRef.current) clearTimeout(salvaTimeoutRef.current);
     salvaTimeoutRef.current = setTimeout(
@@ -155,26 +155,26 @@ export default function WorkoutLive() {
     };
   }, [esercizioIdx, serieCorrente, form, serieCompletate, eserciziLive, tempoInizio, id, mostraRiepilogo, salvaProgressi]);
 
-  /** Pulisci progressi salvati (completamento o abbandono) */
+  /** Clear the saved progress (completion or abandonment) */
   const pulisciProgressi = useCallback(() => {
     localStorage.removeItem(CHIAVE_PROGRESSO);
   }, [CHIAVE_PROGRESSO]);
 
-  // Aggiorna orologio ogni secondo
+  // Update the clock every second
   useEffect(() => {
     const interval = setInterval(() => setOraAttuale(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Carica sessione se non arriva dallo state
+  // Load the session if it does not come from the state
   useEffect(() => {
     if (!sessione && id) {
       api.get(`/sessioni/${id}`)
         .then(r => {
           setSessione(r.dati);
           if (ss) return;
-          // Niente nel browser (ripreso dallo storico, un altro dispositivo):
-          // il punto in cui eri si ricostruisce dalle serie sul server
+          // Nothing in the browser (resumed from the history, another device):
+          // the point where you were is rebuilt from the sets on the server
           const stato = statoDaSessione(r.dati);
           setEserciziLive(stato.eserciziLive);
           setSerieCompletate(stato.serieCompletate);
@@ -187,23 +187,23 @@ export default function WorkoutLive() {
     }
   }, [id, sessione, ss, naviga]);
 
-  // Attiva wake lock (attiva e disattiva non cambiano fra un render e l'altro)
+  // Enable the wake lock (enable and disable do not change between renders)
   const { attiva: attivaWakeLock, disattiva: disattivaWakeLock } = wakeLock;
   useEffect(() => {
     attivaWakeLock();
     return () => disattivaWakeLock();
   }, [attivaWakeLock, disattivaWakeLock]);
 
-  // Carichi dell'ultima volta per ogni esercizio in programma. Prima si
-  // guardava solo l'ultima sessione della stessa scheda: con una scheda nuova
-  // non compariva nulla, anche se l'esercizio era gia' stato fatto altrove.
+  // Last time's loads for each scheduled exercise. Before, we looked only at
+  // the last session of the same plan: with a new plan nothing appeared, even
+  // if the exercise had already been done elsewhere.
   const idEsercizi = [...new Set(eserciziLive.map(e => e.esercizioId))].sort((a, b) => a - b).join(',');
   useEffect(() => {
     if (!sessione?.id || !idEsercizi) return;
     let annullato = false;
     api.get(`/sessioni/ultimi-carichi?esercizi=${idEsercizi}&escludi=${sessione.id}`)
       .then(r => { if (!annullato) setUltimiCarichi(r.dati || {}); })
-      .catch(() => { /* il riferimento e' un aiuto: senza, si procede */ });
+      .catch(() => { /* the reference is a help: without it, we carry on */ });
     return () => { annullato = true; };
   }, [sessione?.id, idEsercizi]);
 
@@ -235,8 +235,8 @@ export default function WorkoutLive() {
   const esercizi = eserciziLive;
   const esercizioAttuale = esercizi[esercizioIdx];
 
-  // Ricerca tollerante sul nome italiano e sull'originale inglese (utils/ricerca.js),
-  // con i preferiti dell'utente per primi
+  // Typo-tolerant search on the Italian name and the English original (utils/ricerca.js),
+  // with the user's favorites first
   const { preferiti } = usePreferiti();
   const indiceRicerca = useMemo(() => indicizzaEsercizi(catalogoEsercizi), [catalogoEsercizi]);
   const eserciziFiltrati = useMemo(
@@ -245,9 +245,9 @@ export default function WorkoutLive() {
   );
   const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
-  // --- Tracking esercizi completati ---
-  // Un esercizio è "completato" quando ha >= serieTarget serie di lavoro
-  // registrate: riscaldamento e drop non contano (utils/tipiSerie.js)
+  // --- Tracking of completed exercises ---
+  // An exercise is "completed" when it has >= serieTarget recorded working
+  // sets: warm-up and drop sets do not count (utils/tipiSerie.js)
   const contaSeriePerEsercizio = useCallback((idxEsercizio) => {
     const es = esercizi[idxEsercizio];
     if (!es) return 0;
@@ -260,27 +260,27 @@ export default function WorkoutLive() {
     return contaSeriePerEsercizio(idxEsercizio) >= es.serieTarget;
   }, [esercizi, contaSeriePerEsercizio]);
 
-  // Trova prossimo esercizio NON completato (partendo da indice dato)
+  // Find the next NOT completed exercise (starting from the given index)
   const prossimoEsercizioNonCompletato = useCallback((daDove = 0) => {
     for (let i = daDove; i < esercizi.length; i++) {
       if (!esercizioCompletato(i) && i !== esercizioIdx) return i;
     }
-    // Se non trovato dopo, cerca dall'inizio (esercizi saltati prima)
+    // If none is found after it, search from the start (exercises skipped earlier)
     for (let i = 0; i < daDove; i++) {
       if (!esercizioCompletato(i) && i !== esercizioIdx) return i;
     }
-    return -1; // Tutti completati
+    return -1; // All completed
   }, [esercizi, esercizioCompletato, esercizioIdx]);
 
-  // Esercizi saltati (non completati, prima dell'attuale nella lista)
+  // Skipped exercises: every other exercise with no sets logged yet
   const eserciziSaltati = esercizi
     .map((es, idx) => ({ ...es, idx }))
     .filter((_, idx) => idx !== esercizioIdx && !esercizioCompletato(idx) && contaSeriePerEsercizio(idx) === 0);
 
-  // Prossimo indice non completato (per navigazione)
+  // Next not completed index (for navigation)
   const prossimoIdx = prossimoEsercizioNonCompletato(esercizioIdx + 1);
 
-  // Calcolo Orari
+  // Time calculation
   const oreMinuti = oraAttuale.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
   const dataOdierna = oraAttuale.toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short' });
   
@@ -290,33 +290,33 @@ export default function WorkoutLive() {
   const secondiTrascorsi = Math.floor((millisecondiTrascorsi % 60000) / 1000);
   const cronometro = `${oreTrascorsi > 0 ? oreTrascorsi + ':' : ''}${oreTrascorsi > 0 ? minutiTrascorsi.toString().padStart(2, '0') : minutiTrascorsi}:${secondiTrascorsi.toString().padStart(2, '0')}`;
 
-  // Serie salvate sul telefono e non ancora arrivate: si dice solo quando
-  // aspettano da qualche secondo (con la rete partono subito)
+  // Sets saved on the phone that have not arrived yet: we say so only when
+  // they have been waiting for a few seconds (with a network they go right away)
   const codaFerma = coda.quante > 0 && oraAttuale.getTime() - Date.parse(coda.dalle) > CODA_FERMA_MS;
 
-  // Serie completate per l'esercizio attuale: riscaldamento, poi ogni serie con i suoi drop
+  // Completed sets for the current exercise: warm-up, then each set with its drop sets
   const serieEsercizio = ordinaSerie(serieCompletate.filter(
     s => s.esercizioId === esercizioAttuale?.esercizioId
   ));
 
-  // Col bilanciere, i dischi da caricare per lato per il peso scritto
+  // With a barbell, the plates to load per side for the weight entered
   const bilanciere = bilanciereDi(esercizioAttuale?.esercizio);
   const dischi = bilanciere ? dischiPerLato(form.peso, bilanciere.peso) : null;
 
   const isCardio = esercizioAttuale?.esercizio?.attrezzatura?.categoria === 'CARDIO' || 
                    esercizioAttuale?.esercizio?.gruppoMuscoloPrimario?.toLowerCase() === 'cardio';
 
-  // Serie dell'ultima volta per l'esercizio attuale
+  // Last time's sets for the current exercise
   const caricoPrecedente = ultimiCarichi[esercizioAttuale?.esercizioId] || null;
   const seriePrecedenti = caricoPrecedente?.serie || [];
-  // Riferimento per la serie da fare: la stessa serie dell'ultima volta, o
-  // l'ultima fatta se allora ne erano state fatte meno
+  // Reference for the set to do: the same set as last time, or the last one
+  // done if fewer were done back then
   const riferimento = seriePrecedenti.length
     ? ([...seriePrecedenti].reverse().find(sp => sp.serieNumero === serieCorrente) || seriePrecedenti[seriePrecedenti.length - 1])
     : null;
   const riferimentoCardio = riferimento?.durataMinuti > 0;
 
-  // Il peso di oggi dalla doppia progressione sulle ultime volte (utils/progressione.js)
+  // Today's weight from double progression over the last times (utils/progressione.js)
   const incremento = incrementoPer(esercizioAttuale?.esercizio);
   const proposta = isCardio ? null : propostaCarico({
     storico: caricoPrecedente?.storico ?? [],
@@ -326,10 +326,10 @@ export default function WorkoutLive() {
   });
   const usaProposta = () => setForm(p => ({ ...p, peso: String(proposta.peso) }));
 
-  // --- Riscaldamento e drop (utils/tipiSerie.js) ---
-  // Prima della prima serie di lavoro, la rampa verso il peso di oggi: quello
-  // scritto, se no la proposta o l'ultima volta. Restano i passi piu' pesanti
-  // dei riscaldamenti gia' fatti.
+  // --- Warm-up and drop sets (utils/tipiSerie.js) ---
+  // Before the first working set, the ramp up to today's weight: the one
+  // entered, otherwise the proposal or last time's. The heaviest steps above
+  // the warm-ups already done remain.
   const lavoroIniziato = serieEsercizio.some(diLavoro);
   const riscaldamenti = serieEsercizio.filter(s => s.tipo === 'RISCALDAMENTO');
   const pesoDiLavoro = Number(form.peso) || proposta?.peso || (riferimento && !riferimentoCardio ? riferimento.pesoEffettivo : 0);
@@ -337,7 +337,7 @@ export default function WorkoutLive() {
   const rampa = isCardio || lavoroIniziato
     ? []
     : rampaRiscaldamento(pesoDiLavoro, { incremento, minimo: bilanciere?.peso ?? 0 }).filter(p => p.peso > pesoScaldato);
-  // I drop della serie in corso: righe peso/ripetizioni sotto quella principale
+  // The drop sets of the current set: weight/reps rows below the main one
   const drop = form.drop ?? [];
   const dropIncompleto = drop.some(d => (d.peso === '') !== (d.rep === ''));
   const serieIncompleta = isCardio ? !form.minuti : (!form.peso || !form.rep || dropIncompleto);
@@ -352,8 +352,8 @@ export default function WorkoutLive() {
   const togliDrop = (indice) => setForm(p => ({ ...p, drop: (p.drop ?? []).filter((_, i) => i !== indice) }));
 
   /**
-   * Una serie di riscaldamento: si vede fra le serie fatte ma non conta fra
-   * quelle della scheda e non fa partire il recupero. true se registrata.
+   * A warm-up set: it shows among the sets done but does not count among
+   * the plan's sets and does not start the rest. true if recorded.
    */
   const registraRiscaldamento = (peso, ripetizioni) => {
     if (inviandoRef.current || !(peso >= 0) || !(ripetizioni > 0)) return false;
@@ -378,8 +378,8 @@ export default function WorkoutLive() {
 
   const usaRiferimento = () => {
     if (!riferimento) return;
-    // Solo i parametri da impostare prima della serie: le ripetizioni si
-    // scrivono dopo averla fatta, e precompilate verrebbero registrate per sbaglio
+    // Only the parameters to set before the set: reps are entered after doing
+    // it, and prefilled they would be recorded by mistake
     if (riferimentoCardio) {
       setForm(p => ({ ...p, minuti: String(riferimento.durataMinuti), resistenza: riferimento.livelloResistenza ? String(riferimento.livelloResistenza) : p.resistenza }));
     } else {
@@ -404,7 +404,7 @@ export default function WorkoutLive() {
       })
     };
 
-    // I drop fatti con questa serie: stesso numero, subito dopo di lei
+    // The drop sets done with this set: same number, right after it
     const dropFatti = isCardio ? [] : drop.filter(d => d.peso !== '' && d.rep !== '').map(d => ({
       esercizioId: esercizioAttuale.esercizioId,
       serieNumero: serieCorrente,
@@ -417,9 +417,9 @@ export default function WorkoutLive() {
     riposaUnAttimo();
     const registrate = [datiSerie, ...dropFatti].map(dati => ({ ...dati, idClient: registraSerie(dati).id }));
     const nuoveCompletate = [...serieCompletate, ...registrate];
-    // Finito l'esercizio si passa subito al prossimo non completato.
-    // prossimoIdx esclude gia' l'esercizio attuale, e questa serie non cambia
-    // lo stato degli altri: il valore calcolato nel render e' quello giusto.
+    // Once the exercise is finished we move straight to the next not completed one.
+    // prossimoIdx already excludes the current exercise, and this set does not
+    // change the state of the others: the value computed in render is the right one.
     const passaAvanti = serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1;
     if (passaAvanti) {
       const nuovoForm = formPerNuovoEsercizio(form);
@@ -428,7 +428,7 @@ export default function WorkoutLive() {
       apriEsercizio(prossimoIdx);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // Peso e ripetizioni restano per la serie dopo, i drop no
+      // Weight and reps stay for the next set, the drop sets do not
       const formDopo = { ...form, drop: [] };
       salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1, form: formDopo });
       setSerieCompletate(nuoveCompletate);
@@ -436,7 +436,7 @@ export default function WorkoutLive() {
       setForm(formDopo);
     }
 
-    // Recupero: quello dell'esercizio appena finito, anche se si e' gia' passati avanti
+    // Rest: the one of the exercise just finished, even if we have already moved on
     const prossimo = passaAvanti
       ? `${nomeEsercizio(esercizi[prossimoIdx].esercizio)} · serie 1`
       : `${nomeEsercizio(esercizioAttuale.esercizio)} · serie ${serieCorrente + 1}`;
@@ -466,21 +466,21 @@ export default function WorkoutLive() {
   };
 
   const prossimoEsercizio = () => {
-    // Naviga al prossimo esercizio NON completato
+    // Go to the next NOT completed exercise
     if (prossimoIdx !== -1) {
       cambiaEsercizio(prossimoIdx);
     }
   };
 
   /**
-   * Campi per un nuovo esercizio: peso, ripetizioni e minuti si svuotano (il
-   * peso di quello prima, coi suoi dischi, sarebbe solo fuorviante: il
-   * segnaposto mostra la proposta o l'ultima volta), e i drop con loro. RPE e
-   * resistenza restano.
+   * Fields for a new exercise: weight, reps and minutes are cleared (the
+   * previous one's weight, with its plates, would only be misleading: the
+   * placeholder shows the proposal or last time's), and the drop sets with them.
+   * RPE and resistance stay.
    */
   const formPerNuovoEsercizio = (f) => ({ ...f, peso: '', rep: '', minuti: '', drop: [] });
 
-  /** Mostra un altro esercizio senza toccare il recupero. */
+  /** Show another exercise without touching the rest. */
   const apriEsercizio = (nuovoIndice) => {
     setEsercizioIdx(nuovoIndice);
     setSerieCorrente(1);
@@ -491,22 +491,22 @@ export default function WorkoutLive() {
 
   /**
    * @param {number} secondi
-   * @param {boolean} inCima - recupero in cima, sopra l'esercizio successivo
-   * @param {string} prossimo - cosa tocca dopo, per la notifica: "Panca piana · serie 2"
+   * @param {boolean} inCima - rest at the top, above the next exercise
+   * @param {string} prossimo - what comes next, for the notification: "Panca piana · serie 2"
    */
   const avviaRecupero = (secondi, inCima, prossimo) => {
     timer.avvia(secondi);
     setDurataRecupero(secondi);
     setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
-    // Il timer dell'app a schermo bloccato si ferma: avvisa il server
+    // The app's timer stops with the screen locked: tell the server
     if (push.iscritto) {
       avvisoRecuperoRef.current = true;
       api.post('/notifiche/push/recupero', { secondi, prossimo }).catch(() => {});
     }
   };
 
-  /** Recupero interrotto o allenamento finito: niente avviso */
+  /** Rest interrupted or workout finished: no notification */
   const annullaAvvisoRecupero = () => {
     if (!avvisoRecuperoRef.current) return;
     avvisoRecuperoRef.current = false;
@@ -522,13 +522,13 @@ export default function WorkoutLive() {
 
   const cambiaEsercizio = (nuovoIndice) => {
     apriEsercizio(nuovoIndice);
-    // Il recupero riguarda il corpo, non l'esercizio: se sta scorrendo
-    // continua, in cima, sopra l'esercizio appena scelto
+    // The rest is about the body, not the exercise: if it is running it
+    // keeps going, at the top, above the exercise just picked
     if (timerAttivo) setRecuperoInCima(true);
   };
 
-  // "Termina" va in coda dopo le serie: parte con loro, o quando torna la rete.
-  // Il riepilogo aspetta un poco l'invio (per i record), poi si mostra comunque
+  // "Termina" is queued after the sets: it is sent with them, or when the network is back.
+  // The summary waits a little for the sending (for the records), then shows anyway
   const completaAllenamento = async () => {
     if (chiudendo) return;
     setChiudendo(true);
@@ -536,13 +536,13 @@ export default function WorkoutLive() {
     try {
       await entro(inviaOra(utenteId), ATTESA_CHIUSURA_MS, 'Rete lenta');
     } catch {
-      // Senza rete, o con una rete che non risponde: resta in coda e parte dopo
+      // No network, or a network that does not respond: it stays queued and is sent later
     }
     annullaAvvisoRecupero();
     setIdChiusura(voce.id);
     setMostraRiepilogo(true);
     setChiudendo(false);
-    pulisciProgressi(); // Pulisci localStorage al completamento
+    pulisciProgressi(); // Clear localStorage on completion
     wakeLock.disattiva();
   };
 
@@ -553,10 +553,11 @@ export default function WorkoutLive() {
     wakeLock.attiva();
   };
 
-  // "Ho chiuso per sbaglio": la sessione torna in corso e si riparte da dove
-  // eri, con le serie gia' fatte (sono ancora tutte qui, in memoria)
+  // "Ho chiuso per sbaglio" (I closed it by mistake): the session goes back to in
+  // progress and you start again from where you were, with the sets already done
+  // (they are all still here, in memory)
   const riprendiAllenamento = async () => {
-    // Chiuso senza rete: "Termina" e' ancora sul telefono, basta toglierlo
+    // Closed without a network: "Termina" is still on the phone, removing it is enough
     if (togliDallaCoda(utenteId, [idChiusura])) {
       tornaAllAllenamento();
       return;
@@ -580,7 +581,7 @@ export default function WorkoutLive() {
     );
   }
 
-  // Riepilogo finale
+  // Final summary
   if (mostraRiepilogo) {
     return (
       <div className="min-h-screen bg-[var(--bg-primario)] flex items-center justify-center p-4">
@@ -606,7 +607,7 @@ export default function WorkoutLive() {
             </div>
           </div>
 
-          {/* Nuovi record */}
+          {/* New records */}
           {nuoviRecord.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-bold text-[var(--successo)] mb-2">🏆 Nuovi Record!</h3>
@@ -683,7 +684,7 @@ export default function WorkoutLive() {
         </p>
       )}
 
-      {/* Recupero dopo l'ultima serie: resta in vista mentre prepari il prossimo esercizio */}
+      {/* Rest after the last set: it stays in view while you get ready for the next exercise */}
       {timerAttivo && recuperoInCima && timer.secondiRimasti > 0 && (
         <div className="sticky z-30 px-4 pt-3" style={{ top: 'var(--safe-top)' }}>
           <div className="max-w-lg mx-auto rounded-[var(--raggio-md)] border border-[var(--accent)]/40 bg-[var(--bg-secondario)] shadow-lg overflow-hidden">
@@ -708,24 +709,24 @@ export default function WorkoutLive() {
         </div>
       )}
 
-      {/* Esercizio attuale */}
+      {/* Current exercise */}
       <div className="flex-1 flex flex-col p-4 gap-4 max-w-lg mx-auto w-full">
-        {/* Orologio & Cronometro */}
+        {/* Clock & Stopwatch */}
         <div className="flex items-center justify-between bg-[var(--bg-terziario)] p-3 rounded-[var(--raggio-md)] -mt-2 shadow-sm border border-[var(--bordo)]">
-          {/* Left: Orologio */}
+          {/* Left: Clock */}
           <div className="flex flex-col items-start">
             <span className="text-2xl font-bold tabular-nums leading-none text-[var(--testo-primario)]">{oreMinuti}</span>
             <span className="text-[10px] text-[var(--testo-terziario)] uppercase tracking-wider mt-1">{dataOdierna}</span>
           </div>
 
-          {/* Right: Cronometro Allenamento */}
+          {/* Right: Workout stopwatch */}
           <div className="flex flex-col items-end">
             <span className="text-2xl font-bold text-[var(--accent)] tabular-nums leading-none">{cronometro}</span>
             <span className="text-[10px] text-[var(--accent)] opacity-80 uppercase tracking-wider mt-1">Tempo Allenamento</span>
           </div>
         </div>
 
-        {/* Nome esercizio */}
+        {/* Exercise name */}
         <motion.div key={esercizioIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                     className="text-center py-2">
           <h2 className="text-xl md:text-2xl font-bold">{nomeEsercizio(esercizioAttuale.esercizio)}</h2>
@@ -744,10 +745,10 @@ export default function WorkoutLive() {
           </p>
         </motion.div>
 
-        {/* Video esercizio (YouTube embed) */}
+        {/* Exercise video (YouTube embed) */}
         {esercizioAttuale.esercizio.linkVideo && (() => {
           const url = esercizioAttuale.esercizio.linkVideo;
-          // Estrai videoId da youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
+          // Extract the videoId from youtu.be/ID, youtube.com/watch?v=ID, youtube.com/embed/ID
           const mShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
           const mLong = url.match(/[?&]v=([a-zA-Z0-9_-]+)/);
           const mEmbed = url.match(/embed\/([a-zA-Z0-9_-]+)/);
@@ -792,7 +793,7 @@ export default function WorkoutLive() {
           );
         })()}
 
-        {/* Serie completate: riscaldamento, poi ogni serie con i suoi drop */}
+        {/* Completed sets: warm-up, then each set with its drop sets */}
         {serieEsercizio.length > 0 && (
           <div className="flex flex-col gap-1">
             {serieEsercizio.map((s, i) => (
@@ -815,7 +816,7 @@ export default function WorkoutLive() {
           </div>
         )}
 
-        {/* Timer recupero overlay */}
+        {/* Rest timer overlay */}
         <AnimatePresence>
           {timerAttivo && timer.secondiRimasti > 0 && !recuperoInCima && (
             <motion.div
@@ -839,7 +840,7 @@ export default function WorkoutLive() {
                       className="mt-4 text-sm text-[var(--accent)] font-medium px-4 py-1.5 rounded-full border border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors">
                 Salta recupero →
               </button>
-              {/* A schermo bloccato il timer si ferma: lo dice, e dove rimediare */}
+              {/* With the screen locked the timer stops: say so, and where to fix it */}
               {push.caricato && push.supportate && push.serverAttivo && !push.iscritto && push.permesso !== 'denied' && (
                 <p className="mt-3 text-[11px] text-[var(--testo-terziario)]">
                   A schermo bloccato non suona: <Link to="/profilo?tab=notifiche" className="text-[var(--accent)] underline">attiva le notifiche</Link> per l'avviso di fine recupero.
@@ -858,14 +859,14 @@ export default function WorkoutLive() {
           )}
         </AnimatePresence>
 
-        {/* Input serie — solo se timer non attivo */}
+        {/* Set input: when the rest timer is off, finished or moved to the top */}
         {(!timerAttivo || timer.secondiRimasti === 0 || recuperoInCima) && serieCorrente <= esercizioAttuale.serieTarget && (
           <div className="flex flex-col gap-3">
             <p className="text-sm font-semibold text-center text-[var(--testo-secondario)]">
               Serie {serieCorrente} / {esercizioAttuale.serieTarget}
             </p>
 
-            {/* Proposta di oggi: sale, resta o scarica, e perche' */}
+            {/* Today's proposal: up, same or deload, and why */}
             {proposta && (
               <button
                 type="button"
@@ -888,7 +889,7 @@ export default function WorkoutLive() {
               </button>
             )}
 
-            {/* Ultima volta: per decidere il carico prima di iniziare la serie */}
+            {/* Last time: to decide the load before starting the set */}
             {riferimento && (
               <button
                 type="button"
@@ -909,7 +910,7 @@ export default function WorkoutLive() {
               </button>
             )}
 
-            {/* Prima della prima serie: la rampa di riscaldamento, un tocco per passo fatto */}
+            {/* Before the first set: the warm-up ramp, one tap per step done */}
             {rampa.length > 0 && (
               <div className="px-3 py-2.5 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)]">
                 <p className="text-[11px] text-[var(--testo-terziario)] mb-2">
@@ -969,7 +970,7 @@ export default function WorkoutLive() {
               </p>
             )}
 
-            {/* Drop: subito dopo la serie, a peso calato, si registrano insieme a lei */}
+            {/* Drop sets: right after the set, with a lower weight, they are recorded together with it */}
             {!isCardio && (
               <div className="flex flex-col gap-2">
                 {drop.map((d, i) => (
@@ -1008,7 +1009,7 @@ export default function WorkoutLive() {
                      className="w-full accent-[var(--accent)]" />
             </div>
 
-            {/* Bottoni azione — ENORMI */}
+            {/* Action buttons — HUGE */}
             <div className="flex flex-col gap-2 mt-2">
               <button onClick={completaSerie} disabled={inviando || serieIncompleta}
                       className={`btn-enorme ${
@@ -1019,7 +1020,7 @@ export default function WorkoutLive() {
                 ✓ Serie Completata{drop.length > 0 ? ` + ${drop.length === 1 ? 'drop' : `${drop.length} drop`}` : ''}
               </button>
 
-              {/* Prima della prima serie di lavoro: quella appena fatta era un riscaldamento */}
+              {/* Before the first working set: the one just done was a warm-up */}
               {!isCardio && !lavoroIniziato && (
                 <button onClick={riscaldamentoDalForm} disabled={inviando || !form.peso || !form.rep}
                         className="text-sm font-medium text-[var(--testo-secondario)] py-1.5 hover:text-[var(--testo-primario)] transition-colors disabled:opacity-50">
@@ -1040,7 +1041,7 @@ export default function WorkoutLive() {
           </div>
         )}
 
-        {/* Prossimo esercizio / Completa */}
+        {/* Next exercise / Complete */}
         {serieCorrente > esercizioAttuale.serieTarget && (
           <div className="flex flex-col gap-3 mt-4">
             {prossimoIdx !== -1 ? (
@@ -1049,7 +1050,7 @@ export default function WorkoutLive() {
                   {nomeEsercizio(esercizi[prossimoIdx].esercizio)} →
                 </button>
 
-                {/* Promemoria esercizi saltati */}
+                {/* Reminder of skipped exercises */}
                 {eserciziSaltati.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 8 }}
@@ -1087,7 +1088,7 @@ export default function WorkoutLive() {
         )}
       </div>
 
-      {/* Drawer Selettore Esercizi */}
+      {/* Exercise picker drawer */}
       <AnimatePresence>
         {mostraSelettoreEsercizi && (
           <motion.div
@@ -1167,7 +1168,7 @@ export default function WorkoutLive() {
         )}
       </AnimatePresence>
 
-      {/* Drawer Ricerca Esercizi */}
+      {/* Exercise search drawer */}
       <AnimatePresence>
         {mostraRicercaEsercizi && (
           <motion.div

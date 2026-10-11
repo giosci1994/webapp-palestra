@@ -1,13 +1,13 @@
 // ============================================
-// GymMaster — Recupero dagli errori di render
+// GymMaster — Recovery from render errors
 // ============================================
 //
-// Senza questo componente un errore durante il render smonta l'intera app e
-// resta solo lo sfondo: lo "schermo nero" da cui non si esce se non chiudendo
-// l'app. Qui l'errore viene contenuto e si offre una via d'uscita.
+// Without this component an error during render unmounts the whole app and
+// only the background is left: the "black screen" you can only leave by
+// closing the app. Here the error is contained and a way out is offered.
 //
-// Durante un allenamento i progressi sono gia' al sicuro (serie sul server,
-// stato in localStorage), quindi "Riprova" riprende da dove eri.
+// During a workout the progress is already safe (sets on the server, state
+// in localStorage), so "Riprova" (retry) resumes from where you were.
 
 import { Component } from 'react';
 
@@ -45,7 +45,7 @@ export default class RecuperoErrori extends Component {
             </button>
             <button
               type="button"
-              // Ricarica completa: riparte da uno stato pulito
+              // Full reload: starts again from a clean state
               onClick={() => window.location.assign('/dashboard')}
               className="w-full py-2.5 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium"
             >

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Modifica un allenamento dello storico
-// Orari, note e serie di una sessione già conclusa
+// GymMaster — Edit a workout from the history
+// Times, notes and sets of a workout already finished
 // ============================================
 
 import { useState, useRef } from 'react';
@@ -10,28 +10,28 @@ import { api } from '../../config/api.js';
 import { nomeEsercizio, formattaDurata, aStringaData, aStringaOra, eCardioNelloStorico } from '../../utils/formattatori.js';
 import { DURATA_SOSPETTA_MINUTI } from '../../utils/costanti.js';
 
-// Il tipo di una serie (utils/tipiSerie.js) si cambia toccando il suo numero:
-// serie di lavoro → riscaldamento → drop → di nuovo di lavoro
+// The type of a set (utils/tipiSerie.js) changes by tapping its number:
+// working set → warm-up → drop set → working set again
 const PROSSIMO_TIPO = { LAVORO: 'RISCALDAMENTO', RISCALDAMENTO: 'DROP', DROP: 'LAVORO' };
 const NOME_TIPO = { LAVORO: 'serie di lavoro', RISCALDAMENTO: 'riscaldamento', DROP: 'drop' };
 
-const DURATA_MAX = 600;          // come il server: oltre le 10 ore non è un allenamento
+const DURATA_MAX = 600;          // like the server: over 10 hours it is not a workout
 const MINUTI_GIORNO = 24 * 60;
 
-/** Numero da un campo del form; vuoto → null. */
+/** Number from a form field; empty → null. */
 const numero = (valore) => (String(valore ?? '').trim() === '' ? null : Number(valore));
 
-/** Contenuto di un campo da un valore salvato (null → vuoto). */
+/** Field content from a saved value (null → empty). */
 const campo = (valore) => (valore == null ? '' : String(valore));
 
-/** L'istante è nel futuro? Si chiede al salvataggio, non durante il render. */
+/** Is the instant in the future? Asked on save, not during render. */
 const nelFuturo = (istante) => istante.getTime() > Date.now();
 
-/** Gli esercizi dello storico come gruppi di righe modificabili. */
+/** The exercises from the history as groups of editable rows. */
 function gruppiDaSessione(sessione) {
   return sessione.esercizi.map(voce => ({
     esercizio: voce.esercizio,
-    // Deciso all'apertura: aggiungere o togliere righe non cambia i campi mostrati
+    // Decided on opening: adding or removing rows does not change the fields shown
     cardio: eCardioNelloStorico(voce),
     serie: voce.serie.map(s => ({
       chiave: `s${s.id}`,
@@ -46,10 +46,10 @@ function gruppiDaSessione(sessione) {
   }));
 }
 
-/** Righe confrontabili, per capire se le serie sono cambiate. */
+/** Comparable rows, to tell whether the sets have changed. */
 const impronta = (gruppi) => JSON.stringify(gruppi.map(g => g.serie.map(s => [s.id, s.tipo, s.peso, s.rep, s.rpe, s.minuti, s.livello])));
 
-/** Primo problema nelle serie, da mostrare prima di inviare; null se va tutto bene. */
+/** First problem in the sets, to show before sending; null if all is well. */
 function erroreSerie(gruppi) {
   for (const g of gruppi) {
     for (const [i, s] of g.serie.entries()) {
@@ -72,7 +72,7 @@ function erroreSerie(gruppi) {
   return null;
 }
 
-/** Le serie nel formato di PATCH /sessioni/:id, nell'ordine in cui sono mostrate. */
+/** The sets in the PATCH /sessioni/:id format, in the order they are shown. */
 function serieDaInviare(gruppi) {
   return gruppi.flatMap(g => g.serie.map(s => ({
     ...(s.id ? { id: s.id } : { esercizioId: g.esercizio.id }),
@@ -109,7 +109,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
   const [errore, setErrore] = useState('');
   const nuoveSerie = useRef(0);
 
-  // Data e ora locali → istante assoluto, come nella registrazione di un allenamento passato
+  // Local date and time → absolute instant, as when logging a past workout
   const inizio = new Date(`${data}T${ora}`);
   const minuti = numero(durata);
   const fine = !Number.isNaN(inizio.getTime()) && Number.isInteger(minuti)
@@ -117,9 +117,9 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
     : null;
   const giorniDopo = fine ? Math.round((new Date(aStringaData(fine)) - new Date(data)) / 86400000) : 0;
 
-  // L'ora di fine e la durata sono la stessa informazione: chi ricorda a che ora
-  // ha finito non deve fare il conto dei minuti. Una fine prima dell'inizio
-  // cade il giorno dopo (iniziato alle 23:30, finito all'1:00).
+  // The end time and the duration are the same information: whoever remembers
+  // when they finished should not have to count the minutes. An end before the
+  // start falls on the next day (started at 23:30, finished at 1:00).
   const cambiaOraFine = (valore) => {
     if (!valore || !ora) return;
     const [hf, mf] = valore.split(':').map(Number);
@@ -127,7 +127,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
     setDurata(String((hf * 60 + mf - (hi * 60 + mi) + MINUTI_GIORNO) % MINUTI_GIORNO));
   };
 
-  /** Solo i campi cambiati: un PATCH che non tocca cio' che l'utente ha lasciato com'era. */
+  /** Only the changed fields: a PATCH that does not touch what the user left as it was. */
   const modifiche = () => {
     const corpo = {};
     if (data !== iniziale.data || ora !== iniziale.ora) corpo.dataInizio = inizio;
@@ -190,7 +190,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
   const aggiungiSerie = (indice) => {
     nuoveSerie.current += 1;
     const chiave = `n${nuoveSerie.current}`;
-    // Riparte dai valori dell'ultima serie: di solito si ripete lo stesso carico
+    // Starts from the values of the last set: the same load is usually repeated
     cambiaGruppo(indice, g => {
       const ultima = g.serie[g.serie.length - 1];
       const valori = ultima
@@ -203,7 +203,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
   const durataSospetta = Number.isInteger(minuti) && minuti > DURATA_SOSPETTA_MINUTI;
 
   return (
-    // Sopra la barra di navigazione (z-50), che altrimenti coprirebbe i pulsanti in fondo
+    // Above the navigation bar (z-50), which would otherwise cover the buttons at the bottom
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4"
@@ -298,7 +298,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
                         {g.cardio ? (
                           <span className="text-xs text-center text-[var(--testo-terziario)]">{i + 1}</span>
                         ) : (
-                          // Il cardio non ha riscaldamento e drop: solo qui il numero si tocca
+                          // Cardio has no warm-up or drop sets: only here can the number be tapped
                           <button type="button" onClick={() => aggiornaSerie(gi, s.chiave, 'tipo', PROSSIMO_TIPO[s.tipo])}
                                   aria-label={`Serie ${i + 1}: ${NOME_TIPO[s.tipo]}. Tocca per cambiare tipo`}
                                   title="Tocca per cambiare tipo: serie, riscaldamento, drop"

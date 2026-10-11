@@ -4,8 +4,8 @@ import {
   formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale
 } from './formattatori.js';
 
-// I test girano nel fuso Europe/Rome (vitest.config.js): le 08:05 UTC del
-// 10 ottobre, in ora legale, sono le 10:05 italiane.
+// The tests run in the Europe/Rome time zone (vitest.config.js): 08:05 UTC on
+// 10 October, in daylight saving time, is 10:05 in Italy.
 
 describe('formattaData', () => {
   it('senza data mostra un trattino', () => {
@@ -21,7 +21,7 @@ describe('formattaData', () => {
 
 describe('aStringaData e aStringaOra', () => {
   it('usano il giorno e l\'ora locali, senza passare per UTC', () => {
-    // 00:30 del 5 gennaio in Italia: in UTC e' ancora il 4
+    // 00:30 on 5 January in Italy: in UTC it is still the 4th
     const d = new Date(2026, 0, 5, 0, 30);
     expect(aStringaData(d)).toBe('2026-01-05');
     expect(aStringaOra(d)).toBe('00:30');
@@ -36,7 +36,7 @@ describe('aStringaData e aStringaOra', () => {
 
 describe('lunediDi', () => {
   it('porta al lunedì della stessa settimana, a mezzanotte', () => {
-    // Giovedì 8 e domenica 11 ottobre 2026 → lunedì 5
+    // Thursday 8 and Sunday 11 October 2026 → Monday 5
     expect(lunediDi(new Date(2026, 9, 8, 18, 30))).toEqual(new Date(2026, 9, 5));
     expect(lunediDi(new Date(2026, 9, 11, 23, 59))).toEqual(new Date(2026, 9, 5));
   });

@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Hook notifiche push
+// GymMaster — Push notifications hook
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,9 +9,9 @@ import { chiaveInByte, supportoPush, iscrizioneAttuale, disiscriviDispositivo, e
 const permessoAttuale = () => (typeof Notification === 'undefined' ? 'default' : Notification.permission);
 
 /**
- * Le notifiche push su questo dispositivo: se si possono attivare, se lo sono,
- * e le funzioni per attivarle, toglierle e provarle (services/push.service.js
- * nel backend, public/sw-push.js nel service worker).
+ * Push notifications on this device: whether they can be turned on, whether
+ * they are on, and the functions to turn them on, off and test them
+ * (services/push.service.js in the backend, public/sw-push.js in the service worker).
  */
 export function usePushNotifiche() {
   const [supporto] = useState(supportoPush);
@@ -25,7 +25,7 @@ export function usePushNotifiche() {
         if (annullato) return;
         const { attive, chiave } = risposta.dati;
         const iscrizione = attuale?.iscrizione ?? null;
-        // Il browser e' iscritto: si riallinea il server, che potrebbe averla persa
+        // The browser is subscribed: re-sync the server, which may have lost it
         if (attive && iscrizione) api.post('/notifiche/push/iscrizione', iscrizione.toJSON()).catch(() => {});
         setStato(s => ({ ...s, caricato: true, serverAttivo: attive, chiave, iscritto: Boolean(iscrizione) }));
       })
@@ -33,15 +33,15 @@ export function usePushNotifiche() {
     return () => { annullato = true; };
   }, [supporto.supportate]);
 
-  /** Chiede il permesso e iscrive il dispositivo. false se il permesso e' negato */
+  /** Asks for permission and subscribes the device. false if permission is denied */
   const attiva = useCallback(async () => {
     const permesso = await Notification.requestPermission();
     setStato(s => ({ ...s, permesso }));
     if (permesso !== 'granted') return false;
     const attuale = await iscrizioneAttuale();
     if (!attuale) throw new Error('Il service worker non è attivo: ricarica la pagina e riprova');
-    // L'iscrizione passa dal servizio push del browser (Google, Mozilla,
-    // Apple): se non risponde si dice, invece di restare appesi
+    // The subscription goes through the browser's push service (Google, Mozilla,
+    // Apple): if it does not answer we say so, instead of hanging
     let iscrizione = attuale.iscrizione;
     if (!iscrizione) {
       try {
@@ -63,7 +63,7 @@ export function usePushNotifiche() {
     setStato(s => ({ ...s, iscritto: false }));
   }, []);
 
-  /** Una notifica di prova a tutti i dispositivi dell'utente: quanti ne raggiunge */
+  /** A test notification to all the user's devices: how many it reaches */
   const prova = useCallback(() => api.post('/notifiche/push/prova').then(r => r.dati?.raggiunti ?? 0), []);
 
   return {

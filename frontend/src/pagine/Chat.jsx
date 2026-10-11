@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pagina Chat
-// Lista conversazioni + richieste contatto
+// GymMaster — Chat page
+// Conversation list + contact requests
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -19,9 +19,9 @@ export default function Chat() {
   const [mostraCerca, setMostraCerca] = useState(false);
   const [ricerca, setRicerca] = useState('');
   const [risultatiRicerca, setRisultatiRicerca] = useState([]);
-  const [tab, setTab] = useState('chat'); // chat, richieste
+  const [tab, setTab] = useState('chat'); // chat, requests
 
-  // Al primo caricamento con lo spinner; accettata una richiesta, l'elenco si aggiorna sul posto
+  // On first load with the spinner; once a request is accepted, the list updates in place
   const caricaDati = useCallback(() => Promise.all([
     api.get('/chat/conversazioni'),
     api.get('/chat/contatti/ricevute')
@@ -59,20 +59,20 @@ export default function Chat() {
     try {
       await api.patch(`/chat/contatti/${id}/rispondi`, { stato });
       setRichieste(prev => prev.filter(r => r.id !== id));
-      if (stato === 'ACCETTATA') caricaDati(); // Ricarica conversazioni
+      if (stato === 'ACCETTATA') caricaDati(); // Reload the conversations
     } catch (err) {
       alert(err.message);
     }
   };
 
-  // Trova l'altro partecipante nella conversazione
+  // Find the other participant in the conversation
   const altroPartecipante = (conv) => {
     return conv.partecipanti?.find(p => p.utente?.id !== utente.id)?.utente;
   };
 
   return (
     <div className="flex flex-col max-w-2xl w-full mx-auto px-4 md:px-6">
-      {/* Header Fissato in Alto */}
+      {/* Header pinned to the top */}
       <div className="sticky top-0 z-40 bg-[var(--bg-primario)] pt-4 pb-4 border-b border-[var(--bordo)] mb-4">
         <div className="flex items-center justify-between">
           <div>
@@ -87,7 +87,7 @@ export default function Chat() {
           </button>
         </div>
         
-        {/* Tabs: Chat / Richieste */}
+        {/* Tabs: Chat / Requests */}
         <div className="flex gap-2 mt-4">
           <button onClick={() => setTab('chat')}
                   className={`px-4 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all ${
@@ -109,7 +109,7 @@ export default function Chat() {
         </div>
       </div>
 
-      {/* Ricerca utenti */}
+      {/* User search */}
       <AnimatePresence>
         {mostraCerca && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
@@ -148,14 +148,14 @@ export default function Chat() {
         )}
       </AnimatePresence>
 
-      {/* Contenuto */}
+      {/* Content */}
       <div className="flex-1 pb-6">
       {caricamento ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
         </div>
       ) : tab === 'chat' ? (
-        /* Lista conversazioni */
+        /* Conversation list */
         conversazioni.length === 0 ? (
           <div className="glass-card p-card-inner text-center">
             <div className="text-4xl mb-3">💬</div>
@@ -211,7 +211,7 @@ export default function Chat() {
           </div>
         )
       ) : (
-        /* Lista richieste */
+        /* Request list */
         richieste.length === 0 ? (
           <div className="glass-card p-card-inner text-center">
             <div className="text-4xl mb-3">✉️</div>

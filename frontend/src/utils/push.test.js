@@ -3,9 +3,9 @@ import { chiaveInByte, supportoPush, entro } from './push.js';
 
 describe('chiaveInByte', () => {
   it('decodifica il base64url senza padding delle chiavi VAPID', () => {
-    // "GymMaster!" in base64url: R3ltTWFzdGVyIQ (senza "==")
+    // "GymMaster!" in base64url: R3ltTWFzdGVyIQ (without "==")
     expect(Array.from(chiaveInByte('R3ltTWFzdGVyIQ'))).toEqual([...'GymMaster!'].map(c => c.charCodeAt(0)));
-    // I caratteri propri del base64url: - e _ al posto di + e /
+    // The characters specific to base64url: - and _ instead of + and /
     expect(Array.from(chiaveInByte('-_8'))).toEqual([0xfb, 0xff]);
   });
 

@@ -1,6 +1,6 @@
 // ============================================
-// GymMaster — Pianificazione Allenamenti
-// Calendario delle schede programmate, con spostamento e rinvio
+// GymMaster — Workout Schedule
+// Calendar of the scheduled plans, with moving and postponing
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,13 +24,13 @@ const STATI = {
   SALTATO: { etichetta: 'Saltato', colore: 'var(--testo-terziario)' }
 };
 
-/** Il periodo del calendario come chiave: "2026-09-28|2026-11-08" */
+/** The calendar period as a key: "2026-09-28|2026-11-08" */
 const chiavePeriodo = ({ da, a }) => `${da}|${a}`;
 
 export default function Pianificazione() {
-  // Sul telefono la griglia mensile stringe troppo i giorni: lì si parte dalla
-  // settimana. Finché non si sceglie esplicitamente, la vista segue la
-  // larghezza dello schermo; dopo la scelta resta quella voluta.
+  // On a phone the monthly grid squeezes the days too much: there we start from
+  // the week. Until the user picks one explicitly, the view follows the screen
+  // width; after the choice it stays the one they wanted.
   const telefono = useTelefono();
   const [modoScelto, setModoScelto] = useState(null);
   const modo = modoScelto ?? (telefono ? 'settimana' : 'mese');
@@ -42,8 +42,8 @@ export default function Pianificazione() {
   const [pannelloPiano, setPannelloPiano] = useState(false);
   const [errore, setErrore] = useState('');
 
-  // Il mese mostrato piu' un margine, cosi' spostando un allenamento di qualche
-  // giorno oltre il bordo del mese resta comunque visibile al ricaricamento.
+  // The month shown plus a margin, so that moving a workout a few days past the
+  // edge of the month still keeps it visible on reload.
   const intervallo = useCallback(() => {
     let da, a;
     if (modo === 'mese') {
@@ -59,8 +59,8 @@ export default function Pianificazione() {
     return { da: aStringa(da), a: aStringa(a) };
   }, [ancora, modo]);
 
-  // Il periodo mostrato: spostandosi di settimana o di mese torna lo spinner,
-  // mentre dopo una modifica il calendario si aggiorna sul posto
+  // The period shown: moving by a week or a month brings the spinner back,
+  // while after an edit the calendar updates in place
   const [caricatoPer, setCaricatoPer] = useState(null);
   const caricamento = caricatoPer !== chiavePeriodo(intervallo());
 
@@ -101,7 +101,7 @@ export default function Pianificazione() {
   const elimina = (a) => azione(() => api.delete(`/pianificazione/${a.id}`));
   const spostaA = (a, data) => azione(() => api.patch(`/pianificazione/${a.id}`, { data }));
 
-  // Pallini colorati per stato, uno per allenamento del giorno
+  // Colored dots by status, one per workout of the day
   const marcatori = Object.fromEntries(
     Object.entries(perGiorno).map(([giorno, lista]) => [giorno, lista.map(a => ({ colore: STATI[a.stato].colore }))])
   );
@@ -145,7 +145,7 @@ export default function Pianificazione() {
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8">
-          {/* Calendario */}
+          {/* Calendar */}
           <div className="glass-card p-card-inner">
             <Calendario
               modo={modo}
@@ -166,7 +166,7 @@ export default function Pianificazione() {
             </div>
           </div>
 
-          {/* Dettaglio del giorno */}
+          {/* Day detail */}
           <div className="glass-card p-card-inner flex flex-col">
             <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
               <CalendarDays size={20} className="text-[var(--testo-secondario)]" />
@@ -195,9 +195,9 @@ export default function Pianificazione() {
                     </div>
 
                     <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-                      {/* /allenamento/:id vuole una sessione, non una scheda: col numero
-                          della scheda la sessione non esisteva e si finiva in Gestione
-                          schede. Allenati ora apre invece la scheda pronta da far partire. */}
+                      {/* /allenamento/:id wants a session, not a plan: with the plan's number
+                          the session did not exist and the user ended up in "Gestione schede"
+                          (plan management). "Allenati ora" opens the plan ready to start instead. */}
                       <Link to={`/allenamento?scheda=${a.scheda.id}`} style={{ color: '#fff' }} className="py-1.5 px-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
                         <PlayCircle size={14} /> Inizia
                       </Link>
@@ -246,7 +246,7 @@ export default function Pianificazione() {
   );
 }
 
-/** Programma una singola scheda nel giorno selezionato. */
+/** Schedule a single plan on the selected day. */
 function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
   const [schedaId, setSchedaId] = useState('');
   const [inCorso, setInCorso] = useState(false);
@@ -291,9 +291,9 @@ function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
 }
 
 /**
- * Distribuzione settimanale: l'uso tipico non e' una sola scheda ripetuta ogni
- * giorno, ma piu' schede assegnate a giorni diversi e ripetute per qualche
- * settimana.
+ * Weekly distribution: the typical use is not a single plan repeated every
+ * day, but several plans assigned to different days and repeated for a few
+ * weeks.
  */
 function PianificaSettimana({ schede, onFatto, onErrore }) {
   const [voci, setVoci] = useState([{ schedaId: '', giornoSettimana: 0 }]);

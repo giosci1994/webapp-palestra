@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Pagina Login
+// GymMaster — Login page
 // ============================================
 
 import { useState } from 'react';
@@ -17,7 +17,7 @@ export default function Login() {
   const [erroreLocale, setErroreLocale] = useState('');
   const [mostraReinvio, setMostraReinvio] = useState(false);
   const [reinviato, setReinviato] = useState(false);
-  // "Ricorda dispositivo" — stato persistente in localStorage
+  // "Ricorda dispositivo" (remember device) — state persisted in localStorage
   const [ricordaDispositivo, setRicordaDispositivo] = useState(
     () => localStorage.getItem('gymmaster_ricorda_dispositivo') === 'true'
   );
@@ -31,7 +31,7 @@ export default function Login() {
     localStorage.setItem('gymmaster_ricorda_dispositivo', valore ? 'true' : 'false');
   };
 
-  /** Dopo l'accesso: l'onboarding se il profilo e' da completare, altrimenti la dashboard */
+  /** After signing in: onboarding if the profile still has to be completed, otherwise the dashboard */
   const vaiDopoAccesso = (utenteLoggato) => {
     naviga(utenteLoggato?.profiloCompletato === false ? '/onboarding' : '/dashboard', { replace: true });
   };
@@ -42,7 +42,7 @@ export default function Login() {
     try {
       vaiDopoAccesso(await loginConPasskey(ricordaDispositivo));
     } catch (err) {
-      // Annullato sul dispositivo: nessun errore da mostrare
+      // Cancelled on the device: no error to show
       if (err?.name !== 'NotAllowedError' && err?.name !== 'AbortError') {
         setErroreLocale(err.message || 'Accesso con passkey non riuscito');
       }
@@ -207,7 +207,7 @@ export default function Login() {
           )}
         </form>
 
-        {/* Link registrazione */}
+        {/* Sign-up link */}
         <p className="text-center mt-6 text-sm text-[var(--testo-secondario)]">
           Non hai un account?{' '}
           <Link to="/registrazione" className="font-semibold">

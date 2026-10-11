@@ -1,5 +1,5 @@
 // ============================================
-// GymMaster — Password dimenticata (richiesta reset)
+// GymMaster — Forgot password (reset request)
 // ============================================
 
 import { useState } from 'react';
@@ -23,7 +23,7 @@ export default function PasswordDimenticata() {
   const submit = async (e) => {
     e.preventDefault();
     setCaricamento(true);
-    try { await api.post('/auth/richiedi-reset', { email }); } catch { /* risposta generica */ }
+    try { await api.post('/auth/richiedi-reset', { email }); } catch { /* generic response */ }
     setInviato(true);
     setCaricamento(false);
   };

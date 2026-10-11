@@ -1,17 +1,17 @@
 // ============================================
-// GymMaster — Riscaldamento e drop set
+// GymMaster — Warm-up and drop sets
 // ============================================
 //
-// Le stesse regole del server (backend/src/utils/tipiSerie.js):
-// - riscaldamento: prima delle serie di lavoro; si vede, ma resta fuori da
-//   volume, conteggi, record e progressione;
-// - drop: subito dopo una serie di lavoro, a peso calato e senza recupero;
-//   conta nel volume ma non come serie a se'.
+// The same rules as the server (backend/src/utils/tipiSerie.js):
+// - warm-up: before the working sets; it is shown, but stays out of
+//   volume, counts, records and progression;
+// - drop: right after a working set, at a lower weight and with no rest;
+//   it counts in the volume but not as a set of its own.
 
-/** Una serie di lavoro? Senza tipo (salvate prima che ci fosse) lo e' */
+/** A working set? Without a tipo (saved before it existed) it is */
 export const diLavoro = s => (s?.tipo ?? 'LAVORO') === 'LAVORO';
 
-/** Il volume (kg × ripetizioni) delle serie, riscaldamento escluso */
+/** The volume (kg × reps) of the sets, warm-up excluded */
 export const volumeDi = serie => serie
   .filter(s => s.tipo !== 'RISCALDAMENTO')
   .reduce((somma, s) => somma + (s.pesoEffettivo || 0) * (s.repEffettive || 0), 0);
@@ -19,9 +19,9 @@ export const volumeDi = serie => serie
 const posto = s => (s.tipo === 'RISCALDAMENTO' ? [0, s.serieNumero ?? 0, 0] : [1, s.serieNumero ?? 0, s.tipo === 'DROP' ? 1 : 0]);
 
 /**
- * Le serie di un esercizio nell'ordine in cui mostrarle: prima il
- * riscaldamento, poi ogni serie di lavoro seguita dai suoi drop. A parita'
- * resta l'ordine di arrivo.
+ * The sets of an exercise in the order to show them: first the
+ * warm-up, then each working set followed by its drops. On a tie
+ * the arrival order stays.
  */
 export function ordinaSerie(serie) {
   return serie
@@ -30,7 +30,7 @@ export function ordinaSerie(serie) {
     .map(x => x.s);
 }
 
-/** Percentuali del peso di lavoro e ripetizioni della rampa di riscaldamento */
+/** Working-weight percentages and reps of the warm-up ramp */
 export const RAMPA = [
   { quota: 0.4, rep: 10 },
   { quota: 0.6, rep: 5 },
@@ -40,12 +40,12 @@ export const RAMPA = [
 const arrotondaA = (peso, gradino) => Math.round(Math.round(peso / gradino) * gradino * 100) / 100;
 
 /**
- * La rampa di riscaldamento verso il peso di lavoro: 40%×10, 60%×5, 80%×3,
- * arrotondati al gradino dell'attrezzo e mai sotto il minimo (la barra
- * vuota). Toglie i passi doppi e quelli che arrivano al peso di lavoro.
+ * The warm-up ramp towards the working weight: 40%×10, 60%×5, 80%×3,
+ * rounded to the equipment's step and never below the minimum (the empty
+ * bar). It drops duplicate steps and those that reach the working weight.
  * @param {number} pesoLavoro
  * @param {{ incremento?: number, minimo?: number }} [opzioni]
- * @returns {{ peso: number, rep: number }[]} vuota se il peso e' troppo leggero per scaldarsi
+ * @returns {{ peso: number, rep: number }[]} empty if the weight is too light to warm up for
  */
 export function rampaRiscaldamento(pesoLavoro, { incremento = 2.5, minimo = 0 } = {}) {
   const lavoro = Number(pesoLavoro);
@@ -60,8 +60,8 @@ export function rampaRiscaldamento(pesoLavoro, { incremento = 2.5, minimo = 0 } 
 }
 
 /**
- * Il peso proposto per un drop: un quinto in meno, al gradino dell'attrezzo
- * (almeno un gradino sotto); null se non si puo' calare.
+ * The suggested weight for a drop: one fifth less, at the equipment's step
+ * (at least one step lower); null if it cannot go lower.
  */
 export function pesoDrop(peso, incremento = 2.5) {
   const prima = Number(peso);
