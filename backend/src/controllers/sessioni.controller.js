@@ -6,7 +6,7 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
-import { concludiSessione, controllaRecord } from '../services/conclusioneSessione.service.js';
+import { concludiSessione, controllaRecord, STATI_DA_CHIUDERE } from '../services/conclusioneSessione.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
 /** Lista sessioni dell'utente */
@@ -783,7 +783,7 @@ export async function registraSessionePassata(req, res, next) {
       // Se quel giorno era in calendario, l'allenamento risulta fatto: cosi'
       // non resta segnato come "da fare" dopo essere stato registrato.
       await tx.allenamentoPianificato.updateMany({
-        where: { utenteId: req.utente.id, schedaId: idScheda, data: giornoLocale(inizio), stato: 'PIANIFICATO' },
+        where: { utenteId: req.utente.id, schedaId: idScheda, data: giornoLocale(inizio), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
         data: { stato: 'COMPLETATO', sessioneId: creata.id }
       });
 
@@ -1027,7 +1027,7 @@ export async function modificaSessione(req, res, next) {
           data: { stato: 'PIANIFICATO', sessioneId: null }
         });
         await tx.allenamentoPianificato.updateMany({
-          where: { utenteId: sessione.utenteId, schedaId: sessione.schedaId, data: giornoLocale(dati.dataInizio), stato: 'PIANIFICATO', sessioneId: null },
+          where: { utenteId: sessione.utenteId, schedaId: sessione.schedaId, data: giornoLocale(dati.dataInizio), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
           data: { stato: 'COMPLETATO', sessioneId: id }
         });
       }

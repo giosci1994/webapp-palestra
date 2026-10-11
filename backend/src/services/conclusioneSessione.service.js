@@ -32,6 +32,12 @@ export const ORE_SESSIONE_VUOTA = 24;
 const MINUTI_PER_SERIE = 3;
 
 /**
+ * The calendar entries a workout of that day marks as done. A skipped one too:
+ * whoever skipped it from the reminder and then trained anyway did it.
+ */
+export const STATI_DA_CHIUDERE = ['PIANIFICATO', 'SALTATO'];
+
+/**
  * Quando e' finito un allenamento che si chiude adesso.
  * Se l'ultima attivita' (l'ultima serie, o l'inizio se non ce ne sono) e'
  * recente, adesso; se no l'allenamento e' stato dimenticato aperto e finisce
@@ -84,7 +90,7 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
       utenteId: sessione.utenteId,
       schedaId: sessione.schedaId,
       data: giornoLocale(sessione.dataInizio),
-      stato: 'PIANIFICATO',
+      stato: { in: STATI_DA_CHIUDERE },
       sessioneId: null
     },
     data: { stato: 'COMPLETATO', sessioneId: sessione.id }

@@ -38,3 +38,6 @@ logs/
 
 # Graphify
 graphify-out/
+
+# Permessi locali di Claude Code: di chi li usa, non del progetto
+.claude/settings.local.json

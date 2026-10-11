@@ -1,22 +1,27 @@
 // ============================================
-// GymMaster — Promemoria dell'allenamento di oggi
-// Compare aprendo l'app quando c'e' una scheda in programma: cosa ti
-// aspetta, a che ora conviene andare e un tasto per partire subito.
+// GymMaster — Today's workout reminder
+// Shown when the app opens and a workout is planned for today: what is
+// waiting, when the gym is quietest and a button to start right away.
 // ============================================
 //
-// "Aprire l'app" vale sia per l'avvio sia per il ritorno dopo una pausa
-// lunga: una PWA spesso resta in memoria e al mattino non riparte da zero.
-// Chiuso con "Più tardi", il promemoria ricompare alla prossima apertura.
+// "Opening the app" means both a fresh start and coming back after a long
+// pause: a PWA often stays in memory and does not restart in the morning.
+//
+// Closed with "Più tardi" (or by tapping outside), it stays closed for the
+// rest of the day: the workout is still on the Home page, to start at the gym.
+// "Salta oggi" marks today's workouts as skipped, "Rimanda a domani" moves
+// them to tomorrow.
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CalendarClock, Clock, Play, RotateCcw } from 'lucide-react';
 import { api } from '../../config/api.js';
+import { promemoriaDaMostrare, rimandaPromemoria } from '../../utils/promemoriaRimandato.js';
 
-// Dopo quanto tempo in secondo piano il ritorno conta come nuova apertura
+// After how long in the background coming back counts as a new opening
 const RIAPERTURA_MS = 30 * 60 * 1000;
-// Ore mostrate nella striscia dell'affluenza
+// Hours shown in the crowd strip
 const PRIMA_ORA = 6;
 const ULTIMA_ORA = 23;
 
@@ -26,16 +31,17 @@ const affollamento = (livello) =>
 
 /**
  * @param {object} p
- * @param {boolean} p.inAttesa - true finche' non e' il momento di mostrarsi
- *   (allenamento in corso a schermo pieno, storie delle novita' aperte)
+ * @param {boolean} p.inAttesa - true while it is not the moment to show up
+ *   (full-screen workout in progress, "what's new" stories open)
  */
 export default function PromemoriaAllenamento({ inAttesa }) {
   const naviga = useNavigate();
-  // "Armato" all'apertura: al primo momento libero chiede al server cosa c'e'
-  // oggi e poi si disarma, che ci sia qualcosa da mostrare o no
+  // "Armed" when the app opens: at the first free moment it asks the server
+  // what is planned today, then disarms, whether there is something to show or not
   const [armato, setArmato] = useState(true);
   const [dati, setDati] = useState(null);
-  const [rimandando, setRimandando] = useState(false);
+  // 'domani' or 'salta' while that change is being saved
+  const [salvando, setSalvando] = useState(null);
   const [errore, setErrore] = useState('');
   const nascostoDa = useRef(null);
   const tastoPrincipale = useRef(null);
@@ -60,22 +66,27 @@ export default function PromemoriaAllenamento({ inAttesa }) {
       .then(r => {
         if (annullato) return;
         setArmato(false);
-        if (r.dati?.allenamenti?.length) { setErrore(''); setDati(r.dati); }
+        if (promemoriaDaMostrare(r.dati)) { setErrore(''); setDati(r.dati); }
       })
       .catch(() => { if (!annullato) setArmato(false); });
     return () => { annullato = true; };
   }, [armato, inAttesa]);
 
   const aperto = Boolean(dati) && !inAttesa;
-  const chiudi = () => setDati(null);
+  // However it is closed, it does not come back today
+  const chiudi = () => { rimandaPromemoria(dati); setDati(null); };
 
   useEffect(() => {
     if (!aperto) return;
     tastoPrincipale.current?.focus();
-    const esc = (e) => { if (e.key === 'Escape') setDati(null); };
+    const esc = (e) => {
+      if (e.key !== 'Escape') return;
+      rimandaPromemoria(dati);
+      setDati(null);
+    };
     window.addEventListener('keydown', esc);
     return () => window.removeEventListener('keydown', esc);
-  }, [aperto]);
+  }, [aperto, dati]);
 
   const principale = dati?.allenamenti[0];
   const altri = dati?.allenamenti.slice(1) ?? [];
@@ -83,23 +94,26 @@ export default function PromemoriaAllenamento({ inAttesa }) {
 
   const inizia = () => {
     chiudi();
-    // Allenati ora apre la scheda pronta da far partire; una sessione gia'
-    // iniziata oggi si riprende invece di ricominciarla da capo
+    // "Allenati ora" opens the plan ready to start; a session already started
+    // today is resumed instead of started over
     naviga(inCorso ? `/allenamento/${inCorso}` : `/allenamento?scheda=${principale.scheda.id}`);
   };
 
-  const rimandaADomani = async () => {
+  /** Changes all of today's workouts in the calendar, then closes */
+  const cambiaGiornata = async (azione, modifica, messaggioErrore) => {
     try {
-      setRimandando(true);
+      setSalvando(azione);
       setErrore('');
-      await Promise.all(dati.allenamenti.map(a => api.patch(`/pianificazione/${a.id}`, { rimandaGiorni: 1 })));
+      await Promise.all(dati.allenamenti.map(a => api.patch(`/pianificazione/${a.id}`, modifica)));
       chiudi();
     } catch (err) {
-      setErrore(err?.message || 'Non sono riuscito a spostarlo');
+      setErrore(err?.message || messaggioErrore);
     } finally {
-      setRimandando(false);
+      setSalvando(null);
     }
   };
+  const rimandaADomani = () => cambiaGiornata('domani', { rimandaGiorni: 1 }, 'Non sono riuscito a spostarlo');
+  const saltaOggi = () => cambiaGiornata('salta', { stato: 'SALTATO' }, 'Non sono riuscito a segnarlo come saltato');
 
   return (
     <AnimatePresence>
@@ -158,11 +172,17 @@ export default function PromemoriaAllenamento({ inAttesa }) {
                   Più tardi
                 </button>
                 {!inCorso && (
-                  <button type="button" onClick={rimandaADomani} disabled={rimandando} className="btn-secondario flex-1 !px-3 disabled:opacity-50">
-                    {rimandando ? 'Sposto…' : 'Rimanda a domani'}
+                  <button type="button" onClick={saltaOggi} disabled={Boolean(salvando)} className="btn-secondario flex-1 !px-3 disabled:opacity-50">
+                    {salvando === 'salta' ? 'Salto…' : 'Salta oggi'}
                   </button>
                 )}
               </div>
+              {!inCorso && (
+                <button type="button" onClick={rimandaADomani} disabled={Boolean(salvando)}
+                        className="self-center py-1.5 px-3 text-sm font-medium text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] disabled:opacity-50">
+                  {salvando === 'domani' ? 'Sposto…' : 'Rimanda a domani'}
+                </button>
+              )}
             </div>
           </motion.div>
         </motion.div>
@@ -171,13 +191,13 @@ export default function PromemoriaAllenamento({ inAttesa }) {
   );
 }
 
-/** L'ora consigliata, con la giornata dell'affluenza per vederne il perché. */
+/** The suggested hour, with the day's crowd levels to show why. */
 function QuandoAndare({ orario }) {
   const { consigliato, adesso, fascia, abitudine, ore } = orario;
   const oraAttuale = adesso?.ora ?? null;
   const eAdesso = consigliato && consigliato.ora === oraAttuale;
-  // Se adesso c'e' chiaramente meno gente dell'ora consigliata, chi e' gia'
-  // in palestra deve saperlo
+  // If right now is clearly quieter than the suggested hour, whoever is
+  // already at the gym should know
   const adessoMeglio = consigliato && adesso && !eAdesso && adesso.livello < consigliato.livello - 5;
   const nellaFascia = consigliato && abitudine && consigliato.ora >= fascia.da && consigliato.ora <= fascia.a;
 
@@ -186,8 +206,8 @@ function QuandoAndare({ orario }) {
 
   let titolo, dettaglio;
   if (eAdesso) {
-    // "Migliore" fra le ore che restano, non per forza vuota: il dettaglio
-    // dice quanta gente c'e' davvero
+    // The best of the hours left, not necessarily empty: the detail says how
+    // crowded it really is
     titolo = 'Adesso è l’ora migliore';
     dettaglio = `${adesso.live ? 'In questo momento' : 'Di solito a quest’ora'} ${affollamento(adesso.livello)} · ${adesso.livello}%`;
   } else if (consigliato) {
