@@ -1,0 +1,58 @@
+{
+  "titolo": "Body",
+  "periodo": {
+    "7": "in the last 7 days",
+    "30": "in the last 30 days",
+    "90": "in the last 3 months",
+    "365": "in the last 12 months",
+    "altro": "in the last {giorni} days"
+  },
+  "periodoBreve": {
+    "7": "7 days",
+    "30": "30 days",
+    "90": "3 months",
+    "365": "12 months",
+    "altro": "{giorni} days"
+  },
+  "aOggi": "as of today",
+  "corpoLibero": "Bodyweight × {rep}",
+  "seriePeriodo_one": "{numero} set {periodo}",
+  "seriePeriodo_other": "{numero} sets {periodo}",
+  "seriePeriodoConIndirette_one": "{numero} set {periodo}, {indirette} of them as a secondary muscle",
+  "seriePeriodoConIndirette_other": "{numero} sets {periodo}, {indirette} of them as a secondary muscle",
+  "nessunaSerie": "No sets {periodo}",
+  "nessunaSerieTocca": "No sets {periodo}: tap a muscle to see its history.",
+  "nonFatto": "Not done {periodo}",
+  "ultimaVolta": "last done {data}",
+  "carico": "Load",
+  "massimale": "Max",
+  "formulaEpley": "Epley formula applied to the {peso} kg × {rep} set of {data}",
+  "stimatoDa": "estimated from {peso} × {rep}",
+  "andamento": "Progress",
+  "nascondiAndamento": "Hide progress",
+  "lavoratoAnche": "Also worked in",
+  "etichetta": {
+    "recupero": "{nome}: {stato}, last done {data}",
+    "maiAllenato": "{nome}: never trained",
+    "serie_one": "{nome}: {numero} set {periodo}",
+    "serie_other": "{nome}: {numero} sets {periodo}",
+    "nessunaSerie": "{nome}: no sets {periodo}"
+  },
+  "erroreDati": "Could not load body data.",
+  "vuoto": "Complete a few workouts to see which muscles you've trained.",
+  "ariaVista": "What the colors show",
+  "vista": {
+    "serie": "Sets",
+    "recupero": "Recovery"
+  },
+  "unaSerie": "1 set",
+  "serieMassimo_one": "{numero} set",
+  "serieMassimo_other": "{numero} sets",
+  "fuoriSagoma": "Not on the body map:",
+  "toccaMuscolo": "Tap a muscle to see exercises, loads and maxes.",
+  "chiudiDettaglio": "Close details",
+  "nessunEsercizio": "No exercises logged for this muscle.",
+  "notaMassimale": "Your max is the heaviest set done for a single rep.",
+  "notaTest": "When you test your max, log the set with 1 rep and it will show up here.",
+  "notaStima": "Without a test, ≈ is an estimate from sets of up to 12 reps."
+}

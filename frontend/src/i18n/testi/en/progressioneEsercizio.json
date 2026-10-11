@@ -1,0 +1,14 @@
+{
+  "erroreCaricamento": "Could not load progress.",
+  "caricamento": "Loading progress…",
+  "serveAltroAllenamento": "You need at least one more workout with this exercise to see its progress.",
+  "carico": "Load",
+  "massimaleStimato": "Estimated max",
+  "massimale": "Max",
+  "unitaRip": "reps",
+  "serieMigliore": "Best set: <b>{valore}</b>",
+  "massimaleStimatoValore": "Estimated max: <b>{valore}</b>",
+  "massimaleValore": "🏆 Max: <b>{valore}</b>",
+  "ripetizioni": "Reps: <b>{valore}</b>",
+  "durata": "Duration: <b>{valore}</b>"
+}

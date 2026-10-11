@@ -6,6 +6,7 @@
 // The outline is the only way to pick a group: so every muscle is a button
 // for the keyboard too (Tab, Enter or Space) and for screen readers.
 
+import { useLingua } from '../../hooks/useLingua.js';
 import { FRONTE, RETRO } from './sagomaCorpo.js';
 import { COLORE_NON_ALLENATO } from '../../utils/costanti.js';
 
@@ -20,10 +21,12 @@ const DECORATIVI = new Set(['head', 'neck', 'knees']);
  * @param {(muscolo: string) => void} p.onTocca
  */
 export default function MappaCorpo({ colori, etichette, evidenziati, onTocca }) {
-  const figura = (dati, vista) => {
+  const { t } = useLingua();
+  // `vista` and `descrizione` are translation keys: the caption and the screen reader label
+  const figura = (dati, vista, descrizione) => {
     return (
       <figure className="flex-1 flex flex-col items-center gap-1.5 min-w-0 max-w-[160px]">
-        <svg viewBox="0 0 100 200" className="mappa-muscoli w-full h-auto" role="group" aria-label={`Muscoli, vista ${vista.toLowerCase()}`}>
+        <svg viewBox="0 0 100 200" className="mappa-muscoli w-full h-auto" role="group" aria-label={t(descrizione)}>
           {dati.map(({ muscolo, punti }) => {
             const decorativo = DECORATIVI.has(muscolo);
             const selezionato = evidenziati.has(muscolo);
@@ -67,15 +70,15 @@ export default function MappaCorpo({ colori, etichette, evidenziati, onTocca }) 
             )}
           </g>
         </svg>
-        <figcaption className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{vista}</figcaption>
+        <figcaption className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{t(vista)}</figcaption>
       </figure>
     );
   };
 
   return (
     <div className="flex items-start justify-center gap-6">
-      {figura(FRONTE, 'Fronte')}
-      {figura(RETRO, 'Retro')}
+      {figura(FRONTE, 'mappaCorpo.fronte', 'mappaCorpo.ariaFronte')}
+      {figura(RETRO, 'mappaCorpo.retro', 'mappaCorpo.ariaRetro')}
     </div>
   );
 }

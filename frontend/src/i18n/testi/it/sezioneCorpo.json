@@ -1,0 +1,58 @@
+{
+  "titolo": "Corpo",
+  "periodo": {
+    "7": "negli ultimi 7 giorni",
+    "30": "negli ultimi 30 giorni",
+    "90": "negli ultimi 3 mesi",
+    "365": "negli ultimi 12 mesi",
+    "altro": "negli ultimi {giorni} giorni"
+  },
+  "periodoBreve": {
+    "7": "7 giorni",
+    "30": "30 giorni",
+    "90": "3 mesi",
+    "365": "12 mesi",
+    "altro": "{giorni} giorni"
+  },
+  "aOggi": "a oggi",
+  "corpoLibero": "Corpo libero × {rep}",
+  "seriePeriodo_one": "{numero} serie {periodo}",
+  "seriePeriodo_other": "{numero} serie {periodo}",
+  "seriePeriodoConIndirette_one": "{numero} serie {periodo}, di cui {indirette} da muscolo secondario",
+  "seriePeriodoConIndirette_other": "{numero} serie {periodo}, di cui {indirette} da muscolo secondario",
+  "nessunaSerie": "Nessuna serie {periodo}",
+  "nessunaSerieTocca": "Nessuna serie {periodo}: tocca un muscolo per vedere lo storico.",
+  "nonFatto": "Non fatto {periodo}",
+  "ultimaVolta": "ultima volta {data}",
+  "carico": "Carico",
+  "massimale": "Massimale",
+  "formulaEpley": "Formula di Epley sulla serie da {peso} kg × {rep} del {data}",
+  "stimatoDa": "stimato da {peso} × {rep}",
+  "andamento": "Andamento",
+  "nascondiAndamento": "Nascondi andamento",
+  "lavoratoAnche": "Lavorato anche in",
+  "etichetta": {
+    "recupero": "{nome}: {stato}, ultima volta {data}",
+    "maiAllenato": "{nome}: mai allenato",
+    "serie_one": "{nome}: {numero} serie {periodo}",
+    "serie_other": "{nome}: {numero} serie {periodo}",
+    "nessunaSerie": "{nome}: nessuna serie {periodo}"
+  },
+  "erroreDati": "Impossibile caricare i dati del corpo.",
+  "vuoto": "Completa qualche allenamento per vedere quali muscoli hai allenato.",
+  "ariaVista": "Cosa mostrano i colori",
+  "vista": {
+    "serie": "Serie",
+    "recupero": "Recupero"
+  },
+  "unaSerie": "1 serie",
+  "serieMassimo_one": "{numero} serie",
+  "serieMassimo_other": "{numero} serie",
+  "fuoriSagoma": "Fuori dalla sagoma:",
+  "toccaMuscolo": "Tocca un muscolo per vedere esercizi, carichi e massimali.",
+  "chiudiDettaglio": "Chiudi il dettaglio",
+  "nessunEsercizio": "Nessun esercizio registrato per questo muscolo.",
+  "notaMassimale": "Il massimale è la serie più pesante fatta con una sola ripetizione.",
+  "notaTest": "Quando fai un test di massimale, registra la serie con 1 ripetizione e comparirà qui.",
+  "notaStima": "Senza un test, ≈ indica una stima dalle serie fino a 12 ripetizioni."
+}

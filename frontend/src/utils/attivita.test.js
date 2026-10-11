@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { scegli } from '../i18n/index.js';
 import { grigliaAttivita, SETTIMANE_ATTIVITA } from './attivita.js';
 
 // Friday 9 October 2026, local time (the tests run with TZ Europe/Rome)
@@ -6,6 +7,8 @@ const OGGI = new Date(2026, 9, 9, 18, 30);
 const giorno = (giorno, serie = 20, allenamenti = 1) => ({ giorno, allenamenti, serie });
 
 describe('grigliaAttivita', () => {
+  beforeEach(() => scegli('it'));
+
   it('53 settimane da lunedi\' a domenica, che finiscono con quella di oggi', () => {
     const { settimane } = grigliaAttivita([], OGGI);
     expect(settimane).toHaveLength(SETTIMANE_ATTIVITA);
@@ -30,6 +33,12 @@ describe('grigliaAttivita', () => {
     expect(settimane[3].some(g => g.giorno === '2025-11-01')).toBe(true);
     expect(mesi.at(-1).etichetta).toBe('ott');
     expect(mesi).toHaveLength(12);
+  });
+
+  it('i nomi dei mesi seguono la lingua dell\'app', () => {
+    expect(grigliaAttivita([], OGGI, 'en').mesi.map(m => m.etichetta).slice(0, 2)).toEqual(['Nov', 'Dec']);
+    scegli('en');
+    expect(grigliaAttivita([], OGGI).mesi.at(-1).etichetta).toBe('Oct');
   });
 
   it('l\'intensita\' segue le serie, misurate sul 90° percentile dei giorni attivi', () => {

@@ -1,0 +1,30 @@
+{
+  "ariaIndicatori": "Period indicators",
+  "periodo": {
+    "titolo7": "Last 7 days",
+    "titolo30": "Last 30 days",
+    "titolo90": "Last 3 months",
+    "titolo365": "Last 12 months",
+    "titoloAltro": "Last {giorni} days",
+    "confronto7": "vs the previous 7 days",
+    "confronto30": "vs the previous 30 days",
+    "confronto90": "vs the previous 3 months",
+    "confronto365": "vs the previous 12 months",
+    "confrontoAltro": "vs the previous {giorni} days"
+  },
+  "invariato": "unchanged",
+  "inPiu": "more than the previous period",
+  "inMeno": "less than the previous period",
+  "daZero": "from 0",
+  "allenamenti": "Workouts",
+  "volume": "Volume lifted",
+  "durataMedia": "Average duration",
+  "settimaneDiFila": "Weeks in a row",
+  "allenamentiN_one": "{count} workout",
+  "allenamentiN_other": "{count} workouts",
+  "minutiDiMedia": "{valore} min on average",
+  "ariaUltimeSettimane": "Last 12 weeks: {attive} with at least one workout",
+  "questaSettimana": "This week",
+  "settimaneFa_one": "{count} week ago",
+  "settimaneFa_other": "{count} weeks ago"
+}

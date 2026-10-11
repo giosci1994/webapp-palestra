@@ -1,0 +1,57 @@
+{
+  "titolo": "Modifica allenamento",
+  "tipo": {
+    "LAVORO": "serie di lavoro",
+    "RISCALDAMENTO": "riscaldamento",
+    "DROP": "drop"
+  },
+  "errori": {
+    "minutiMancanti": "{esercizio}, serie {numero}: inserisci i minuti o elimina la serie",
+    "minutiNonValidi": "{esercizio}, serie {numero}: minuti non validi",
+    "livelloNonValido": "{esercizio}, serie {numero}: livello non valido",
+    "pesoNonValido": "{esercizio}, serie {numero}: peso non valido",
+    "ripMancanti": "{esercizio}, serie {numero}: inserisci le ripetizioni o elimina la serie",
+    "ripNonValide": "{esercizio}, serie {numero}: ripetizioni non valide",
+    "dataOraNonValide": "Data od ora non valide",
+    "durataFuoriLimiti": "La durata deve essere fra 1 e {max} minuti",
+    "inizioNelFuturo": "L'inizio è nel futuro",
+    "fineNelFuturo": "Con quest'ora e questa durata l'allenamento finirebbe nel futuro",
+    "riscaldamentoNonValido": "Minuti di riscaldamento non validi",
+    "salvataggio": "Salvataggio non riuscito"
+  },
+  "uscireSenzaSalvare": "Uscire senza salvare le modifiche?",
+  "durataSospetta": "Risulta durato <b>{durata}</b>: probabilmente è rimasto aperto dopo la fine. Imposta l'ora in cui hai finito davvero.",
+  "giorno": "Giorno",
+  "oraInizio": "Ora d'inizio",
+  "oraFine": "Ora di fine",
+  "giorniDopo_one": "giorno dopo",
+  "giorniDopo_other": "+{count} giorni",
+  "durata": "Durata (min)",
+  "riscaldamento": "Riscaldamento (min)",
+  "facoltativo": "facoltativo",
+  "facoltative": "facoltative",
+  "note": "Note",
+  "serie": "Serie",
+  "suggerimentoTipo": "Tocca il numero di una serie per segnarla come riscaldamento 🔥 o drop ↳: non contano fra le serie, il riscaldamento neanche nel volume.",
+  "nessunaSerieRegistrata": "Nessuna serie registrata in questo allenamento.",
+  "colonne": {
+    "numero": "N.",
+    "minuti": "Minuti",
+    "livello": "Livello",
+    "rip": "Rip."
+  },
+  "cambiaTipoAria": "Serie {numero}: {tipo}. Tocca per cambiare tipo",
+  "cambiaTipoTitolo": "Tocca per cambiare tipo: serie, riscaldamento, drop",
+  "aria": {
+    "minuti": "Minuti, serie {numero}",
+    "livello": "Livello, serie {numero}",
+    "peso": "Peso in kg, serie {numero}",
+    "rip": "Ripetizioni, serie {numero}",
+    "rpe": "RPE, serie {numero}",
+    "eliminaSerie": "Elimina serie {numero}"
+  },
+  "esercizioRimosso": "Nessuna serie: salvando, l'esercizio sparirà da questo allenamento.",
+  "aggiungiSerie": "Aggiungi serie",
+  "salvo": "Salvo…",
+  "salvaModifiche": "Salva modifiche"
+}

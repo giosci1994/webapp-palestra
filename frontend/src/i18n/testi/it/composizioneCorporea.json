@@ -1,0 +1,38 @@
+{
+  "campi": {
+    "peso": "Peso",
+    "grassoCorporeoPct": "Grasso corporeo",
+    "massaMuscolareKg": "Massa muscolare",
+    "muscoloScheletricoPct": "Muscolo scheletrico",
+    "acquaPct": "Acqua corporea",
+    "massaMagraKg": "Massa magra (senza grasso)",
+    "grassoSottocutaneoPct": "Grasso sottocutaneo",
+    "grassoViscerale": "Grasso viscerale",
+    "massaOsseaKg": "Massa ossea",
+    "proteinePct": "Proteine",
+    "bmr": "Metabolismo basale (BMR)",
+    "etaMetabolica": "Età metabolica"
+  },
+  "unita": {
+    "livello": "liv.",
+    "anni": "anni"
+  },
+  "campoConUnita": "{nome} ({unita})",
+  "riepilogo": {
+    "peso": "Peso",
+    "grasso": "% Grasso",
+    "massaMuscolare": "Massa musc."
+  },
+  "andamentoPeso": "Andamento peso",
+  "nuovaMisurazione": "Nuova misurazione",
+  "infoAvanzate": "Info avanzate (bilancia)",
+  "storico": "📋 Storico misurazioni",
+  "nessunaMisurazione": "Nessuna misurazione registrata.",
+  "voce": {
+    "grasso": "{valore}% grasso",
+    "muscolo": "{valore}kg musc.",
+    "nessunValore": "Nessun valore",
+    "dalPT": "👨‍🏫 dal PT"
+  },
+  "eliminaConferma": "Eliminare questa misurazione?"
+}

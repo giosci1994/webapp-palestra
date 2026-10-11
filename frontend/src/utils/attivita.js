@@ -5,11 +5,11 @@
 // One square per day, one column per week (Monday to Sunday),
 // the last 53 weeks up to today: like GitHub contributions.
 
+import { localeCorrente } from '../i18n/index.js';
 import { gradinoAllenamento } from './costanti.js';
 
 export const SETTIMANE_ATTIVITA = 53;
 const GIORNO = 86400000;
-const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
 
 /**
  * The reference for intensity: the day's sets at the 90th percentile.
@@ -24,6 +24,7 @@ function riferimento(valori) {
 /**
  * @param {{giorno: string, allenamenti: number, serie: number}[]} giorni - the days with at least one workout
  * @param {Date} oggi
+ * @param {string} [lingua] - language of the month names (default: the current one)
  * @returns {{
  *   settimane: ({giorno: string, allenamenti: number, serie: number, gradino: number, oggi: boolean} | null)[][],
  *   mesi: {colonna: number, etichetta: string}[],
@@ -31,7 +32,9 @@ function riferimento(valori) {
  *   giorniAttivi: number
  * }} settimane: 53 columns of 7 days, null after today; gradino 0 = rest, 1-5 = intensity
  */
-export function grigliaAttivita(giorni, oggi = new Date()) {
+export function grigliaAttivita(giorni, oggi = new Date(), lingua) {
+  // Short month names in the language of the app (the dates are UTC midnights)
+  const nomeMese = new Intl.DateTimeFormat(localeCorrente(lingua), { month: 'short', timeZone: 'UTC' });
   // Count in UTC midnights of the local day: no surprises with the clock change
   const fine = Date.UTC(oggi.getFullYear(), oggi.getMonth(), oggi.getDate());
   const lunedi = fine - ((new Date(fine).getUTCDay() + 6) % 7) * GIORNO;
@@ -51,7 +54,7 @@ export function grigliaAttivita(giorni, oggi = new Date()) {
       if (t > fine) { settimana.push(null); continue; }
       const data = new Date(t);
       // The month name goes above the week that contains its first day
-      if (data.getUTCDate() === 1) mesi.push({ colonna, etichetta: MESI[data.getUTCMonth()] });
+      if (data.getUTCDate() === 1) mesi.push({ colonna, etichetta: nomeMese.format(data) });
       const voce = perGiorno.get(chiave(t));
       const allenamenti = voce?.allenamenti || 0;
       const serie = voce?.serie || 0;

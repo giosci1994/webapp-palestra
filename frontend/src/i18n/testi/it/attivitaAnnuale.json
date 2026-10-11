@@ -1,0 +1,13 @@
+{
+  "titolo": "Attività dell'ultimo anno",
+  "descrizione": "Un quadretto per giorno: più è chiaro, più serie hai completato.",
+  "allenamenti": "Allenamenti",
+  "giorniAttivi": "Giorni attivi",
+  "tocca": "Tocca un giorno per i dettagli.",
+  "meno": "Meno",
+  "piu": "Più",
+  "riposo": "{data}: riposo",
+  "giornoAttivo": "{data}: {allenamenti}, {serie}",
+  "nAllenamenti_one": "{numero} allenamento",
+  "nAllenamenti_other": "{numero} allenamenti"
+}

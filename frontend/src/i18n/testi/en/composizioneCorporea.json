@@ -1,0 +1,38 @@
+{
+  "campi": {
+    "peso": "Weight",
+    "grassoCorporeoPct": "Body fat",
+    "massaMuscolareKg": "Muscle mass",
+    "muscoloScheletricoPct": "Skeletal muscle",
+    "acquaPct": "Body water",
+    "massaMagraKg": "Lean mass (fat-free)",
+    "grassoSottocutaneoPct": "Subcutaneous fat",
+    "grassoViscerale": "Visceral fat",
+    "massaOsseaKg": "Bone mass",
+    "proteinePct": "Protein",
+    "bmr": "Basal metabolic rate (BMR)",
+    "etaMetabolica": "Metabolic age"
+  },
+  "unita": {
+    "livello": "lvl.",
+    "anni": "years"
+  },
+  "campoConUnita": "{nome} ({unita})",
+  "riepilogo": {
+    "peso": "Weight",
+    "grasso": "Fat %",
+    "massaMuscolare": "Muscle mass"
+  },
+  "andamentoPeso": "Weight trend",
+  "nuovaMisurazione": "New measurement",
+  "infoAvanzate": "Advanced info (scale)",
+  "storico": "📋 Measurement history",
+  "nessunaMisurazione": "No measurements recorded.",
+  "voce": {
+    "grasso": "{valore}% fat",
+    "muscolo": "{valore}kg muscle",
+    "nessunValore": "No values",
+    "dalPT": "👨‍🏫 by personal trainer"
+  },
+  "eliminaConferma": "Delete this measurement?"
+}

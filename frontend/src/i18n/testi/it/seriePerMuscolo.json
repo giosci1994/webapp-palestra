@@ -1,0 +1,11 @@
+{
+  "titolo": "Serie a settimana per muscolo",
+  "descrizione": "Media su {numero} settimane. Le serie in cui il muscolo lavora da secondario valgono metà. In evidenza le 10–20 serie indicate di solito per la crescita muscolare.",
+  "descrizioneUnaSettimana": "Media della settimana. Le serie in cui il muscolo lavora da secondario valgono metà. In evidenza le 10–20 serie indicate di solito per la crescita muscolare.",
+  "nessunaSerie": "Nessuna serie registrata nel periodo.",
+  "serie_one": "{numero} serie",
+  "serie_other": "{numero} serie",
+  "dettaglioRiga": "{nome}: {settimanali} a settimana. Nel periodo {periodo}.",
+  "dettaglioRigaConIndirette": "{nome}: {settimanali} a settimana. Nel periodo {periodo}, di cui {indirette} da esercizi in cui lavora da secondario.",
+  "senzaSerie": "Nessuna serie nel periodo: {gruppi}."
+}

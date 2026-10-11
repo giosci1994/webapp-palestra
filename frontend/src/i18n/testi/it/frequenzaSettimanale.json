@@ -1,0 +1,18 @@
+{
+  "titolo": "Frequenza settimanale",
+  "descrizione": "Allenamenti per settimana nelle ultime 12.",
+  "nessunDato": "Nessun dato disponibile.",
+  "questaSettimana": "Questa settimana",
+  "mediaSettimana": "Media a settimana",
+  "settimanaDal": "Settimana dal {data}",
+  "suProgrammati_one": "su {numero} programmato",
+  "suProgrammati_other": "su {numero} programmati",
+  "fatti_one": "{numero} allenamento fatto",
+  "fatti_other": "{numero} allenamenti fatti",
+  "programmati_one": "{numero} programmato",
+  "programmati_other": "{numero} programmati",
+  "fattiSuProgrammati": "{fatti} su {programmati}",
+  "legendaFatti": "Fatti",
+  "legendaProgrammati": "Programmati",
+  "ora": "Ora"
+}
