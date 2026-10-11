@@ -1,7 +1,14 @@
 {
-  "versione": "1.2.0",
+  "versione": "1.2.1",
   "build": "2026-10-11",
   "changelog": [
+    {
+      "versione": "1.2.1",
+      "data": "2026-10-11",
+      "modifiche": [
+        "Allenati anche senza campo: serie e fine allenamento restano sul telefono e arrivano da sole quando torna la rete"
+      ]
+    },
     {
       "versione": "1.2.0",
       "data": "2026-10-11",
@@ -10,7 +17,6 @@
         "Progressione automatica dei carichi: durante l'allenamento l'app propone quanto caricare, e dice perché",
         "Accesso con passkey ed elenco dei dispositivi collegati (Profilo → Sicurezza); le sessioni non scollegano più",
         "Allenamenti: riprendi quello chiuso per sbaglio, correggi uno già concluso, registra quelli fatti senza app, salvane uno come scheda",
-        "Allenati anche senza campo: serie e fine allenamento restano sul telefono e arrivano da sole quando torna la rete",
         "Gli allenamenti lasciati aperti si chiudono da soli all'ultima serie, con la durata giusta",
         "Catalogo in italiano, con ricerca tollerante agli errori, preferiti e calcolo dei dischi",
         "Statistiche: sezione Corpo con i muscoli allenati, andamento degli esercizi, massimali stimati e attività dell'anno",

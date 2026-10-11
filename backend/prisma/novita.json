@@ -1,6 +1,6 @@
 [
   {
-    "versione": "1.2.0",
+    "versione": "1.2.1",
     "titolo": "Ti avvisa anche in tasca",
     "sottotitolo": "Notifiche sul telefono, anche ad app chiusa e schermo bloccato",
     "icona": "🔔",
@@ -24,7 +24,7 @@
     "coloreFine": "#9060fb"
   },
   {
-    "versione": "1.2.0",
+    "versione": "1.2.1",
     "titolo": "Anche senza campo",
     "sottotitolo": "In palestra la rete va e viene: l'allenamento no",
     "icona": "📴",
