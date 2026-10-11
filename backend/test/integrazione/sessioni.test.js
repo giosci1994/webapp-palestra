@@ -217,6 +217,23 @@ describe('avvio e chiusura di un allenamento', () => {
     assert.equal(await prisma.sessioneAllenamento.count({ where: { schedaId: privataAltrui.id } }), 0);
   });
 
+  it('a past workout marks done the entry of its day, even a skipped one', async () => {
+    const inizio = giorniFa(1);
+    const piano = await prisma.allenamentoPianificato.create({
+      data: { utenteId: utente.id, schedaId: scheda.id, data: giornoLocale(inizio), stato: 'SALTATO' }
+    });
+    const risposta = await server.richiesta('POST', '/sessioni/passata', {
+      token: tokenPer(utente),
+      corpo: {
+        schedaId: scheda.id, dataInizio: inizio.toISOString(), durataMinuti: 45,
+        serie: [{ esercizioId: panca.id, serieNumero: 1, pesoEffettivo: 80, repEffettive: 8 }]
+      }
+    });
+    assert.equal(risposta.stato, 201);
+    const dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', risposta.corpo.dati.id]);
+  });
+
   it("il record di un allenamento chiuso dal superadmin va a chi si e' allenato", async () => {
     const sessione = await creaSessione(utente, scheda, {
       inizio: new Date(Date.now() - 45 * MINUTO), conclusa: false, serie: [{ esercizio: panca, peso: 100, rep: 5 }]
@@ -279,6 +296,16 @@ describe('riprendere un allenamento chiuso per sbaglio', () => {
 
     await completa(sessione);
     dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
+    assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', sessione.id]);
+  });
+
+  it('a workout skipped from the reminder and then done anyway is marked done', async () => {
+    const inizio = new Date(Date.now() - 40 * MINUTO);
+    const piano = await prisma.allenamentoPianificato.create({
+      data: { utenteId: utente.id, schedaId: scheda.id, data: giornoLocale(inizio), stato: 'SALTATO' }
+    });
+    const sessione = await appenaChiuso({ inizio });
+    const dopo = await prisma.allenamentoPianificato.findUnique({ where: { id: piano.id } });
     assert.deepEqual([dopo.stato, dopo.sessioneId], ['COMPLETATO', sessione.id]);
   });
 

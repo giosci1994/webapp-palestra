@@ -1,7 +1,14 @@
 {
-  "versione": "1.3.0",
+  "versione": "1.3.1",
   "build": "2026-10-11",
   "changelog": [
+    {
+      "versione": "1.3.1",
+      "data": "2026-10-11",
+      "modifiche": [
+        "Allenamento di oggi: \"Più tardi\" non te lo ripropone più fino a domani (lo avvii dalla Home quando sei in palestra), e \"Salta oggi\" lo segna come saltato"
+      ]
+    },
     {
       "versione": "1.3.0",
       "data": "2026-10-11",
