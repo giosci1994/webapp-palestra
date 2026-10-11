@@ -9,6 +9,7 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 
 const router = Router();
 // Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
@@ -126,7 +127,7 @@ router.get('/clienti/:id', async (req, res, next) => {
       }),
       prisma.sessioneAllenamento.findMany({
         where: { utenteId: clienteId }, orderBy: { dataInizio: 'desc' }, take: 5,
-        include: { scheda: { select: { titolo: true } }, _count: { select: { logSerie: true } } }
+        include: { scheda: { select: { titolo: true } }, _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } } }
       }),
       prisma.recordPersonale.findMany({
         where: { utenteId: clienteId }, orderBy: { pesoMaxRaggiunto: 'desc' }, take: 10,
@@ -146,7 +147,7 @@ router.get('/clienti/:id', async (req, res, next) => {
         orderBy: { dataInizio: 'asc' }
       }),
       prisma.logSerie.findMany({
-        where: { sessione: { utenteId: clienteId }, completato: true },
+        where: { sessione: { utenteId: clienteId }, completato: true, ...SOLO_LAVORO },
         include: { esercizio: { select: { gruppoMuscoloPrimario: true } } }
       })
     ]);

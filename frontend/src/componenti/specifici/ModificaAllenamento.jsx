@@ -10,6 +10,11 @@ import { api } from '../../config/api.js';
 import { nomeEsercizio, formattaDurata, aStringaData, aStringaOra, eCardioNelloStorico } from '../../utils/formattatori.js';
 import { DURATA_SOSPETTA_MINUTI } from '../../utils/costanti.js';
 
+// Il tipo di una serie (utils/tipiSerie.js) si cambia toccando il suo numero:
+// serie di lavoro → riscaldamento → drop → di nuovo di lavoro
+const PROSSIMO_TIPO = { LAVORO: 'RISCALDAMENTO', RISCALDAMENTO: 'DROP', DROP: 'LAVORO' };
+const NOME_TIPO = { LAVORO: 'serie di lavoro', RISCALDAMENTO: 'riscaldamento', DROP: 'drop' };
+
 const DURATA_MAX = 600;          // come il server: oltre le 10 ore non è un allenamento
 const MINUTI_GIORNO = 24 * 60;
 
@@ -31,6 +36,7 @@ function gruppiDaSessione(sessione) {
     serie: voce.serie.map(s => ({
       chiave: `s${s.id}`,
       id: s.id,
+      tipo: s.tipo ?? 'LAVORO',
       peso: campo(s.pesoEffettivo),
       rep: campo(s.repEffettive),
       rpe: campo(s.rpe),
@@ -41,7 +47,7 @@ function gruppiDaSessione(sessione) {
 }
 
 /** Righe confrontabili, per capire se le serie sono cambiate. */
-const impronta = (gruppi) => JSON.stringify(gruppi.map(g => g.serie.map(s => [s.id, s.peso, s.rep, s.rpe, s.minuti, s.livello])));
+const impronta = (gruppi) => JSON.stringify(gruppi.map(g => g.serie.map(s => [s.id, s.tipo, s.peso, s.rep, s.rpe, s.minuti, s.livello])));
 
 /** Primo problema nelle serie, da mostrare prima di inviare; null se va tutto bene. */
 function erroreSerie(gruppi) {
@@ -70,6 +76,7 @@ function erroreSerie(gruppi) {
 function serieDaInviare(gruppi) {
   return gruppi.flatMap(g => g.serie.map(s => ({
     ...(s.id ? { id: s.id } : { esercizioId: g.esercizio.id }),
+    tipo: s.tipo,
     ...(g.cardio
       ? { durataMinuti: numero(s.minuti), livelloResistenza: numero(s.livello) }
       : { pesoEffettivo: numero(s.peso) ?? 0, repEffettive: numero(s.rep), rpe: numero(s.rpe) })
@@ -189,7 +196,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
       const valori = ultima
         ? { peso: ultima.peso, rep: ultima.rep, rpe: ultima.rpe, minuti: ultima.minuti, livello: ultima.livello }
         : { peso: '', rep: '', rpe: '', minuti: '', livello: '' };
-      return { ...g, serie: [...g.serie, { chiave, id: null, ...valori }] };
+      return { ...g, serie: [...g.serie, { chiave, id: null, tipo: 'LAVORO', ...valori }] };
     });
   };
 
@@ -265,11 +272,16 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
 
           <div className="flex flex-col gap-3">
             <h4 className={ETICHETTA}>Serie</h4>
+            {gruppi.some(g => !g.cardio) && (
+              <p className="text-[11px] text-[var(--testo-terziario)] -mt-2">
+                Tocca il numero di una serie per segnarla come riscaldamento 🔥 o drop ↳: non contano fra le serie, il riscaldamento neanche nel volume.
+              </p>
+            )}
             {gruppi.length === 0 && (
               <p className="text-xs text-[var(--testo-terziario)]">Nessuna serie registrata in questo allenamento.</p>
             )}
             {gruppi.map((g, gi) => {
-              const colonne = g.cardio ? 'grid-cols-[1.5rem_1fr_1fr_2.25rem]' : 'grid-cols-[1.5rem_1fr_1fr_1fr_2.25rem]';
+              const colonne = g.cardio ? 'grid-cols-[1.5rem_1fr_1fr_2.25rem]' : 'grid-cols-[2rem_1fr_1fr_1fr_2.25rem]';
               return (
                 <div key={g.esercizio.id} className="rounded-[var(--raggio-md)] border border-[var(--bordo-light)] p-3">
                   <p className="font-semibold text-sm mb-2 truncate">{nomeEsercizio(g.esercizio)}</p>
@@ -283,7 +295,17 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
                   <div className="flex flex-col gap-2">
                     {g.serie.map((s, i) => (
                       <div key={s.chiave} className={`grid ${colonne} gap-2 items-center`}>
-                        <span className="text-xs text-center text-[var(--testo-terziario)]">{i + 1}</span>
+                        {g.cardio ? (
+                          <span className="text-xs text-center text-[var(--testo-terziario)]">{i + 1}</span>
+                        ) : (
+                          // Il cardio non ha riscaldamento e drop: solo qui il numero si tocca
+                          <button type="button" onClick={() => aggiornaSerie(gi, s.chiave, 'tipo', PROSSIMO_TIPO[s.tipo])}
+                                  aria-label={`Serie ${i + 1}: ${NOME_TIPO[s.tipo]}. Tocca per cambiare tipo`}
+                                  title="Tocca per cambiare tipo: serie, riscaldamento, drop"
+                                  className="h-9 text-xs text-center rounded-[var(--raggio-sm)] border border-dashed border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)] transition-colors">
+                            {s.tipo === 'RISCALDAMENTO' ? '🔥' : s.tipo === 'DROP' ? '↳' : g.serie.slice(0, i + 1).filter(x => x.tipo === 'LAVORO').length}
+                          </button>
+                        )}
                         {g.cardio ? (
                           <>
                             <input type="number" min="0" max={DURATA_MAX} inputMode="numeric" value={s.minuti}

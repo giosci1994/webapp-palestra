@@ -1,7 +1,16 @@
 {
-  "versione": "1.2.1",
+  "versione": "1.3.0",
   "build": "2026-10-11",
   "changelog": [
+    {
+      "versione": "1.3.0",
+      "data": "2026-10-11",
+      "modifiche": [
+        "Serie di riscaldamento: prima della prima serie l'app propone la rampa, e il riscaldamento non conta più in volume, serie e record",
+        "Drop set: aggiungi i cali di peso alla serie prima di registrarla",
+        "Storico: segna una serie come riscaldamento o drop toccando il suo numero"
+      ]
+    },
     {
       "versione": "1.2.1",
       "data": "2026-10-11",

@@ -15,6 +15,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
 import { creaNotifica } from './notifiche.service.js';
+import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 
 const MINUTO = 60 * 1000;
 
@@ -63,7 +64,8 @@ export function fineEffettiva(dataInizio, serie, adesso = new Date()) {
 export async function concludiSessione(sessione, { noteFinali, adesso = new Date() } = {}) {
   const serie = await prisma.logSerie.findMany({ where: { sessioneId: sessione.id } });
   const completate = serie.filter(s => s.completato);
-  const volumeTotale = completate.reduce((somma, s) => somma + s.pesoEffettivo * s.repEffettive, 0);
+  // Il riscaldamento non e' volume (utils/tipiSerie.js)
+  const volumeTotale = volumeDi(completate);
   const { fine, dimenticata } = fineEffettiva(sessione.dataInizio, serie, adesso);
 
   const aggiornata = await prisma.sessioneAllenamento.update({
@@ -144,14 +146,15 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
 
 /**
  * Nuovi record personali dalle serie date: un record nuovo per ogni esercizio
- * in cui il peso massimo supera quello di prima.
+ * in cui il peso massimo supera quello di prima. Contano le serie di lavoro:
+ * riscaldamento e drop no.
  */
 export async function controllaRecord(utenteId, serie, dataRecord = null) {
   const recordAggiornati = [];
 
   // Raggruppa serie per esercizio e trova il peso max
   const pesoPerEsercizio = {};
-  for (const s of serie) {
+  for (const s of serie.filter(diLavoro)) {
     if (!pesoPerEsercizio[s.esercizioId] || s.pesoEffettivo > pesoPerEsercizio[s.esercizioId]) {
       pesoPerEsercizio[s.esercizioId] = s.pesoEffettivo;
     }

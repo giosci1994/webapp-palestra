@@ -15,6 +15,7 @@ import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
 import { statoDaSessione, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
 import { propostaCarico, incrementoPer } from '../utils/progressione.js';
+import { diLavoro, volumeDi, ordinaSerie, rampaRiscaldamento, pesoDrop } from '../utils/tipiSerie.js';
 import { usePushNotifiche } from '../hooks/usePushNotifiche.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
@@ -71,7 +72,7 @@ export default function WorkoutLive() {
   const [sessione, setSessione] = useState(location.state?.sessione || null);
   const [esercizioIdx, setEsercizioIdx] = useState(ss ? ss.esercizioIdx : 0);
   const [serieCorrente, setSerieCorrente] = useState(ss ? ss.serieCorrente : 1);
-  const [form, setForm] = useState(ss ? ss.form : { peso: '', rep: '', rpe: 7, minuti: '', resistenza: '' });
+  const [form, setForm] = useState(ss ? ss.form : { peso: '', rep: '', rpe: 7, minuti: '', resistenza: '', drop: [] });
   const [serieCompletate, setSerieCompletate] = useState(ss ? ss.serieCompletate : []);
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
   const [riprendendo, setRiprendendo] = useState(false);
@@ -245,11 +246,12 @@ export default function WorkoutLive() {
   const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
   // --- Tracking esercizi completati ---
-  // Un esercizio è "completato" quando ha >= serieTarget serie registrate
+  // Un esercizio è "completato" quando ha >= serieTarget serie di lavoro
+  // registrate: riscaldamento e drop non contano (utils/tipiSerie.js)
   const contaSeriePerEsercizio = useCallback((idxEsercizio) => {
     const es = esercizi[idxEsercizio];
     if (!es) return 0;
-    return serieCompletate.filter(s => s.esercizioId === es.esercizioId).length;
+    return serieCompletate.filter(s => s.esercizioId === es.esercizioId && diLavoro(s)).length;
   }, [esercizi, serieCompletate]);
 
   const esercizioCompletato = useCallback((idxEsercizio) => {
@@ -292,10 +294,10 @@ export default function WorkoutLive() {
   // aspettano da qualche secondo (con la rete partono subito)
   const codaFerma = coda.quante > 0 && oraAttuale.getTime() - Date.parse(coda.dalle) > CODA_FERMA_MS;
 
-  // Serie completate per l'esercizio attuale
-  const serieEsercizio = serieCompletate.filter(
+  // Serie completate per l'esercizio attuale: riscaldamento, poi ogni serie con i suoi drop
+  const serieEsercizio = ordinaSerie(serieCompletate.filter(
     s => s.esercizioId === esercizioAttuale?.esercizioId
-  );
+  ));
 
   // Col bilanciere, i dischi da caricare per lato per il peso scritto
   const bilanciere = bilanciereDi(esercizioAttuale?.esercizio);
@@ -315,13 +317,64 @@ export default function WorkoutLive() {
   const riferimentoCardio = riferimento?.durataMinuti > 0;
 
   // Il peso di oggi dalla doppia progressione sulle ultime volte (utils/progressione.js)
+  const incremento = incrementoPer(esercizioAttuale?.esercizio);
   const proposta = isCardio ? null : propostaCarico({
     storico: caricoPrecedente?.storico ?? [],
     serieTarget: esercizioAttuale?.serieTarget,
     repTarget: esercizioAttuale?.repTarget,
-    incremento: incrementoPer(esercizioAttuale?.esercizio)
+    incremento
   });
   const usaProposta = () => setForm(p => ({ ...p, peso: String(proposta.peso) }));
+
+  // --- Riscaldamento e drop (utils/tipiSerie.js) ---
+  // Prima della prima serie di lavoro, la rampa verso il peso di oggi: quello
+  // scritto, se no la proposta o l'ultima volta. Restano i passi piu' pesanti
+  // dei riscaldamenti gia' fatti.
+  const lavoroIniziato = serieEsercizio.some(diLavoro);
+  const riscaldamenti = serieEsercizio.filter(s => s.tipo === 'RISCALDAMENTO');
+  const pesoDiLavoro = Number(form.peso) || proposta?.peso || (riferimento && !riferimentoCardio ? riferimento.pesoEffettivo : 0);
+  const pesoScaldato = Math.max(0, ...riscaldamenti.map(s => s.pesoEffettivo));
+  const rampa = isCardio || lavoroIniziato
+    ? []
+    : rampaRiscaldamento(pesoDiLavoro, { incremento, minimo: bilanciere?.peso ?? 0 }).filter(p => p.peso > pesoScaldato);
+  // I drop della serie in corso: righe peso/ripetizioni sotto quella principale
+  const drop = form.drop ?? [];
+  const dropIncompleto = drop.some(d => (d.peso === '') !== (d.rep === ''));
+  const serieIncompleta = isCardio ? !form.minuti : (!form.peso || !form.rep || dropIncompleto);
+
+  const aggiungiDrop = () => setForm(p => {
+    const righe = p.drop ?? [];
+    const proposto = pesoDrop(righe.length ? righe[righe.length - 1].peso : p.peso, incremento);
+    return { ...p, drop: [...righe, { peso: proposto != null ? String(proposto) : '', rep: '' }] };
+  });
+  const cambiaDrop = (indice, campo, valore) =>
+    setForm(p => ({ ...p, drop: (p.drop ?? []).map((d, i) => (i === indice ? { ...d, [campo]: valore } : d)) }));
+  const togliDrop = (indice) => setForm(p => ({ ...p, drop: (p.drop ?? []).filter((_, i) => i !== indice) }));
+
+  /**
+   * Una serie di riscaldamento: si vede fra le serie fatte ma non conta fra
+   * quelle della scheda e non fa partire il recupero. true se registrata.
+   */
+  const registraRiscaldamento = (peso, ripetizioni) => {
+    if (inviandoRef.current || !(peso >= 0) || !(ripetizioni > 0)) return false;
+    riposaUnAttimo();
+    const dati = {
+      esercizioId: esercizioAttuale.esercizioId,
+      serieNumero: riscaldamenti.length + 1,
+      tipo: 'RISCALDAMENTO',
+      pesoEffettivo: peso,
+      repEffettive: ripetizioni,
+      completato: true
+    };
+    const voce = registraSerie(dati);
+    const nuoveCompletate = [...serieCompletate, { ...dati, idClient: voce.id }];
+    salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate });
+    setSerieCompletate(nuoveCompletate);
+    return true;
+  };
+  const riscaldamentoDalForm = () => {
+    if (registraRiscaldamento(parseFloat(form.peso), parseInt(form.rep))) setForm(p => ({ ...p, rep: '' }));
+  };
 
   const usaRiferimento = () => {
     if (!riferimento) return;
@@ -335,16 +388,12 @@ export default function WorkoutLive() {
   };
 
   const completaSerie = () => {
-    if (inviandoRef.current) return;
-    if (isCardio) {
-      if (!form.minuti) return;
-    } else {
-      if (!form.peso || !form.rep) return;
-    }
+    if (inviandoRef.current || serieIncompleta) return;
 
     const datiSerie = {
       esercizioId: esercizioAttuale.esercizioId,
       serieNumero: serieCorrente,
+      tipo: 'LAVORO',
       pesoEffettivo: isCardio ? 0 : parseFloat(form.peso),
       repEffettive: isCardio ? 0 : parseInt(form.rep),
       rpe: form.rpe,
@@ -355,9 +404,19 @@ export default function WorkoutLive() {
       })
     };
 
+    // I drop fatti con questa serie: stesso numero, subito dopo di lei
+    const dropFatti = isCardio ? [] : drop.filter(d => d.peso !== '' && d.rep !== '').map(d => ({
+      esercizioId: esercizioAttuale.esercizioId,
+      serieNumero: serieCorrente,
+      tipo: 'DROP',
+      pesoEffettivo: parseFloat(d.peso),
+      repEffettive: parseInt(d.rep),
+      completato: true
+    }));
+
     riposaUnAttimo();
-    const voce = registraSerie(datiSerie);
-    const nuoveCompletate = [...serieCompletate, { ...datiSerie, idClient: voce.id }];
+    const registrate = [datiSerie, ...dropFatti].map(dati => ({ ...dati, idClient: registraSerie(dati).id }));
+    const nuoveCompletate = [...serieCompletate, ...registrate];
     // Finito l'esercizio si passa subito al prossimo non completato.
     // prossimoIdx esclude gia' l'esercizio attuale, e questa serie non cambia
     // lo stato degli altri: il valore calcolato nel render e' quello giusto.
@@ -369,9 +428,12 @@ export default function WorkoutLive() {
       apriEsercizio(prossimoIdx);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1 });
+      // Peso e ripetizioni restano per la serie dopo, i drop no
+      const formDopo = { ...form, drop: [] };
+      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieCorrente + 1, form: formDopo });
       setSerieCompletate(nuoveCompletate);
       setSerieCorrente(serieCorrente + 1);
+      setForm(formDopo);
     }
 
     // Recupero: quello dell'esercizio appena finito, anche se si e' gia' passati avanti
@@ -413,9 +475,10 @@ export default function WorkoutLive() {
   /**
    * Campi per un nuovo esercizio: peso, ripetizioni e minuti si svuotano (il
    * peso di quello prima, coi suoi dischi, sarebbe solo fuorviante: il
-   * segnaposto mostra la proposta o l'ultima volta). RPE e resistenza restano.
+   * segnaposto mostra la proposta o l'ultima volta), e i drop con loro. RPE e
+   * resistenza restano.
    */
-  const formPerNuovoEsercizio = (f) => ({ ...f, peso: '', rep: '', minuti: '' });
+  const formPerNuovoEsercizio = (f) => ({ ...f, peso: '', rep: '', minuti: '', drop: [] });
 
   /** Mostra un altro esercizio senza toccare il recupero. */
   const apriEsercizio = (nuovoIndice) => {
@@ -532,12 +595,12 @@ export default function WorkoutLive() {
           )}
           <div className="grid grid-cols-2 gap-4 my-6">
             <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
-              <p className="text-2xl font-bold testo-gradient">{serieCompletate.length}</p>
+              <p className="text-2xl font-bold testo-gradient">{serieCompletate.filter(diLavoro).length}</p>
               <p className="text-xs text-[var(--testo-terziario)]">Serie completate</p>
             </div>
             <div className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
               <p className="text-2xl font-bold testo-gradient">
-                {formattaPeso(serieCompletate.reduce((s, l) => s + ((l.pesoEffettivo || 0) * (l.repEffettive || 0)), 0))} kg
+                {formattaPeso(volumeDi(serieCompletate))} kg
               </p>
               <p className="text-xs text-[var(--testo-terziario)]">Volume totale</p>
             </div>
@@ -729,12 +792,17 @@ export default function WorkoutLive() {
           );
         })()}
 
-        {/* Serie completate */}
+        {/* Serie completate: riscaldamento, poi ogni serie con i suoi drop */}
         {serieEsercizio.length > 0 && (
           <div className="flex flex-col gap-1">
             {serieEsercizio.map((s, i) => (
-              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-[var(--raggio-sm)] bg-[var(--successo-dim)]">
-                <span className="text-sm text-[var(--successo)] font-medium">Serie {i + 1} ✓</span>
+              <div key={s.idClient ?? s.id ?? i}
+                   className={`flex items-center justify-between px-3 py-2 rounded-[var(--raggio-sm)] ${
+                     s.tipo === 'RISCALDAMENTO' ? 'bg-[var(--bg-terziario)]' : 'bg-[var(--successo-dim)]'
+                   } ${s.tipo === 'DROP' ? 'ml-6' : ''}`}>
+                <span className={`text-sm font-medium ${s.tipo === 'RISCALDAMENTO' ? 'text-[var(--testo-secondario)]' : 'text-[var(--successo)]'}`}>
+                  {s.tipo === 'RISCALDAMENTO' ? '🔥 Riscaldamento' : s.tipo === 'DROP' ? '↳ Drop' : `Serie ${s.serieNumero ?? i + 1} ✓`}
+                </span>
                 <span className="text-sm">
                   {s.durataMinuti ? (
                     `${s.durataMinuti} min ${s.livelloResistenza ? `(Liv. ${s.livelloResistenza})` : ''}`
@@ -841,6 +909,24 @@ export default function WorkoutLive() {
               </button>
             )}
 
+            {/* Prima della prima serie: la rampa di riscaldamento, un tocco per passo fatto */}
+            {rampa.length > 0 && (
+              <div className="px-3 py-2.5 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)]">
+                <p className="text-[11px] text-[var(--testo-terziario)] mb-2">
+                  🔥 Riscaldamento verso {kg(pesoDiLavoro)} kg · tocca un passo quando l'hai fatto
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {rampa.map(passo => (
+                    <button key={passo.peso} type="button" disabled={inviando}
+                            onClick={() => registraRiscaldamento(passo.peso, passo.rep)}
+                            className="px-3 py-1.5 rounded-full border border-[var(--bordo)] bg-[var(--bg-primario)] text-sm font-semibold tabular-nums hover:border-[var(--accent)] transition-colors disabled:opacity-60">
+                      {kg(passo.peso)} kg × {passo.rep}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               {isCardio ? (
                 <>
@@ -883,6 +969,34 @@ export default function WorkoutLive() {
               </p>
             )}
 
+            {/* Drop: subito dopo la serie, a peso calato, si registrano insieme a lei */}
+            {!isCardio && (
+              <div className="flex flex-col gap-2">
+                {drop.map((d, i) => (
+                  <div key={i} className="grid grid-cols-[3.5rem_1fr_1fr_2rem] gap-2 items-center">
+                    <span className="text-xs font-semibold text-[var(--testo-secondario)]">↳ Drop</span>
+                    <input type="number" value={d.peso} onChange={e => cambiaDrop(i, 'peso', e.target.value)}
+                           className="campo-input text-center text-lg font-bold py-2" placeholder="kg"
+                           inputMode="decimal" step="0.5" min="0" aria-label={`Peso del drop ${i + 1}`} />
+                    <input type="number" value={d.rep} onChange={e => cambiaDrop(i, 'rep', e.target.value)}
+                           className="campo-input text-center text-lg font-bold py-2" placeholder="rip."
+                           inputMode="numeric" min="0" aria-label={`Ripetizioni del drop ${i + 1}`} />
+                    <button type="button" onClick={() => togliDrop(i)} aria-label={`Togli il drop ${i + 1}`}
+                            className="h-9 flex items-center justify-center rounded-[var(--raggio-sm)] text-[var(--testo-terziario)] hover:text-[var(--pericolo)]">
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {dropIncompleto && (
+                  <p className="text-[11px] text-[var(--avviso)]">Scrivi peso e ripetizioni del drop, o toglilo</p>
+                )}
+                <button type="button" onClick={aggiungiDrop}
+                        className="self-start text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">
+                  ↘ Aggiungi un drop set
+                </button>
+              </div>
+            )}
+
             {/* RPE slider */}
             <div>
               <div className="flex items-center justify-between mb-1">
@@ -896,14 +1010,22 @@ export default function WorkoutLive() {
 
             {/* Bottoni azione — ENORMI */}
             <div className="flex flex-col gap-2 mt-2">
-              <button onClick={completaSerie} disabled={inviando || (isCardio ? !form.minuti : (!form.peso || !form.rep))}
+              <button onClick={completaSerie} disabled={inviando || serieIncompleta}
                       className={`btn-enorme ${
-                        (isCardio ? !form.minuti : (!form.peso || !form.rep)) 
-                          ? 'opacity-80 bg-[var(--pericolo-dim)] text-[var(--pericolo)] border border-[var(--pericolo)]/50 cursor-not-allowed' 
+                        serieIncompleta
+                          ? 'opacity-80 bg-[var(--pericolo-dim)] text-[var(--pericolo)] border border-[var(--pericolo)]/50 cursor-not-allowed'
                           : 'successo'
                       }`}>
-                ✓ Serie Completata
+                ✓ Serie Completata{drop.length > 0 ? ` + ${drop.length === 1 ? 'drop' : `${drop.length} drop`}` : ''}
               </button>
+
+              {/* Prima della prima serie di lavoro: quella appena fatta era un riscaldamento */}
+              {!isCardio && !lavoroIniziato && (
+                <button onClick={riscaldamentoDalForm} disabled={inviando || !form.peso || !form.rep}
+                        className="text-sm font-medium text-[var(--testo-secondario)] py-1.5 hover:text-[var(--testo-primario)] transition-colors disabled:opacity-50">
+                  🔥 Registra come riscaldamento (non conta fra le serie)
+                </button>
+              )}
 
               <button onClick={saltaSerie} disabled={inviando}
                       className="btn-enorme disabled:opacity-60" style={{ background: 'var(--bg-terziario)', color: 'var(--testo-secondario)' }}>

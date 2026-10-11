@@ -87,6 +87,16 @@ enum StatoIscrizione {
   TERMINATA
 }
 
+// Che serie e': di lavoro (quelle della scheda), di riscaldamento (prima
+// delle serie di lavoro, fuori da volume, conteggi, record e progressione) o
+// drop (subito dopo una serie di lavoro, a peso calato: conta nel volume, non
+// come serie a se')
+enum TipoSerie {
+  LAVORO
+  RISCALDAMENTO
+  DROP
+}
+
 // ============================================
 // UTENTI & SICUREZZA
 // ============================================
@@ -448,7 +458,10 @@ model LogSerie {
   id                   Int     @id @default(autoincrement())
   sessioneId           Int     @map("sessione_id")
   esercizioId          Int     @map("esercizio_id")
+  // Le serie di lavoro sono numerate 1, 2, 3...; il riscaldamento ha la sua
+  // numerazione; un drop porta il numero della serie di lavoro che segue
   serieNumero          Int     @map("serie_numero")
+  tipo                 TipoSerie @default(LAVORO)
   pesoEffettivo        Float   @map("peso_effettivo")
   repEffettive         Int     @map("rep_effettive")
   rpe                  Int?    // Rate of Perceived Exertion 1-10

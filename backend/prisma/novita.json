@@ -46,5 +46,29 @@
     "ctaRotta": "/schede",
     "coloreInizio": "#10b981",
     "coloreFine": "#0ea5e9"
+  },
+  {
+    "versione": "1.3.0",
+    "titolo": "Riscaldamento e drop set",
+    "sottotitolo": "Contano solo le serie che contano",
+    "icona": "🔥",
+    "punti": [
+      {
+        "icona": "🔥",
+        "testo": "Prima della prima serie l'app propone la rampa di riscaldamento: un tocco per ogni passo fatto"
+      },
+      {
+        "icona": "↘️",
+        "testo": "Drop set: aggiungi i cali di peso alla serie prima di registrarla"
+      },
+      {
+        "icona": "📊",
+        "testo": "Il riscaldamento non gonfia più volume, serie e record. Nello Storico correggi il tipo di una serie toccando il suo numero"
+      }
+    ],
+    "ctaTesto": "Inizia un allenamento",
+    "ctaRotta": "/schede",
+    "coloreInizio": "#f97316",
+    "coloreFine": "#ef4444"
   }
 ]

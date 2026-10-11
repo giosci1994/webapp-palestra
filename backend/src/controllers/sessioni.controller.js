@@ -7,6 +7,7 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
 import { concludiSessione, controllaRecord } from '../services/conclusioneSessione.service.js';
+import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
 /** Lista sessioni dell'utente */
 export async function listaSessioni(req, res, next) {
@@ -17,7 +18,7 @@ export async function listaSessioni(req, res, next) {
       where: { utenteId: req.utente.id },
       include: {
         scheda: { select: { id: true, titolo: true } },
-        _count: { select: { logSerie: true } }
+        _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } }
       },
       orderBy: { dataInizio: 'desc' },
       take: parseInt(limite),
@@ -50,7 +51,8 @@ const INCLUDI_STORICO = {
     },
     orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
   },
-  _count: { select: { logSerie: true } }
+  // Le serie fatte: riscaldamento, drop e serie saltate non contano
+  _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } }
 };
 
 /** Una sessione letta con INCLUDI_STORICO, con i log raggruppati per esercizio */
@@ -66,6 +68,7 @@ export function formattaPerStorico(s) {
     eserciziRaggruppati[log.esercizioId].serie.push({
       id: log.id,
       serieNumero: log.serieNumero,
+      tipo: log.tipo,
       pesoEffettivo: log.pesoEffettivo,
       repEffettive: log.repEffettive,
       rpe: log.rpe,
@@ -75,6 +78,8 @@ export function formattaPerStorico(s) {
       velocitaKmh: log.velocitaKmh
     });
   });
+  // Riscaldamento, poi ogni serie di lavoro con i suoi drop
+  for (const gruppo of Object.values(eserciziRaggruppati)) gruppo.serie.sort(ordineSerie);
 
   return {
     id: s.id,
@@ -227,6 +232,8 @@ export async function ultimiCarichi(req, res, next) {
       where: {
         esercizioId: { in: ids },
         completato: true,
+        // L'ultima volta e la progressione guardano le serie di lavoro
+        ...SOLO_LAVORO,
         sessione: {
           utenteId: req.utente.id,
           ...(Number.isInteger(escludi) ? { id: { not: escludi } } : {})
@@ -405,7 +412,8 @@ export function eserciziDaSessione(logSerie, eserciziScheda = []) {
   const dallaScheda = new Map(eserciziScheda.map(e => [e.esercizioId, e]));
   const perEsercizio = new Map();
   for (const serie of [...logSerie].sort((a, b) => a.id - b.id)) {
-    if (!serie.completato) continue;
+    // La scheda nuova ha le serie di lavoro: riscaldamento e drop restano fuori
+    if (!serie.completato || !diLavoro(serie)) continue;
     if (!perEsercizio.has(serie.esercizioId)) perEsercizio.set(serie.esercizioId, []);
     perEsercizio.get(serie.esercizioId).push(serie);
   }
@@ -558,12 +566,13 @@ export async function logSerie(req, res, next) {
     const sessioneId = parseInt(req.params.id);
     const {
       esercizioId, serieNumero, pesoEffettivo, repEffettive, rpe, completato, motivoSaltoEsercizio, noteSerie,
-      distanzaKm, durataMinuti, livelloResistenza, velocitaKmh, inclinazione, idClient, registrataIl
+      distanzaKm, durataMinuti, livelloResistenza, velocitaKmh, inclinazione, idClient, registrataIl, tipo
     } = req.body;
 
     if (!esercizioId || !serieNumero) {
       throw new ErroreValidazione('esercizioId e serieNumero sono obbligatori');
     }
+    const tipoSerie = leggiTipo(tipo);
     if (idClient != null && (typeof idClient !== 'string' || !ID_CLIENT.test(idClient))) {
       throw new ErroreValidazione('idClient non valido');
     }
@@ -592,6 +601,7 @@ export async function logSerie(req, res, next) {
           sessioneId,
           esercizioId: parseInt(esercizioId),
           serieNumero: parseInt(serieNumero),
+          tipo: tipoSerie,
           pesoEffettivo: parseFloat(pesoEffettivo) || 0,
           repEffettive: parseInt(repEffettive) || 0,
           rpe: rpe ? parseInt(rpe) : null,
@@ -731,6 +741,7 @@ export async function registraSessionePassata(req, res, next) {
       return {
         esercizioId,
         serieNumero,
+        tipo: leggiTipo(r.tipo, `Serie ${i + 1}: `),
         pesoEffettivo: peso,
         repEffettive: rep,
         rpe: r.rpe != null ? parseInt(r.rpe) : null,
@@ -744,9 +755,7 @@ export async function registraSessionePassata(req, res, next) {
       };
     });
 
-    const volume = preparate
-      .filter(r => r.completato)
-      .reduce((somma, r) => somma + r.pesoEffettivo * r.repEffettive, 0);
+    const volume = volumeDi(preparate);
 
     const fine = new Date(inizio.getTime() + durata * 60000);
 
@@ -819,6 +828,8 @@ export function leggiValoriSerie(riga, n) {
     }
     valori[campo] = v;
   }
+  // Una serie segnata male in palestra (era un riscaldamento) si corregge qui
+  if (riga.tipo !== undefined) valori.tipo = leggiTipo(riga.tipo, `Serie ${n}: `);
   return valori;
 }
 
@@ -837,7 +848,7 @@ async function riallineaRecord(tx, utenteId, pesiPrima) {
   const creati = [];
   for (const [esercizioId, pesi] of pesiPrima) {
     const migliore = await tx.logSerie.findFirst({
-      where: { esercizioId, completato: true, sessione: { utenteId } },
+      where: { esercizioId, completato: true, ...SOLO_LAVORO, sessione: { utenteId } },
       orderBy: [{ pesoEffettivo: 'desc' }, { sessione: { dataInizio: 'asc' } }],
       select: { pesoEffettivo: true, sessione: { select: { dataInizio: true } } }
     });
@@ -974,18 +985,22 @@ export async function modificaSessione(req, res, next) {
         }
 
         // Numerazione 1..n per esercizio nell'ordine ricevuto: tolta una serie
-        // registrata due volte non resta il buco ("1, 3, 4")
+        // registrata due volte non resta il buco ("1, 3, 4"). Il riscaldamento
+        // ha la sua numerazione, un drop il numero della serie di lavoro prima
         const contatori = new Map();
         let volume = 0;
         for (const r of righe) {
-          const serieNumero = (contatori.get(r.esercizioId) || 0) + 1;
-          contatori.set(r.esercizioId, serieNumero);
+          const conto = contatori.get(r.esercizioId) || { LAVORO: 0, RISCALDAMENTO: 0 };
+          contatori.set(r.esercizioId, conto);
+          const tipo = r.valori.tipo ?? r.esistente?.tipo ?? 'LAVORO';
+          const serieNumero = tipo === 'DROP' ? Math.max(conto.LAVORO, 1) : ++conto[tipo];
           const valori = { ...r.valori, serieNumero };
           if (r.esistente) {
             if (Object.entries(valori).some(([campo, v]) => r.esistente[campo] !== v)) {
               await tx.logSerie.update({ where: { id: r.esistente.id }, data: valori });
             }
-            if (valori.pesoEffettivo !== undefined && valori.pesoEffettivo !== r.esistente.pesoEffettivo) {
+            if ((valori.pesoEffettivo !== undefined && valori.pesoEffettivo !== r.esistente.pesoEffettivo) ||
+                tipo !== r.esistente.tipo) {
               tocca(r.esercizioId);
             }
           } else {
@@ -994,8 +1009,10 @@ export async function modificaSessione(req, res, next) {
             });
             tocca(r.esercizioId);
           }
-          volume += (valori.pesoEffettivo ?? r.esistente?.pesoEffettivo ?? 0) *
-                    (valori.repEffettive ?? r.esistente?.repEffettive ?? 0);
+          if (tipo !== 'RISCALDAMENTO') {
+            volume += (valori.pesoEffettivo ?? r.esistente?.pesoEffettivo ?? 0) *
+                      (valori.repEffettive ?? r.esistente?.repEffettive ?? 0);
+          }
         }
         dati.volumeTotaleKg = Math.round(volume * 10) / 10;
       }

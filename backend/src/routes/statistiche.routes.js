@@ -10,6 +10,7 @@ import { gruppiDiEsercizio, GRUPPI_PRINCIPALI, GRUPPI_NON_MUSCOLARI } from '../u
 import { consiglioAllenamento } from '../services/consiglio.service.js';
 import { giornoLocale } from '../utils/date.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 
 const router = Router();
 // Gli id nell'indirizzo sono interi positivi (middleware/validazione.js)
@@ -192,8 +193,9 @@ router.get('/muscoli', async (req, res, next) => {
     const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
     const inizioPeriodo = new Date(Date.now() - giorni * 86400000);
 
+    // Le serie di lavoro: riscaldamento e drop non sono serie per il muscolo
     const serie = await prisma.logSerie.findMany({
-      where: { completato: true, sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } } },
+      where: { completato: true, ...SOLO_LAVORO, sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } } },
       select: {
         sessioneId: true, pesoEffettivo: true, repEffettive: true, durataMinuti: true,
         esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true, gruppoMuscoloSecondario: true } },
@@ -331,6 +333,7 @@ router.get('/progressione/:esercizioId', async (req, res, next) => {
       where: {
         esercizioId,
         completato: true,
+        ...SOLO_LAVORO,
         sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } }
       },
       select: {
@@ -430,7 +433,7 @@ router.get('/attivita-annuale', async (req, res, next) => {
         dataFine: { not: null },
         dataInizio: { gte: inizio > resetDate ? inizio : resetDate }
       },
-      select: { dataInizio: true, _count: { select: { logSerie: { where: { completato: true } } } } }
+      select: { dataInizio: true, _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } } }
     });
 
     const perGiorno = new Map();

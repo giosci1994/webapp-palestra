@@ -14,6 +14,7 @@
 import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_NON_MUSCOLARI, GRUPPI_PRINCIPALI } from '../utils/gruppiMuscolari.js';
 import { giornoLocale, giorniDiCalendario } from '../utils/date.js';
+import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 
 const ORE_RECUPERO = 48;
 const GIORNI_PIANO = 7;
@@ -140,7 +141,7 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
 
   const [serie, pianiFatti, piani, sessioniPerScheda, schede] = await Promise.all([
     prisma.logSerie.findMany({
-      where: { completato: true, sessione: { utenteId, dataInizio: { gte: inizioStoria, lte: adesso } } },
+      where: { completato: true, ...SOLO_LAVORO, sessione: { utenteId, dataInizio: { gte: inizioStoria, lte: adesso } } },
       select: {
         esercizio: { select: { gruppoMuscoloPrimario: true, gruppoMuscoloSecondario: true } },
         sessione: { select: { dataInizio: true } }
