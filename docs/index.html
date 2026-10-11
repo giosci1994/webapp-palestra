@@ -6,13 +6,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#070b0a" />
   <meta name="description"
-    content="GymMaster — A complete, modern microservice architecture platform designed for comprehensive gym management." />
+    content="GymMaster — A self-hosted gym web app: workouts (even offline), progress, personal trainers, chat, live crowd levels and a Telegram bot." />
   <title>GymMaster — Web-App Palestra</title>
 
   <!-- Open Graph -->
   <meta property="og:title" content="GymMaster — Web-App Palestra" />
   <meta property="og:description"
-    content="Gym management reinvented. A microservice architecture platform with a web dashboard and Telegram bot." />
+    content="A self-hosted gym web app: workouts even offline, progress, personal trainers, chat, live crowd levels and a Telegram bot." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://giosci1994.github.io/webapp-palestra/" />
   <meta property="og:image" content="https://giosci1994.github.io/webapp-palestra/assets/social-preview.png" />
@@ -58,7 +58,7 @@
       <div class="hero-left">
         <div class="kicker">
           <span class="dot"></span>
-          <span>Open Source Architecture</span>
+          <span>Open source · self-hosted</span>
         </div>
 
         <h1>
@@ -66,7 +66,7 @@
         </h1>
 
         <p class="lead">
-          A complete microservice architecture platform. Integrates a modern web dashboard, an automated Telegram bot, and background services to provide a unified experience for both members and administrators.
+          A self-hosted web app for your gym, in Italian. Members log workouts from their phone, even without signal, and follow their progress; trainers manage clients and plans; everyone gets chat, live crowd levels and a Telegram bot.
         </p>
 
         <div class="hero-actions">
@@ -101,44 +101,39 @@
       <div class="section-head reveal">
         <span class="section-label">// features</span>
         <h2>Everything your gym needs</h2>
-        <p>Built with modern technologies to ensure scalability, security, and an amazing user experience.</p>
+        <p>A progressive web app that installs on the home screen, sends push notifications and updates itself.</p>
       </div>
 
       <div class="cards-grid">
         <article class="card reveal">
-          <span class="card-icon">📊</span>
-          <h3>Interactive Dashboard</h3>
-          <p>Modern, responsive UI built with React and Vite for user management and workout tracking.</p>
+          <span class="card-icon">🏋️</span>
+          <h3>Workouts, even offline</h3>
+          <p>A phone-first workout screen with rest timer, load suggestions that explain themselves, warm-up ramps and drop sets. Sets are saved on the phone and sync when the signal comes back.</p>
         </article>
-
-        <article class="card reveal">
-          <span class="card-icon">🤖</span>
-          <h3>Telegram Bot</h3>
-          <p>Automated notifications and interactions via grammY framework for quick member access.</p>
-        </article>
-
-        <article class="card reveal">
-          <span class="card-icon">🔄</span>
-          <h3>Real-Time Data</h3>
-          <p>Redis caching for fast data retrieval and WebSocket support for live updates.</p>
-        </article>
-
         <article class="card reveal">
           <span class="card-icon">📈</span>
-          <h3>Automated Scraper</h3>
-          <p>Playwright-powered microservice extracting real-time gym attendance and population.</p>
+          <h3>Progress you can trust</h3>
+          <p>Muscles trained and recovering, exercise trends, estimated maxes, personal records, yearly activity and body composition. Warm-ups never inflate your volume.</p>
         </article>
-
+        <article class="card reveal">
+          <span class="card-icon">🧑‍🏫</span>
+          <h3>Personal trainers</h3>
+          <p>Trainers manage clients, appointments, assigned plans, announcements and measurements. Members chat in real time with each other and with their trainer.</p>
+        </article>
+        <article class="card reveal">
+          <span class="card-icon">📍</span>
+          <h3>Live gym crowd levels</h3>
+          <p>A Playwright scraper reads Google Maps every 30 minutes, so the app can tell you how busy your gym is and when it is quieter.</p>
+        </article>
+        <article class="card reveal">
+          <span class="card-icon">🤖</span>
+          <h3>Telegram bot and AI assistant</h3>
+          <p>A grammY bot shows plans and stats and builds new plans step by step; a Gemini assistant knows your training history.</p>
+        </article>
         <article class="card reveal">
           <span class="card-icon">🔐</span>
-          <h3>Secure & Scalable</h3>
-          <p>Isolated containerized microservices with robust PKCE OAuth flows and JWT authentication.</p>
-        </article>
-
-        <article class="card reveal">
-          <span class="card-icon">🧠</span>
-          <h3>Graphify Ready</h3>
-          <p>Fully compatible with Graphify AI for deep architectural understanding and mapping.</p>
+          <h3>Secure and self-hosted</h3>
+          <p>Passkeys or Argon2id passwords, rotating JWT refresh tokens, data export and account deletion. Runs on your own server with Docker Compose, and installs itself on every GitHub release.</p>
         </article>
       </div>
     </section>
@@ -201,7 +196,7 @@
       <div class="section-head reveal">
         <span class="section-label">// quick-start</span>
         <h2>Up and running locally</h2>
-        <p>Clone the repository and start the microservices stack via Docker Compose.</p>
+        <p>You need Docker with Compose and Node.js 22 to build the frontend.</p>
       </div>
 
       <div class="quickstart reveal">
@@ -209,11 +204,16 @@
 git clone https://github.com/giosci1994/webapp-palestra.git
 cd webapp-palestra
 
-<span class="code-comment"># Setup environment and start</span>
+<span class="code-comment"># Settings: change passwords, JWT secrets, APP_URL and ORIGINI_CONSENTITE</span>
 cp .env.esempio .env
-docker-compose up -d --build</code></pre>
+
+<span class="code-comment"># Build the frontend (nginx serves frontend/dist)</span>
+(cd frontend &amp;&amp; npm ci &amp;&amp; npm run build)
+
+<span class="code-comment"># Start database, backend and nginx (bot and scraper are optional)</span>
+docker compose up -d --build db redis backend nginx</code></pre>
         <p class="hint">
-          Then open <a href="http://localhost:6969"><code>http://localhost:6969</code></a>.
+          Then open <a href="http://localhost:6969"><code>http://localhost:6969</code></a> and sign in with the admin account from <code>.env</code>. Full guide in the <a href="https://github.com/giosci1994/webapp-palestra#readme">README</a>.
         </p>
       </div>
 
