@@ -10,6 +10,7 @@ import logger from '../utils/logger.js';
 import { t } from '../i18n/index.js';
 import { chiudiAltreSessioni } from './autenticazione.service.js';
 import { leggiLingua } from '../utils/lingue.js';
+import { eliminaAccount } from './eliminazioneAccount.service.js';
 
 /**
  * Gets the list of all users (SuperAdmin only).
@@ -273,6 +274,7 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, f
 
 /**
  * Permanently deletes a user and all their related data (SuperAdmin only).
+ * Reuses eliminaAccount logic to handle shared workout plans correctly.
  */
 export async function eliminaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
@@ -282,17 +284,11 @@ export async function eliminaUtente(utenteId) {
     throw new ErroreNonAutorizzato(t('utentiService.impossibileEliminareSuperAdmin'));
   }
 
-  // Delete everything in one transaction to avoid constraint errors (foreign keys)
-  await prisma.$transaction([
-    prisma.logSerie.deleteMany({ where: { sessione: { utenteId } } }),
-    prisma.sessioneAllenamento.deleteMany({ where: { utenteId } }),
-    prisma.recordPersonale.deleteMany({ where: { utenteId } }),
-    prisma.esercizioScheda.deleteMany({ where: { scheda: { creatoreId: utenteId } } }),
-    prisma.schedaAllenamento.deleteMany({ where: { creatoreId: utenteId } }),
-    prisma.messaggio.deleteMany({ where: { mittenteId: utenteId } }),
-    prisma.utente.delete({ where: { id: utenteId } })
-  ]);
+  // Reuse eliminaAccount: it handles the case where other users have trained
+  // with this user's plans (RESTRICT foreign key on SessioneAllenamento.scheda).
+  // Plans in use are transferred to an administrator instead of being deleted.
+  await eliminaAccount(utenteId);
 
-  logger.info({ utenteId }, 'Utente eliminato definitivamente');
+  logger.info({ utenteId }, 'Utente eliminato dall\'admin');
   return true;
 }
