@@ -1,7 +1,17 @@
 {
-  "versione": "1.5.1",
+  "versione": "1.5.2",
   "build": "2026-10-12",
   "changelog": [
+    {
+      "versione": "1.5.2",
+      "data": "2026-10-12",
+      "modifiche": [
+        "Aggiornamenti più affidabili: il server prova la configurazione nuova di nginx con tutti i suoi file prima di installarla"
+      ],
+      "modificheEn": [
+        "More reliable updates: the server tests the new nginx configuration with all its files before installing it"
+      ]
+    },
     {
       "versione": "1.5.1",
       "data": "2026-10-12",
