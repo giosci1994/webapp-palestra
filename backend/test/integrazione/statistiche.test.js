@@ -5,25 +5,18 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { creaApp } from '../../src/app.js';
-import prisma from '../../src/config/database.js';
-import jwt from 'jsonwebtoken';
+import { avviaServer } from '../supporto/server.js';
+import { prisma } from '../supporto/database.js';
+import { creaUtente, tokenPer } from '../supporto/dati.js';
 
 describe('Statistics period filtering', () => {
-  let app, utente;
+  let server, utente;
 
   before(async () => {
-    app = creaApp();
+    server = await avviaServer();
 
     // Create test user
-    utente = await prisma.utente.create({
-      data: {
-        email: `test-statistiche-${Date.now()}@example.com`,
-        nome: 'Test Statistiche',
-        passwordHash: 'dummy',
-        emailVerificata: true
-      }
-    });
+    utente = await creaUtente({ email: `test-statistiche-${Date.now()}@example.com` });
 
     // Create workouts: 2 old (100 days ago), 5 recent (last 30 days)
     const schedaId = (await prisma.schedaAllenamento.create({
@@ -68,18 +61,12 @@ describe('Statistics period filtering', () => {
     await prisma.sessioneAllenamento.deleteMany({ where: { utenteId: utente.id } });
     await prisma.schedaAllenamento.deleteMany({ where: { creatoreId: utente.id } });
     await prisma.utente.delete({ where: { id: utente.id } });
+    await server.chiudi();
   });
 
-  const creaToken = (utenteId) => {
-    return jwt.sign({ utenteId }, process.env.JWT_SECRET || 'test-secret', { expiresIn: '1h' });
-  };
-
   it('should return correct workout count for 30 days period', async () => {
-    const token = creaToken(utente.id);
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/statistiche/sessioni?giorni=60',
-      headers: { authorization: `Bearer ${token}` }
+    const res = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=60', {
+      headers: { authorization: `Bearer ${tokenPer(utente)}` }
     });
 
     assert.equal(res.statusCode, 200);
@@ -92,11 +79,8 @@ describe('Statistics period filtering', () => {
   });
 
   it('should return correct workout count for 90 days period', async () => {
-    const token = creaToken(utente.id);
-    const res = await app.inject({
-      method: 'GET',
-      url: '/api/v1/statistiche/sessioni?giorni=180',
-      headers: { authorization: `Bearer ${token}` }
+    const res = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=180', {
+      headers: { authorization: `Bearer ${tokenPer(utente)}` }
     });
 
     assert.equal(res.statusCode, 200);
@@ -111,18 +95,13 @@ describe('Statistics period filtering', () => {
   it('should not be limited by dataResetStatistiche', async () => {
     // The bug was: dataResetStatistiche (40 days ago) would cap both periods
     // at the same 40 days, making 30-day and 90-day show the same count
-    const token = creaToken(utente.id);
 
-    const res30 = await app.inject({
-      method: 'GET',
-      url: '/api/v1/statistiche/sessioni?giorni=60',
-      headers: { authorization: `Bearer ${token}` }
+    const res30 = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=60', {
+      headers: { authorization: `Bearer ${tokenPer(utente)}` }
     });
 
-    const res90 = await app.inject({
-      method: 'GET',
-      url: '/api/v1/statistiche/sessioni?giorni=180',
-      headers: { authorization: `Bearer ${token}` }
+    const res90 = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=180', {
+      headers: { authorization: `Bearer ${tokenPer(utente)}` }
     });
 
     const count30 = JSON.parse(res30.body).dati.reduce((s, d) => s + d.sessioni, 0);
