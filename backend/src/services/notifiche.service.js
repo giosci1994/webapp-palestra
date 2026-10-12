@@ -7,6 +7,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { inviaPush } from './push.service.js';
 import { linguaDiUtenteId, traduciPer } from '../i18n/destinatario.js';
+import { giornoLocale } from '../utils/date.js';
 
 // How many notifications to keep per user: past this threshold the oldest
 // ones are deleted, so the table does not grow forever.
@@ -115,9 +116,8 @@ export async function segnaTutteLette(utenteId) {
  */
 export async function inviaPromemoriaAllenamenti(io) {
   const adesso = new Date();
-  const oggi = new Date(Date.UTC(adesso.getUTCFullYear(), adesso.getUTCMonth(), adesso.getUTCDate()));
-  const inizioGiornata = new Date(adesso);
-  inizioGiornata.setHours(0, 0, 0, 0);
+  const oggi = giornoLocale(adesso);
+  const inizioGiornata = giornoLocale(adesso);
 
   const previsti = await prisma.allenamentoPianificato.findMany({
     where: { data: oggi, stato: 'PIANIFICATO' },
