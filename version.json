@@ -1,7 +1,27 @@
 {
-  "versione": "1.4.0",
-  "build": "2026-10-11",
+  "versione": "1.5.0",
+  "build": "2026-10-12",
   "changelog": [
+    {
+      "versione": "1.5.0",
+      "data": "2026-10-12",
+      "modifiche": [
+        "Anche il server parla la tua lingua: errori, conferme, badge e livelli, consigli della Home, affluenza ed email",
+        "Notifiche e push arrivano nella lingua di chi le riceve: quelle del trainer, il promemoria di oggi, il recupero finito, i messaggi in chat",
+        "Il bot Telegram risponde nella lingua del tuo account, nomi degli esercizi compresi",
+        "L'assistente AI, l'esportazione in Word e le storie delle novità in inglese",
+        "Le schede assegnate dal trainer hanno il nome nella tua lingua",
+        "Correzioni: \"1 allenamento aggiunto\" al singolare, e il livello della scheda scritto per bene nel bot e nel Word (\"Intermedio\")"
+      ],
+      "modificheEn": [
+        "The server speaks your language too: errors, confirmations, badges and levels, Home advice, crowd levels and emails",
+        "Notifications and push arrive in the recipient's language: those from your trainer, today's reminder, rest over, chat messages",
+        "The Telegram bot answers in your account's language, exercise names included",
+        "The AI assistant, the Word export and the \"what's new\" stories in English",
+        "Plans assigned by your trainer are named in your language",
+        "Fixes: \"1 workout added\" in the singular, and the plan level written properly in the bot and in Word (\"Intermediate\")"
+      ]
+    },
     {
       "versione": "1.4.0",
       "data": "2026-10-11",
