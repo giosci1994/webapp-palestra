@@ -23,7 +23,7 @@ describe('Statistics period filtering', () => {
       data: {
         creatoreId: utente.id,
         titolo: 'Test',
-        visibilita: 'PRIVATA'
+        visibilita: 'PERSONALE'
       }
     })).id;
 
