@@ -23,9 +23,11 @@ describe('promemoria - ora locale', () => {
     const mattina = new Date('2026-10-12T06:30:00Z');
     const inverno = new Date('2026-01-15T07:30:00Z');
 
-    // getHours() returns UTC hours: 6 and 7, both less than 8
-    assert.equal(mattina.getHours(), 6); // Would skip the reminder
-    assert.equal(inverno.getHours(), 7); // Would skip the reminder
+    // On a server running in UTC (the containers, the CI) getHours() returns
+    // the UTC hours: 6 and 7, both less than 8. getUTCHours() gives the same
+    // on any machine, so the test does not depend on the local time zone
+    assert.equal(mattina.getUTCHours(), 6); // Would skip the reminder
+    assert.equal(inverno.getUTCHours(), 7); // Would skip the reminder
 
     // But in Copenhagen it's already 8:30, so the reminder should run
     assert.equal(orarioLocale(mattina).ora, 8);
