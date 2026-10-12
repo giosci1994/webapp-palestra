@@ -7,15 +7,23 @@ import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { creaApp } from '../../src/app.js';
 import prisma from '../../src/config/database.js';
-import { creaUtenteTest, eliminaUtenteTest, creaToken } from '../helpers/utenti.js';
+import jwt from 'jsonwebtoken';
 
 describe('Statistics period filtering', () => {
-  let app, utente, token;
+  let app, utente;
 
   before(async () => {
     app = creaApp();
-    utente = await creaUtenteTest();
-    token = creaToken(utente.id);
+
+    // Create test user
+    utente = await prisma.utente.create({
+      data: {
+        email: `test-statistiche-${Date.now()}@example.com`,
+        nome: 'Test Statistiche',
+        passwordHash: 'dummy',
+        emailVerificata: true
+      }
+    });
 
     // Create workouts: 2 old (100 days ago), 5 recent (last 30 days)
     const schedaId = (await prisma.schedaAllenamento.create({
@@ -56,10 +64,18 @@ describe('Statistics period filtering', () => {
   });
 
   after(async () => {
-    await eliminaUtenteTest(utente.id);
+    // Clean up: delete user and all related data
+    await prisma.sessioneAllenamento.deleteMany({ where: { utenteId: utente.id } });
+    await prisma.schedaAllenamento.deleteMany({ where: { creatoreId: utente.id } });
+    await prisma.utente.delete({ where: { id: utente.id } });
   });
 
+  const creaToken = (utenteId) => {
+    return jwt.sign({ utenteId }, process.env.JWT_SECRET || 'test-secret', { expiresIn: '1h' });
+  };
+
   it('should return correct workout count for 30 days period', async () => {
+    const token = creaToken(utente.id);
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/statistiche/sessioni?giorni=60',
@@ -76,6 +92,7 @@ describe('Statistics period filtering', () => {
   });
 
   it('should return correct workout count for 90 days period', async () => {
+    const token = creaToken(utente.id);
     const res = await app.inject({
       method: 'GET',
       url: '/api/v1/statistiche/sessioni?giorni=180',
@@ -94,6 +111,7 @@ describe('Statistics period filtering', () => {
   it('should not be limited by dataResetStatistiche', async () => {
     // The bug was: dataResetStatistiche (40 days ago) would cap both periods
     // at the same 40 days, making 30-day and 90-day show the same count
+    const token = creaToken(utente.id);
 
     const res30 = await app.inject({
       method: 'GET',

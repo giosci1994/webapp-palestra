@@ -24,7 +24,7 @@ import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js'
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
-import { formattaPeso, formattaData, formattaNumero, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
+import { formattaPeso, formattaNumero, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
 /** The load proposal by outcome: label (a translation key) and colors of the card */
@@ -379,17 +379,6 @@ export default function WorkoutLive() {
   };
   const riscaldamentoDalForm = () => {
     if (registraRiscaldamento(parseFloat(form.peso), parseInt(form.rep))) setForm(p => ({ ...p, rep: '' }));
-  };
-
-  const usaRiferimento = () => {
-    if (!riferimento) return;
-    // Only the parameters to set before the set: reps are entered after doing
-    // it, and prefilled they would be recorded by mistake
-    if (riferimentoCardio) {
-      setForm(p => ({ ...p, minuti: String(riferimento.durataMinuti), resistenza: riferimento.livelloResistenza ? String(riferimento.livelloResistenza) : p.resistenza }));
-    } else {
-      setForm(p => ({ ...p, peso: String(riferimento.pesoEffettivo) }));
-    }
   };
 
   const completaSerie = () => {
