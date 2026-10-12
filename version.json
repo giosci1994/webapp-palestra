@@ -1,7 +1,23 @@
 {
-  "versione": "1.5.2",
+  "versione": "1.5.3",
   "build": "2026-10-12",
   "changelog": [
+    {
+      "versione": "1.5.3",
+      "data": "2026-10-12",
+      "modifiche": [
+        "Miglioramenti all'interfaccia e correzioni",
+        "Durante l'allenamento: la lista delle serie completate si può chiudere per avere più spazio quando ci sono molti riscaldamenti",
+        "Calendario: la legenda ora mostra solo 'Completato' (verde) e 'In programma' (viola), senza più la voce ridondante 'Svolto'",
+        "Statistiche: i periodi di confronto (7 giorni, 30 giorni, 3 mesi, 12 mesi) ora contano correttamente tutti gli allenamenti nel periodo richiesto, non più limitati dalla data di reset"
+      ],
+      "modificheEn": [
+        "UI improvements and fixes",
+        "During workout: the completed sets list can be collapsed to save space when there are many warm-ups",
+        "Calendar: the legend now shows only 'Completed' (green) and 'Scheduled' (purple), without the redundant 'Done' entry",
+        "Statistics: comparison periods (7 days, 30 days, 3 months, 12 months) now correctly count all workouts in the requested period, no longer limited by the reset date"
+      ]
+    },
     {
       "versione": "1.5.2",
       "data": "2026-10-12",
