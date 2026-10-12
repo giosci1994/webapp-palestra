@@ -1,7 +1,27 @@
 {
-  "versione": "1.5.0",
+  "versione": "1.5.1",
   "build": "2026-10-12",
   "changelog": [
+    {
+      "versione": "1.5.1",
+      "data": "2026-10-12",
+      "modifiche": [
+        "Correzioni di sicurezza e affidabilità",
+        "Header di sicurezza (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy) ora su tutte le risorse nginx",
+        "L'assistente AI vede gli ultimi 20 messaggi nelle conversazioni lunghe, non più i primi",
+        "Gli admin possono eliminare utenti le cui schede sono state usate da altri (le schede vengono trasferite)",
+        "I promemoria arrivano all'ora giusta: ora locale invece di UTC",
+        "Lo Storico non mostra più \"nessun allenamento\" mentre sta caricando"
+      ],
+      "modificheEn": [
+        "Security and reliability fixes",
+        "Security headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy) now on all nginx resources",
+        "The AI assistant sees the last 20 messages in long conversations, no longer the first ones",
+        "Admins can delete users whose plans have been used by others (plans are transferred)",
+        "Reminders arrive at the right time: local time instead of UTC",
+        "History no longer shows \"no workouts\" while loading"
+      ]
+    },
     {
       "versione": "1.5.0",
       "data": "2026-10-12",
