@@ -12,6 +12,7 @@ import logger from './utils/logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { orarioLocale } from './utils/date.js';
 
 // --- Configuration ---
 const PORTA = parseInt(process.env.PORTA_BACKEND) || 3000;
@@ -52,7 +53,8 @@ const INTERVALLO_PROMEMORIA = 60 * 60 * 1000; // 1 hour
 const ORA_MINIMA_PROMEMORIA = 8;              // not before 8 in the morning
 setInterval(async () => {
   try {
-    if (new Date().getHours() < ORA_MINIMA_PROMEMORIA) return;
+    const { ora } = orarioLocale();
+    if (ora < ORA_MINIMA_PROMEMORIA) return;
     await inviaPromemoriaAllenamenti(io);
   } catch (errore) {
     logger.error({ errore: errore.message }, 'Errore nell\'invio dei promemoria allenamento');
