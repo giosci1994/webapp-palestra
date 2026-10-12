@@ -10,7 +10,7 @@ import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
-import { t } from '../i18n/index.js';
+import { t, localeDi } from '../i18n/index.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
 
 const router = Router();
@@ -402,7 +402,7 @@ router.post('/appuntamenti', async (req, res, next) => {
         tipo: 'nuovo_appuntamento',
         titolo: t('ptRoutes.nuovoAppuntamentoTitolo', {}, lingua),
         messaggio: t('ptRoutes.nuovoAppuntamentoMessaggio', {
-          nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(lingua)
+          nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(localeDi(lingua))
         }, lingua),
         timestamp: new Date().toISOString()
       });

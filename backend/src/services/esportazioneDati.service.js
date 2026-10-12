@@ -38,12 +38,12 @@ export const CAMPI_PROFILO = [
 
 /** The Utente columns left out, and why */
 export const CAMPI_RISERVATI = {
-  passwordHash: 'segreto',
-  tokenVerificaEmail: 'segreto',
-  tokenVerificaScadenza: 'serve solo al token di verifica',
-  tokenResetPassword: 'segreto',
-  tokenResetScadenza: 'serve solo al token di reset',
-  palestraId: 'sostituito dai dati della palestra'
+  passwordHash: 'secret',
+  tokenVerificaEmail: 'secret',
+  tokenVerificaScadenza: 'only used by the verification token',
+  tokenResetPassword: 'secret',
+  tokenResetScadenza: 'only used by the reset token',
+  palestraId: "replaced by the gym's data"
 };
 
 // Profile fields saved as JSON text: in the file they become objects again

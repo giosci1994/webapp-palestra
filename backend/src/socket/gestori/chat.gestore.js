@@ -8,6 +8,8 @@ import logger from '../../utils/logger.js';
 import prisma from '../../config/database.js';
 import { inviaNotificaTelegram, escapeHtml } from '../../services/telegram.service.js';
 import { inviaPush } from '../../services/push.service.js';
+import { t, conLingua } from '../../i18n/index.js';
+import { linguaDiUtenteId } from '../../i18n/destinatario.js';
 
 // Notifies the other participants (fire-and-forget): a push to everyone (with
 // the app open the service worker leaves it to the chat; messages of the same
@@ -22,8 +24,9 @@ async function notificaDestinatari(conversazioneId, mittenteId, messaggio, utent
     const anteprima = contenuto.length > 120 ? contenuto.slice(0, 120) + '…' : contenuto;
 
     for (const p of partecipanti) {
+      // Without a sender name the title is a key: inviaPush translates it for the recipient
       inviaPush(p.utenteId, {
-        titolo: `💬 ${messaggio.mittente?.nome || 'Nuovo messaggio'}`,
+        titolo: messaggio.mittente?.nome ? `💬 ${messaggio.mittente.nome}` : 'chatGestore.pushNuovoMessaggio',
         messaggio: anteprima,
         percorso: `/chat/${conversazioneId}`,
         tag: `chat-${conversazioneId}`
@@ -32,8 +35,11 @@ async function notificaDestinatari(conversazioneId, mittenteId, messaggio, utent
 
     const offline = partecipanti.filter(p => !utentiConnessi.has(p.utenteId));
     if (offline.length === 0) return;
-    const testo = `💬 <b>${escapeHtml(messaggio.mittente?.nome || 'Qualcuno')}</b> ti ha scritto su GymMaster:\n${escapeHtml(anteprima)}`;
     for (const p of offline) {
+      // Each recipient gets the message in their own language
+      const lingua = await linguaDiUtenteId(p.utenteId);
+      const mittente = `<b>${escapeHtml(messaggio.mittente?.nome || t('chatGestore.qualcuno', {}, lingua))}</b>`;
+      const testo = `${t('chatGestore.telegramMessaggio', { mittente }, lingua)}\n${escapeHtml(anteprima)}`;
       await inviaNotificaTelegram(p.utenteId, testo);
     }
   } catch (errore) {
@@ -50,28 +56,33 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
   // --- Real-time message sending ---
   socket.on('chat:invia_messaggio', async (dati, callback) => {
     try {
-      const { conversazioneId, contenuto } = dati;
+      // A socket event is not a request, so it has no language: the errors
+      // that go back to the sender (also those of the service) are in theirs
+      const lingua = await linguaDiUtenteId(utenteId);
+      await conLingua(lingua, async () => {
+        const { conversazioneId, contenuto } = dati;
 
-      if (!conversazioneId || !contenuto || contenuto.trim().length === 0) {
-        return callback?.({ errore: 'Dati messaggio non validi' });
-      }
+        if (!conversazioneId || !contenuto || contenuto.trim().length === 0) {
+          return callback?.({ errore: t('chatGestore.datiNonValidi') });
+        }
 
-      if (contenuto.length > 2000) {
-        return callback?.({ errore: 'Messaggio troppo lungo (max 2000 caratteri)' });
-      }
+        if (contenuto.length > 2000) {
+          return callback?.({ errore: t('chatGestore.messaggioTroppoLungo') });
+        }
 
-      // Save the message in the database
-      const messaggio = await inviaMessaggio(conversazioneId, utenteId, contenuto.trim());
+        // Save the message in the database
+        const messaggio = await inviaMessaggio(conversazioneId, utenteId, contenuto.trim());
 
-      // Send the message to all the participants of the conversation
-      io.to(`conversazione:${conversazioneId}`).emit('chat:nuovo_messaggio', {
-        messaggio
+        // Send the message to all the participants of the conversation
+        io.to(`conversazione:${conversazioneId}`).emit('chat:nuovo_messaggio', {
+          messaggio
+        });
+
+        // Push and Telegram to the recipients (does not block the response)
+        notificaDestinatari(conversazioneId, utenteId, messaggio, utentiConnessi).catch(() => {});
+
+        callback?.({ successo: true, messaggio });
       });
-
-      // Push and Telegram to the recipients (does not block the response)
-      notificaDestinatari(conversazioneId, utenteId, messaggio, utentiConnessi).catch(() => {});
-
-      callback?.({ successo: true, messaggio });
     } catch (errore) {
       logger.error({ utenteId, errore: errore.message }, 'Errore invio messaggio WebSocket');
       callback?.({ errore: errore.message });

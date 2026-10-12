@@ -4,7 +4,7 @@
 // ============================================
 
 import { ErroreNonAutorizzato } from '../utils/errori.js';
-import { t, linguaCorrente } from '../i18n/index.js';
+import { t, localeDi } from '../i18n/index.js';
 
 /**
  * Creates a middleware that checks whether the user has one of the allowed roles.
@@ -29,7 +29,7 @@ export function autorizza(...ruoliConsentiti) {
         new ErroreNonAutorizzato(t('autorizzazione.ruoloNonAutorizzato', {
           ruolo: req.utente.ruolo,
           // "A or B" / "A o B", in the request's language
-          richiesti: new Intl.ListFormat(linguaCorrente(), { type: 'disjunction' }).format(ruoliConsentiti)
+          richiesti: new Intl.ListFormat(localeDi(), { type: 'disjunction' }).format(ruoliConsentiti)
         }))
       );
     }

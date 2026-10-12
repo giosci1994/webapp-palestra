@@ -1,0 +1,4 @@
+{
+  "notificaTitolo": "Allenamento chiuso",
+  "notificaMessaggio": "Avevi lasciato aperto «{scheda}» di {giorno}: l'ho chiuso all'ultima serie, alle {ora}. Puoi correggerlo dallo Storico."
+}

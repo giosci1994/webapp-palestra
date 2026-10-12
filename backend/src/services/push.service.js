@@ -136,9 +136,11 @@ export function programmaFineRecupero(utenteId, secondi, prossimo) {
   annullaFineRecupero(utenteId);
   const timer = setTimeout(() => {
     recuperi.delete(utenteId);
+    // A timer has no request: keys, which inviaPush translates for the user
     inviaPush(utenteId, {
-      titolo: '⏱️ Recupero finito',
-      messaggio: prossimo ? `Tocca a te: ${prossimo}` : 'Tocca a te: la prossima serie',
+      titolo: 'pushService.fineRecuperoTitolo',
+      messaggio: prossimo ? 'pushService.fineRecuperoMessaggio' : 'pushService.fineRecuperoMessaggioSenza',
+      variabili: { prossimo },
       percorso: '/allenamento',
       tag: 'recupero',
       urgente: true,

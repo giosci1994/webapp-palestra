@@ -16,6 +16,8 @@ import logger from '../utils/logger.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
 import { creaNotifica } from './notifiche.service.js';
 import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
+import { linguaDiUtenteId } from '../i18n/destinatario.js';
+import { localeDi } from '../i18n/index.js';
 
 const MINUTO = 60 * 1000;
 
@@ -104,8 +106,9 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
   return { sessione: aggiornata, recordPersonali, dimenticata };
 }
 
-const formatoGiorno = new Intl.DateTimeFormat('it-IT', { timeZone: FUSO_ORARIO, weekday: 'long', day: 'numeric', month: 'long' });
-const formatoOra = new Intl.DateTimeFormat('it-IT', { timeZone: FUSO_ORARIO, hour: '2-digit', minute: '2-digit' });
+// How dates and times are written in each language (the same as the app)
+const formatoGiorno = (lingua) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: FUSO_ORARIO, weekday: 'long', day: 'numeric', month: 'long' });
+const formatoOra = (lingua) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: FUSO_ORARIO, hour: '2-digit', minute: '2-digit' });
 
 /**
  * The periodic check (server.js): workouts idle for more than
@@ -137,11 +140,18 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
 
     const { sessione } = await concludiSessione(aperta, { adesso });
     chiuse++;
+    // No request here: the notification is in the user's language, and so are
+    // the day and the time inside it
+    const lingua = await linguaDiUtenteId(aperta.utenteId);
     await creaNotifica(io, aperta.utenteId, {
       tipo: 'SISTEMA',
-      titolo: 'Allenamento chiuso',
-      messaggio: `Avevi lasciato aperto «${aperta.scheda.titolo}» di ${formatoGiorno.format(aperta.dataInizio)}: `
-        + `l'ho chiuso all'ultima serie, alle ${formatoOra.format(sessione.dataFine)}. Puoi correggerlo dallo Storico.`,
+      titolo: 'conclusioneSessioneService.notificaTitolo',
+      messaggio: 'conclusioneSessioneService.notificaMessaggio',
+      variabili: {
+        scheda: aperta.scheda.titolo,
+        giorno: formatoGiorno(lingua).format(aperta.dataInizio),
+        ora: formatoOra(lingua).format(sessione.dataFine)
+      },
       percorso: '/storico'
     });
   }

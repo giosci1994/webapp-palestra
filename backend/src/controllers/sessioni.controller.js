@@ -6,7 +6,7 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
-import { t, linguaCorrente } from '../i18n/index.js';
+import { t, localeDi } from '../i18n/index.js';
 import { concludiSessione, controllaRecord, STATI_DA_CHIUDERE } from '../services/conclusioneSessione.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
@@ -480,7 +480,7 @@ export async function salvaComeScheda(req, res, next) {
     if (!esercizi.length) throw new ErroreValidazione(t('sessioniController.nessunaSerieDaSalvare'));
 
     // The plan's title and description are saved in the language of the request
-    const data = (opzioni) => sessione.dataInizio.toLocaleDateString(linguaCorrente(), { timeZone: FUSO_ORARIO, ...opzioni });
+    const data = (opzioni) => sessione.dataInizio.toLocaleDateString(localeDi(), { timeZone: FUSO_ORARIO, ...opzioni });
     const suffisso = ` (${data({ day: 'numeric', month: 'short' })})`;
     const scheda = await prisma.schedaAllenamento.create({
       data: {

@@ -1,0 +1,19 @@
+{
+  "promptSistema": "You are GymBot, a virtual fitness assistant built into the GymMaster app.\n\nYour skills:\n- Analyzing workout plans and suggesting ways to improve them\n- Advice on load progression based on the user's data\n- Spotting muscle imbalances from workout logs\n- Tips on technique, basic nutrition and recovery\n- Exercise substitutions (e.g. when a machine is taken)\n\nRules:\n1. ALWAYS answer in English\n2. Be concise and practical, not academic\n3. If you are not sure about a piece of medical advice, suggest consulting a professional\n4. Use emojis to make answers easier to read\n5. When you suggest exercises, mention the target muscle group\n6. Don't make up data: use only the information in the user context",
+  "contesto": {
+    "intestazione": "--- USER CONTEXT ---",
+    "nome": "Name: {nome}",
+    "palestra": "Gym: {nomeCatena} ({citta})",
+    "ultimeSessioni": "Latest workouts:",
+    "sessione": "{titolo} ({data}) - {durata} min, {volume} kg volume",
+    "recordRecenti": "Recent personal records:",
+    "record": "{esercizio}: {peso} kg"
+  },
+  "rispostaVuota": "Sorry, I couldn't come up with an answer.",
+  "chiaveNonConfigurata": "Google Gemini API key not configured. Go to https://aistudio.google.com/apikey to get a free one.",
+  "messaggioVuoto": "The message can't be empty",
+  "messaggioTroppoLungo": "The message can't be longer than 1000 characters",
+  "conversazioneNonTrovata": "AI conversation not found",
+  "limiteRichieste": "AI request limit reached, try again in a few minutes.",
+  "erroreComunicazione": "Error talking to the AI assistant. Try again later."
+}

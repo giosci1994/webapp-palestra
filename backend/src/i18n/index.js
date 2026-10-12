@@ -20,7 +20,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { LINGUE, LINGUA_BASE } from '../utils/lingue.js';
+import { LINGUE, LINGUA_BASE, LOCALE } from '../utils/lingue.js';
 
 const CARTELLA = join(dirname(fileURLToPath(import.meta.url)), 'testi');
 
@@ -83,6 +83,11 @@ export function linguaDiUtente(utente) {
 /** The language of the current request (or of the surrounding conLingua) */
 export function linguaCorrente() {
   return contesto.getStore() || LINGUA_BASE;
+}
+
+/** The locale for dates, numbers and lists in a language (the current one by default) */
+export function localeDi(lingua = linguaCorrente()) {
+  return LOCALE[lingua] || LOCALE[LINGUA_BASE];
 }
 
 /** Runs fn with `lingua` as the current language, for messages outside a request */

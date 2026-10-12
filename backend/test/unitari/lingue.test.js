@@ -2,8 +2,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  linguaDaIntestazione, linguaDiUtente, linguaCorrente, conLingua, traduci, linguaSupportata
+  linguaDaIntestazione, linguaDiUtente, linguaCorrente, conLingua, traduci, linguaSupportata, localeDi
 } from '../../src/i18n/index.js';
+import { LINGUE } from '../../src/utils/lingue.js';
 import { ErroreNonTrovato } from '../../src/utils/errori.js';
 
 describe('the language of a request', () => {
@@ -41,6 +42,14 @@ describe('the language of a user, outside a request', () => {
     });
     assert.deepEqual(dentro, ['it', 'Risorsa non trovata', 'Risorsa non trovata']);
     assert.equal(linguaCorrente(), 'en');
+  });
+});
+
+describe('dates and numbers', () => {
+  it('every language has its locale, the same as the app', () => {
+    for (const lingua of LINGUE) assert.ok(Intl.DateTimeFormat.supportedLocalesOf(localeDi(lingua)).length, lingua);
+    assert.deepEqual([localeDi('en'), localeDi('it'), localeDi('xx')], ['en-GB', 'it-IT', 'en-GB']);
+    assert.equal(conLingua('it', () => localeDi()), 'it-IT');
   });
 });
 

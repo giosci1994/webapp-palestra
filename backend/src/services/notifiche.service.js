@@ -140,9 +140,13 @@ export async function inviaPromemoriaAllenamenti(io) {
     });
     if (giaInviato) continue;
 
+    // This runs on a timer, outside any request: the title is a key (with a
+    // plural count) that creaNotifica translates for the user; the message is
+    // just the plan titles
     await creaNotifica(io, utenteId, {
       tipo: 'PROMEMORIA_ALLENAMENTO',
-      titolo: titoli.length === 1 ? 'Oggi ti aspetta un allenamento' : `Oggi ti aspettano ${titoli.length} allenamenti`,
+      titolo: 'notificheService.promemoriaAllenamento',
+      variabili: { count: titoli.length },
       messaggio: titoli.join(' · '),
       percorso: '/pianificazione'
     });

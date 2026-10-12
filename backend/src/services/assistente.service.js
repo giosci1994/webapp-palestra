@@ -7,6 +7,7 @@ import { GoogleGenAI } from '@google/genai';
 import prisma from '../config/database.js';
 import { ErroreApp, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 
 // Initializes the Gemini client (lazily)
 let clientAI = null;
@@ -16,7 +17,7 @@ function ottieniClientAI() {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey === 'LA_TUA_API_KEY_GEMINI') {
       throw new ErroreApp(
-        'API Key di Google Gemini non configurata. Visita https://aistudio.google.com/apikey per ottenerne una gratuita.',
+        t('assistenteService.chiaveNonConfigurata'),
         503,
         'AI_NON_CONFIGURATA'
       );
@@ -26,34 +27,20 @@ function ottieniClientAI() {
   return clientAI;
 }
 
-// System prompt that gives the assistant its context
-const SYSTEM_PROMPT = `Sei GymBot, un assistente fitness virtuale integrato nell'app GymMaster.
-
-Le tue competenze:
-- Analisi schede di allenamento e suggerimenti per migliorarle
-- Consigli sulla progressione dei carichi basati sui dati dell'utente
-- Identificazione di squilibri muscolari dai log di allenamento
-- Suggerimenti su tecnica, nutrizione base e recupero
-- Sostituzione esercizi (es. se un macchinario è occupato)
-
-Regole:
-1. Rispondi SEMPRE in italiano
-2. Sii conciso e pratico, non accademico
-3. Se non sei sicuro di un consiglio medico, suggerisci di consultare un professionista
-4. Usa emoji per rendere le risposte più leggibili
-5. Quando suggerisci esercizi, menziona il gruppo muscolare bersaglio
-6. Non inventare dati: usa solo le informazioni fornite dal contesto utente`;
+// The system prompt (assistenteService.promptSistema) gives the assistant its
+// context. It is written in each language and tells the model to answer in
+// that one: the language of the request (linguaCorrente()), so the app's.
 
 /**
  * Sends a message to the AI assistant along with the user's context.
  */
 export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = null) {
   if (!messaggio || messaggio.trim().length === 0) {
-    throw new ErroreValidazione('Il messaggio non può essere vuoto');
+    throw new ErroreValidazione(t('assistenteService.messaggioVuoto'));
   }
 
   if (messaggio.length > 1000) {
-    throw new ErroreValidazione('Il messaggio non può superare 1000 caratteri');
+    throw new ErroreValidazione(t('assistenteService.messaggioTroppoLungo'));
   }
 
   const ai = ottieniClientAI();
@@ -76,7 +63,7 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
     });
 
     if (!conversazioneAI || conversazioneAI.utenteId !== utenteId) {
-      throw new ErroreValidazione('Conversazione AI non trovata');
+      throw new ErroreValidazione(t('assistenteService.conversazioneNonTrovata'));
     }
   } else {
     conversazioneAI = await prisma.conversazioneAI.create({
@@ -115,13 +102,13 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
       model: 'gemini-2.5-flash',
       contents: storicoConversazione,
       config: {
-        systemInstruction: SYSTEM_PROMPT + '\n\n' + contestoUtente,
+        systemInstruction: t('assistenteService.promptSistema') + '\n\n' + contestoUtente,
         maxOutputTokens: 1024,
         temperature: 0.7
       }
     });
 
-    const testoRisposta = risposta.text || 'Mi dispiace, non sono riuscito a generare una risposta.';
+    const testoRisposta = risposta.text || t('assistenteService.rispostaVuota');
 
     // Save the assistant's answer
     await prisma.messaggioAI.create({
@@ -143,14 +130,14 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
 
     if (errore.message?.includes('429') || errore.message?.includes('quota')) {
       throw new ErroreApp(
-        'Limite di richieste AI raggiunto, riprova tra qualche minuto.',
+        t('assistenteService.limiteRichieste'),
         429,
         'AI_RATE_LIMIT'
       );
     }
 
     throw new ErroreApp(
-      'Errore nella comunicazione con l\'assistente AI. Riprova più tardi.',
+      t('assistenteService.erroreComunicazione'),
       502,
       'AI_ERRORE'
     );
@@ -188,10 +175,10 @@ async function costruisciContestoUtente(utenteId) {
 
   if (!utente) return '';
 
-  let contesto = `\n--- CONTESTO UTENTE ---\nNome: ${utente.nome}`;
+  let contesto = `\n${t('assistenteService.contesto.intestazione')}\n${t('assistenteService.contesto.nome', { nome: utente.nome })}`;
 
   if (utente.palestra) {
-    contesto += `\nPalestra: ${utente.palestra.nomeCatena} (${utente.palestra.citta})`;
+    contesto += `\n${t('assistenteService.contesto.palestra', { nomeCatena: utente.palestra.nomeCatena, citta: utente.palestra.citta })}`;
   }
 
   // Load the last 5 workouts for context
@@ -208,9 +195,14 @@ async function costruisciContestoUtente(utenteId) {
   });
 
   if (ultimeSessioni.length > 0) {
-    contesto += '\n\nUltime sessioni:';
+    contesto += `\n\n${t('assistenteService.contesto.ultimeSessioni')}`;
     for (const s of ultimeSessioni) {
-      contesto += `\n- ${s.scheda.titolo} (${s.dataInizio.toLocaleDateString('it-IT')}) - ${s.durataMinuti || '?'} min, ${s.volumeTotaleKg || '?'} kg volume`;
+      contesto += `\n- ${t('assistenteService.contesto.sessione', {
+        titolo: s.scheda.titolo,
+        data: s.dataInizio.toLocaleDateString(localeDi()),
+        durata: s.durataMinuti || '?',
+        volume: s.volumeTotaleKg || '?'
+      })}`;
     }
   }
 
@@ -223,9 +215,9 @@ async function costruisciContestoUtente(utenteId) {
   });
 
   if (records.length > 0) {
-    contesto += '\n\nRecord personali recenti:';
+    contesto += `\n\n${t('assistenteService.contesto.recordRecenti')}`;
     for (const r of records) {
-      contesto += `\n- ${r.esercizio.nome}: ${r.pesoMaxRaggiunto} kg`;
+      contesto += `\n- ${t('assistenteService.contesto.record', { esercizio: r.esercizio.nome, peso: r.pesoMaxRaggiunto })}`;
     }
   }
 

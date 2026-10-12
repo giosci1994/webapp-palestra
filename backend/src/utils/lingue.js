@@ -12,6 +12,9 @@ import { t } from '../i18n/index.js';
 export const LINGUE = ['en', 'it'];
 export const LINGUA_BASE = 'en';
 
+// How each language writes dates, numbers and lists (the same as the app)
+export const LOCALE = { en: 'en-GB', it: 'it-IT' };
+
 /**
  * A language for Utente.lingua: one of LINGUE, or null (empty, null) to
  * follow the phone. Anything else is a validation error.

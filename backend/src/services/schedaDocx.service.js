@@ -7,6 +7,7 @@ import {
   Document, Packer, Paragraph, TextRun, AlignmentType, LevelFormat,
   Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType
 } from 'docx';
+import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 
 // Palette and sizes copied from the template the user provided: navy blue
 // for headers and session titles, neutral grays for the body.
@@ -23,6 +24,27 @@ const C = {
 };
 
 const FONT = 'Arial';
+
+/** The muscle group in the current language; a name with no translation stays as it is. */
+function nomeGruppo(nome) {
+  const chiave = `gruppi.${nome}`;
+  const testo = t(chiave);
+  return testo !== chiave ? testo : nome;
+}
+
+/**
+ * The exercise name in the current language (the same rule as the app): the
+ * imported catalogue has English names and `nomeIt` with the translation; the
+ * curated one has the Italian name in `nome`, often with the English one in
+ * brackets ("Lat Machine (Lat Pulldown)"), and an empty `nomeIt`.
+ */
+function nomeEsercizio(esercizio) {
+  if (!esercizio) return '';
+  if (linguaCorrente() === 'it') return esercizio.nomeIt || esercizio.nome || '';
+  if (esercizio.nomeIt) return esercizio.nome || '';
+  const traParentesi = esercizio.nome?.match(/\(([^)]+)\)\s*$/);
+  return traParentesi ? traParentesi[1].trim() : esercizio.nome || '';
+}
 
 // Four columns of equal width. They must be declared both on the table and on
 // every cell, in DXA: with percentages Google Docs gets the layout wrong.
@@ -53,7 +75,7 @@ function serieEReps(voce) {
   if (cardio.length > 0) return cardio.join(' · ');
 
   if (voce.serieTarget && voce.repTarget) return `${voce.serieTarget} x ${voce.repTarget}`;
-  if (voce.serieTarget) return `${voce.serieTarget} serie`;
+  if (voce.serieTarget) return t('schedaDocxService.numeroSerie', { count: voce.serieTarget });
   return voce.repTarget || '—';
 }
 
@@ -63,7 +85,7 @@ function recupero(voce) {
 }
 
 /**
- * The "Note Tecniche" (technical notes) column.
+ * The "Technical Notes" column.
  *
  * In order of precedence: the note written for this exercise in this plan,
  * then the exercise's generic description, finally muscle group and
@@ -72,12 +94,12 @@ function recupero(voce) {
 function note(voce) {
   const parti = [];
 
-  if (voce.riscaldamento) parti.push('Riscaldamento');
+  if (voce.riscaldamento) parti.push(t('schedaDocxService.riscaldamento'));
 
   const cardio = [];
   if (voce.velocitaKmh) cardio.push(`${voce.velocitaKmh} km/h`);
-  if (voce.inclinazione) cardio.push(`pendenza ${voce.inclinazione}%`);
-  if (voce.livelloResistenza) cardio.push(`resistenza ${voce.livelloResistenza}`);
+  if (voce.inclinazione) cardio.push(t('schedaDocxService.pendenza', { valore: voce.inclinazione }));
+  if (voce.livelloResistenza) cardio.push(t('schedaDocxService.resistenza', { valore: voce.livelloResistenza }));
   if (cardio.length > 0) parti.push(cardio.join(', '));
 
   // The note written for this plan takes precedence: it is the specific
@@ -89,7 +111,8 @@ function note(voce) {
   } else if (descrizione) {
     parti.push(descrizione);
   } else {
-    const contesto = [voce.esercizio?.gruppoMuscoloPrimario, voce.esercizio?.attrezzatura?.nome]
+    const gruppo = voce.esercizio?.gruppoMuscoloPrimario;
+    const contesto = [gruppo && nomeGruppo(gruppo), voce.esercizio?.attrezzatura?.nome]
       .filter(Boolean).join(' · ');
     if (contesto) parti.push(contesto);
   }
@@ -98,12 +121,12 @@ function note(voce) {
 }
 
 function tabellaEsercizi(esercizi) {
-  const intestazioni = ['Esercizio', 'Serie x Reps', 'Recupero', 'Note Tecniche'];
+  const intestazioni = ['esercizio', 'serieReps', 'recupero', 'noteTecniche'];
 
   const righe = [
     new TableRow({
       tableHeader: true,
-      children: intestazioni.map(t => cella(t, {
+      children: intestazioni.map(chiave => cella(t(`schedaDocxService.intestazioni.${chiave}`), {
         grassetto: true,
         sfondo: C.intestazioneSfondo,
         colore: C.intestazioneTesto,
@@ -112,7 +135,7 @@ function tabellaEsercizi(esercizi) {
     }),
     ...esercizi.map(voce => new TableRow({
       children: [
-        cella(voce.esercizio?.nomeIt || voce.esercizio?.nome, { grassetto: true, colore: C.cellaForte }),
+        cella(nomeEsercizio(voce.esercizio), { grassetto: true, colore: C.cellaForte }),
         cella(serieEReps(voce)),
         cella(recupero(voce)),
         cella(note(voce))
@@ -176,7 +199,7 @@ function lineeGuida(testo) {
 
 /** Blank lines to write down loads by hand: the document is used at the gym. */
 function spazioNote() {
-  const righe = [paragrafoSezione('Note')];
+  const righe = [paragrafoSezione(t('schedaDocxService.note'))];
   for (let i = 0; i < 4; i++) {
     righe.push(new Paragraph({
       spacing: { after: 80 },
@@ -202,14 +225,16 @@ export async function generaDocxSchede(schede, opzioni = {}) {
   const multipla = schede.length > 1;
 
   const titolo = opzioni.titolo?.trim()
-    || (multipla ? 'Programma di Allenamento' : (schede[0]?.titolo || 'Scheda di Allenamento'));
+    || (multipla ? t('schedaDocxService.titoloProgramma') : (schede[0]?.titolo || t('schedaDocxService.titoloScheda')));
 
-  const totaleEsercizi = schede.reduce((t, s) => t + (s.esercizi?.length || 0), 0);
+  const totaleEsercizi = schede.reduce((somma, s) => somma + (s.esercizi?.length || 0), 0);
+  const livello = schede[0]?.livello;
+  const chiaveLivello = `schedaDocxService.livelli.${livello}`;
   const sottotitolo = opzioni.sottotitolo?.trim() || (multipla
-    ? `Programma settimanale su ${schede.length} sedute — ${totaleEsercizi} esercizi complessivi`
-    : [schede[0]?.livello && `Livello: ${schede[0].livello}`,
-       schede[0]?.creatore?.nome && `Creata da ${schede[0].creatore.nome}`,
-       `${totaleEsercizi} eserciz${totaleEsercizi === 1 ? 'io' : 'i'}`].filter(Boolean).join('  ·  '));
+    ? t('schedaDocxService.sottotitoloProgramma', { sedute: schede.length, count: totaleEsercizi })
+    : [livello && t('schedaDocxService.livello', { livello: t(chiaveLivello) !== chiaveLivello ? t(chiaveLivello) : livello }),
+       schede[0]?.creatore?.nome && t('schedaDocxService.creataDa', { nome: schede[0].creatore.nome }),
+       t('schedaDocxService.conteggioEsercizi', { count: totaleEsercizi })].filter(Boolean).join('  ·  '));
 
   const corpo = [paragrafoTitolo(titolo), paragrafoSottotitolo(sottotitolo)];
 
@@ -218,17 +243,19 @@ export async function generaDocxSchede(schede, opzioni = {}) {
   // them once per plan would make the document unreadable.
   const descrizioni = [...new Set(schede.map(s => s.descrizione?.trim()).filter(Boolean))];
   if (descrizioni.length > 0) {
-    corpo.push(paragrafoSezione('Linee Guida'));
+    corpo.push(paragrafoSezione(t('schedaDocxService.lineeGuida')));
     for (const d of descrizioni) corpo.push(...lineeGuida(d));
   }
 
   schede.forEach((scheda, i) => {
     const esercizi = scheda.esercizi || [];
-    corpo.push(paragrafoSessione(multipla ? `Sessione ${i + 1}: ${scheda.titolo}` : 'Esercizi'));
+    corpo.push(paragrafoSessione(multipla
+      ? t('schedaDocxService.sessione', { numero: i + 1, titolo: scheda.titolo })
+      : t('schedaDocxService.elencoEsercizi')));
 
     if (esercizi.length === 0) {
       corpo.push(new Paragraph({
-        children: [new TextRun({ text: 'Questa scheda non contiene ancora esercizi.', italics: true, size: 20, color: C.sottotitolo, font: FONT })]
+        children: [new TextRun({ text: t('schedaDocxService.schedaVuota'), italics: true, size: 20, color: C.sottotitolo, font: FONT })]
       }));
     } else {
       corpo.push(tabellaEsercizi(esercizi));
@@ -241,7 +268,7 @@ export async function generaDocxSchede(schede, opzioni = {}) {
     alignment: AlignmentType.CENTER,
     spacing: { before: 400 },
     children: [new TextRun({
-      text: `Esportata da GymMaster il ${new Date().toLocaleDateString('it-IT')}`,
+      text: t('schedaDocxService.esportataIl', { data: new Date().toLocaleDateString(localeDi()) }),
       size: 16, color: '9999AA', font: FONT
     })]
   }));
@@ -271,10 +298,11 @@ export async function generaDocxSchede(schede, opzioni = {}) {
 
 /** Safe file name: only harmless characters, so no title can tamper with the HTTP header. */
 export function nomeFileDocumento(titolo) {
-  const base = (titolo || 'scheda')
+  const nomePredefinito = t('schedaDocxService.nomeFile');
+  const base = (titolo || nomePredefinito)
     .normalize('NFD').replace(/[̀-ͯ]/g, '')   // strips the accents
     .replace(/[^a-zA-Z0-9 _-]/g, '')
     .trim().replace(/\s+/g, '-')
-    .slice(0, 60) || 'scheda';
+    .slice(0, 60) || nomePredefinito;
   return `${base}.docx`;
 }
