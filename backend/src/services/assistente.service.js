@@ -56,7 +56,7 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
       where: { id: conversazioneAiId },
       include: {
         messaggi: {
-          orderBy: { inviatoIl: 'asc' },
+          orderBy: { inviatoIl: 'desc' },
           take: 20 // Last 20 messages for context
         }
       }
@@ -64,6 +64,11 @@ export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = 
 
     if (!conversazioneAI || conversazioneAI.utenteId !== utenteId) {
       throw new ErroreValidazione(t('assistenteService.conversazioneNonTrovata'));
+    }
+
+    // Reverse the array to get chronological order (oldest first)
+    if (conversazioneAI.messaggi) {
+      conversazioneAI.messaggi.reverse();
     }
   } else {
     conversazioneAI = await prisma.conversazioneAI.create({
