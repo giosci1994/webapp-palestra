@@ -174,6 +174,9 @@ $(novita_della_versione)"
   return 1
 }
 
+# Changes that touch nginx: its files, or the compose file that mounts them
+NGINX='^(nginx/|docker-compose\.yml$)'
+
 # true if one of the changed files matches the expression
 cambiato() { printf '%s\n' "$1" | grep -qE "$2"; }
 
@@ -190,10 +193,11 @@ prepara() {
   fi
   # shellcheck disable=SC2016 # $1 is expanded by the inner bash
   passo "build del frontend" bash -c 'cd frontend && npx vite build --outDir "$1" --emptyOutDir' _ "$STATO/dist" || return 1
-  if cambiato "$cambiati" '^nginx/'; then
-    # The running nginx still sees the old file: the new one is tested separately
-    passo "controllo della configurazione di nginx" docker run --rm --network web-apppalestra_gymmaster-rete \
-      -v "$CARTELLA/nginx/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:alpine nginx -t || return 1
+  if cambiato "$cambiati" "$NGINX"; then
+    # The running nginx still sees the old files: the new configuration is
+    # tested in a throwaway container defined by the new compose file, so it
+    # gets every file the compose mounts (a new include too)
+    passo "controllo della configurazione di nginx" docker compose run --rm --no-deps -T nginx nginx -t || return 1
   fi
 }
 
@@ -207,7 +211,7 @@ passa() {
     if cambiato "$cambiati" "^$servizio/"; then passo "avvio di $servizio" docker compose up -d --no-deps --force-recreate "$servizio" || return 1; fi
   done
   passo "pubblicazione del frontend" rsync -a --delete --checksum "$STATO/dist/" frontend/dist/ || return 1
-  if cambiato "$cambiati" '^nginx/'; then
+  if cambiato "$cambiati" "$NGINX"; then
     passo "avvio di nginx" docker compose up -d --no-deps --force-recreate nginx || return 1
     aspetta_sano gymmaster-nginx 120 || return 1
   fi

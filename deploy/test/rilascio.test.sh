@@ -26,6 +26,7 @@ echo "docker $*" >>"$FINTI/chiamate"
 case "$*" in
   *"exec -T db"*) echo "copia finta del database" ;;
   "compose build "*) if [ "${FALLISCI:-}" = "build ${!#}" ]; then echo "build finta fallita"; exit 1; fi ;;
+  *"nginx -t") if [ "${FALLISCI:-}" = "nginx -t" ]; then echo "nginx: [emerg] configurazione finta sbagliata"; exit 1; fi ;;
   "inspect "*) echo healthy ;;
 esac
 exit 0
@@ -146,7 +147,7 @@ prova "una release piu' vecchia non si installa" eval '[ "$(installata)" = 1.2.1
 nuova_versione 1.2.2 bot/bot.js nginx/nginx.conf
 pubblica v1.2.2
 rilascia
-prova "se cambiano bot e nginx, si ricostruiscono e si riavviano anche loro" eval '[ "$(installata)" = 1.2.2 ] && chiamato "compose build bot" && chiamato "force-recreate bot" && chiamato "nginx:alpine nginx -t" && chiamato "force-recreate nginx" && ! chiamato "build scraper"'
+prova "se cambiano bot e nginx, si ricostruiscono e si riavviano anche loro" eval '[ "$(installata)" = 1.2.2 ] && chiamato "compose build bot" && chiamato "force-recreate bot" && chiamato "compose run --rm --no-deps -T nginx nginx -t" && chiamato "force-recreate nginx" && ! chiamato "build scraper"'
 
 nuova_versione 1.2.3 frontend/src/app.js
 pubblica v1.2.3
@@ -190,6 +191,19 @@ prova "una release il cui version.json dice altro non si installa" eval '[ "$(in
 
 rilascia --installa v1.2.5
 prova "a mano si installa anche saltando le fallite" eval '[ "$(installata)" = 1.2.5 ]'
+
+# The compose file decides which files nginx mounts (v1.5.1 added an include)
+nuova_versione 1.2.6 docker-compose.yml
+pubblica v1.2.6
+rilascia
+prova "se cambia il compose, si prova la configurazione di nginx e nginx riparte" eval '[ "$(installata)" = 1.2.6 ] && chiamato "compose run --rm --no-deps -T nginx nginx -t" && chiamato "force-recreate nginx" && grep -qx "docker compose up -d" "$FINTI/chiamate"'
+
+nuova_versione 1.2.7 nginx/nginx.conf
+pubblica v1.2.7
+export FALLISCI="nginx -t"
+rilascia
+unset FALLISCI
+prova "una configurazione di nginx sbagliata ferma tutto prima di toccare il sito" eval '[ "$(installata)" = 1.2.6 ] && ! chiamato "up -d" && messaggio "controllo della configurazione di nginx. Il sito non è stato toccato, resta la 1.2.6"'
 
 echo
 echo "Prove dello script di rilascio: $riusciti riuscite, $falliti fallite"
