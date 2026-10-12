@@ -1,0 +1,6 @@
+{
+  "origineNonConsentita": "Origine non consentita",
+  "elementoNonTrovato": "Elemento non trovato",
+  "jsonNonValido": "Il corpo della richiesta non è un JSON valido",
+  "erroreInterno": "Si è verificato un errore interno del server"
+}

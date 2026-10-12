@@ -1,0 +1,11 @@
+{
+  "utenteNonTrovato": "User not found",
+  "impossibileApprovare": "Can't approve a user with status: {stato}",
+  "nonPuoiBannareSuperAdmin": "You can't ban a SuperAdmin",
+  "bioTroppoLunga": "The bio can't be longer than 200 characters",
+  "immagineTroppoGrande": "Image too large. Maximum 300KB.",
+  "passwordObbligatorie": "The old password and the new password are required",
+  "nuovaPasswordCorta": "The new password must be at least 8 characters long",
+  "passwordAttualeErrata": "The current password is incorrect",
+  "impossibileEliminareSuperAdmin": "Can't delete a SuperAdmin. Demote them to a regular user first."
+}

@@ -1,0 +1,12 @@
+{
+  "esercizioNonValido": "Invalid exercise",
+  "esercizioNonTrovato": "Exercise not found",
+  "palestraIdNonValido": "Invalid gym ID",
+  "fasciaOrariaRovesciata": "Time range is reversed",
+  "livello": {
+    "nessunDato": "No data",
+    "poco": "Not crowded",
+    "medio": "Moderately crowded",
+    "molto": "Very crowded"
+  }
+}

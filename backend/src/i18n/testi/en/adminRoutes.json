@@ -1,0 +1,17 @@
+{
+  "idNonValido": "Invalid ID",
+  "passwordResettata": "Password reset",
+  "palestraEliminata": "Gym deleted",
+  "esercizioEliminato": "Exercise deleted",
+  "suggerimentoNonTrovato": "Suggestion not found",
+  "suggerimentoGiaGestito": "Suggestion already handled",
+  "esercizioApprovatoTitolo": "Exercise approved! 🎉",
+  "esercizioApprovatoMessaggio": "Your suggestion \"{nome}\" was added to the catalog!",
+  "suggerimentoApprovato": "Suggestion approved and exercise created",
+  "suggerimentoRifiutatoTitolo": "Suggestion not approved",
+  "suggerimentoRifiutatoConMotivo": "\"{nome}\" was not approved: {motivo}",
+  "suggerimentoRifiutatoSenzaMotivo": "\"{nome}\" was not approved.",
+  "suggerimentoRifiutato": "Suggestion rejected",
+  "titoloObbligatorio": "Title is required",
+  "novitaEliminata": "What's new item deleted"
+}

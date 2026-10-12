@@ -1,0 +1,10 @@
+{
+  "idNonValido": "Invalid ID",
+  "notificaNonTrovata": "Notification not found",
+  "iscrizionePushNonValida": "Invalid push subscription",
+  "pushNonAttive": "Push notifications are not active on the server",
+  "provaTitolo": "🔔 Notifications on",
+  "provaMessaggio": "From now on GymMaster will alert you even when your screen is locked.",
+  "recuperoFuoriLimiti": "The rest must be between 1 and {max} seconds",
+  "prossimoNonValido": "The next exercise must be a short text"
+}

@@ -8,6 +8,7 @@ import { verificaToken, verificaTokenOpzionale } from '../middleware/autenticazi
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione } from '../utils/errori.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { t } from '../i18n/index.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -55,9 +56,9 @@ router.get('/esercizi', verificaToken, async (req, res, next) => {
 /** The exercise id from the route; 404 if the exercise does not exist */
 async function esercizioDaRotta(req) {
   const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Esercizio non valido');
+  if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione(t('catalogoRoutes.esercizioNonValido'));
   const esiste = await prisma.esercizio.count({ where: { id } });
-  if (!esiste) throw new ErroreNonTrovato('Esercizio non trovato');
+  if (!esiste) throw new ErroreNonTrovato(t('catalogoRoutes.esercizioNonTrovato'));
   return id;
 }
 
@@ -115,7 +116,7 @@ router.get('/palestre', verificaTokenOpzionale, async (req, res, next) => {
 router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, next) => {
   try {
     const palestraId = parseInt(req.params.id);
-    if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: 'ID palestra non valido' });
+    if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: t('catalogoRoutes.palestraIdNonValido') });
 
     // Use the Europe/Copenhagen time zone to work out the day/hour
     const adesso = new Date();
@@ -147,13 +148,13 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
     const liveCorrente = liveValido(datoOraCorrente) ? datoOraCorrente : null;
 
     // Level as text
-    let livelloTesto = 'Nessun dato';
+    let livelloTesto = t('catalogoRoutes.livello.nessunDato');
     let livelloColore = 'grigio';
     if (datoOraCorrente) {
       const pct = liveCorrente?.liveLivello ?? datoOraCorrente.livelloPercentuale;
-      if (pct <= 30) { livelloTesto = 'Poco affollata'; livelloColore = 'verde'; }
-      else if (pct <= 60) { livelloTesto = 'Mediamente affollata'; livelloColore = 'giallo'; }
-      else { livelloTesto = 'Molto affollata'; livelloColore = 'rosso'; }
+      if (pct <= 30) { livelloTesto = t('catalogoRoutes.livello.poco'); livelloColore = 'verde'; }
+      else if (pct <= 60) { livelloTesto = t('catalogoRoutes.livello.medio'); livelloColore = 'giallo'; }
+      else { livelloTesto = t('catalogoRoutes.livello.molto'); livelloColore = 'rosso'; }
     }
 
     res.json({
@@ -184,13 +185,13 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
 router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, async (req, res, next) => {
   try {
     const palestraId = parseInt(req.params.id);
-    if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: 'ID palestra non valido' });
+    if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: t('catalogoRoutes.palestraIdNonValido') });
 
     // Time window considered: at night the gym is almost always empty, but
     // suggesting 4 a.m. would not help anyone.
     const da = Math.min(Math.max(parseInt(req.query.da) || 6, 0), 23);
     const a = Math.min(Math.max(parseInt(req.query.a) || 22, 0), 23);
-    if (da > a) return res.status(400).json({ successo: false, errore: 'Fascia oraria rovesciata' });
+    if (da > a) return res.status(400).json({ successo: false, errore: t('catalogoRoutes.fasciaOrariaRovesciata') });
 
     const righe = await prisma.afluenzaPalestra.findMany({
       where: { palestraId, ora: { gte: da, lte: a } },
@@ -202,7 +203,7 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
       return res.json({ successo: true, dati: { disponibile: false, fascia: { da, a }, perGiorno: [], migliori: [] } });
     }
 
-    const media = righe.reduce((t, r) => t + r.livelloPercentuale, 0) / righe.length;
+    const media = righe.reduce((somma, r) => somma + r.livelloPercentuale, 0) / righe.length;
 
     // For each day: the three least crowded hours and the day's average
     const perGiornoMappa = new Map();
@@ -214,7 +215,7 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
     const perGiorno = [...perGiornoMappa.entries()]
       .map(([giorno, ore]) => ({
         giornoSettimana: giorno,
-        media: Math.round(ore.reduce((t, o) => t + o.livelloPercentuale, 0) / ore.length),
+        media: Math.round(ore.reduce((somma, o) => somma + o.livelloPercentuale, 0) / ore.length),
         migliori: [...ore]
           .sort((x, y) => x.livelloPercentuale - y.livelloPercentuale || x.ora - y.ora)
           .slice(0, 3)

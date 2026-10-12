@@ -1,0 +1,17 @@
+{
+  "idNonValido": "ID non valido",
+  "passwordResettata": "Password resettata",
+  "palestraEliminata": "Palestra eliminata",
+  "esercizioEliminato": "Esercizio eliminato",
+  "suggerimentoNonTrovato": "Suggerimento non trovato",
+  "suggerimentoGiaGestito": "Suggerimento già gestito",
+  "esercizioApprovatoTitolo": "Esercizio approvato! 🎉",
+  "esercizioApprovatoMessaggio": "Il tuo suggerimento \"{nome}\" è stato aggiunto al catalogo!",
+  "suggerimentoApprovato": "Suggerimento approvato ed esercizio creato",
+  "suggerimentoRifiutatoTitolo": "Suggerimento non approvato",
+  "suggerimentoRifiutatoConMotivo": "\"{nome}\" non è stato approvato: {motivo}",
+  "suggerimentoRifiutatoSenzaMotivo": "\"{nome}\" non è stato approvato.",
+  "suggerimentoRifiutato": "Suggerimento rifiutato",
+  "titoloObbligatorio": "Titolo obbligatorio",
+  "novitaEliminata": "Novità eliminata"
+}

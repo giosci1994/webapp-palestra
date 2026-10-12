@@ -1,0 +1,13 @@
+{
+  "destinatarioIdObbligatorio": "ID destinatario obbligatorio",
+  "destinatarioIdNonValido": "ID destinatario non valido",
+  "statoRispostaObbligatorio": "Stato risposta obbligatorio",
+  "statoRispostaNonValido": "Stato deve essere: ACCETTATA, RIFIUTATA o BLOCCATA",
+  "conversazioneIdObbligatorio": "ID conversazione obbligatorio",
+  "conversazioneIdNonValido": "ID conversazione non valido",
+  "contenutoObbligatorio": "Contenuto messaggio obbligatorio",
+  "messaggioVuoto": "Il messaggio non può essere vuoto",
+  "messaggioLungo": "Il messaggio non può superare 2000 caratteri",
+  "ritenzioneMinima": "Il valore minimo è 0 (conservazione permanente)",
+  "ritenzioneMassima": "Il valore massimo è 365 giorni"
+}

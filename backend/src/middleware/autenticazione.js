@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
-import { linguaSupportata } from '../i18n/index.js';
+import { linguaSupportata, t } from '../i18n/index.js';
 
 /**
  * JWT authentication middleware.
@@ -19,7 +19,7 @@ export async function verificaToken(req, res, next) {
     const headerAuth = req.headers.authorization;
 
     if (!headerAuth || !headerAuth.startsWith('Bearer ')) {
-      throw new ErroreNonAutenticato('Token di accesso mancante');
+      throw new ErroreNonAutenticato(t('autenticazione.tokenMancante'));
     }
 
     const token = headerAuth.split(' ')[1];
@@ -50,20 +50,20 @@ export async function verificaToken(req, res, next) {
     });
 
     if (!utente) {
-      throw new ErroreNonAutenticato('Utente non trovato');
+      throw new ErroreNonAutenticato(t('autenticazione.utenteNonTrovato'));
     }
 
     // Access tokens from before families existed have none: they expire on their own
     const { refreshTokens, ...datiUtente } = utente;
     if (payload.famiglia && refreshTokens.length === 0) {
-      throw new ErroreNonAutenticato('Sessione chiusa: accedi di nuovo');
+      throw new ErroreNonAutenticato(t('autenticazione.sessioneChiusa'));
     }
 
     if (utente.stato !== 'ATTIVO') {
       throw new ErroreNonAutenticato(
         utente.stato === 'BANNATO'
-          ? 'Il tuo account è stato sospeso'
-          : 'Il tuo account è in attesa di approvazione'
+          ? t('autenticazione.accountSospeso')
+          : t('autenticazione.accountInAttesa')
       );
     }
 
@@ -84,15 +84,15 @@ export async function verificaToken(req, res, next) {
     }
 
     if (errore.name === 'TokenExpiredError') {
-      return next(new ErroreNonAutenticato('Token di accesso scaduto'));
+      return next(new ErroreNonAutenticato(t('autenticazione.tokenScaduto')));
     }
 
     if (errore.name === 'JsonWebTokenError') {
-      return next(new ErroreNonAutenticato('Token di accesso non valido'));
+      return next(new ErroreNonAutenticato(t('autenticazione.tokenNonValido')));
     }
 
     logger.error({ errore: errore.message }, 'Errore imprevisto nella verifica del token');
-    return next(new ErroreNonAutenticato('Errore di autenticazione'));
+    return next(new ErroreNonAutenticato(t('autenticazione.erroreAutenticazione')));
   }
 }
 

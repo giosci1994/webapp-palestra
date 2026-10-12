@@ -14,6 +14,8 @@ import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { t } from '../i18n/index.js';
+import { linguaDiUtenteId } from '../i18n/destinatario.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -25,7 +27,7 @@ router.use(autorizza('SUPERADMIN'));
 router.put('/utenti/:id/reset-password', async (req, res, next) => {
   try {
     const targetId = parseInt(req.params.id);
-    if (isNaN(targetId)) return res.status(400).json({ successo: false, messaggio: 'ID non valido' });
+    if (isNaN(targetId)) return res.status(400).json({ successo: false, messaggio: t('adminRoutes.idNonValido') });
     // Random temporary password (the admin passes it on to the user, who then changes it)
     const passwordTemporanea = crypto.randomBytes(9).toString('base64url'); // ~12 characters
     const hash = await argon2.hash(passwordTemporanea);
@@ -34,7 +36,7 @@ router.put('/utenti/:id/reset-password', async (req, res, next) => {
       data: { passwordHash: hash }
     });
     logger.warn({ adminId: req.utente.id, targetId }, 'Admin ha resettato la password di un utente');
-    res.json({ successo: true, messaggio: 'Password resettata', dati: { passwordTemporanea } });
+    res.json({ successo: true, messaggio: t('adminRoutes.passwordResettata'), dati: { passwordTemporanea } });
   } catch (errore) { next(errore); }
 });
 
@@ -69,7 +71,7 @@ router.put('/palestre/:id', async (req, res, next) => {
 router.delete('/palestre/:id', async (req, res, next) => {
   try {
     await prisma.palestra.delete({ where: { id: parseInt(req.params.id) } });
-    res.json({ successo: true, messaggio: 'Palestra eliminata' });
+    res.json({ successo: true, messaggio: t('adminRoutes.palestraEliminata') });
   } catch (errore) { next(errore); }
 });
 
@@ -138,7 +140,7 @@ router.put('/esercizi/:id', async (req, res, next) => {
 router.delete('/esercizi/:id', async (req, res, next) => {
   try {
     await prisma.esercizio.delete({ where: { id: parseInt(req.params.id) } });
-    res.json({ successo: true, messaggio: 'Esercizio eliminato' });
+    res.json({ successo: true, messaggio: t('adminRoutes.esercizioEliminato') });
   } catch (errore) { next(errore); }
 });
 
@@ -204,11 +206,11 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
     });
 
     if (!suggerimento) {
-      return res.status(404).json({ successo: false, messaggio: 'Suggerimento non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('adminRoutes.suggerimentoNonTrovato') });
     }
 
     if (suggerimento.stato !== 'IN_ATTESA') {
-      return res.status(400).json({ successo: false, messaggio: 'Suggerimento già gestito' });
+      return res.status(400).json({ successo: false, messaggio: t('adminRoutes.suggerimentoGiaGestito') });
     }
 
     // Create the real exercise (uses the fields edited by the admin or the original ones)
@@ -237,10 +239,11 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
     // Notify the user who made the suggestion
     const io = req.app.get('io');
     if (io) {
+      const lingua = await linguaDiUtenteId(suggerimento.utenteId);
       io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
         tipo: 'suggerimento_approvato',
-        titolo: 'Esercizio approvato! 🎉',
-        messaggio: `Il tuo suggerimento "${suggerimento.nome}" è stato aggiunto al catalogo!`,
+        titolo: t('adminRoutes.esercizioApprovatoTitolo', {}, lingua),
+        messaggio: t('adminRoutes.esercizioApprovatoMessaggio', { nome: suggerimento.nome }, lingua),
         dati: { esercizioId: esercizio.id },
         timestamp: new Date().toISOString()
       });
@@ -248,7 +251,7 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
 
     res.json({
       successo: true,
-      messaggio: 'Suggerimento approvato ed esercizio creato',
+      messaggio: t('adminRoutes.suggerimentoApprovato'),
       dati: esercizio
     });
   } catch (errore) { next(errore); }
@@ -266,11 +269,11 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
     });
 
     if (!suggerimento) {
-      return res.status(404).json({ successo: false, messaggio: 'Suggerimento non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('adminRoutes.suggerimentoNonTrovato') });
     }
 
     if (suggerimento.stato !== 'IN_ATTESA') {
-      return res.status(400).json({ successo: false, messaggio: 'Suggerimento già gestito' });
+      return res.status(400).json({ successo: false, messaggio: t('adminRoutes.suggerimentoGiaGestito') });
     }
 
     await prisma.suggerimentoEsercizio.update({
@@ -285,17 +288,18 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
     // Notify the user
     const io = req.app.get('io');
     if (io) {
+      const lingua = await linguaDiUtenteId(suggerimento.utenteId);
       io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
         tipo: 'suggerimento_rifiutato',
-        titolo: 'Suggerimento non approvato',
+        titolo: t('adminRoutes.suggerimentoRifiutatoTitolo', {}, lingua),
         messaggio: motivoRifiuto
-          ? `"${suggerimento.nome}" non è stato approvato: ${motivoRifiuto}`
-          : `"${suggerimento.nome}" non è stato approvato.`,
+          ? t('adminRoutes.suggerimentoRifiutatoConMotivo', { nome: suggerimento.nome, motivo: motivoRifiuto }, lingua)
+          : t('adminRoutes.suggerimentoRifiutatoSenzaMotivo', { nome: suggerimento.nome }, lingua),
         timestamp: new Date().toISOString()
       });
     }
 
-    res.json({ successo: true, messaggio: 'Suggerimento rifiutato' });
+    res.json({ successo: true, messaggio: t('adminRoutes.suggerimentoRifiutato') });
   } catch (errore) { next(errore); }
 });
 
@@ -343,7 +347,7 @@ router.get('/novita', async (req, res, next) => {
 router.post('/novita', async (req, res, next) => {
   try {
     const { titolo, sottotitolo, punti, icona, immagine, ctaTesto, ctaRotta, coloreInizio, coloreFine, attiva, ordine } = req.body;
-    if (!titolo) return res.status(400).json({ successo: false, messaggio: 'Titolo obbligatorio' });
+    if (!titolo) return res.status(400).json({ successo: false, messaggio: t('adminRoutes.titoloObbligatorio') });
     const nuova = await prisma.novita.create({
       data: {
         titolo,
@@ -392,7 +396,7 @@ router.put('/novita/:id', async (req, res, next) => {
 router.delete('/novita/:id', async (req, res, next) => {
   try {
     await prisma.novita.delete({ where: { id: parseInt(req.params.id) } });
-    res.json({ successo: true, messaggio: 'Novità eliminata' });
+    res.json({ successo: true, messaggio: t('adminRoutes.novitaEliminata') });
   } catch (errore) { next(errore); }
 });
 

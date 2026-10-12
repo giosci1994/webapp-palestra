@@ -21,6 +21,7 @@
 
 import prisma from '../config/database.js';
 import { giornoLocale } from '../utils/date.js';
+import { t } from '../i18n/index.js';
 
 // Changes when the file's structure changes
 export const VERSIONE_FORMATO = 1;
@@ -174,7 +175,8 @@ export async function esportaDatiUtente(utenteId) {
     formato: 'gymmaster-esportazione-dati',
     versioneFormato: VERSIONE_FORMATO,
     esportatoIl: new Date().toISOString(),
-    nota: 'Tutti i dati che GymMaster conserva sul tuo account. Degli altri utenti compare solo il nome.',
+    // In the language of the request that asked for the file
+    nota: t('esportazioneDatiService.nota'),
     profilo,
     schede: schede.map(({ assegnataDaPT, ...scheda }) => ({ ...scheda, assegnataDa: nomeDi(assegnataDaPT) })),
     allenamenti: sessioni.map(({ scheda, logSerie, ...sessione }) => ({

@@ -6,6 +6,7 @@
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
+import { t, linguaDaIntestazione } from '../i18n/index.js';
 
 // Helper: extracts the real IP from the request
 const getIp = (req) => req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip);
@@ -22,6 +23,11 @@ const getUserKey = (req) => {
   return getIp(req);
 };
 
+// Helper: the 429 messages are translated for each request, from
+// Accept-Language: a limiter is created once, and the global one runs before
+// the middleware that sets the request's language
+const linguaDi = (req) => linguaDaIntestazione(req.headers['accept-language']);
+
 /**
  * Global rate limiter for all the API routes.
  * 500 requests per 15-minute window.
@@ -32,15 +38,14 @@ export const limitatoreGlobale = rateLimit({
   max: 500,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    successo: false,
-    codice: 'TROPPE_RICHIESTE',
-    messaggio: 'Troppe richieste, riprova tra qualche minuto.'
-  },
   keyGenerator: getUserKey,
-  handler: (req, res, next, opzioni) => {
+  handler: (req, res) => {
     logger.warn({ ip: getIp(req), percorso: req.path }, 'Rate limit globale superato');
-    res.status(429).json(opzioni.message);
+    res.status(429).json({
+      successo: false,
+      codice: 'TROPPE_RICHIESTE',
+      messaggio: t('limitatore.troppeRichieste', {}, linguaDi(req))
+    });
   }
 });
 
@@ -54,15 +59,14 @@ export const limitatoreAuth = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    successo: false,
-    codice: 'TROPPE_RICHIESTE_AUTH',
-    messaggio: 'Troppi tentativi di autenticazione, riprova tra 15 minuti.'
-  },
   keyGenerator: getIp,
-  handler: (req, res, next, opzioni) => {
+  handler: (req, res) => {
     logger.warn({ ip: getIp(req), percorso: req.path }, 'Rate limit autenticazione superato');
-    res.status(429).json(opzioni.message);
+    res.status(429).json({
+      successo: false,
+      codice: 'TROPPE_RICHIESTE_AUTH',
+      messaggio: t('limitatore.troppiTentativiAuth', {}, linguaDi(req))
+    });
   }
 });
 
@@ -76,10 +80,11 @@ export const limitatoreAI = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getUserKey,
-
-  message: {
-    successo: false,
-    codice: 'TROPPE_RICHIESTE_AI',
-    messaggio: 'Troppe richieste all\'assistente AI, riprova tra un minuto.'
+  handler: (req, res) => {
+    res.status(429).json({
+      successo: false,
+      codice: 'TROPPE_RICHIESTE_AI',
+      messaggio: t('limitatore.troppeRichiesteAI', {}, linguaDi(req))
+    });
   }
 });

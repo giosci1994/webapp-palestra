@@ -1,0 +1,16 @@
+{
+  "registrazioneVerificaEmail": "Registration complete. Check your email to verify your account.",
+  "registrazioneCompletata": "Registration complete.",
+  "emailGiaVerificata": "Email already verified.",
+  "emailVerificata": "Email verified!",
+  "verificaReinviata": "If the address is registered and not yet verified, we've sent you a new email.",
+  "resetRichiesto": "If the address is registered, we've sent you a link to reset your password.",
+  "passwordReimpostata": "Password reset. You can now sign in.",
+  "loginEffettuato": "Signed in successfully",
+  "refreshTokenMancante": "Refresh token missing",
+  "logoutEffettuato": "Signed out successfully",
+  "dispositivoScollegato": "Device signed out",
+  "altriDispositiviScollegati": "Your other devices have been signed out",
+  "passkeyAggiunta": "Passkey added",
+  "passkeyEliminata": "Passkey deleted"
+}

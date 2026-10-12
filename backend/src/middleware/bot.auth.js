@@ -6,12 +6,13 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
+import { t, conLingua, linguaSupportata } from '../i18n/index.js';
 
 /** Checks the X-Bot-Secret header. The bot routes are never exposed publicly. */
 export function verificaSegretoBot(req, res, next) {
   const segreto = req.headers['x-bot-secret'];
   if (!process.env.BOT_SECRET || segreto !== process.env.BOT_SECRET) {
-    return next(new ErroreNonAutorizzato('Accesso bot non autorizzato'));
+    return next(new ErroreNonAutorizzato(t('botAuth.accessoNonAutorizzato')));
   }
   next();
 }
@@ -24,13 +25,13 @@ export async function risolviUtenteTelegram(req, res, next) {
   try {
     const chatId = req.body?.chatId;
     if (chatId === undefined || chatId === null || chatId === '') {
-      throw new ErroreValidazione('chatId mancante');
+      throw new ErroreValidazione(t('botAuth.chatIdMancante'));
     }
 
     const collegamento = await prisma.collegamentoTelegram.findUnique({
       where: { telegramChatId: BigInt(chatId) },
       include: {
-        utente: { select: { id: true, nome: true, ruolo: true, stato: true, palestraId: true } }
+        utente: { select: { id: true, nome: true, ruolo: true, stato: true, palestraId: true, lingua: true, linguaApp: true } }
       }
     });
 
@@ -38,20 +39,27 @@ export async function risolviUtenteTelegram(req, res, next) {
       return res.status(409).json({
         successo: false,
         codice: 'NON_COLLEGATO',
-        messaggio: 'Account Telegram non collegato. Genera un codice dall\'app e invialo qui.'
+        messaggio: t('botAuth.nonCollegato')
       });
     }
+
+    // The bot sends no Accept-Language: the answers go to the linked user, in
+    // their language (Profile choice, then the app's last one, then the request's)
+    const { utente } = collegamento;
+    const lingua = linguaSupportata(utente.lingua) || linguaSupportata(utente.linguaApp) || req.lingua;
 
     if (collegamento.utente.stato !== 'ATTIVO') {
       return res.status(403).json({
         successo: false,
         codice: 'ACCOUNT_NON_ATTIVO',
-        messaggio: 'Il tuo account non è attivo.'
+        messaggio: t('botAuth.accountNonAttivo', {}, lingua)
       });
     }
 
     req.utenteTelegram = collegamento.utente;
-    next();
+    // Whatever the route builds from here on (t() in the controller and the
+    // services) is in that language too
+    conLingua(lingua, next);
   } catch (errore) {
     next(errore);
   }

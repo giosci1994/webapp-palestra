@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
+import { t, linguaDiUtente } from '../i18n/index.js';
 
 const router = Router();
 router.use(verificaToken);
@@ -18,7 +19,7 @@ router.post('/', async (req, res, next) => {
     if (!nome?.trim() || !gruppoMuscoloPrimario?.trim()) {
       return res.status(400).json({
         successo: false,
-        messaggio: 'Nome e gruppo muscolare primario sono obbligatori'
+        messaggio: t('suggerimentiRoutes.nomeEGruppoObbligatori')
       });
     }
 
@@ -42,14 +43,16 @@ router.post('/', async (req, res, next) => {
       // Find every admin
       const admins = await prisma.utente.findMany({
         where: { ruolo: 'SUPERADMIN', stato: 'ATTIVO' },
-        select: { id: true }
+        select: { id: true, lingua: true, linguaApp: true }
       });
 
+      // Each admin gets the text in their own language, not the requester's
       for (const admin of admins) {
+        const lingua = linguaDiUtente(admin);
         io.to(`utente:${admin.id}`).emit('notifica:nuova', {
           tipo: 'suggerimento_esercizio',
-          titolo: 'Nuovo suggerimento esercizio',
-          messaggio: `${req.utente.nome} ha suggerito: "${nome}"`,
+          titolo: t('suggerimentiRoutes.nuovoSuggerimentoTitolo', {}, lingua),
+          messaggio: t('suggerimentiRoutes.nuovoSuggerimentoMessaggio', { utente: req.utente.nome, esercizio: nome }, lingua),
           dati: { suggerimentoId: suggerimento.id },
           timestamp: new Date().toISOString()
         });
@@ -58,7 +61,7 @@ router.post('/', async (req, res, next) => {
 
     res.status(201).json({
       successo: true,
-      messaggio: 'Suggerimento inviato con successo! L\'amministratore lo esaminerà.',
+      messaggio: t('suggerimentiRoutes.suggerimentoInviato'),
       dati: suggerimento
     });
   } catch (errore) { next(errore); }

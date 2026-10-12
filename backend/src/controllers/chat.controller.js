@@ -4,6 +4,14 @@
 // ============================================
 
 import * as chatService from '../services/chat.service.js';
+import { t } from '../i18n/index.js';
+
+// The message for each answer to a contact request (translation keys)
+const MESSAGGIO_RISPOSTA = {
+  ACCETTATA: 'chatController.richiestaAccettata',
+  RIFIUTATA: 'chatController.richiestaRifiutata',
+  BLOCCATA: 'chatController.richiestaBloccata'
+};
 
 /** POST /api/v1/chat/contatti/richiesta — Sends a contact request */
 export async function inviaRichiesta(req, res, next) {
@@ -12,7 +20,7 @@ export async function inviaRichiesta(req, res, next) {
       req.utente.id,
       req.body.destinatarioId
     );
-    res.status(201).json({ successo: true, messaggio: 'Richiesta di contatto inviata', dati: richiesta });
+    res.status(201).json({ successo: true, messaggio: t('chatController.richiestaInviata'), dati: richiesta });
   } catch (errore) {
     next(errore);
   }
@@ -26,7 +34,7 @@ export async function rispondiRichiesta(req, res, next) {
       req.utente.id,
       req.body.stato
     );
-    res.json({ successo: true, messaggio: `Richiesta ${req.body.stato.toLowerCase()}`, dati: risultato });
+    res.json({ successo: true, messaggio: t(MESSAGGIO_RISPOSTA[req.body.stato]), dati: risultato });
   } catch (errore) {
     next(errore);
   }

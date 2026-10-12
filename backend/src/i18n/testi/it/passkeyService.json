@@ -1,0 +1,9 @@
+{
+  "richiestaScaduta": "Richiesta scaduta: riprova",
+  "utenteNonTrovato": "Utente non trovato",
+  "passwordNonCorretta": "Password non corretta",
+  "passkeyNonValida": "Passkey non valida: riprova",
+  "passkeyGiaRegistrata": "Questa passkey è già registrata",
+  "passkeyNonTrovata": "Passkey non trovata",
+  "passkeyNonRiconosciuta": "Passkey non riconosciuta: se l'hai eliminata dal profilo, entra con la password"
+}

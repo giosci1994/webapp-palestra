@@ -1,0 +1,41 @@
+{
+  "utenteNonTrovato": "User not found",
+  "livello": {
+    "principiante": "Beginner",
+    "apprendista": "Apprentice",
+    "intermedio": "Intermediate",
+    "avanzato": "Advanced",
+    "esperto": "Expert",
+    "maestro": "Master",
+    "campione": "Champion",
+    "leggenda": "Legend",
+    "mito": "Myth",
+    "divinita": "Divinity",
+    "titanoSupremo": "Supreme Titan",
+    "immortale": "Immortal"
+  },
+  "badge": {
+    "primaVolta": { "nome": "First Time", "desc": "Complete your first workout" },
+    "costante": { "nome": "Consistent", "desc": "10 workouts completed" },
+    "veterano": { "nome": "Veteran", "desc": "50 workouts completed" },
+    "centurione": { "nome": "Centurion", "desc": "100 workouts completed" },
+    "instancabile": { "nome": "Tireless", "desc": "200 workouts completed" },
+    "tonnellata": { "nome": "One Ton", "desc": "1,000 kg of total volume" },
+    "mostro": { "nome": "Beast", "desc": "10,000 kg of total volume" },
+    "titano": { "nome": "Titan", "desc": "100,000 kg of total volume" },
+    "atlas": { "nome": "Atlas", "desc": "500,000 kg of total volume" },
+    "milionario": { "nome": "Millionaire", "desc": "1,000,000 kg of total volume" },
+    "primoRecord": { "nome": "First Record", "desc": "Set your first personal record" },
+    "recordman": { "nome": "Record Breaker", "desc": "Set 5 personal records" },
+    "recordmanElite": { "nome": "Elite Record Breaker", "desc": "20 personal records" },
+    "maratoneta": { "nome": "Marathoner", "desc": "10 hours of total training" },
+    "ultraMaratoneta": { "nome": "Ultra Marathoner", "desc": "50 hours of total training" },
+    "creatore": { "nome": "Creator", "desc": "Create 3 workout plans" },
+    "architect": { "nome": "Architect", "desc": "Create 10 workout plans" },
+    "sociale": { "nome": "Social", "desc": "Send 10 chat messages" },
+    "chatterbox": { "nome": "Chatterbox", "desc": "Send 100 chat messages" },
+    "settimanaPerfetta": { "nome": "Perfect Week", "desc": "7-day streak" },
+    "mesePerfetto": { "nome": "Perfect Month", "desc": "30-day streak" },
+    "centuria": { "nome": "Century", "desc": "100-day streak" }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "emailGiaRegistrata": "An account with this email already exists",
+  "tokenMancante": "Missing token",
+  "linkVerificaNonValido": "Invalid verification link",
+  "linkVerificaScaduto": "Verification link expired. Request a new one from the sign-in page.",
+  "passwordDebole": "The password must be at least 8 characters long, with an uppercase letter and a number",
+  "linkResetNonValido": "Invalid reset link",
+  "linkResetScaduto": "Reset link expired. Request a new one.",
+  "credenzialiNonValide": "Invalid credentials",
+  "troppiTentativi_one": "Too many failed attempts for this account: try again in {count} minute",
+  "troppiTentativi_other": "Too many failed attempts for this account: try again in {count} minutes",
+  "accountSospeso": "Your account has been suspended",
+  "accountInAttesa": "Your account is awaiting approval from the administrator",
+  "emailNonVerificata": "Verify your email before signing in. Check your inbox (and your spam folder).",
+  "refreshTokenNonValido": "Invalid refresh token",
+  "accountNonAttivo": "Account not active",
+  "sessioneCompromessa": "Your security token has been compromised, please sign in again",
+  "refreshTokenScaduto": "Refresh token expired",
+  "sessioneNonTrovata": "Session not found"
+}

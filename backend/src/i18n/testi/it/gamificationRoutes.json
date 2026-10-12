@@ -1,0 +1,41 @@
+{
+  "utenteNonTrovato": "Utente non trovato",
+  "livello": {
+    "principiante": "Principiante",
+    "apprendista": "Apprendista",
+    "intermedio": "Intermedio",
+    "avanzato": "Avanzato",
+    "esperto": "Esperto",
+    "maestro": "Maestro",
+    "campione": "Campione",
+    "leggenda": "Leggenda",
+    "mito": "Mito",
+    "divinita": "Divinità",
+    "titanoSupremo": "Titano Supremo",
+    "immortale": "Immortale"
+  },
+  "badge": {
+    "primaVolta": { "nome": "Prima Volta", "desc": "Completa il primo allenamento" },
+    "costante": { "nome": "Costante", "desc": "10 sessioni completate" },
+    "veterano": { "nome": "Veterano", "desc": "50 sessioni completate" },
+    "centurione": { "nome": "Centurione", "desc": "100 sessioni completate" },
+    "instancabile": { "nome": "Instancabile", "desc": "200 sessioni completate" },
+    "tonnellata": { "nome": "Tonnellata", "desc": "1.000 kg di volume totale" },
+    "mostro": { "nome": "Mostro", "desc": "10.000 kg di volume totale" },
+    "titano": { "nome": "Titano", "desc": "100.000 kg di volume totale" },
+    "atlas": { "nome": "Atlas", "desc": "500.000 kg di volume totale" },
+    "milionario": { "nome": "Milionario", "desc": "1.000.000 kg di volume totale" },
+    "primoRecord": { "nome": "Primo Record", "desc": "Stabilisci il primo record personale" },
+    "recordman": { "nome": "Recordman", "desc": "Stabilisci 5 record personali" },
+    "recordmanElite": { "nome": "Recordman Elite", "desc": "20 record personali" },
+    "maratoneta": { "nome": "Maratoneta", "desc": "10 ore di allenamento totali" },
+    "ultraMaratoneta": { "nome": "Ultra Maratoneta", "desc": "50 ore di allenamento totali" },
+    "creatore": { "nome": "Creatore", "desc": "Crea 3 schede di allenamento" },
+    "architect": { "nome": "Architect", "desc": "Crea 10 schede di allenamento" },
+    "sociale": { "nome": "Sociale", "desc": "Invia 10 messaggi in chat" },
+    "chatterbox": { "nome": "Chatterbox", "desc": "Invia 100 messaggi in chat" },
+    "settimanaPerfetta": { "nome": "Settimana Perfetta", "desc": "7 giorni di streak" },
+    "mesePerfetto": { "nome": "Mese Perfetto", "desc": "30 giorni di streak" },
+    "centuria": { "nome": "Centuria", "desc": "100 giorni di streak" }
+  }
+}

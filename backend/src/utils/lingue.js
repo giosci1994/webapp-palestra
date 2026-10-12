@@ -7,6 +7,7 @@
 // follows the phone's language.
 
 import { ErroreValidazione } from './errori.js';
+import { t } from '../i18n/index.js';
 
 export const LINGUE = ['en', 'it'];
 export const LINGUA_BASE = 'en';
@@ -18,5 +19,5 @@ export const LINGUA_BASE = 'en';
 export function leggiLingua(valore) {
   if (valore === null || valore === '') return null;
   if (LINGUE.includes(valore)) return valore;
-  throw new ErroreValidazione(`Lingua non supportata: usa ${LINGUE.join(', ')}`);
+  throw new ErroreValidazione(t('lingue.nonSupportata', { lingue: LINGUE.join(', ') }));
 }

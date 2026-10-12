@@ -6,6 +6,7 @@
 import * as utentiService from '../services/utenti.service.js';
 import { esportaDatiUtente, nomeFileEsportazione } from '../services/esportazioneDati.service.js';
 import logger from '../utils/logger.js';
+import { t } from '../i18n/index.js';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -61,7 +62,7 @@ export async function esportaDati(req, res, next) {
 export async function approva(req, res, next) {
   try {
     const utente = await utentiService.approvaUtente(parseInt(req.params.id));
-    res.json({ successo: true, messaggio: 'Utente approvato', dati: utente });
+    res.json({ successo: true, messaggio: t('utentiController.utenteApprovato'), dati: utente });
   } catch (errore) {
     next(errore);
   }
@@ -71,7 +72,7 @@ export async function approva(req, res, next) {
 export async function banna(req, res, next) {
   try {
     const utente = await utentiService.bannaUtente(parseInt(req.params.id));
-    res.json({ successo: true, messaggio: 'Utente bannato', dati: utente });
+    res.json({ successo: true, messaggio: t('utentiController.utenteBannato'), dati: utente });
   } catch (errore) {
     next(errore);
   }
@@ -82,7 +83,7 @@ export async function cambiaRuolo(req, res, next) {
   try {
     const { ruolo } = req.body;
     const utente = await utentiService.cambiaRuolo(parseInt(req.params.id), ruolo);
-    res.json({ successo: true, messaggio: 'Ruolo aggiornato', dati: utente });
+    res.json({ successo: true, messaggio: t('utentiController.ruoloAggiornato'), dati: utente });
   } catch (errore) {
     next(errore);
   }
@@ -92,7 +93,7 @@ export async function cambiaRuolo(req, res, next) {
 export async function elimina(req, res, next) {
   try {
     await utentiService.eliminaUtente(parseInt(req.params.id));
-    res.json({ successo: true, messaggio: 'Utente eliminato definitivamente' });
+    res.json({ successo: true, messaggio: t('utentiController.utenteEliminato') });
   } catch (errore) {
     next(errore);
   }
@@ -102,7 +103,7 @@ export async function elimina(req, res, next) {
 export async function aggiornaProfilo(req, res, next) {
   try {
     const utente = await utentiService.aggiornaProfilo(req.utente.id, req.body);
-    res.json({ successo: true, messaggio: 'Profilo aggiornato', dati: utente });
+    res.json({ successo: true, messaggio: t('utentiController.profiloAggiornato'), dati: utente });
   } catch (errore) {
     next(errore);
   }
@@ -113,7 +114,7 @@ export async function cambiaPassword(req, res, next) {
   try {
     const { vecchiaPassword, nuovaPassword } = req.body;
     await utentiService.cambiaPassword(req.utente.id, vecchiaPassword, nuovaPassword, req.utente.famiglia);
-    res.json({ successo: true, messaggio: 'Password aggiornata: gli altri dispositivi sono stati scollegati' });
+    res.json({ successo: true, messaggio: t('utentiController.passwordAggiornata') });
   } catch (errore) {
     next(errore);
   }

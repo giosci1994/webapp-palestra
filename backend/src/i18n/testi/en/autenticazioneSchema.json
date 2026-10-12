@@ -1,0 +1,14 @@
+{
+  "emailObbligatoria": "Email is required",
+  "emailNonValida": "Invalid email format",
+  "emailTroppoLunga": "Email is too long",
+  "passwordObbligatoria": "Password is required",
+  "passwordCorta": "The password must be at least 8 characters long",
+  "passwordLunga": "The password can't be longer than 128 characters",
+  "passwordDebole": "The password must contain at least one uppercase letter, one lowercase letter and one number",
+  "nomeObbligatorio": "Name is required",
+  "nomeCorto": "The name must be at least 2 characters long",
+  "nomeLungo": "The name can't be longer than 100 characters",
+  "palestraIdNonValido": "Invalid gym ID",
+  "refreshTokenObbligatorio": "Refresh token is required"
+}

@@ -1,0 +1,22 @@
+{
+  "schedaNonTrovata": "Plan not found",
+  "schedaNumeroNonTrovata": "Plan {id} not found",
+  "schedaNonAccessibile": "You don't have access to this plan",
+  "schedaTitoloNonAccessibile": "You don't have access to the plan \"{titolo}\"",
+  "titoloObbligatorio": "The title is required",
+  "soloAdminPtGlobali": "Only admins and personal trainers can create global plans",
+  "nonPuoiClonare": "You can't clone this plan",
+  "copiaTitolo": "{titolo} (copy)",
+  "nonPuoiModificare": "You can't edit this plan",
+  "nonPuoiEliminare": "You can't delete this plan",
+  "schedaEliminata": "Plan deleted",
+  "esercizioSchedaNonTrovato": "Plan exercise not found",
+  "esercizioRimosso": "Exercise removed from the plan",
+  "idNonValido": "Invalid ID",
+  "indicareAlmenoUnaScheda": "Specify at least one plan in \"ids\"",
+  "idsNonValido": "The \"ids\" parameter is not valid",
+  "massimoSchedePerDocumento": "At most 10 plans per document",
+  "stessaSchedaPiuVolte": "The same plan is listed more than once",
+  "programmaSedute_one": "Program {count} workout",
+  "programmaSedute_other": "Program {count} workouts"
+}

@@ -12,6 +12,7 @@
 //   stays out of counts, records, maxes and progression.
 
 import { ErroreValidazione } from './errori.js';
+import { t } from '../i18n/index.js';
 
 export const TIPI_SERIE = ['LAVORO', 'RISCALDAMENTO', 'DROP'];
 
@@ -26,10 +27,13 @@ export const volumeDi = serie => serie
   .filter(s => s.completato !== false && s.tipo !== 'RISCALDAMENTO')
   .reduce((somma, s) => somma + (s.pesoEffettivo || 0) * (s.repEffettive || 0), 0);
 
-/** The type sent by the client; missing means LAVORO. `dove` starts the error message ("Serie 3: ") */
+/**
+ * The type sent by the client; missing means LAVORO. `dove` starts the error
+ * message: a prefix the caller has already translated ("Serie 3: ")
+ */
 export function leggiTipo(valore, dove = '') {
   if (valore == null) return 'LAVORO';
-  if (!TIPI_SERIE.includes(valore)) throw new ErroreValidazione(`${dove}tipo di serie non valido`);
+  if (!TIPI_SERIE.includes(valore)) throw new ErroreValidazione(dove + t('tipiSerie.tipoNonValido'));
   return valore;
 }
 

@@ -1,0 +1,5 @@
+{
+  "salute": "GymMaster API is up and running 💪",
+  "bannerErrore": "Could not read the banner",
+  "rottaNonTrovata": "Route {metodo} {percorso} does not exist"
+}

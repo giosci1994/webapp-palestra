@@ -11,6 +11,7 @@ import { consiglioAllenamento } from '../services/consiglio.service.js';
 import { giornoLocale } from '../utils/date.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
+import { t } from '../i18n/index.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -309,12 +310,12 @@ router.delete('/record/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
     const record = await prisma.recordPersonale.findUnique({ where: { id } });
-    if (!record) return res.status(404).json({ successo: false, messaggio: 'Record non trovato' });
+    if (!record) return res.status(404).json({ successo: false, messaggio: t('statisticheRoutes.recordNonTrovato') });
     if (record.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      return res.status(403).json({ successo: false, messaggio: 'Non autorizzato' });
+      return res.status(403).json({ successo: false, messaggio: t('statisticheRoutes.nonAutorizzato') });
     }
     await prisma.recordPersonale.delete({ where: { id } });
-    res.json({ successo: true, messaggio: 'Record eliminato' });
+    res.json({ successo: true, messaggio: t('statisticheRoutes.recordEliminato') });
   } catch (errore) { next(errore); }
 });
 

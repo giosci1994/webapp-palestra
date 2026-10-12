@@ -7,6 +7,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { t } from '../i18n/index.js';
 import autenticazioneRoutes from './autenticazione.routes.js';
 import utentiRoutes from './utenti.routes.js';
 import chatRoutes from './chat.routes.js';
@@ -42,7 +43,7 @@ const VERSIONE_APP = (() => {
 router.get('/salute', (req, res) => {
   res.json({
     successo: true,
-    messaggio: 'GymMaster API funzionante 💪',
+    messaggio: t('indice.salute'),
     versione: VERSIONE_APP,
     timestamp: new Date().toISOString()
   });
@@ -59,7 +60,7 @@ router.get('/banner', (req, res) => {
       res.json({ successo: true, dati: { visibile: false, testo: '' } });
     }
   } catch (err) {
-    res.status(500).json({ successo: false, messaggio: 'Errore lettura banner' });
+    res.status(500).json({ successo: false, messaggio: t('indice.bannerErrore') });
   }
 });
 
@@ -87,7 +88,7 @@ router.use('*', (req, res) => {
   res.status(404).json({
     successo: false,
     codice: 'ROTTA_NON_TROVATA',
-    messaggio: `La rotta ${req.method} ${req.originalUrl} non esiste`
+    messaggio: t('indice.rottaNonTrovata', { metodo: req.method, percorso: req.originalUrl })
   });
 });
 

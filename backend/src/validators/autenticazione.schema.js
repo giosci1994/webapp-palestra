@@ -2,34 +2,37 @@
 // GymMaster — Authentication validation schemas
 // Zod schemas for login, registration, refresh
 // ============================================
+//
+// The messages are translation keys: middleware/validazione.js translates
+// them into the request's language when it builds the response.
 
 import { z } from 'zod';
 
 /** Schema for registering a new user */
 export const schemaRegistrazione = z.object({
   email: z
-    .string({ required_error: 'Email obbligatoria' })
-    .email('Formato email non valido')
-    .max(255, 'Email troppo lunga')
+    .string({ required_error: 'autenticazioneSchema.emailObbligatoria' })
+    .email('autenticazioneSchema.emailNonValida')
+    .max(255, 'autenticazioneSchema.emailTroppoLunga')
     .toLowerCase()
     .trim(),
   password: z
-    .string({ required_error: 'Password obbligatoria' })
-    .min(8, 'La password deve avere almeno 8 caratteri')
-    .max(128, 'La password non può superare 128 caratteri')
+    .string({ required_error: 'autenticazioneSchema.passwordObbligatoria' })
+    .min(8, 'autenticazioneSchema.passwordCorta')
+    .max(128, 'autenticazioneSchema.passwordLunga')
     .regex(
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      'La password deve contenere almeno una maiuscola, una minuscola e un numero'
+      'autenticazioneSchema.passwordDebole'
     ),
   nome: z
-    .string({ required_error: 'Nome obbligatorio' })
-    .min(2, 'Il nome deve avere almeno 2 caratteri')
-    .max(100, 'Il nome non può superare 100 caratteri')
+    .string({ required_error: 'autenticazioneSchema.nomeObbligatorio' })
+    .min(2, 'autenticazioneSchema.nomeCorto')
+    .max(100, 'autenticazioneSchema.nomeLungo')
     .trim(),
   palestraId: z
     .number()
     .int()
-    .positive('ID palestra non valido')
+    .positive('autenticazioneSchema.palestraIdNonValido')
     .optional()
     .nullable()
 });
@@ -37,13 +40,13 @@ export const schemaRegistrazione = z.object({
 /** Schema for the login */
 export const schemaLogin = z.object({
   email: z
-    .string({ required_error: 'Email obbligatoria' })
-    .email('Formato email non valido')
+    .string({ required_error: 'autenticazioneSchema.emailObbligatoria' })
+    .email('autenticazioneSchema.emailNonValida')
     .toLowerCase()
     .trim(),
   password: z
-    .string({ required_error: 'Password obbligatoria' })
-    .min(1, 'Password obbligatoria'),
+    .string({ required_error: 'autenticazioneSchema.passwordObbligatoria' })
+    .min(1, 'autenticazioneSchema.passwordObbligatoria'),
   // It must be listed: valida() replaces the body with the validated one, and
   // zod drops the fields the schema does not know
   ricordaDispositivo: z.boolean().optional()
@@ -52,6 +55,6 @@ export const schemaLogin = z.object({
 /** Schema for the token refresh */
 export const schemaRefresh = z.object({
   refreshToken: z
-    .string({ required_error: 'Refresh token obbligatorio' })
-    .min(1, 'Refresh token obbligatorio')
+    .string({ required_error: 'autenticazioneSchema.refreshTokenObbligatorio' })
+    .min(1, 'autenticazioneSchema.refreshTokenObbligatorio')
 });

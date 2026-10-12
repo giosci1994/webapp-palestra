@@ -7,6 +7,7 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import argon2 from 'argon2';
 import logger from '../utils/logger.js';
+import { t } from '../i18n/index.js';
 import { chiudiAltreSessioni } from './autenticazione.service.js';
 import { leggiLingua } from '../utils/lingue.js';
 
@@ -60,9 +61,9 @@ export async function ottieniTuttiGliUtenti({ pagina = 1, limite = 20, stato, ru
 export async function approvaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
 
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('utentiService.utenteNonTrovato'));
   if (utente.stato !== 'IN_ATTESA' && utente.stato !== 'BANNATO') {
-    throw new ErroreNonAutorizzato(`Impossibile approvare un utente in stato: ${utente.stato}`);
+    throw new ErroreNonAutorizzato(t('utentiService.impossibileApprovare', { stato: utente.stato }));
   }
 
   const utenteAggiornato = await prisma.utente.update({
@@ -80,10 +81,10 @@ export async function approvaUtente(utenteId) {
  */
 export async function bannaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('utentiService.utenteNonTrovato'));
 
   if (utente.ruolo === 'SUPERADMIN') {
-    throw new ErroreNonAutorizzato('Non puoi bannare un SuperAdmin');
+    throw new ErroreNonAutorizzato(t('utentiService.nonPuoiBannareSuperAdmin'));
   }
 
   const utenteAggiornato = await prisma.utente.update({
@@ -107,7 +108,7 @@ export async function bannaUtente(utenteId) {
  */
 export async function cambiaRuolo(utenteId, nuovoRuolo) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('utentiService.utenteNonTrovato'));
 
   const utenteAggiornato = await prisma.utente.update({
     where: { id: utenteId },
@@ -150,7 +151,7 @@ export async function ottieniProfilo(utenteId) {
     }
   });
 
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('utentiService.utenteNonTrovato'));
   return utente;
 }
 
@@ -187,12 +188,12 @@ export async function aggiornaProfilo(utenteId, dati) {
 
   // Bio validation (max 200 characters)
   if (datiAggiornamento.bio && datiAggiornamento.bio.length > 200) {
-    throw new ErroreValidazione('La bio non può superare i 200 caratteri');
+    throw new ErroreValidazione(t('utentiService.bioTroppoLunga'));
   }
 
   // Image validation (max ~300KB base64)
   if (datiAggiornamento.immagineProfilo && datiAggiornamento.immagineProfilo.length > 400000) {
-    throw new ErroreValidazione('Immagine troppo grande. Massimo 300KB.');
+    throw new ErroreValidazione(t('utentiService.immagineTroppoGrande'));
   }
 
   const utenteAggiornato = await prisma.utente.update({
@@ -232,11 +233,11 @@ export async function aggiornaProfilo(utenteId, dati) {
  */
 export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, famigliaCorrente = null) {
   if (!vecchiaPassword || !nuovaPassword) {
-    throw new ErroreValidazione('Vecchia password e nuova password sono obbligatorie');
+    throw new ErroreValidazione(t('utentiService.passwordObbligatorie'));
   }
 
   if (nuovaPassword.length < 8) {
-    throw new ErroreValidazione('La nuova password deve avere almeno 8 caratteri');
+    throw new ErroreValidazione(t('utentiService.nuovaPasswordCorta'));
   }
 
   const utente = await prisma.utente.findUnique({
@@ -244,12 +245,12 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, f
     select: { passwordHash: true }
   });
 
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('utentiService.utenteNonTrovato'));
 
   // Check the old password
   const passwordValida = await argon2.verify(utente.passwordHash, vecchiaPassword);
   if (!passwordValida) {
-    throw new ErroreValidazione('La password attuale non è corretta');
+    throw new ErroreValidazione(t('utentiService.passwordAttualeErrata'));
   }
 
   // Hash the new password
@@ -275,10 +276,10 @@ export async function cambiaPassword(utenteId, vecchiaPassword, nuovaPassword, f
  */
 export async function eliminaUtente(utenteId) {
   const utente = await prisma.utente.findUnique({ where: { id: utenteId } });
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('utentiService.utenteNonTrovato'));
 
   if (utente.ruolo === 'SUPERADMIN') {
-    throw new ErroreNonAutorizzato('Impossibile eliminare un SuperAdmin. Declassalo prima a UTENTE.');
+    throw new ErroreNonAutorizzato(t('utentiService.impossibileEliminareSuperAdmin'));
   }
 
   // Delete everything in one transaction to avoid constraint errors (foreign keys)

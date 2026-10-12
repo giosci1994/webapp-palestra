@@ -1,0 +1,6 @@
+{
+  "accessoNonAutorizzato": "Bot access not authorized",
+  "chatIdMancante": "Missing chatId",
+  "nonCollegato": "Telegram account not linked. Generate a code in the app and send it here.",
+  "accountNonAttivo": "Your account is not active."
+}

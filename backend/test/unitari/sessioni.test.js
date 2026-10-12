@@ -1,11 +1,16 @@
 // The pure functions behind correcting a workout from the history and logging
 // a past one: reading the values from the client and the history format.
-import { describe, it } from 'node:test';
+import { describe, it as prova } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   leggiValoriSerie, leggiInizio, leggiDurata, formattaPerStorico, eserciziDaSessione, orarioDalTelefono
 } from '../../src/controllers/sessioni.controller.js';
 import { ErroreValidazione } from '../../src/utils/errori.js';
+import { conLingua } from '../../src/i18n/index.js';
+
+// Outside a request the server speaks English: these tests check the
+// Italian messages, so each one runs as a request in Italian would
+const it = (nome, corpo) => prova(nome, () => conLingua('it', corpo));
 
 const MINUTO = 60 * 1000;
 
