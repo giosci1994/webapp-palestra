@@ -91,6 +91,7 @@ services:
       retries: 3
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/security-headers.conf:/etc/nginx/security-headers.conf:ro
       - ./frontend/dist:/usr/share/nginx/html:ro
     depends_on:
       - backend
