@@ -41,6 +41,24 @@ t('comune.serie', { count: 3 })                   // serie_one / serie_other
 - Dates and numbers: the helpers in `utils/formattatori.js`, or `localeCorrente()`.
 - Data from the server (plan titles, exercise descriptions, messages) is not translated in the app. Exercise names go through `nomeEsercizio()`, muscle groups through `nomeGruppo()`.
 
+## The server
+
+The server's texts (API errors and confirmations, notifications, push, emails, the dashboard advice, badges, the Telegram bot) work the same way, in `backend/src/i18n/`:
+
+```js
+import { t } from '../i18n/index.js';
+
+throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
+res.json({ successo: true, messaggio: t('utentiController.profiloAggiornato') });
+```
+
+- During a request, the language is the app's: it sends it in `Accept-Language`, and the server keeps it for the whole request, so `t()` works in services too.
+- A text for another user (a notification for a client created by their trainer, a push, a Telegram message) goes in the recipient's language: the one chosen in Profile, otherwise the one their app last used (`Utente.linguaApp`). `creaNotifica` and `inviaPush` take translation keys and do it on their own; elsewhere use `linguaDiUtenteId()` and `conLingua()`.
+- The Telegram bot follows the linked user's language, or the one of their Telegram app.
+- `backend/test/unitari/testi.test.js` checks the server's files like the app's.
+
+"What's new" stories (`backend/prisma/novita.json`) have an `en` block with the English texts, and each changelog entry in `version.json` has `modificheEn` next to the Italian `modifiche`.
+
 ## Checks
 
 `frontend/src/i18n/testi.test.js` fails when:
@@ -53,7 +71,7 @@ t('comune.serie', { count: 3 })                   // serie_one / serie_other
 
 1. Copy `frontend/src/i18n/testi/en/` to a folder named after the language code, for example `testi/es/`, and translate the values. Keep the keys, the `{placeholders}` and the `<tags>`.
 2. In `frontend/src/i18n/index.js`, add the code to `LINGUE`, its own name to `NOMI_LINGUE` (`es: 'Español'`) and its default locale to `LOCALE_PREDEFINITA` (`es: 'es-ES'`). The folder is loaded on its own.
-3. In `backend/src/utils/lingue.js`, add the code to `LINGUE`, so the language can be saved on the account.
-4. Run `cd frontend && npm test`: the checks above tell you what is missing.
+3. Copy `backend/src/i18n/testi/en/` the same way, and add the code to `LINGUE` in `backend/src/utils/lingue.js`, so the server answers in that language and it can be saved on the account.
+4. Run `cd frontend && npm test` and `cd backend && npm run test:unitari`: the checks above tell you what is missing.
 
 Plural forms follow the language's rules: Polish or Arabic need `_few` or `_many` keys too, which `Intl.PluralRules` asks for.

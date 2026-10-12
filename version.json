@@ -10,6 +10,12 @@
         "Date e numeri nel formato della tua lingua",
         "Nel catalogo trovi muscoli e attrezzi anche col nome inglese",
         "Correzioni ai testi: \"1 esercizio\", \"1 sessione\" e simili al singolare"
+      ],
+      "modificheEn": [
+        "The app speaks English: it follows your phone's language, and you can choose it in Profile → Language (the choice stays on your account)",
+        "Dates and numbers in your language's format",
+        "The catalogue finds muscles and equipment by their English names too",
+        "Text fixes: singular forms like \"1 exercise\" and \"1 session\""
       ]
     },
     {
@@ -17,6 +23,9 @@
       "data": "2026-10-11",
       "modifiche": [
         "Allenamento di oggi: \"Più tardi\" non te lo ripropone più fino a domani (lo avvii dalla Home quando sei in palestra), e \"Salta oggi\" lo segna come saltato"
+      ],
+      "modificheEn": [
+        "Today's workout: \"Later\" doesn't ask again until tomorrow (start it from Home when you're at the gym), and \"Skip today\" marks it as skipped"
       ]
     },
     {
@@ -26,6 +35,11 @@
         "Serie di riscaldamento: prima della prima serie l'app propone la rampa, e il riscaldamento non conta più in volume, serie e record",
         "Drop set: aggiungi i cali di peso alla serie prima di registrarla",
         "Storico: segna una serie come riscaldamento o drop toccando il suo numero"
+      ],
+      "modificheEn": [
+        "Warm-up sets: before the first set the app suggests a ramp, and warm-ups no longer count towards volume, sets and records",
+        "Drop sets: add the weight drops to a set before logging it",
+        "History: mark a set as warm-up or drop set by tapping its number"
       ]
     },
     {
@@ -33,6 +47,9 @@
       "data": "2026-10-11",
       "modifiche": [
         "Allenati anche senza campo: serie e fine allenamento restano sul telefono e arrivano da sole quando torna la rete"
+      ],
+      "modificheEn": [
+        "Train without signal: sets and the end of the workout stay on your phone and are sent on their own when the network comes back"
       ]
     },
     {
@@ -51,6 +68,20 @@
         "Affluenza: l'app suggerisce quando la palestra è più libera",
         "Scarica tutti i dati del tuo account o elimina l'account definitivamente",
         "Più affidabilità: test automatici, dipendenze senza vulnerabilità note"
+      ],
+      "modificheEn": [
+        "Notifications on your phone even with the app closed: end of rest, chat messages and reminders (Profile → Notifications)",
+        "Automatic load progression: during the workout the app suggests how much to lift, and says why",
+        "Sign in with a passkey, and a list of linked devices (Profile → Security); sessions no longer sign you out",
+        "Workouts: resume one closed by mistake, fix a finished one, log those done without the app, save one as a plan",
+        "Workouts left open close on their own at the last set, with the right duration",
+        "Catalogue in Italian, with typo-tolerant search, favourites and a plates calculator",
+        "Statistics: a Body section with the muscles you trained, exercise trends, estimated maxes and the year's activity",
+        "Schedule: a calendar of plans, reminders and notifications in the bell",
+        "Plans in Word (.docx), several at once too, and technique notes for every exercise",
+        "Crowd levels: the app suggests when the gym is quietest",
+        "Download all your account data, or delete your account for good",
+        "More reliable: automated tests, dependencies with no known vulnerabilities"
       ]
     },
     {
@@ -60,6 +91,11 @@
         "Sicurezza: corrette autorizzazioni su schede/sessioni/chat (un utente non può più toccare dati altrui)",
         "Reset password admin: ora genera una password temporanea casuale",
         "Migliorie minori di robustezza"
+      ],
+      "modificheEn": [
+        "Security: fixed permissions on plans, sessions and chat (a user can no longer touch someone else's data)",
+        "Admin password reset: now generates a random temporary password",
+        "Minor robustness improvements"
       ]
     },
     {
@@ -68,6 +104,10 @@
       "modifiche": [
         "Risolto il problema 'Token di accesso mancante' durante l'allenamento dopo un blocco schermo",
         "Sessione più stabile: niente più logout imprevisti; i progressi dell'allenamento restano salvati"
+      ],
+      "modificheEn": [
+        "Fixed the 'missing access token' error during a workout after locking the screen",
+        "More stable session: no more unexpected sign-outs; workout progress stays saved"
       ]
     },
     {
@@ -76,6 +116,10 @@
       "modifiche": [
         "Bot: corretto l'errore della creazione guidata quando scegli una parte del corpo",
         "Bot: menu comandi completo e testi aggiornati (si scrive, non si parla)"
+      ],
+      "modificheEn": [
+        "Bot: fixed the guided creation error when picking a body part",
+        "Bot: complete command menu and updated texts (you type, you don't talk)"
       ]
     },
     {
@@ -84,6 +128,10 @@
       "modifiche": [
         "Bot Telegram: /guidata — crea una scheda scegliendo a pulsanti per categorie italiane",
         "Propone per primi i tuoi esercizi più usati"
+      ],
+      "modificheEn": [
+        "Telegram bot: /guidata — create a plan by picking categories with buttons",
+        "Suggests your most used exercises first"
       ]
     },
     {
@@ -91,6 +139,9 @@
       "data": "2026-06-20",
       "modifiche": [
         "Bot Telegram: nuovo comando /statistiche con il riepilogo dei tuoi allenamenti"
+      ],
+      "modificheEn": [
+        "Telegram bot: new /statistiche command with a summary of your workouts"
       ]
     },
     {
@@ -99,6 +150,10 @@
       "modifiche": [
         "Bot Telegram: ricevi una notifica su Telegram quando ti scrivono in chat e non sei online",
         "(Richiede aver collegato Telegram dal Profilo)"
+      ],
+      "modificheEn": [
+        "Telegram bot: get a Telegram notification when someone writes to you in the chat and you're offline",
+        "(Requires linking Telegram from Profile)"
       ]
     },
     {
@@ -107,6 +162,10 @@
       "modifiche": [
         "Nuovo: Composizione corporea con storico (peso, grasso, muscolo, acqua, BMR, età metabolica…) e grafico andamento",
         "Profilo → 📊 Composizione corporea. Il tuo PT può aggiungere le misurazioni dal dettaglio cliente"
+      ],
+      "modificheEn": [
+        "New: body composition with history (weight, fat, muscle, water, BMR, metabolic age…) and a trend chart",
+        "Profile → 📊 Body composition. Your trainer can add measurements from the client's page"
       ]
     },
     {
@@ -115,6 +174,10 @@
       "modifiche": [
         "Dashboard PT più professionale: azioni rapide, KPI ridisegnati e anteprima clienti con ultima attività",
         "Se non hai clienti, invito a condividere il profilo pubblico per acquisirli"
+      ],
+      "modificheEn": [
+        "A more professional trainer dashboard: quick actions, redesigned KPIs and a client preview with their last activity",
+        "With no clients yet, an invitation to share your public profile to get some"
       ]
     },
     {
@@ -123,6 +186,10 @@
       "modifiche": [
         "Foto profilo: ora carichi una foto normale, la ritagli (zoom + trascina) e viene compressa in automatico",
         "Niente più limite di dimensione da gestire a mano"
+      ],
+      "modificheEn": [
+        "Profile photo: upload a normal photo, crop it (zoom and drag) and it's compressed automatically",
+        "No more size limit to deal with by hand"
       ]
     },
     {
@@ -131,6 +198,10 @@
       "modifiche": [
         "Admin Utenti: ora mostra ultima connessione, schede/sessioni, palestra e stato verifica email",
         "Avatar utente nella lista"
+      ],
+      "modificheEn": [
+        "Admin users: now shows last sign-in, plans and sessions, gym and email verification status",
+        "User avatars in the list"
       ]
     },
     {
@@ -139,6 +210,10 @@
       "modifiche": [
         "Recupero password: link 'Password dimenticata?' nel login → ricevi un'email per reimpostarla",
         "Reset password sicuro con link a scadenza (1 ora)"
+      ],
+      "modificheEn": [
+        "Password recovery: a 'Forgot your password?' link at sign-in → you get an email to reset it",
+        "Secure password reset with a link that expires (1 hour)"
       ]
     },
     {
@@ -147,6 +222,10 @@
       "modifiche": [
         "Chat: lo stato online/offline ora è quello reale dell'altra persona (non più sempre online)",
         "Mostra 'visto' con l'ultimo accesso quando offline"
+      ],
+      "modificheEn": [
+        "Chat: the online/offline status is now the other person's real one (no longer always online)",
+        "Shows 'last seen' when offline"
       ]
     },
     {
@@ -155,6 +234,10 @@
       "modifiche": [
         "Gestione Novità: campi Punti sistemati + selettore di emoji a griglia",
         "Admin: non puoi più bannare/declassare/eliminare il tuo stesso account"
+      ],
+      "modificheEn": [
+        "What's new admin: fixed the Points fields, plus an emoji grid picker",
+        "Admin: you can no longer ban, demote or delete your own account"
       ]
     },
     {
@@ -163,6 +246,10 @@
       "modifiche": [
         "Onboarding dedicato per i Personal Trainer: bio, specializzazioni, esperienza, certificazioni, tariffe",
         "Il profilo pubblico del PT mostra ora le info professionali"
+      ],
+      "modificheEn": [
+        "Dedicated onboarding for personal trainers: bio, specializations, experience, certifications, rates",
+        "The trainer's public profile now shows their professional details"
       ]
     },
     {
@@ -171,6 +258,10 @@
       "modifiche": [
         "Predisposta la verifica dell'email alla registrazione (si attiva quando configurata)",
         "Sicurezza account migliorata"
+      ],
+      "modificheEn": [
+        "Email verification at sign-up is ready (it turns on when configured)",
+        "Better account security"
       ]
     },
     {
@@ -180,6 +271,11 @@
         "Registrazione semplificata: l'account è attivo subito, niente attesa di approvazione",
         "Accesso automatico dopo la registrazione",
         "Il ruolo Personal Trainer resta soggetto ad approvazione"
+      ],
+      "modificheEn": [
+        "Simpler sign-up: the account is active right away, no waiting for approval",
+        "Automatic sign-in after sign-up",
+        "The Personal Trainer role still needs approval"
       ]
     },
     {
@@ -188,6 +284,10 @@
       "modifiche": [
         "Ora puoi richiedere di diventare Personal Trainer dal tuo Profilo (anche dopo la registrazione)",
         "La richiesta arriva all'amministratore per l'approvazione"
+      ],
+      "modificheEn": [
+        "You can now ask to become a Personal Trainer from your Profile (after signing up too)",
+        "The request goes to the administrator for approval"
       ]
     },
     {
@@ -196,6 +296,10 @@
       "modifiche": [
         "Ora puoi clonare una scheda pubblica (di un PT/admin) come tua copia personale modificabile",
         "Apri una scheda globale e tocca ⧉ Clona"
+      ],
+      "modificheEn": [
+        "You can now clone a public plan (by a trainer or admin) as your own editable copy",
+        "Open a shared plan and tap ⧉ Clone"
       ]
     },
     {
@@ -204,6 +308,10 @@
       "modifiche": [
         "Nuova pagina \"Trova un Personal Trainer\" con ricerca",
         "Dashboard: invito discreto a trovare un PT (solo se non ne hai uno)"
+      ],
+      "modificheEn": [
+        "New \"Find a personal trainer\" page with search",
+        "Dashboard: a discreet invitation to find a trainer (only if you don't have one)"
       ]
     },
     {
@@ -212,6 +320,10 @@
       "modifiche": [
         "Nuovo: profilo pubblico dei Personal Trainer (bio, statistiche, schede) — tocca un PT per vederlo",
         "Più facile valutare e iscriversi a un Personal Trainer"
+      ],
+      "modificheEn": [
+        "New: public profile of personal trainers (bio, stats, plans) — tap a trainer to see it",
+        "Easier to evaluate and join a personal trainer"
       ]
     },
     {
@@ -220,6 +332,10 @@
       "modifiche": [
         "Fix importante: le spaziature (margini) ora funzionano in tutta l'app — un reset CSS le annullava ovunque",
         "Sezioni e card ora correttamente distanziate in Profilo, Statistiche e tutte le pagine"
+      ],
+      "modificheEn": [
+        "Important fix: spacing (margins) now works across the whole app — a CSS reset was cancelling it everywhere",
+        "Sections and cards now properly spaced in Profile, Statistics and every page"
       ]
     },
     {
@@ -227,6 +343,9 @@
       "data": "2026-06-19",
       "modifiche": [
         "Profilo: più spazio tra le card in tutte le sezioni (non più attaccate)"
+      ],
+      "modificheEn": [
+        "Profile: more space between the cards in every section (no longer stuck together)"
       ]
     },
     {
@@ -234,6 +353,9 @@
       "data": "2026-06-19",
       "modifiche": [
         "Ombra delle card più morbida: niente più alone/intersezione tra riquadri vicini su sfondo scuro"
+      ],
+      "modificheEn": [
+        "Softer card shadows: no more halos between neighbouring boxes on the dark background"
       ]
     },
     {
@@ -241,6 +363,9 @@
       "data": "2026-06-19",
       "modifiche": [
         "Statistiche: KPI più distanziate tra loro e spaziatura sezioni leggermente ridotta (28px)"
+      ],
+      "modificheEn": [
+        "Statistics: more space between KPIs and slightly smaller section spacing (28px)"
       ]
     },
     {
@@ -248,6 +373,9 @@
       "data": "2026-06-19",
       "modifiche": [
         "Statistiche: più spazio tra KPI e grafici e tra i grafici (32px, come la Dashboard)"
+      ],
+      "modificheEn": [
+        "Statistics: more space between KPIs and charts, and between charts (32px, like the Dashboard)"
       ]
     },
     {
@@ -256,6 +384,10 @@
       "modifiche": [
         "Statistiche: spaziatura tra le sezioni uniformata",
         "Fix: modificando una scheda con cardio non si perdono più durata/velocità/inclinazione"
+      ],
+      "modificheEn": [
+        "Statistics: consistent spacing between sections",
+        "Fix: editing a plan with cardio no longer loses duration, speed and incline"
       ]
     },
     {
@@ -263,6 +395,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Popup novità rifinito: tolta la X, barra di avanzamento nascosta con una sola novità, bottone d'azione più grande"
+      ],
+      "modificheEn": [
+        "Polished what's new popup: no X, progress bar hidden with a single story, bigger action button"
       ]
     },
     {
@@ -270,6 +405,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Popup novità: aggiunto il badge \"Novità\" (più vicino al design previsto)"
+      ],
+      "modificheEn": [
+        "What's new popup: added the \"New\" badge (closer to the intended design)"
       ]
     },
     {
@@ -277,6 +415,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Colori corretti su Android: impedito al browser di scurire automaticamente il tema (color-scheme: dark)"
+      ],
+      "modificheEn": [
+        "Correct colours on Android: the browser no longer darkens the theme on its own (color-scheme: dark)"
       ]
     },
     {
@@ -285,6 +426,10 @@
       "modifiche": [
         "Auto-aggiornamento dell'app più affidabile (si ricarica da sola alla nuova versione)",
         "Profilo > Informazioni mostra la versione dell'app oltre a quella del server"
+      ],
+      "modificheEn": [
+        "More reliable auto-update (the app reloads on its own when there's a new version)",
+        "Profile > Info shows the app's version as well as the server's"
       ]
     },
     {
@@ -292,6 +437,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Grafico affluenza: barre a colore pieno (verde/ambra/rosso) senza trasparenza"
+      ],
+      "modificheEn": [
+        "Crowd chart: solid colour bars (green, amber, red) with no transparency"
       ]
     },
     {
@@ -299,6 +447,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Grafico affluenza più leggibile su smartphone (tracce e barre con più contrasto)"
+      ],
+      "modificheEn": [
+        "Crowd chart easier to read on phones (tracks and bars with more contrast)"
       ]
     },
     {
@@ -307,6 +458,10 @@
       "modifiche": [
         "Nuovo: sezione Novità in stile storie — al primo avvio si apre, poi resta una bolla per rivederle",
         "Pannello admin per creare e gestire le novità da mostrare agli utenti"
+      ],
+      "modificheEn": [
+        "New: a what's new section in story style — it opens at first launch, then a bubble stays to see it again",
+        "Admin panel to create and manage the stories shown to users"
       ]
     },
     {
@@ -314,6 +469,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Grafico affluenza ridisegnato: stile orari di punta con segnaposto ora corrente e animazione"
+      ],
+      "modificheEn": [
+        "Redesigned crowd chart: peak hours style with a marker for the current hour and an animation"
       ]
     },
     {
@@ -322,6 +480,10 @@
       "modifiche": [
         "Mobile: tap target più comodi nella barra di navigazione + accessibilità",
         "Pulsanti d'azione a tutta larghezza su smartphone"
+      ],
+      "modificheEn": [
+        "Mobile: easier tap targets in the navigation bar, and accessibility",
+        "Full-width action buttons on phones"
       ]
     },
     {
@@ -329,6 +491,9 @@
       "data": "2026-06-18",
       "modifiche": [
         "Allenamento live: voci cardio mostrano durata/velocità/inclinazione invece di serie×rep"
+      ],
+      "modificheEn": [
+        "Live workout: cardio items show duration, speed and incline instead of sets × reps"
       ]
     },
     {
@@ -337,6 +502,10 @@
       "modifiche": [
         "Dashboard più rifinita: caricamento con skeleton, card Messaggi cliccabile",
         "Empty state migliorato per le attività recenti"
+      ],
+      "modificheEn": [
+        "More polished dashboard: skeleton loading, tappable Messages card",
+        "Better empty state for recent activity"
       ]
     },
     {
@@ -346,6 +515,11 @@
         "Bot: schede con cardio (tapis roulant, cyclette, ellittica, vogatore, stepper, air bike) e riscaldamento",
         "Cardio con target di durata, velocità, inclinazione e resistenza nella scheda",
         "Aggiunti gli esercizi cardio al catalogo"
+      ],
+      "modificheEn": [
+        "Bot: plans with cardio (treadmill, exercise bike, elliptical, rower, stepper, air bike) and warm-up",
+        "Cardio with duration, speed, incline and resistance targets in the plan",
+        "Cardio exercises added to the catalogue"
       ]
     },
     {
@@ -355,6 +529,11 @@
         "Nuovo: bot Telegram per leggere le tue schede e crearle parlando con l'assistente",
         "Creazione schede conversazionale (Gemini) con riconoscimento esercizi dal catalogo",
         "Collegamento account Telegram dalla sezione Profilo > Sicurezza"
+      ],
+      "modificheEn": [
+        "New: a Telegram bot to read your plans and create them by chatting with the assistant",
+        "Conversational plan creation (Gemini), recognising exercises from the catalogue",
+        "Link your Telegram account from Profile > Security"
       ]
     },
     {
@@ -367,6 +546,14 @@
         "Endpoint /salute e banner di avvio riportano la versione reale",
         "Migrazioni Prisma ripristinate nel versionamento (no .gitignore)",
         "Ripristinato /version.json per il controllo auto-aggiornamento"
+      ],
+      "modificheEn": [
+        "Updated vite-plugin-pwa to 1.3.0 (Vite 8 compatibility)",
+        "The backend now closes its connections cleanly on shutdown",
+        "Database seeding with an idempotency guard (faster restarts)",
+        "The /salute endpoint and the startup banner report the real version",
+        "Prisma migrations back under version control (no .gitignore)",
+        "Restored /version.json for the auto-update check"
       ]
     },
     {
@@ -374,6 +561,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -381,6 +571,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -388,6 +581,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -395,6 +591,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -402,6 +601,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -409,6 +611,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -416,6 +621,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -423,6 +631,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -430,6 +641,9 @@
       "data": "2026-05-27",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -437,6 +651,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -444,6 +661,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -451,6 +671,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -458,6 +681,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -465,6 +691,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -472,6 +701,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -479,6 +711,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -486,6 +721,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -493,6 +731,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -500,6 +741,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -507,6 +751,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -514,6 +761,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -521,6 +771,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -528,6 +781,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -535,6 +791,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -542,6 +801,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -549,6 +811,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -556,6 +821,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -563,6 +831,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -570,6 +841,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -577,6 +851,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -584,6 +861,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -591,6 +871,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -598,6 +881,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -605,6 +891,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -612,6 +901,9 @@
       "data": "2026-05-15",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -619,6 +911,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -626,6 +921,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -633,6 +931,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -640,6 +941,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -647,6 +951,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -654,6 +961,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -661,6 +971,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -668,6 +981,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -675,6 +991,9 @@
       "data": "2026-05-13",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -682,6 +1001,9 @@
       "data": "2026-05-12",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -689,6 +1011,9 @@
       "data": "2026-05-12",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -696,6 +1021,9 @@
       "data": "2026-05-12",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -703,6 +1031,9 @@
       "data": "2026-05-12",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -710,6 +1041,9 @@
       "data": "2026-05-12",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -717,6 +1051,9 @@
       "data": "2026-05-12",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -724,6 +1061,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -731,6 +1071,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -738,6 +1081,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -745,6 +1091,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -752,6 +1101,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -759,6 +1111,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -766,6 +1121,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -773,6 +1131,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -780,6 +1141,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -787,6 +1151,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -794,6 +1161,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -801,6 +1171,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -808,6 +1181,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -815,6 +1191,9 @@
       "data": "2026-05-11",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -822,6 +1201,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -829,6 +1211,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -836,6 +1221,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -843,6 +1231,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -850,6 +1241,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -857,6 +1251,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -864,6 +1261,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -871,6 +1271,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -878,6 +1281,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -885,6 +1291,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -892,6 +1301,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -899,6 +1311,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -906,6 +1321,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -913,6 +1331,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -920,6 +1341,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -927,6 +1351,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -934,6 +1361,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -941,6 +1371,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -948,6 +1381,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -955,6 +1391,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -962,6 +1401,9 @@
       "data": "2026-05-05",
       "modifiche": [
         "Build automatica"
+      ],
+      "modificheEn": [
+        "Automatic build"
       ]
     },
     {
@@ -973,6 +1415,13 @@
         "Profilo utente esteso con immagine, dati personali e privacy",
         "Modifica password dal profilo",
         "Popup Info App con specifiche tecniche e changelog"
+      ],
+      "modificheEn": [
+        "Added workout history with full session details",
+        "Previous-workout reference banner in the live workout",
+        "Extended user profile with photo, personal details and privacy",
+        "Change your password from the profile",
+        "App info popup with technical specs and changelog"
       ]
     },
     {
@@ -987,6 +1436,16 @@
         "Assistente AI integrato",
         "Gamification e classifiche",
         "PWA con supporto offline"
+      ],
+      "modificheEn": [
+        "GymMaster's first release",
+        "Dashboard with statistics and AI recommendations",
+        "Workout plan management with drag-and-drop",
+        "Live workout with timer, RPE and cardio support",
+        "Real-time chat and messaging",
+        "Built-in AI assistant",
+        "Gamification and leaderboards",
+        "PWA with offline support"
       ]
     }
   ],

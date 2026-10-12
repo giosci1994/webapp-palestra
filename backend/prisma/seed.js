@@ -61,6 +61,19 @@ async function garantisciNovitaIniziale() {
       ]),
       ctaTesto: 'Collega Telegram',
       ctaRotta: '/profilo',
+      // The English version: the app shows it to English users
+      traduzioni: JSON.stringify({
+        en: {
+          titolo: 'The Telegram bot is here',
+          sottotitolo: 'Create and check your plans right from Telegram',
+          punti: [
+            { icona: '💬', testo: 'Create plans by chatting with the bot while you train' },
+            { icona: '📋', testo: 'Read and download your plans anywhere' },
+            { icona: '🔥', testo: 'Add cardio and warm-up by typing' }
+          ],
+          ctaTesto: 'Link Telegram'
+        }
+      }),
       coloreInizio: '#8b5cf6',
       coloreFine: '#06b6d4',
       attiva: true,

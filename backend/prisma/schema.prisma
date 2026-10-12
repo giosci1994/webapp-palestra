@@ -686,6 +686,7 @@ model Novita {
   ctaRotta     String?  @map("cta_rotta")     // e.g. "/profilo"
   coloreInizio String?  @map("colore_inizio") // header gradient (hex)
   coloreFine   String?  @map("colore_fine")
+  traduzioni   String?  // JSON: { "en": { "titolo", "sottotitolo", "punti", "ctaTesto" } }; the base fields are Italian
   attiva       Boolean  @default(true)
   ordine       Int      @default(0)
   creatoIl     DateTime @default(now()) @map("creato_il")

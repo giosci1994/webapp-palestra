@@ -21,7 +21,26 @@
     "ctaTesto": "Attiva le notifiche",
     "ctaRotta": "/profilo?tab=notifiche",
     "coloreInizio": "#ec4899",
-    "coloreFine": "#9060fb"
+    "coloreFine": "#9060fb",
+    "en": {
+      "titolo": "It reaches you in your pocket",
+      "sottotitolo": "Notifications on your phone, even with the app closed and the screen locked",
+      "punti": [
+        {
+          "icona": "⏱️",
+          "testo": "Rest over? Your phone tells you, and what comes next, even in your pocket"
+        },
+        {
+          "icona": "💬",
+          "testo": "Chat messages, reminders and alerts arrive even with the app closed"
+        },
+        {
+          "icona": "📱",
+          "testo": "On iPhone, first add the app to the Home screen, then turn them on in Profile"
+        }
+      ],
+      "ctaTesto": "Turn on notifications"
+    }
   },
   {
     "versione": "1.2.1",
@@ -45,7 +64,26 @@
     "ctaTesto": "Inizia un allenamento",
     "ctaRotta": "/schede",
     "coloreInizio": "#10b981",
-    "coloreFine": "#0ea5e9"
+    "coloreFine": "#0ea5e9",
+    "en": {
+      "titolo": "Even without signal",
+      "sottotitolo": "At the gym the network comes and goes: your workout doesn't",
+      "punti": [
+        {
+          "icona": "✅",
+          "testo": "Log your sets as always, even offline: they stay saved on your phone"
+        },
+        {
+          "icona": "📶",
+          "testo": "When the network is back they're sent on their own, once, with the time you did them"
+        },
+        {
+          "icona": "🏁",
+          "testo": "You can even finish the workout offline: duration and records come out right"
+        }
+      ],
+      "ctaTesto": "Start a workout"
+    }
   },
   {
     "versione": "1.3.0",
@@ -69,6 +107,25 @@
     "ctaTesto": "Inizia un allenamento",
     "ctaRotta": "/schede",
     "coloreInizio": "#f97316",
-    "coloreFine": "#ef4444"
+    "coloreFine": "#ef4444",
+    "en": {
+      "titolo": "Warm-up and drop sets",
+      "sottotitolo": "Only the sets that matter count",
+      "punti": [
+        {
+          "icona": "🔥",
+          "testo": "Before the first set the app suggests a warm-up ramp: one tap for each step you've done"
+        },
+        {
+          "icona": "↘️",
+          "testo": "Drop sets: add the weight drops to a set before logging it"
+        },
+        {
+          "icona": "📊",
+          "testo": "Warm-ups no longer inflate volume, sets and records. In History, change a set's type by tapping its number"
+        }
+      ],
+      "ctaTesto": "Start a workout"
+    }
   }
 ]
