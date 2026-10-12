@@ -107,15 +107,11 @@ router.get('/sessioni', async (req, res, next) => {
     const da = new Date();
     da.setDate(da.getDate() - parseInt(giorni));
 
-    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
-    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
-    const filterDa = da > resetDate ? da : resetDate;
-
     const sessioni = await prisma.sessioneAllenamento.findMany({
       where: {
         utenteId: req.utente.id,
         dataFine: { not: null },
-        dataInizio: { gte: filterDa }
+        dataInizio: { gte: da }
       },
       select: {
         id: true,
