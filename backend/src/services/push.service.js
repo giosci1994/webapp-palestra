@@ -14,6 +14,7 @@ import webpush from 'web-push';
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { descriviDispositivo } from '../utils/dispositivo.js';
+import { linguaDiUtenteId, traduciPer } from '../i18n/destinatario.js';
 
 let configurate = false;
 
@@ -82,10 +83,15 @@ export function contaIscrizioni(utenteId) {
  *   durataSecondi: past this, if the phone was unreachable, it must no longer be delivered
  * @returns {Promise<number>} the devices reached
  */
-export async function inviaPush(utenteId, { titolo, messaggio = '', percorso = '/', tag, urgente = false, durataSecondi = 24 * 3600, sempre = false }) {
+export async function inviaPush(utenteId, { titolo, messaggio = '', percorso = '/', tag, urgente = false, durataSecondi = 24 * 3600, sempre = false, variabili = {} }) {
   if (!configura()) return 0;
   try {
     const iscrizioni = await prisma.iscrizionePush.findMany({ where: { utenteId } });
+    if (iscrizioni.length === 0) return 0;
+    // Title and message may be translation keys: in the recipient's language
+    const lingua = await linguaDiUtenteId(utenteId);
+    titolo = traduciPer(lingua, titolo, variabili);
+    messaggio = traduciPer(lingua, messaggio, variabili);
     const contenuto = JSON.stringify({ titolo, messaggio, percorso, tag, ...(sempre && { sempre }) });
     let raggiunti = 0;
     await Promise.all(iscrizioni.map(async iscrizione => {
