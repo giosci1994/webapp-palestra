@@ -51,6 +51,7 @@
     "nascondi": "Nascondi video"
   },
   "serieFatte": {
+    "titolo": "{totale, plural, one {# serie completata} other {# serie completate}}",
     "riscaldamento": "🔥 Riscaldamento",
     "serie": "Serie {numero} ✓",
     "livello": "(Liv. {livello})"

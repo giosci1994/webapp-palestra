@@ -109,6 +109,7 @@ export default function WorkoutLive() {
   // Closed hours after the last set: the server makes it end there (and it cannot be resumed)
   const finitoAllUltimaSerie = chiusura.risposta?.dimenticata ? new Date(chiusura.risposta.dati.dataFine) : null;
   const [mostraVideo, setMostraVideo] = useState(false);
+  const [mostraSerieCompletate, setMostraSerieCompletate] = useState(false);
   const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
   const [oraAttuale, setOraAttuale] = useState(new Date());
   // The last time you did each exercise, in any plan
@@ -800,25 +801,48 @@ export default function WorkoutLive() {
         {/* Completed sets: warm-up, then each set with its drop sets */}
         {serieEsercizio.length > 0 && (
           <div className="flex flex-col gap-1">
-            {serieEsercizio.map((s, i) => (
-              <div key={s.idClient ?? s.id ?? i}
-                   className={`flex items-center justify-between px-3 py-2 rounded-[var(--raggio-sm)] ${
-                     s.tipo === 'RISCALDAMENTO' ? 'bg-[var(--bg-terziario)]' : 'bg-[var(--successo-dim)]'
-                   } ${s.tipo === 'DROP' ? 'ml-6' : ''}`}>
-                <span className={`text-sm font-medium ${s.tipo === 'RISCALDAMENTO' ? 'text-[var(--testo-secondario)]' : 'text-[var(--successo)]'}`}>
-                  {s.tipo === 'RISCALDAMENTO'
-                    ? t('workoutLive.serieFatte.riscaldamento')
-                    : s.tipo === 'DROP' ? t('workoutLive.drop.etichetta') : t('workoutLive.serieFatte.serie', { numero: s.serieNumero ?? i + 1 })}
-                </span>
-                <span className="text-sm">
-                  {s.durataMinuti ? (
-                    `${s.durataMinuti} min ${s.livelloResistenza ? t('workoutLive.serieFatte.livello', { livello: s.livelloResistenza }) : ''}`
-                  ) : (
-                    `${formattaPeso(s.pesoEffettivo)} kg × ${s.repEffettive}`
-                  )}
-                </span>
-              </div>
-            ))}
+            <button
+              onClick={() => setMostraSerieCompletate(v => !v)}
+              className="flex items-center justify-between px-3 py-2 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] transition-colors"
+            >
+              <span className="text-sm font-medium text-[var(--testo-secondario)]">
+                {t('workoutLive.serieFatte.titolo', { totale: serieEsercizio.length })}
+              </span>
+              <span className="text-xs text-[var(--testo-terziario)]">{mostraSerieCompletate ? '▲' : '▼'}</span>
+            </button>
+            <AnimatePresence>
+              {mostraSerieCompletate && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex flex-col gap-1 pt-1">
+                    {serieEsercizio.map((s, i) => (
+                      <div key={s.idClient ?? s.id ?? i}
+                           className={`flex items-center justify-between px-3 py-2 rounded-[var(--raggio-sm)] ${
+                             s.tipo === 'RISCALDAMENTO' ? 'bg-[var(--bg-terziario)]' : 'bg-[var(--successo-dim)]'
+                           } ${s.tipo === 'DROP' ? 'ml-6' : ''}`}>
+                        <span className={`text-sm font-medium ${s.tipo === 'RISCALDAMENTO' ? 'text-[var(--testo-secondario)]' : 'text-[var(--successo)]'}`}>
+                          {s.tipo === 'RISCALDAMENTO'
+                            ? t('workoutLive.serieFatte.riscaldamento')
+                            : s.tipo === 'DROP' ? t('workoutLive.drop.etichetta') : t('workoutLive.serieFatte.serie', { numero: s.serieNumero ?? i + 1 })}
+                        </span>
+                        <span className="text-sm">
+                          {s.durataMinuti ? (
+                            `${s.durataMinuti} min ${s.livelloResistenza ? t('workoutLive.serieFatte.livello', { livello: s.livelloResistenza }) : ''}`
+                          ) : (
+                            `${formattaPeso(s.pesoEffettivo)} kg × ${s.repEffettive}`
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         )}
 
@@ -891,29 +915,6 @@ export default function WorkoutLive() {
                       : `${proposta.ripetizioni.min}-${proposta.ripetizioni.max}`}
                   </span>
                   <span className="block text-[11px] leading-snug text-[var(--testo-secondario)] mt-0.5">{proposta.motivo}</span>
-                </span>
-                <span className="text-xs font-bold text-[var(--accent)] shrink-0">{t('workoutLive.usa')}</span>
-              </button>
-            )}
-
-            {/* Last time: to decide the load before starting the set */}
-            {riferimento && (
-              <button
-                type="button"
-                onClick={usaRiferimento}
-                className="flex items-center justify-between gap-3 w-full px-3 py-2.5 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)] text-left hover:border-[var(--accent)] transition-colors"
-              >
-                <span className="min-w-0">
-                  <span className="block text-[11px] text-[var(--testo-terziario)]">
-                    {t('workoutLive.riferimento.ultimaVolta', { data: formattaData(caricoPrecedente.data) })}
-                  </span>
-                  <span className="block text-base font-bold tabular-nums">
-                    {riferimentoCardio
-                      ? (riferimento.livelloResistenza
-                          ? t('workoutLive.riferimento.minutiLivello', { minuti: riferimento.durataMinuti, livello: riferimento.livelloResistenza })
-                          : t('workoutLive.riferimento.minuti', { minuti: riferimento.durataMinuti }))
-                      : `${riferimento.pesoEffettivo > 0 ? `${formattaPeso(riferimento.pesoEffettivo)} kg` : t('workoutLive.riferimento.corpoLibero')} × ${riferimento.repEffettive}`}
-                  </span>
                 </span>
                 <span className="text-xs font-bold text-[var(--accent)] shrink-0">{t('workoutLive.usa')}</span>
               </button>

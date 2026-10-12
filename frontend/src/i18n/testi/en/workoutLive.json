@@ -51,6 +51,7 @@
     "nascondi": "Hide video"
   },
   "serieFatte": {
+    "titolo": "{totale, plural, one {# set completed} other {# sets completed}}",
     "riscaldamento": "🔥 Warm-up",
     "serie": "Set {numero} ✓",
     "livello": "(Lvl {livello})"
