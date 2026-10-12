@@ -165,7 +165,7 @@ export default function StoricoAllenamenti() {
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
         </div>
-      ) : sessioni.length === 0 ? (
+      ) : sessioni.length === 0 && !caricamento ? (
         <div className="glass-card p-8 text-center">
           <div className="text-4xl mb-3">📜</div>
           <p className="text-[var(--testo-secondario)]">
@@ -175,7 +175,7 @@ export default function StoricoAllenamenti() {
             {t('storicoAllenamenti.vuotoSuggerimento')}
           </p>
         </div>
-      ) : (
+      ) : !caricamento ? (
         <div className="flex flex-col gap-3">
           <AnimatePresence>
             {sessioni.map((sessione, i) => (
@@ -284,7 +284,7 @@ export default function StoricoAllenamenti() {
             </div>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Workout Detail Drawer (makes way for the editor while editing) */}
       <AnimatePresence>
