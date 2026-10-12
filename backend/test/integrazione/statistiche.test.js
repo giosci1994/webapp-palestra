@@ -70,29 +70,27 @@ describe('Statistics period filtering', () => {
 
   it('should return correct workout count for 30 days period', async () => {
     const res = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=60', {
-      headers: { authorization: `Bearer ${tokenPer(utente)}` }
+      token: tokenPer(utente)
     });
 
-    assert.equal(res.statusCode, 200);
-    const data = JSON.parse(res.body);
-    assert.ok(data.successo);
+    assert.equal(res.stato, 200);
+    assert.ok(res.corpo.successo);
 
     // Should include 5 recent workouts only
-    const totaleSessioni = data.dati.reduce((sum, day) => sum + day.sessioni, 0);
+    const totaleSessioni = res.corpo.dati.reduce((sum, day) => sum + day.sessioni, 0);
     assert.equal(totaleSessioni, 5, 'Should count 5 workouts in last 60 days');
   });
 
   it('should return correct workout count for 90 days period', async () => {
     const res = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=180', {
-      headers: { authorization: `Bearer ${tokenPer(utente)}` }
+      token: tokenPer(utente)
     });
 
-    assert.equal(res.statusCode, 200);
-    const data = JSON.parse(res.body);
-    assert.ok(data.successo);
+    assert.equal(res.stato, 200);
+    assert.ok(res.corpo.successo);
 
     // Should include all 7 workouts (2 old + 5 recent)
-    const totaleSessioni = data.dati.reduce((sum, day) => sum + day.sessioni, 0);
+    const totaleSessioni = res.corpo.dati.reduce((sum, day) => sum + day.sessioni, 0);
     assert.equal(totaleSessioni, 7, 'Should count all 7 workouts in last 180 days');
   });
 
@@ -101,15 +99,15 @@ describe('Statistics period filtering', () => {
     // at the same 40 days, making 30-day and 90-day show the same count
 
     const res30 = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=60', {
-      headers: { authorization: `Bearer ${tokenPer(utente)}` }
+      token: tokenPer(utente)
     });
 
     const res90 = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=180', {
-      headers: { authorization: `Bearer ${tokenPer(utente)}` }
+      token: tokenPer(utente)
     });
 
-    const count30 = JSON.parse(res30.body).dati.reduce((s, d) => s + d.sessioni, 0);
-    const count90 = JSON.parse(res90.body).dati.reduce((s, d) => s + d.sessioni, 0);
+    const count30 = res30.corpo.dati.reduce((s, d) => s + d.sessioni, 0);
+    const count90 = res90.corpo.dati.reduce((s, d) => s + d.sessioni, 0);
 
     assert.ok(count90 > count30,
       `90-day period (${count90}) should have more workouts than 30-day period (${count30})`);
