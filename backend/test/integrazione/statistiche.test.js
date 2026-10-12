@@ -20,7 +20,11 @@ describe('Statistics period filtering', () => {
 
     // Create workouts: 2 old (100 days ago), 5 recent (last 30 days)
     const schedaId = (await prisma.schedaAllenamento.create({
-      data: { creatoreId: utente.id, titolo: 'Test', esercizi: [] }
+      data: {
+        creatoreId: utente.id,
+        titolo: 'Test',
+        visibilita: 'PRIVATA'
+      }
     })).id;
 
     const oggi = new Date();
