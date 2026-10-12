@@ -69,7 +69,7 @@ describe('Statistics period filtering', () => {
   });
 
   it('should return correct workout count for 30 days period', async () => {
-    const res = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=60', {
+    const res = await server.richiesta('GET', '/statistiche/sessioni?giorni=60', {
       token: tokenPer(utente)
     });
 
@@ -82,7 +82,7 @@ describe('Statistics period filtering', () => {
   });
 
   it('should return correct workout count for 90 days period', async () => {
-    const res = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=180', {
+    const res = await server.richiesta('GET', '/statistiche/sessioni?giorni=180', {
       token: tokenPer(utente)
     });
 
@@ -98,11 +98,11 @@ describe('Statistics period filtering', () => {
     // The bug was: dataResetStatistiche (40 days ago) would cap both periods
     // at the same 40 days, making 30-day and 90-day show the same count
 
-    const res30 = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=60', {
+    const res30 = await server.richiesta('GET', '/statistiche/sessioni?giorni=60', {
       token: tokenPer(utente)
     });
 
-    const res90 = await server.richiesta('GET', '/api/v1/statistiche/sessioni?giorni=180', {
+    const res90 = await server.richiesta('GET', '/statistiche/sessioni?giorni=180', {
       token: tokenPer(utente)
     });
 
