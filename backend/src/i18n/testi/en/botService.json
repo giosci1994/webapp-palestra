@@ -1,0 +1,63 @@
+{
+  "aiNonConfigurata": "AI assistant not configured (GEMINI_API_KEY missing).",
+  "codiceMancante": "Code missing",
+  "codiceNonValido": "Invalid or expired code. Generate a new one from the app.",
+  "troppoVeloce": "You're sending messages too fast, wait a minute. ⏳",
+  "messaggioVuoto": "Empty message",
+  "messaggioTroppoLungo": "Message too long (max 1000 characters)",
+  "limiteAI": "AI request limit reached, try again shortly. ⏳",
+  "erroreAI": "Something went wrong with the AI assistant, try again shortly.",
+  "rispostaVuota": "Ok 👍",
+  "schedaNonTrovata": "Plan not found",
+  "esercizioNonTrovato": "Exercise not found",
+  "bozzaVuotaGuidata": "The draft is empty: add at least one exercise.",
+  "titoloSchedaPredefinito": "Plan from Telegram",
+  "descrizioneScheda": "Created via the Telegram bot",
+  "prompt": {
+    "esempioConferma": "✅ Added: <name> — <sets>x<reps>"
+  },
+  "livelli": {
+    "BASE": "Beginner",
+    "INTERMEDIO": "Intermediate",
+    "AVANZATO": "Advanced"
+  },
+  "regioni": {
+    "Parte Superiore": "Upper body",
+    "Parte Inferiore": "Lower body",
+    "Core": "Core",
+    "Tutto il Corpo": "Full body"
+  },
+  "bozza": {
+    "vuota": "The draft is empty.",
+    "titoloDaDefinire": "(to be defined)",
+    "riepilogo": "Title: {titolo}\nItems ({numero}):\n{righe}"
+  },
+  "voce": {
+    "forza": "{n}. {nome} — {serie}x{ripetizioni} (rest {recupero}s)",
+    "forzaSenzaRecupero": "{n}. {nome} — {serie}x{ripetizioni}",
+    "cardio": "{n}. {etichetta}: {nome}",
+    "cardioDettagli": "{n}. {etichetta}: {nome} — {dettagli}",
+    "cardioScheda": "{n}. {icona} {nome}",
+    "cardioSchedaDettagli": "{n}. {icona} {nome} — {dettagli}",
+    "etichettaRiscaldamento": "🔥 Warm-up",
+    "etichettaCardio": "🏃 Cardio",
+    "durata": "{valore} min",
+    "velocita": "{valore} km/h",
+    "inclinazione": "incline {valore}%",
+    "resistenza": "level {valore}",
+    "distanza": "{valore} km"
+  },
+  "scheda": {
+    "testo": "📋 *{titolo}*\nLevel: {livello}\n\n{righe}",
+    "nessunEsercizio": "(no exercises)"
+  },
+  "statistiche": {
+    "titolo": "*📊 Your stats*",
+    "totali": "🏋️ Total workouts: *{valore}*",
+    "ultimi7Giorni": "📅 Last 7 days: *{valore}*",
+    "volume": "📦 Total volume: *{valore} kg*",
+    "tempo": "⏱️ Total time: *{valore} h*",
+    "record": "🏆 Personal records: *{valore}*",
+    "ultimoAllenamento": "_Last workout: {data}_"
+  }
+}

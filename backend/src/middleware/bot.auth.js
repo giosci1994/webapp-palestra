@@ -57,6 +57,8 @@ export async function risolviUtenteTelegram(req, res, next) {
     }
 
     req.utenteTelegram = collegamento.utente;
+    // The bot writes its own texts in the same language
+    res.set('Content-Language', lingua);
     // Whatever the route builds from here on (t() in the controller and the
     // services) is in that language too
     conLingua(lingua, next);

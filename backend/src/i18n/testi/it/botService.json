@@ -1,0 +1,63 @@
+{
+  "aiNonConfigurata": "Assistente AI non configurato (GEMINI_API_KEY mancante).",
+  "codiceMancante": "Codice mancante",
+  "codiceNonValido": "Codice non valido o scaduto. Generane uno nuovo dall'app.",
+  "troppoVeloce": "Stai scrivendo troppo in fretta, attendi un minuto. ⏳",
+  "messaggioVuoto": "Messaggio vuoto",
+  "messaggioTroppoLungo": "Messaggio troppo lungo (max 1000 caratteri)",
+  "limiteAI": "Limite di richieste AI raggiunto, riprova tra poco. ⏳",
+  "erroreAI": "Errore con l'assistente AI, riprova tra poco.",
+  "rispostaVuota": "Ok 👍",
+  "schedaNonTrovata": "Scheda non trovata",
+  "esercizioNonTrovato": "Esercizio non trovato",
+  "bozzaVuotaGuidata": "La bozza è vuota: aggiungi almeno un esercizio.",
+  "titoloSchedaPredefinito": "Scheda da Telegram",
+  "descrizioneScheda": "Creata via bot Telegram",
+  "prompt": {
+    "esempioConferma": "✅ Aggiunto: <nome> — <serie>x<rip>"
+  },
+  "livelli": {
+    "BASE": "Base",
+    "INTERMEDIO": "Intermedio",
+    "AVANZATO": "Avanzato"
+  },
+  "regioni": {
+    "Parte Superiore": "Parte Superiore",
+    "Parte Inferiore": "Parte Inferiore",
+    "Core": "Core",
+    "Tutto il Corpo": "Tutto il Corpo"
+  },
+  "bozza": {
+    "vuota": "La bozza è vuota.",
+    "titoloDaDefinire": "(da definire)",
+    "riepilogo": "Titolo: {titolo}\nVoci ({numero}):\n{righe}"
+  },
+  "voce": {
+    "forza": "{n}. {nome} — {serie}x{ripetizioni} (rec {recupero}s)",
+    "forzaSenzaRecupero": "{n}. {nome} — {serie}x{ripetizioni}",
+    "cardio": "{n}. {etichetta}: {nome}",
+    "cardioDettagli": "{n}. {etichetta}: {nome} — {dettagli}",
+    "cardioScheda": "{n}. {icona} {nome}",
+    "cardioSchedaDettagli": "{n}. {icona} {nome} — {dettagli}",
+    "etichettaRiscaldamento": "🔥 Riscaldamento",
+    "etichettaCardio": "🏃 Cardio",
+    "durata": "{valore} min",
+    "velocita": "{valore} km/h",
+    "inclinazione": "incl {valore}%",
+    "resistenza": "liv {valore}",
+    "distanza": "{valore} km"
+  },
+  "scheda": {
+    "testo": "📋 *{titolo}*\nLivello: {livello}\n\n{righe}",
+    "nessunEsercizio": "(nessun esercizio)"
+  },
+  "statistiche": {
+    "titolo": "*📊 Le tue statistiche*",
+    "totali": "🏋️ Allenamenti totali: *{valore}*",
+    "ultimi7Giorni": "📅 Ultimi 7 giorni: *{valore}*",
+    "volume": "📦 Volume totale: *{valore} kg*",
+    "tempo": "⏱️ Tempo totale: *{valore} h*",
+    "record": "🏆 Record personali: *{valore}*",
+    "ultimoAllenamento": "_Ultimo allenamento: {data}_"
+  }
+}
