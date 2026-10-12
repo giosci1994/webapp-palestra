@@ -188,19 +188,25 @@ export default function Dashboard() {
     }
   };
 
-  // Calendar dots: red for workouts already done, a status color for the
-  // scheduled ones.
+  // Calendar dots: green for completed workouts, violet for scheduled ones
   const marcatoriCalendario = (() => {
     const per = {};
     const aggiungi = (giorno, colore) => {
       if (!per[giorno]) per[giorno] = [];
       if (!per[giorno].some(x => x.colore === colore)) per[giorno].push({ colore });
     };
-    for (const s of sessioniRecenti) aggiungi(s.dataInizio.split('T')[0], 'var(--pericolo)');
+    // Completed workouts (both planned and unplanned)
+    const giorniCompletati = new Set();
+    for (const s of sessioniRecenti) giorniCompletati.add(s.dataInizio.split('T')[0]);
     for (const p of pianificati) {
-      aggiungi(p.data, p.stato === 'COMPLETATO' ? 'var(--successo, #22c55e)'
-                     : p.stato === 'SALTATO' ? 'var(--testo-terziario)'
-                     : 'var(--accent)');
+      if (p.stato === 'COMPLETATO') giorniCompletati.add(p.data);
+    }
+    for (const giorno of giorniCompletati) aggiungi(giorno, 'var(--successo, #22c55e)');
+
+    // Scheduled workouts (in progress, skipped)
+    for (const p of pianificati) {
+      if (p.stato === 'SALTATO') aggiungi(p.data, 'var(--testo-terziario)');
+      else if (p.stato === 'IN_PROGRAMMA') aggiungi(p.data, 'var(--accent)');
     }
     return per;
   })();
@@ -475,9 +481,8 @@ export default function Dashboard() {
                   />
 
                   <div className="flex items-center gap-3 mt-5 pt-4 border-t border-[var(--bordo-light)] text-xs text-[var(--testo-terziario)] flex-wrap">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--pericolo)' }} /> {t('dashboard.calendario.svolto')}</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} /> {t('dashboard.calendario.inProgramma')}</span>
                     <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--successo, #22c55e)' }} /> {t('dashboard.calendario.completato')}</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} /> {t('dashboard.calendario.inProgramma')}</span>
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-[var(--bordo-light)] flex items-center justify-between gap-3 text-sm">
