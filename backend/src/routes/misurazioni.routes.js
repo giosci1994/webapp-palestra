@@ -7,6 +7,7 @@ import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { t } from '../i18n/index.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -79,10 +80,10 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
     const m = await prisma.misurazioneCorporea.findUnique({ where: { id }, select: { utenteId: true } });
-    if (!m) return res.status(404).json({ successo: false, messaggio: 'Misurazione non trovata' });
-    if (m.utenteId !== req.utente.id) return res.status(403).json({ successo: false, messaggio: 'Non autorizzato' });
+    if (!m) return res.status(404).json({ successo: false, messaggio: t('misurazioniRoutes.misurazioneNonTrovata') });
+    if (m.utenteId !== req.utente.id) return res.status(403).json({ successo: false, messaggio: t('misurazioniRoutes.nonAutorizzato') });
     await prisma.misurazioneCorporea.delete({ where: { id } });
-    res.json({ successo: true, messaggio: 'Misurazione eliminata' });
+    res.json({ successo: true, messaggio: t('misurazioniRoutes.misurazioneEliminata') });
   } catch (errore) { next(errore); }
 });
 
@@ -91,7 +92,7 @@ router.get('/cliente/:id', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
     if (!(await isPTDelCliente(req.utente.id, clienteId))) {
-      return res.status(403).json({ successo: false, messaggio: 'Non sei il Personal Trainer di questo cliente' });
+      return res.status(403).json({ successo: false, messaggio: t('misurazioniRoutes.nonSeiIlPtDelCliente') });
     }
     const lista = await prisma.misurazioneCorporea.findMany({
       where: { utenteId: clienteId },
@@ -106,7 +107,7 @@ router.post('/cliente/:id', async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
     if (!(await isPTDelCliente(req.utente.id, clienteId))) {
-      return res.status(403).json({ successo: false, messaggio: 'Non sei il Personal Trainer di questo cliente' });
+      return res.status(403).json({ successo: false, messaggio: t('misurazioniRoutes.nonSeiIlPtDelCliente') });
     }
     const dati = costruisciDati(req.body);
     await calcolaBmiSeMancante(dati, clienteId);

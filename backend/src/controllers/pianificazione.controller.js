@@ -8,6 +8,7 @@ import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../ut
 import { creaNotifica } from '../services/notifiche.service.js';
 import { gruppiDellaScheda } from '../services/consiglio.service.js';
 import { giornoLocale, orarioLocale } from '../utils/date.js';
+import { t } from '../i18n/index.js';
 
 // Days of the week as used across the app: 0 = Monday … 6 = Sunday
 const GIORNI_VALIDI = [0, 1, 2, 3, 4, 5, 6];
@@ -20,10 +21,10 @@ const MAX_SETTIMANE = 12;
  */
 function aData(valore, nomeCampo = 'data') {
   if (typeof valore !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valore)) {
-    throw new ErroreValidazione(`Campo "${nomeCampo}" non valido: atteso formato YYYY-MM-DD`);
+    throw new ErroreValidazione(t('pianificazioneController.campoFormatoNonValido', { campo: nomeCampo }));
   }
   const d = new Date(`${valore}T00:00:00.000Z`);
-  if (Number.isNaN(d.getTime())) throw new ErroreValidazione(`Campo "${nomeCampo}" non è una data reale`);
+  if (Number.isNaN(d.getTime())) throw new ErroreValidazione(t('pianificazioneController.campoNonDataReale', { campo: nomeCampo }));
   return d;
 }
 
@@ -46,7 +47,7 @@ function giornoSettimanaUTC(d) {
  */
 async function risolviAgenda(richiedente, utenteIdRichiesto) {
   const bersaglioId = utenteIdRichiesto ? parseInt(utenteIdRichiesto, 10) : richiedente.id;
-  if (Number.isNaN(bersaglioId)) throw new ErroreValidazione('Campo "utenteId" non valido');
+  if (Number.isNaN(bersaglioId)) throw new ErroreValidazione(t('pianificazioneController.campoNonValido', { campo: 'utenteId' }));
 
   if (bersaglioId === richiedente.id) return bersaglioId;
   if (richiedente.ruolo === 'SUPERADMIN') return bersaglioId;
@@ -59,19 +60,19 @@ async function risolviAgenda(richiedente, utenteIdRichiesto) {
     if (iscrizione) return bersaglioId;
   }
 
-  throw new ErroreNonAutorizzato('Non puoi gestire il calendario di questo utente');
+  throw new ErroreNonAutorizzato(t('pianificazioneController.nonPuoiGestire'));
 }
 
 /** The plan must be usable by the user it is scheduled for. */
 async function verificaScheda(schedaId, utenteBersaglioId) {
   const id = parseInt(schedaId, 10);
-  if (Number.isNaN(id)) throw new ErroreValidazione('Campo "schedaId" non valido');
+  if (Number.isNaN(id)) throw new ErroreValidazione(t('pianificazioneController.campoNonValido', { campo: 'schedaId' }));
 
   const scheda = await prisma.schedaAllenamento.findUnique({
     where: { id },
     select: { id: true, creatoreId: true, visibilita: true }
   });
-  if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+  if (!scheda) throw new ErroreNonTrovato(t('pianificazioneController.schedaNonTrovata'));
 
   const utilizzabile = scheda.visibilita === 'GLOBALE' || scheda.creatoreId === utenteBersaglioId;
   if (!utilizzabile) {
@@ -81,7 +82,7 @@ async function verificaScheda(schedaId, utenteBersaglioId) {
       where: { id, sessioni: { some: { utenteId: utenteBersaglioId } } },
       select: { id: true }
     });
-    if (!assegnata) throw new ErroreNonAutorizzato('Questa scheda non è disponibile per l\'utente indicato');
+    if (!assegnata) throw new ErroreNonAutorizzato(t('pianificazioneController.schedaNonDisponibile'));
   }
   return id;
 }
@@ -103,7 +104,7 @@ export async function listaPianificazione(req, res, next) {
 
     const da = req.query.da ? aData(req.query.da, 'da') : primoDelMese;
     const a = req.query.a ? aData(req.query.a, 'a') : ultimoDelMese;
-    if (da > a) throw new ErroreValidazione('L\'intervallo richiesto è rovesciato: "da" è successivo ad "a"');
+    if (da > a) throw new ErroreValidazione(t('pianificazioneController.intervalloRovesciato'));
 
     const allenamenti = await prisma.allenamentoPianificato.findMany({
       where: { utenteId, data: { gte: da, lte: a } },
@@ -268,8 +269,10 @@ export async function creaPianificato(req, res, next) {
     if (utenteId !== req.utente.id) {
       await creaNotifica(req.app.get('io'), utenteId, {
         tipo: 'ALLENAMENTO_PIANIFICATO',
-        titolo: 'Nuovo allenamento in calendario',
-        messaggio: `${creato.scheda.titolo} — ${daData(creato.data)}`,
+        // Translation keys: the notification is in the language of the user it is for
+        titolo: 'pianificazioneController.nuovoAllenamentoTitolo',
+        messaggio: 'pianificazioneController.nuovoAllenamentoMessaggio',
+        variabili: { titolo: creato.scheda.titolo, data: daData(creato.data) },
         percorso: '/pianificazione'
       });
     }
@@ -293,11 +296,11 @@ export async function creaPianificazioneSettimanale(req, res, next) {
     const utenteId = await risolviAgenda(req.utente, bersaglio);
 
     if (!Array.isArray(voci) || voci.length === 0) {
-      throw new ErroreValidazione('Serve almeno una voce { schedaId, giornoSettimana }');
+      throw new ErroreValidazione(t('pianificazioneController.serveAlmenoUnaVoce'));
     }
     const nSettimane = parseInt(settimane, 10);
     if (Number.isNaN(nSettimane) || nSettimane < 1 || nSettimane > MAX_SETTIMANE) {
-      throw new ErroreValidazione(`Campo "settimane" deve essere fra 1 e ${MAX_SETTIMANE}`);
+      throw new ErroreValidazione(t('pianificazioneController.settimaneFuoriLimiti', { max: MAX_SETTIMANE }));
     }
     const inizio = aData(dataInizio, 'dataInizio');
 
@@ -306,7 +309,7 @@ export async function creaPianificazioneSettimanale(req, res, next) {
     for (const voce of voci) {
       const giorno = parseInt(voce.giornoSettimana, 10);
       if (!GIORNI_VALIDI.includes(giorno)) {
-        throw new ErroreValidazione('Campo "giornoSettimana" deve essere fra 0 (lunedì) e 6 (domenica)');
+        throw new ErroreValidazione(t('pianificazioneController.giornoSettimanaFuoriLimiti'));
       }
       vociValide.push({ schedaId: await verificaScheda(voce.schedaId, utenteId), giornoSettimana: giorno });
     }
@@ -332,8 +335,12 @@ export async function creaPianificazioneSettimanale(req, res, next) {
     if (utenteId !== req.utente.id && esito.count > 0) {
       await creaNotifica(req.app.get('io'), utenteId, {
         tipo: 'ALLENAMENTO_PIANIFICATO',
-        titolo: 'Il tuo programma è stato aggiornato',
-        messaggio: `${esito.count} allenamenti aggiunti al calendario da ${req.utente.nome || 'il tuo trainer'}`,
+        // Translation keys: the notification is in the language of the user it is for
+        titolo: 'pianificazioneController.programmaAggiornatoTitolo',
+        messaggio: req.utente.nome
+          ? 'pianificazioneController.allenamentiAggiunti'
+          : 'pianificazioneController.allenamentiAggiuntiDalTrainer',
+        variabili: { count: esito.count, nome: req.utente.nome },
         percorso: '/pianificazione'
       });
     }
@@ -351,13 +358,13 @@ export async function creaPianificazioneSettimanale(req, res, next) {
 export async function aggiornaPianificato(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
+    if (Number.isNaN(id)) throw new ErroreValidazione(t('pianificazioneController.idNonValido'));
 
     const esistente = await prisma.allenamentoPianificato.findUnique({
       where: { id },
       select: { id: true, utenteId: true, data: true, schedaId: true }
     });
-    if (!esistente) throw new ErroreNonTrovato('Allenamento pianificato non trovato');
+    if (!esistente) throw new ErroreNonTrovato(t('pianificazioneController.pianificatoNonTrovato'));
     await risolviAgenda(req.utente, esistente.utenteId);
 
     const dati = {};
@@ -368,7 +375,7 @@ export async function aggiornaPianificato(req, res, next) {
     } else if (req.body.rimandaGiorni !== undefined) {
       const giorni = parseInt(req.body.rimandaGiorni, 10);
       if (Number.isNaN(giorni) || giorni === 0 || Math.abs(giorni) > 365) {
-        throw new ErroreValidazione('Campo "rimandaGiorni" deve essere un numero di giorni diverso da zero');
+        throw new ErroreValidazione(t('pianificazioneController.rimandaGiorniNonValido'));
       }
       const nuova = new Date(esistente.data);
       nuova.setUTCDate(nuova.getUTCDate() + giorni);
@@ -377,7 +384,7 @@ export async function aggiornaPianificato(req, res, next) {
 
     if (req.body.stato !== undefined) {
       if (!['PIANIFICATO', 'COMPLETATO', 'SALTATO'].includes(req.body.stato)) {
-        throw new ErroreValidazione('Stato non valido');
+        throw new ErroreValidazione(t('pianificazioneController.statoNonValido'));
       }
       dati.stato = req.body.stato;
     }
@@ -385,7 +392,7 @@ export async function aggiornaPianificato(req, res, next) {
     if (req.body.note !== undefined) dati.note = req.body.note || null;
 
     if (Object.keys(dati).length === 0) {
-      throw new ErroreValidazione('Nessun campo da aggiornare');
+      throw new ErroreValidazione(t('pianificazioneController.nessunCampoDaAggiornare'));
     }
 
     // Moving to a day that already has the same plan would break the unique
@@ -395,7 +402,7 @@ export async function aggiornaPianificato(req, res, next) {
         where: { utenteId: esistente.utenteId, data: dati.data, schedaId: esistente.schedaId, id: { not: id } },
         select: { id: true }
       });
-      if (collisione) throw new ErroreValidazione('Questa scheda è già in calendario in quel giorno');
+      if (collisione) throw new ErroreValidazione(t('pianificazioneController.schedaGiaInCalendario'));
     }
 
     const aggiornato = await prisma.allenamentoPianificato.update({
@@ -414,17 +421,17 @@ export async function aggiornaPianificato(req, res, next) {
 export async function eliminaPianificato(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
+    if (Number.isNaN(id)) throw new ErroreValidazione(t('pianificazioneController.idNonValido'));
 
     const esistente = await prisma.allenamentoPianificato.findUnique({
       where: { id },
       select: { id: true, utenteId: true }
     });
-    if (!esistente) throw new ErroreNonTrovato('Allenamento pianificato non trovato');
+    if (!esistente) throw new ErroreNonTrovato(t('pianificazioneController.pianificatoNonTrovato'));
     await risolviAgenda(req.utente, esistente.utenteId);
 
     await prisma.allenamentoPianificato.delete({ where: { id } });
-    res.json({ successo: true, messaggio: 'Allenamento rimosso dal calendario' });
+    res.json({ successo: true, messaggio: t('pianificazioneController.pianificatoRimosso') });
   } catch (errore) {
     next(errore);
   }

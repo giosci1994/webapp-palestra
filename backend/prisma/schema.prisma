@@ -125,6 +125,7 @@ model Utente {
   obiettivoFitness     String?   @map("obiettivo_fitness")     // "Massa", "Definizione", etc.
   preferenzeVisibilita String?   @map("preferenze_visibilita") // JSON: {"palestra":true,...}
   lingua               String?                                 // App language chosen in Profile ("en", "it"); null follows the phone
+  linguaApp            String?   @map("lingua_app")            // Language the app last used, for messages sent outside a request (push, reminders)
 
   // Onboarding & compliance
   profiloCompletato    Boolean   @default(false) @map("profilo_completato")
@@ -685,6 +686,7 @@ model Novita {
   ctaRotta     String?  @map("cta_rotta")     // e.g. "/profilo"
   coloreInizio String?  @map("colore_inizio") // header gradient (hex)
   coloreFine   String?  @map("colore_fine")
+  traduzioni   String?  // JSON: { "en": { "titolo", "sottotitolo", "punti", "ctaTesto" } }; the base fields are Italian
   attiva       Boolean  @default(true)
   ordine       Int      @default(0)
   creatoIl     DateTime @default(now()) @map("creato_il")

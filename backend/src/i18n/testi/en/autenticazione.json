@@ -1,0 +1,10 @@
+{
+  "tokenMancante": "Access token missing",
+  "utenteNonTrovato": "User not found",
+  "sessioneChiusa": "Session closed: please sign in again",
+  "accountSospeso": "Your account has been suspended",
+  "accountInAttesa": "Your account is awaiting approval",
+  "tokenScaduto": "Access token expired",
+  "tokenNonValido": "Invalid access token",
+  "erroreAutenticazione": "Authentication error"
+}

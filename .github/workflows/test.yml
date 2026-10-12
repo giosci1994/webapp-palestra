@@ -75,8 +75,8 @@ jobs:
       - name: Il backend risponde
         run: |
           docker compose exec -T backend node -e "fetch('http://localhost:3000/api/v1/salute').then(async r => { console.log(r.status, await r.text()); process.exit(r.ok ? 0 : 1) })"
-      - name: Il codice del bot si carica
-        run: docker compose --profile controlli run --rm --no-deps bot node --check bot.js
+      - name: The bot's code and texts load
+        run: docker compose --profile controlli run --rm --no-deps bot sh -c "node --check bot.js && node --input-type=module -e \"await import('./testi.js')\""
       - name: Il codice dello scraper si carica
         run: docker compose --profile controlli run --rm --no-deps --entrypoint node scraper --check scraper-affluenza.js
       - name: Log dei container

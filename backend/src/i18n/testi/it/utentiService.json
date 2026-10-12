@@ -1,0 +1,11 @@
+{
+  "utenteNonTrovato": "Utente non trovato",
+  "impossibileApprovare": "Impossibile approvare un utente in stato: {stato}",
+  "nonPuoiBannareSuperAdmin": "Non puoi bannare un SuperAdmin",
+  "bioTroppoLunga": "La bio non può superare i 200 caratteri",
+  "immagineTroppoGrande": "Immagine troppo grande. Massimo 300KB.",
+  "passwordObbligatorie": "Vecchia password e nuova password sono obbligatorie",
+  "nuovaPasswordCorta": "La nuova password deve avere almeno 8 caratteri",
+  "passwordAttualeErrata": "La password attuale non è corretta",
+  "impossibileEliminareSuperAdmin": "Impossibile eliminare un SuperAdmin. Declassalo prima a UTENTE."
+}

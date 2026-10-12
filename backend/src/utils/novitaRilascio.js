@@ -3,6 +3,8 @@
 // ============================================
 //
 // The stories live in prisma/novita.json, each with the version that brings it.
+// The base fields are Italian; "en" holds the English version of the texts
+// (titolo, sottotitolo, punti, ctaTesto), shown to users in English.
 // When that version is released they are added to the novita table
 // (services/novitaRilascio.service.js), only once: the stories of past
 // versions are never touched again, even if they are changed or deleted
@@ -44,8 +46,37 @@ export function problemiStorie(storie) {
       if (!validi) problemi.push(`${dove}: punti deve essere un elenco di { icona, testo }`);
     }
     if (storia.ordine != null && !Number.isInteger(storia.ordine)) problemi.push(`${dove}: ordine deve essere un numero intero`);
+    if (storia.en != null) {
+      const en = storia.en;
+      const valida = typeof en === 'object' && testo(en.titolo, 200) && facoltativo(en.sottotitolo, 300) && facoltativo(en.ctaTesto, 60) &&
+        (en.punti == null || (Array.isArray(en.punti) && en.punti.length === (storia.punti?.length ?? 0) &&
+          en.punti.every(p => p && facoltativo(p.icona, 20) && testo(p.testo, 300))));
+      if (!valida) problemi.push(`${dove}: en deve avere titolo, e gli stessi punti della storia`);
+    }
   });
   return problemi;
+}
+
+/** The translatable texts of a story */
+const CAMPI_TRADOTTI = ['titolo', 'sottotitolo', 'punti', 'ctaTesto'];
+
+/**
+ * A row of the novita table as the app shows it in `lingua`: the texts of
+ * that language when the story has them (traduzioni), otherwise the base ones.
+ * `punti` comes back as the JSON string the table stores.
+ */
+export function storiaInLingua(riga, lingua) {
+  let traduzioni = null;
+  try { traduzioni = riga.traduzioni ? JSON.parse(riga.traduzioni) : null; } catch { /* unreadable: the base texts */ }
+  const versione = traduzioni?.[lingua];
+  const { traduzioni: _, ...base } = riga;
+  if (!versione) return base;
+  const tradotta = { ...base };
+  for (const campo of CAMPI_TRADOTTI) {
+    if (versione[campo] == null) continue;
+    tradotta[campo] = campo === 'punti' ? JSON.stringify(versione.punti) : versione[campo];
+  }
+  return tradotta;
 }
 
 /**
@@ -68,6 +99,7 @@ export function righeDellaVersione(storie, versione, adesso = new Date()) {
       ctaRotta: storia.ctaRotta ?? null,
       coloreInizio: storia.coloreInizio ?? null,
       coloreFine: storia.coloreFine ?? null,
+      traduzioni: storia.en ? JSON.stringify({ en: storia.en }) : null,
       ordine: storia.ordine ?? 0,
       attiva: true,
       creatoIl: new Date(adesso.getTime() - indice * 1000)

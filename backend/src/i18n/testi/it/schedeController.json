@@ -1,0 +1,22 @@
+{
+  "schedaNonTrovata": "Scheda non trovata",
+  "schedaNumeroNonTrovata": "Scheda {id} non trovata",
+  "schedaNonAccessibile": "Non hai accesso a questa scheda",
+  "schedaTitoloNonAccessibile": "Non hai accesso alla scheda \"{titolo}\"",
+  "titoloObbligatorio": "Il titolo è obbligatorio",
+  "soloAdminPtGlobali": "Solo admin e PT possono creare schede globali",
+  "nonPuoiClonare": "Non puoi clonare questa scheda",
+  "copiaTitolo": "{titolo} (copia)",
+  "nonPuoiModificare": "Non puoi modificare questa scheda",
+  "nonPuoiEliminare": "Non puoi eliminare questa scheda",
+  "schedaEliminata": "Scheda eliminata",
+  "esercizioSchedaNonTrovato": "Esercizio scheda non trovato",
+  "esercizioRimosso": "Esercizio rimosso dalla scheda",
+  "idNonValido": "ID non valido",
+  "indicareAlmenoUnaScheda": "Indicare almeno una scheda in \"ids\"",
+  "idsNonValido": "Parametro \"ids\" non valido",
+  "massimoSchedePerDocumento": "Massimo 10 schede per documento",
+  "stessaSchedaPiuVolte": "La stessa scheda e' indicata piu' volte",
+  "programmaSedute_one": "Programma {count} seduta",
+  "programmaSedute_other": "Programma {count} sedute"
+}

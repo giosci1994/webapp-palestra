@@ -4,7 +4,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { problemiStorie, righeDellaVersione } from '../../src/utils/novitaRilascio.js';
+import { problemiStorie, righeDellaVersione, storiaInLingua } from '../../src/utils/novitaRilascio.js';
 
 const storia = (campi = {}) => ({
   versione: '1.3.0',
@@ -77,5 +77,33 @@ describe('righeDellaVersione', () => {
     const [riga] = righeDellaVersione([{ versione: '1.3.0', titolo: 'Essenziale' }], '1.3.0');
     assert.equal(riga.punti, null);
     assert.equal(riga.ctaRotta, null);
+  });
+});
+
+describe('stories in English', () => {
+  const inglese = { titolo: 'News', sottotitolo: 'Sub', punti: [{ icona: '⏱️', testo: 'First point' }], ctaTesto: 'Go' };
+
+  it('the English version must have a title and the same points as the story', () => {
+    assert.deepEqual(problemiStorie([storia({ en: inglese })]), []);
+    assert.equal(problemiStorie([storia({ en: { ...inglese, titolo: '' } })]).length, 1);
+    assert.equal(problemiStorie([storia({ en: { ...inglese, punti: [] } })]).length, 1);
+  });
+
+  it('goes into the table with the story', () => {
+    const [riga] = righeDellaVersione([storia({ en: inglese })], '1.3.0');
+    assert.deepEqual(JSON.parse(riga.traduzioni), { en: inglese });
+    assert.equal(righeDellaVersione([storia()], '1.3.0')[0].traduzioni, null);
+  });
+
+  it('the app gets the texts of its language, otherwise the base ones', () => {
+    const [riga] = righeDellaVersione([storia({ en: inglese })], '1.3.0');
+    const inEn = storiaInLingua(riga, 'en');
+    assert.equal(inEn.titolo, 'News');
+    assert.equal(inEn.punti, JSON.stringify(inglese.punti));
+    assert.equal(inEn.ctaRotta, riga.ctaRotta);
+    assert.equal('traduzioni' in inEn, false);
+    assert.equal(storiaInLingua(riga, 'it').titolo, 'Una novita');
+    assert.equal(storiaInLingua({ titolo: 'Solo base', traduzioni: null }, 'en').titolo, 'Solo base');
+    assert.equal(storiaInLingua({ titolo: 'Rotta', traduzioni: '{non json' }, 'en').titolo, 'Rotta');
   });
 });

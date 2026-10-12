@@ -5,6 +5,7 @@
 import * as notificheService from '../services/notifiche.service.js';
 import * as pushService from '../services/push.service.js';
 import { ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
+import { t } from '../i18n/index.js';
 
 /** GET /api/v1/notifiche?limite=&soloNonLette= — List + unread count */
 export async function lista(req, res, next) {
@@ -26,10 +27,10 @@ export async function lista(req, res, next) {
 export async function segnaLetta(req, res, next) {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
+    if (Number.isNaN(id)) throw new ErroreValidazione(t('notificheController.idNonValido'));
 
     const fatto = await notificheService.segnaLetta(req.utente.id, id);
-    if (!fatto) throw new ErroreNonTrovato('Notifica non trovata');
+    if (!fatto) throw new ErroreNonTrovato(t('notificheController.notificaNonTrovata'));
 
     res.json({ successo: true, dati: { nonLette: await notificheService.contaNonLette(req.utente.id) } });
   } catch (errore) {
@@ -64,19 +65,19 @@ const testoBreve = (valore, massimo) => typeof valore === 'string' && valore.len
 
 /** A subscription's endpoint: an https address of the browser's push service */
 function leggiEndpoint(endpoint) {
-  if (!testoBreve(endpoint, 2048)) throw new ErroreValidazione('Iscrizione push non valida');
+  if (!testoBreve(endpoint, 2048)) throw new ErroreValidazione(t('notificheController.iscrizionePushNonValida'));
   let indirizzo;
-  try { indirizzo = new URL(endpoint); } catch { throw new ErroreValidazione('Iscrizione push non valida'); }
-  if (indirizzo.protocol !== 'https:') throw new ErroreValidazione('Iscrizione push non valida');
+  try { indirizzo = new URL(endpoint); } catch { throw new ErroreValidazione(t('notificheController.iscrizionePushNonValida')); }
+  if (indirizzo.protocol !== 'https:') throw new ErroreValidazione(t('notificheController.iscrizionePushNonValida'));
   return endpoint;
 }
 
 /** POST /api/v1/notifiche/push/iscrizione — This device receives push notifications (body: PushSubscription.toJSON()) */
 export async function iscriviPush(req, res, next) {
   try {
-    if (!pushService.chiavePubblica()) throw new ErroreValidazione('Le notifiche push non sono attive sul server');
+    if (!pushService.chiavePubblica()) throw new ErroreValidazione(t('notificheController.pushNonAttive'));
     const { endpoint, keys } = req.body || {};
-    if (!testoBreve(keys?.p256dh, 256) || !testoBreve(keys?.auth, 256)) throw new ErroreValidazione('Iscrizione push non valida');
+    if (!testoBreve(keys?.p256dh, 256) || !testoBreve(keys?.auth, 256)) throw new ErroreValidazione(t('notificheController.iscrizionePushNonValida'));
     await pushService.iscrivi(req.utente.id, { endpoint: leggiEndpoint(endpoint), keys }, req.get('user-agent'));
     res.status(201).json({ successo: true });
   } catch (errore) { next(errore); }
@@ -94,8 +95,9 @@ export async function disiscriviPush(req, res, next) {
 export async function provaPush(req, res, next) {
   try {
     const raggiunti = await pushService.inviaPush(req.utente.id, {
-      titolo: '🔔 Notifiche attive',
-      messaggio: 'Da adesso GymMaster ti avvisa anche a schermo bloccato.',
+      // Translation keys: push.service translates them in the language of the device's owner
+      titolo: 'notificheController.provaTitolo',
+      messaggio: 'notificheController.provaMessaggio',
       percorso: '/profilo?tab=notifiche',
       tag: 'prova',
       // The test is sent from the profile, with the app open: it must show anyway
@@ -113,9 +115,9 @@ export async function programmaRecupero(req, res, next) {
   try {
     const { secondi, prossimo } = req.body || {};
     if (!Number.isInteger(secondi) || secondi < 1 || secondi > pushService.RECUPERO_MASSIMO) {
-      throw new ErroreValidazione(`Il recupero va da 1 a ${pushService.RECUPERO_MASSIMO} secondi`);
+      throw new ErroreValidazione(t('notificheController.recuperoFuoriLimiti', { max: pushService.RECUPERO_MASSIMO }));
     }
-    if (prossimo != null && !testoBreve(prossimo, 120)) throw new ErroreValidazione('Il prossimo esercizio deve essere un testo breve');
+    if (prossimo != null && !testoBreve(prossimo, 120)) throw new ErroreValidazione(t('notificheController.prossimoNonValido'));
     pushService.programmaFineRecupero(req.utente.id, secondi, prossimo);
     res.json({ successo: true });
   } catch (errore) { next(errore); }

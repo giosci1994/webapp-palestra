@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { linguaSupportata, t } from '../i18n/index.js';
 
 /**
  * JWT authentication middleware.
@@ -18,7 +19,7 @@ export async function verificaToken(req, res, next) {
     const headerAuth = req.headers.authorization;
 
     if (!headerAuth || !headerAuth.startsWith('Bearer ')) {
-      throw new ErroreNonAutenticato('Token di accesso mancante');
+      throw new ErroreNonAutenticato(t('autenticazione.tokenMancante'));
     }
 
     const token = headerAuth.split(' ')[1];
@@ -40,6 +41,8 @@ export async function verificaToken(req, res, next) {
         stato: true,
         palestraId: true,
         chatRetentionGiorni: true,
+        lingua: true,
+        linguaApp: true,
         ...(payload.famiglia && {
           refreshTokens: { where: { famiglia: payload.famiglia, revocato: false }, select: { id: true }, take: 1 }
         })
@@ -47,21 +50,29 @@ export async function verificaToken(req, res, next) {
     });
 
     if (!utente) {
-      throw new ErroreNonAutenticato('Utente non trovato');
+      throw new ErroreNonAutenticato(t('autenticazione.utenteNonTrovato'));
     }
 
     // Access tokens from before families existed have none: they expire on their own
     const { refreshTokens, ...datiUtente } = utente;
     if (payload.famiglia && refreshTokens.length === 0) {
-      throw new ErroreNonAutenticato('Sessione chiusa: accedi di nuovo');
+      throw new ErroreNonAutenticato(t('autenticazione.sessioneChiusa'));
     }
 
     if (utente.stato !== 'ATTIVO') {
       throw new ErroreNonAutenticato(
         utente.stato === 'BANNATO'
-          ? 'Il tuo account è stato sospeso'
-          : 'Il tuo account è in attesa di approvazione'
+          ? t('autenticazione.accountSospeso')
+          : t('autenticazione.accountInAttesa')
       );
+    }
+
+    // The app's language, remembered for the messages sent outside a request
+    // (push, reminders). It changes rarely: a write only when it does
+    if (req.lingua && linguaSupportata(req.headers['accept-language']) && datiUtente.linguaApp !== req.lingua) {
+      prisma.utente.update({ where: { id: utente.id }, data: { linguaApp: req.lingua } })
+        .catch(err => logger.warn({ utenteId: utente.id, err: err.message }, 'Lingua dell\'app non salvata'));
+      datiUtente.linguaApp = req.lingua;
     }
 
     // Attach the user to the request, with the session it comes from
@@ -73,15 +84,15 @@ export async function verificaToken(req, res, next) {
     }
 
     if (errore.name === 'TokenExpiredError') {
-      return next(new ErroreNonAutenticato('Token di accesso scaduto'));
+      return next(new ErroreNonAutenticato(t('autenticazione.tokenScaduto')));
     }
 
     if (errore.name === 'JsonWebTokenError') {
-      return next(new ErroreNonAutenticato('Token di accesso non valido'));
+      return next(new ErroreNonAutenticato(t('autenticazione.tokenNonValido')));
     }
 
     logger.error({ errore: errore.message }, 'Errore imprevisto nella verifica del token');
-    return next(new ErroreNonAutenticato('Errore di autenticazione'));
+    return next(new ErroreNonAutenticato(t('autenticazione.erroreAutenticazione')));
   }
 }
 

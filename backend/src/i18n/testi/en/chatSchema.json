@@ -1,0 +1,13 @@
+{
+  "destinatarioIdObbligatorio": "Recipient ID is required",
+  "destinatarioIdNonValido": "Invalid recipient ID",
+  "statoRispostaObbligatorio": "Response status is required",
+  "statoRispostaNonValido": "Status must be: ACCETTATA, RIFIUTATA or BLOCCATA",
+  "conversazioneIdObbligatorio": "Conversation ID is required",
+  "conversazioneIdNonValido": "Invalid conversation ID",
+  "contenutoObbligatorio": "Message content is required",
+  "messaggioVuoto": "The message can't be empty",
+  "messaggioLungo": "The message can't be longer than 2000 characters",
+  "ritenzioneMinima": "The minimum value is 0 (keep forever)",
+  "ritenzioneMassima": "The maximum value is 365 days"
+}

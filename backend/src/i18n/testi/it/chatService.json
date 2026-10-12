@@ -1,0 +1,10 @@
+{
+  "richiestaASeStessi": "Non puoi inviare una richiesta a te stesso",
+  "destinatarioNonTrovato": "Utente destinatario non trovato",
+  "utenteNonContattabile": "Non puoi contattare questo utente",
+  "richiestaGiaEsistente": "Esiste già una richiesta di contatto con questo utente",
+  "richiestaNonTrovata": "Richiesta di contatto non trovata",
+  "soloTueRichieste": "Puoi rispondere solo alle tue richieste",
+  "richiestaGiaRisposta": "Questa richiesta ha già ricevuto una risposta",
+  "nonInConversazione": "Non fai parte di questa conversazione"
+}

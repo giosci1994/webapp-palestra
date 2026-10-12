@@ -1,0 +1,6 @@
+{
+  "nomeEGruppoObbligatori": "Name and primary muscle group are required",
+  "nuovoSuggerimentoTitolo": "New exercise suggestion",
+  "nuovoSuggerimentoMessaggio": "{utente} suggested: \"{esercizio}\"",
+  "suggerimentoInviato": "Suggestion sent! The administrator will review it."
+}

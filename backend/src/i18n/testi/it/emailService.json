@@ -1,0 +1,17 @@
+{
+  "linkAlternativo": "Se il pulsante non funziona, copia questo link:",
+  "verifica": {
+    "oggetto": "Verifica il tuo indirizzo email — GymMaster",
+    "titolo": "Benvenuto su GymMaster",
+    "saluto": "Ciao {nome}, conferma il tuo indirizzo email per attivare l'account.",
+    "pulsante": "Verifica la mia email",
+    "scadenza": "Il link scade tra 24 ore. Se non hai creato tu l'account, ignora questa email."
+  },
+  "reset": {
+    "oggetto": "Reimposta la tua password — GymMaster",
+    "titolo": "Reimposta la password",
+    "saluto": "Ciao {nome}, hai richiesto di reimpostare la password del tuo account GymMaster.",
+    "pulsante": "Reimposta la password",
+    "scadenza": "Il link scade tra 1 ora. Se non hai richiesto tu il reset, ignora questa email: la password resterà invariata."
+  }
+}

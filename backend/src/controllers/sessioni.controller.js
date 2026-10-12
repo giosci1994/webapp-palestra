@@ -6,6 +6,7 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
 import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
+import { t, localeDi } from '../i18n/index.js';
 import { concludiSessione, controllaRecord, STATI_DA_CHIUDERE } from '../services/conclusioneSessione.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
@@ -280,7 +281,7 @@ export async function ultimiCarichi(req, res, next) {
 export async function avviaSessione(req, res, next) {
   try {
     const { schedaId, minutiRiscaldamento } = req.body;
-    if (!schedaId) throw new ErroreValidazione('schedaId è obbligatorio');
+    if (!schedaId) throw new ErroreValidazione(t('sessioniController.schedaIdObbligatorio'));
 
     // Check that the plan exists
     const scheda = await prisma.schedaAllenamento.findUnique({
@@ -297,11 +298,11 @@ export async function avviaSessione(req, res, next) {
       }
     });
 
-    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!scheda) throw new ErroreNonTrovato(t('sessioniController.schedaNonTrovata'));
     // As for the plan details: one's own (including those assigned by the
     // personal trainer, who puts them in the client's name) and global ones
     if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
-      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
+      throw new ErroreNonAutorizzato(t('sessioniController.schedaNonAccessibile'));
     }
 
     const sessione = await prisma.sessioneAllenamento.create({
@@ -363,9 +364,9 @@ export async function dettaglioSessione(req, res, next) {
       }
     });
 
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi accedere a questa sessione');
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiAccedere'));
     }
     res.json({ successo: true, dati: sessione });
   } catch (errore) { next(errore); }
@@ -383,9 +384,9 @@ export async function completaSessione(req, res, next) {
     const { noteFinali, conclusaIl } = req.body;
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
     }
 
     // "Termina" tapped without a network arrives when the connection is back:
@@ -454,12 +455,12 @@ const TITOLO_SCHEDA_MAX = 100;
 export async function salvaComeScheda(req, res, next) {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Sessione non valida');
+    if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione(t('sessioniController.sessioneNonValida'));
     const { titolo } = req.body || {};
-    if (titolo != null && typeof titolo !== 'string') throw new ErroreValidazione('Il titolo deve essere un testo');
+    if (titolo != null && typeof titolo !== 'string') throw new ErroreValidazione(t('sessioniController.titoloNonTesto'));
     const titoloScelto = titolo?.trim();
     if (titoloScelto && titoloScelto.length > TITOLO_SCHEDA_MAX) {
-      throw new ErroreValidazione(`Il titolo può avere al massimo ${TITOLO_SCHEDA_MAX} caratteri`);
+      throw new ErroreValidazione(t('sessioniController.titoloTroppoLungo', { max: TITOLO_SCHEDA_MAX }));
     }
 
     const sessione = await prisma.sessioneAllenamento.findUnique({
@@ -469,21 +470,22 @@ export async function salvaComeScheda(req, res, next) {
         scheda: { select: { titolo: true, livello: true, esercizi: true } }
       }
     });
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id) {
-      throw new ErroreNonAutorizzato('Puoi salvare come scheda solo i tuoi allenamenti');
+      throw new ErroreNonAutorizzato(t('sessioniController.soloTuoiAllenamenti'));
     }
-    if (!sessione.dataFine) throw new ErroreValidazione("Prima concludi l'allenamento");
+    if (!sessione.dataFine) throw new ErroreValidazione(t('sessioniController.primaConcludi'));
 
     const esercizi = eserciziDaSessione(sessione.logSerie, sessione.scheda.esercizi);
-    if (!esercizi.length) throw new ErroreValidazione('Nessuna serie completata da salvare');
+    if (!esercizi.length) throw new ErroreValidazione(t('sessioniController.nessunaSerieDaSalvare'));
 
-    const data = (opzioni) => sessione.dataInizio.toLocaleDateString('it-IT', { timeZone: FUSO_ORARIO, ...opzioni });
+    // The plan's title and description are saved in the language of the request
+    const data = (opzioni) => sessione.dataInizio.toLocaleDateString(localeDi(), { timeZone: FUSO_ORARIO, ...opzioni });
     const suffisso = ` (${data({ day: 'numeric', month: 'short' })})`;
     const scheda = await prisma.schedaAllenamento.create({
       data: {
         titolo: titoloScelto || sessione.scheda.titolo.slice(0, TITOLO_SCHEDA_MAX - suffisso.length) + suffisso,
-        descrizione: `Dall'allenamento del ${data({ day: 'numeric', month: 'long', year: 'numeric' })}`,
+        descrizione: t('sessioniController.descrizioneSchedaDaSessione', { data: data({ day: 'numeric', month: 'long', year: 'numeric' }) }),
         livello: sessione.scheda.livello,
         visibilita: 'PERSONALE',
         creatoreId: req.utente.id,
@@ -508,16 +510,16 @@ export const RIAPERTURA_MAX_MINUTI = 30;
 export async function riapriSessione(req, res, next) {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione('Sessione non valida');
+    if (!Number.isInteger(id) || id <= 0) throw new ErroreValidazione(t('sessioniController.sessioneNonValida'));
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
     }
-    if (!sessione.dataFine) throw new ErroreValidazione("L'allenamento è ancora in corso");
+    if (!sessione.dataFine) throw new ErroreValidazione(t('sessioniController.ancoraInCorso'));
     if (Date.now() - sessione.dataFine.getTime() > RIAPERTURA_MAX_MINUTI * 60000) {
-      throw new ErroreValidazione(`Un allenamento si può riprendere solo entro ${RIAPERTURA_MAX_MINUTI} minuti dalla fine`);
+      throw new ErroreValidazione(t('sessioniController.riaperturaScaduta', { count: RIAPERTURA_MAX_MINUTI }));
     }
 
     const riaperta = await prisma.$transaction(async (tx) => {
@@ -548,7 +550,7 @@ const ID_CLIENT = /^[A-Za-z0-9-]{8,64}$/;
  */
 export function orarioDalTelefono(valore, dataInizio, adesso = new Date()) {
   const orario = typeof valore === 'string' || typeof valore === 'number' ? new Date(valore) : null;
-  if (!orario || Number.isNaN(orario.getTime())) throw new ErroreValidazione('Orario non valido');
+  if (!orario || Number.isNaN(orario.getTime())) throw new ErroreValidazione(t('sessioniController.orarioNonValido'));
   return new Date(Math.min(Math.max(orario.getTime(), dataInizio.getTime()), adesso.getTime()));
 }
 
@@ -570,18 +572,18 @@ export async function logSerie(req, res, next) {
     } = req.body;
 
     if (!esercizioId || !serieNumero) {
-      throw new ErroreValidazione('esercizioId e serieNumero sono obbligatori');
+      throw new ErroreValidazione(t('sessioniController.esercizioESerieObbligatori'));
     }
     const tipoSerie = leggiTipo(tipo);
     if (idClient != null && (typeof idClient !== 'string' || !ID_CLIENT.test(idClient))) {
-      throw new ErroreValidazione('idClient non valido');
+      throw new ErroreValidazione(t('sessioniController.idClientNonValido'));
     }
 
     // Check that the workout belongs to the user before recording the set
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id: sessioneId } });
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi registrare serie in questa sessione');
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiRegistrareSerie'));
     }
 
     const includi = { esercizio: { include: { attrezzatura: { select: { categoria: true } } } } };
@@ -643,9 +645,9 @@ export async function eliminaSessione(req, res, next) {
     const id = parseInt(req.params.id);
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
 
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi eliminare le sessioni di altri utenti');
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiEliminare'));
     }
 
     // The schema already deletes the LogSerie rows (onDelete: Cascade); deleting
@@ -655,7 +657,7 @@ export async function eliminaSessione(req, res, next) {
       prisma.sessioneAllenamento.delete({ where: { id } })
     ]);
 
-    res.json({ successo: true, messaggio: 'Sessione eliminata correttamente' });
+    res.json({ successo: true, messaggio: t('sessioniController.sessioneEliminata') });
   } catch (errore) { next(errore); }
 }
 
@@ -672,15 +674,15 @@ const TOLLERANZA_FUTURO_MS = 5 * 60 * 1000;  // clock drift between client and s
  */
 export function leggiInizio(valore) {
   const inizio = new Date(valore);
-  if (Number.isNaN(inizio.getTime())) throw new ErroreValidazione('Data non valida');
+  if (Number.isNaN(inizio.getTime())) throw new ErroreValidazione(t('sessioniController.dataNonValida'));
 
   if (inizio.getTime() > Date.now() + TOLLERANZA_FUTURO_MS) {
-    throw new ErroreValidazione('Un allenamento non può iniziare nel futuro');
+    throw new ErroreValidazione(t('sessioniController.inizioNelFuturo'));
   }
   const limite = new Date();
   limite.setFullYear(limite.getFullYear() - ANNI_INDIETRO_MAX);
   if (inizio < limite) {
-    throw new ErroreValidazione(`Non puoi inserire allenamenti di più di ${ANNI_INDIETRO_MAX} anni fa`);
+    throw new ErroreValidazione(t('sessioniController.troppoVecchio', { count: ANNI_INDIETRO_MAX }));
   }
   return inizio;
 }
@@ -689,7 +691,7 @@ export function leggiInizio(valore) {
 export function leggiDurata(valore) {
   const durata = parseInt(valore);
   if (Number.isNaN(durata) || durata < DURATA_MIN || durata > DURATA_MAX) {
-    throw new ErroreValidazione(`La durata deve essere fra ${DURATA_MIN} e ${DURATA_MAX} minuti`);
+    throw new ErroreValidazione(t('sessioniController.durataFuoriLimiti', { min: DURATA_MIN, max: DURATA_MAX }));
   }
   return durata;
 }
@@ -710,9 +712,9 @@ export async function registraSessionePassata(req, res, next) {
   try {
     const { schedaId, dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
 
-    if (!schedaId) throw new ErroreValidazione('schedaId è obbligatorio');
+    if (!schedaId) throw new ErroreValidazione(t('sessioniController.schedaIdObbligatorio'));
     const idScheda = parseInt(schedaId);
-    if (Number.isNaN(idScheda)) throw new ErroreValidazione('schedaId non valido');
+    if (Number.isNaN(idScheda)) throw new ErroreValidazione(t('sessioniController.schedaIdNonValido'));
 
     const inizio = leggiInizio(dataInizio);
     const durata = leggiDurata(durataMinuti);
@@ -721,9 +723,9 @@ export async function registraSessionePassata(req, res, next) {
       where: { id: idScheda },
       select: { id: true, creatoreId: true, visibilita: true }
     });
-    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!scheda) throw new ErroreNonTrovato(t('sessioniController.schedaNonTrovata'));
     if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
-      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
+      throw new ErroreNonAutorizzato(t('sessioniController.schedaNonAccessibile'));
     }
 
     // The sets are optional: whoever has only the watch summary records date
@@ -733,15 +735,15 @@ export async function registraSessionePassata(req, res, next) {
       const esercizioId = parseInt(r.esercizioId);
       const serieNumero = parseInt(r.serieNumero);
       if (Number.isNaN(esercizioId) || Number.isNaN(serieNumero)) {
-        throw new ErroreValidazione(`Serie ${i + 1}: esercizioId e serieNumero sono obbligatori`);
+        throw new ErroreValidazione(t('sessioniController.serie.obbligatori', { n: i + 1 }));
       }
       const peso = r.pesoEffettivo != null ? parseFloat(r.pesoEffettivo) : 0;
       const rep = r.repEffettive != null ? parseInt(r.repEffettive) : 0;
-      if (peso < 0 || rep < 0) throw new ErroreValidazione(`Serie ${i + 1}: valori negativi non ammessi`);
+      if (peso < 0 || rep < 0) throw new ErroreValidazione(t('sessioniController.serie.negativi', { n: i + 1 }));
       return {
         esercizioId,
         serieNumero,
-        tipo: leggiTipo(r.tipo, `Serie ${i + 1}: `),
+        tipo: leggiTipo(r.tipo, prefissoSerie(i + 1)),
         pesoEffettivo: peso,
         repEffettive: rep,
         rpe: r.rpe != null ? parseInt(r.rpe) : null,
@@ -803,14 +805,18 @@ export async function registraSessionePassata(req, res, next) {
 
 // Values of a set that can be corrected from the history. Weight and reps
 // cannot be missing in the database: empty means 0, as for bodyweight.
+// `errore` is the translation key of the message, translated when it is thrown.
 const CAMPI_SERIE = {
-  pesoEffettivo:     { errore: 'peso non valido', max: 1000, zeroSeVuoto: true },
-  repEffettive:      { errore: 'ripetizioni non valide', max: 1000, intero: true, zeroSeVuoto: true },
-  rpe:               { errore: 'RPE non valido (da 1 a 10)', min: 1, max: 10, intero: true },
-  durataMinuti:      { errore: 'durata non valida', max: DURATA_MAX, intero: true },
-  livelloResistenza: { errore: 'livello non valido', max: 1000, intero: true }
+  pesoEffettivo:     { errore: 'sessioniController.serie.pesoNonValido', max: 1000, zeroSeVuoto: true },
+  repEffettive:      { errore: 'sessioniController.serie.ripetizioniNonValide', max: 1000, intero: true, zeroSeVuoto: true },
+  rpe:               { errore: 'sessioniController.serie.rpeNonValido', min: 1, max: 10, intero: true },
+  durataMinuti:      { errore: 'sessioniController.serie.durataNonValida', max: DURATA_MAX, intero: true },
+  livelloResistenza: { errore: 'sessioniController.serie.livelloNonValido', max: 1000, intero: true }
 };
 const SERIE_MAX = 300;
+
+/** The start of a set's error message ("Set 3: "), for helpers that complete it themselves */
+const prefissoSerie = n => `${t('sessioniController.prefissoSerie', { n })} `;
 
 /** Values of a received set: a missing field stays as it was, an empty one is cleared. */
 export function leggiValoriSerie(riga, n) {
@@ -824,12 +830,12 @@ export function leggiValoriSerie(riga, n) {
     }
     const v = Number(grezzo);
     if (!Number.isFinite(v) || v < (regola.min ?? 0) || v > regola.max || (regola.intero && !Number.isInteger(v))) {
-      throw new ErroreValidazione(`Serie ${n}: ${regola.errore}`);
+      throw new ErroreValidazione(t(regola.errore, { n }));
     }
     valori[campo] = v;
   }
   // A set logged wrong at the gym (it was a warm-up) is corrected here
-  if (riga.tipo !== undefined) valori.tipo = leggiTipo(riga.tipo, `Serie ${n}: `);
+  if (riga.tipo !== undefined) valori.tipo = leggiTipo(riga.tipo, prefissoSerie(n));
   return valori;
 }
 
@@ -899,13 +905,13 @@ export async function modificaSessione(req, res, next) {
       where: { id },
       include: { logSerie: true }
     });
-    if (!sessione) throw new ErroreNonTrovato('Sessione non trovata');
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa sessione');
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
     }
     // An ongoing one is closed with "Termina": here it would clash with the
     // sets the workout is still recording
-    if (!sessione.dataFine) throw new ErroreValidazione('Puoi modificare solo un allenamento concluso');
+    if (!sessione.dataFine) throw new ErroreValidazione(t('sessioniController.soloConcluso'));
 
     const { dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
     const dati = {};
@@ -917,7 +923,7 @@ export async function modificaSessione(req, res, next) {
         : sessione.durataMinuti ?? Math.round((sessione.dataFine - sessione.dataInizio) / 60000);
       const fine = new Date(inizio.getTime() + durata * 60000);
       if (fine.getTime() > Date.now() + TOLLERANZA_FUTURO_MS) {
-        throw new ErroreValidazione("Con quest'ora d'inizio e questa durata l'allenamento finirebbe nel futuro");
+        throw new ErroreValidazione(t('sessioniController.fineNelFuturo'));
       }
       Object.assign(dati, { dataInizio: inizio, durataMinuti: durata, dataFine: fine });
     }
@@ -928,7 +934,7 @@ export async function modificaSessione(req, res, next) {
       } else {
         const minuti = Number(minutiRiscaldamento);
         if (!Number.isInteger(minuti) || minuti < 0 || minuti > DURATA_MAX) {
-          throw new ErroreValidazione('Minuti di riscaldamento non validi');
+          throw new ErroreValidazione(t('sessioniController.minutiRiscaldamentoNonValidi'));
         }
         dati.minutiRiscaldamento = minuti;
       }
@@ -942,25 +948,25 @@ export async function modificaSessione(req, res, next) {
     const svolte = sessione.logSerie.filter(l => l.completato);
     let righe = null;
     if (serie !== undefined) {
-      if (!Array.isArray(serie)) throw new ErroreValidazione('serie deve essere un elenco');
-      if (serie.length > SERIE_MAX) throw new ErroreValidazione(`Al massimo ${SERIE_MAX} serie`);
+      if (!Array.isArray(serie)) throw new ErroreValidazione(t('sessioniController.serieDeveEssereElenco'));
+      if (serie.length > SERIE_MAX) throw new ErroreValidazione(t('sessioniController.serieMassimo', { max: SERIE_MAX }));
       const perId = new Map(svolte.map(l => [l.id, l]));
       const eserciziSessione = new Set(sessione.logSerie.map(l => l.esercizioId));
       const viste = new Set();
       righe = serie.map((riga, i) => {
         const n = i + 1;
-        if (!riga || typeof riga !== 'object') throw new ErroreValidazione(`Serie ${n}: non valida`);
+        if (!riga || typeof riga !== 'object') throw new ErroreValidazione(t('sessioniController.serie.nonValida', { n }));
         let esistente = null;
         if (riga.id != null) {
           esistente = perId.get(Number(riga.id));
           if (!esistente || viste.has(esistente.id)) {
-            throw new ErroreValidazione(`Serie ${n}: non appartiene a questo allenamento`);
+            throw new ErroreValidazione(t('sessioniController.serie.altroAllenamento', { n }));
           }
           viste.add(esistente.id);
         }
         const esercizioId = esistente ? esistente.esercizioId : Number(riga.esercizioId);
         if (!esistente && !eserciziSessione.has(esercizioId)) {
-          throw new ErroreValidazione(`Serie ${n}: si aggiungono serie solo agli esercizi di questo allenamento`);
+          throw new ErroreValidazione(t('sessioniController.serie.soloEserciziPresenti', { n }));
         }
         return { esistente, esercizioId, valori: leggiValoriSerie(riga, n) };
       });

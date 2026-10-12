@@ -4,7 +4,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
-import { creaUtente, tokenPer } from '../supporto/dati.js';
+import { creaUtente, creaScheda, tokenPer } from '../supporto/dati.js';
 
 let server;
 let utente;
@@ -59,5 +59,35 @@ describe('richiesta di iscrizione a un PT', () => {
     const seconda = await iscriviti({ trainerId: trainer.id });
     assert.equal(seconda.stato, 400);
     assert.equal(seconda.corpo.messaggio, 'Hai già una richiesta in attesa');
+  });
+
+  it('the messages come in the language the app asks for', async () => {
+    const inglese = (corpo, chi = utente) =>
+      server.richiesta('POST', '/utenti/iscrizione-pt', { token: tokenPer(chi), corpo, lingua: 'en' });
+    assert.equal((await inglese({ trainerId: 'abc' })).corpo.messaggio, 'Invalid Personal Trainer');
+    assert.equal((await inglese({ trainerId: trainer.id, messaggio: 'x'.repeat(501) })).corpo.messaggio,
+      'The message can be at most 500 characters long');
+    assert.equal((await inglese({ trainerId: trainer.id })).stato, 201);
+    assert.equal((await inglese({ trainerId: trainer.id })).corpo.messaggio, 'You already have a pending request');
+  });
+});
+
+describe('a plan assigned by the trainer', () => {
+  it("is named in the client's language and shows in the client's trainer dashboard", async () => {
+    const cliente = await creaUtente({ lingua: 'en' });
+    await prisma.iscrizionePT.create({ data: { utenteId: cliente.id, trainerId: trainer.id, stato: 'ATTIVA' } });
+    const originale = await creaScheda(trainer, [], { titolo: 'Forza' });
+    // From before assegnataDaPTId, with only the suffix, and a plan of the client's own
+    await creaScheda(cliente, [], { titolo: 'Vecchia (da PT)' });
+    await creaScheda(cliente, [], { titolo: 'Mia' });
+
+    const assegnata = await server.richiesta('POST', `/pt/clienti/${cliente.id}/assegna-scheda`, {
+      token: tokenPer(trainer), corpo: { schedaId: originale.id }
+    });
+    assert.equal(assegnata.stato, 201);
+    assert.equal(assegnata.corpo.dati.titolo, 'Forza (from your PT)');
+
+    const dashboard = await server.richiesta('GET', '/utenti/mio-pt/dashboard', { token: tokenPer(cliente) });
+    assert.deepEqual(dashboard.corpo.dati.schedeAssegnate.map(s => s.titolo).sort(), ['Forza (from your PT)', 'Vecchia (da PT)']);
   });
 });

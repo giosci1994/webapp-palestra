@@ -1,0 +1,17 @@
+{
+  "linkAlternativo": "If the button doesn't work, copy this link:",
+  "verifica": {
+    "oggetto": "Verify your email address — GymMaster",
+    "titolo": "Welcome to GymMaster",
+    "saluto": "Hi {nome}, confirm your email address to activate your account.",
+    "pulsante": "Verify my email",
+    "scadenza": "The link expires in 24 hours. If you didn't create this account, ignore this email."
+  },
+  "reset": {
+    "oggetto": "Reset your password — GymMaster",
+    "titolo": "Reset your password",
+    "saluto": "Hi {nome}, you asked to reset the password of your GymMaster account.",
+    "pulsante": "Reset password",
+    "scadenza": "The link expires in 1 hour. If you didn't ask for a reset, ignore this email: your password will stay the same."
+  }
+}

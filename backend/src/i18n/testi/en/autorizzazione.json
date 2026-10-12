@@ -1,0 +1,4 @@
+{
+  "autenticazioneRichiesta": "Authentication required",
+  "ruoloNonAutorizzato": "Role '{ruolo}' is not authorized. Required: {richiesti}"
+}

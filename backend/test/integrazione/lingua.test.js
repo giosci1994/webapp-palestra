@@ -55,3 +55,25 @@ describe('app language on the account', () => {
     assert.equal(risposta.corpo.dati.utente.lingua, 'en');
   });
 });
+
+describe('the language the app uses, for messages outside a request', () => {
+  const salvata = async () => (await prisma.utente.findUnique({ where: { id: utente.id } })).linguaApp;
+
+  it('is remembered from the requests of the app', async () => {
+    await server.richiesta('GET', '/utenti/profilo', { token: tokenPer(utente), lingua: 'en' });
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(await salvata(), 'en');
+    await server.richiesta('GET', '/utenti/profilo', { token: tokenPer(utente), lingua: 'it-IT,it;q=0.9' });
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(await salvata(), 'it');
+  });
+
+  it('a request without a language, or in one the app does not have, changes nothing', async () => {
+    await server.richiesta('GET', '/utenti/profilo', { token: tokenPer(utente), lingua: 'it' });
+    await new Promise(r => setTimeout(r, 50));
+    await server.richiesta('GET', '/utenti/profilo', { token: tokenPer(utente), lingua: null });
+    await server.richiesta('GET', '/utenti/profilo', { token: tokenPer(utente), lingua: 'fr' });
+    await new Promise(r => setTimeout(r, 50));
+    assert.equal(await salvata(), 'it');
+  });
+});

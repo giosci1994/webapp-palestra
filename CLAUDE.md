@@ -12,7 +12,7 @@ Rules:
 
 - Always talk to Giovanni, the project owner, in Italian: replies, questions and summaries.
 - Everything that goes into the repository is in English: README, docs, code comments, commit messages, pull requests, issue and PR comments. Code names stay in Italian (variables, functions, files, routes, database tables and columns): keep new ones consistent with the code around them. When you touch a file with Italian comments, translate the comments you change.
-- The app is for users all over the world: English is its base language, Italian a translation, and more can follow (`docs/translations.md`). Every text users see goes through `frontend/src/i18n`: `t('<namespace>.<key>')` with the text in `testi/en` and `testi/it`, the same keys in both, never hard-coded. Dates and numbers through `utils/formattatori.js` or `localeCorrente()`. The tests check the keys. Texts that come from the server are still Italian until the backend is translated.
+- The app is for users all over the world: English is its base language, Italian a translation, and more can follow (`docs/translations.md`). Every text users see goes through `frontend/src/i18n`: `t('<namespace>.<key>')` with the text in `testi/en` and `testi/it`, the same keys in both, never hard-coded. Dates and numbers through `utils/formattatori.js` or `localeCorrente()`. The server's texts (errors, confirmations, notifications, emails, the bot) go through `backend/src/i18n` the same way, in the request's language; a text for another user (notification, push, Telegram) in the recipient's (`creaNotifica` and `inviaPush` take keys). The tests check the keys on both sides.
 - One commit per feature. When the work is done and the tests are green, push and open the pull request without asking. Pull requests target `master`, never another branch: GitHub does not move the base when the PR below is merged.
 - Giovanni merges, after looking at the PR's tests. Production updates when he publishes a release on GitHub (see "Releases"): nothing is installed from a work session.
 - The repository is public: no secrets, keys, user data or internal addresses in commits, PRs and files.
@@ -33,8 +33,8 @@ Rules:
 ## Version and what's new
 
 - `version.json` at the root is the app's version: Profile → Info Applicazione shows it (app and server), the backend reads it at startup and Vite publishes it as `/version.json` at every build. Clients download it every 2 minutes and update themselves when it changes.
-- A pull request with something new for users updates `version.json`: `versione` (minor for new features, patch for fixes), `build` with the date and an entry in `changelog` written for users. If the technology changes, `stack` too.
-- The "what's new" stories (the app's story popup) live in `backend/prisma/novita.json`, each with the `versione` that brings it: when that version is released they enter the app, once. Fields: `titolo` (unique), `sottotitolo`, `icona` (emoji), `punti` (`[{ icona, testo }]`), `ctaTesto` and `ctaRotta` (an app route), `coloreInizio` and `coloreFine` (`#rrggbb`). A test checks the file.
+- A pull request with something new for users updates `version.json`: `versione` (minor for new features, patch for fixes), `build` with the date and an entry in `changelog` written for users, in Italian (`modifiche`, used by the Telegram release message) and in English (`modificheEn`, for the release notes). If the technology changes, `stack` too.
+- The "what's new" stories (the app's story popup) live in `backend/prisma/novita.json`, each with the `versione` that brings it: when that version is released they enter the app, once. Fields: `titolo` (unique), `sottotitolo`, `icona` (emoji), `punti` (`[{ icona, testo }]`), `ctaTesto` and `ctaRotta` (an app route), `coloreInizio` and `coloreFine` (`#rrggbb`), in Italian, and `en` with the English `titolo`, `sottotitolo`, `punti` and `ctaTesto`, shown to users in English. A test checks the file.
 
 ## Releases
 

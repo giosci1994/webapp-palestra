@@ -17,7 +17,8 @@ before(async () => { server = await avviaServer(); });
 after(() => server.chiudi());
 beforeEach(async () => {
   await svuotaDatabase();
-  utente = await creaUtente();
+  // The notification of a closed workout is in the user's language: Italian here
+  utente = await creaUtente({ lingua: 'it' });
   panca = await creaEsercizio({ nome: 'Panca piana' });
   scheda = await creaScheda(utente, [panca], { titolo: 'Push A' });
 });
@@ -77,6 +78,17 @@ describe('controllo periodico degli allenamenti aperti', () => {
     assert.equal(notifica.titolo, 'Allenamento chiuso');
     assert.match(notifica.messaggio, /«Push A».*all'ultima serie, alle \d{2}:\d{2}/);
     assert.equal(notifica.percorso, '/storico');
+  });
+
+  it('la notifica arriva nella lingua di chi la riceve, con giorno e ora scritti come nella sua lingua', async () => {
+    await prisma.utente.update({ where: { id: utente.id }, data: { lingua: 'en' } });
+    await aperto(400, 390, 360);
+
+    await chiudiSessioniDimenticate(null);
+
+    const [notifica] = await prisma.allenamentoNotifica.findMany({ where: { utenteId: utente.id } });
+    assert.equal(notifica.titolo, 'Workout closed');
+    assert.match(notifica.messaggio, /^You left “Push A” from \w+ \d{1,2} \w+ open: I closed it at your last set, at \d{2}:\d{2}\. You can fix it from History\.$/);
   });
 
   it('elimina dopo un giorno quelli abbandonati senza nemmeno una serie', async () => {

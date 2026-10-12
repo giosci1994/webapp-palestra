@@ -6,6 +6,7 @@
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { inviaPush } from './push.service.js';
+import { linguaDiUtenteId, traduciPer } from '../i18n/destinatario.js';
 
 // How many notifications to keep per user: past this threshold the oldest
 // ones are deleted, so the table does not grow forever.
@@ -22,8 +23,14 @@ const MAX_PER_UTENTE = 100;
  * @param {number} utenteId - Recipient
  * @param {{tipo?: string, titolo: string, messaggio: string, percorso?: string}} dati
  */
-export async function creaNotifica(io, utenteId, { tipo = 'SISTEMA', titolo, messaggio, percorso = null }) {
+export async function creaNotifica(io, utenteId, { tipo = 'SISTEMA', titolo, messaggio, percorso = null, variabili = {} }) {
   try {
+    // Title and message may be translation keys: they are saved in the
+    // language of whoever receives the notification
+    const lingua = await linguaDiUtenteId(utenteId);
+    titolo = traduciPer(lingua, titolo, variabili);
+    messaggio = traduciPer(lingua, messaggio, variabili);
+
     const notifica = await prisma.allenamentoNotifica.create({
       data: { utenteId, tipo, titolo, messaggio, percorso }
     });
@@ -133,9 +140,13 @@ export async function inviaPromemoriaAllenamenti(io) {
     });
     if (giaInviato) continue;
 
+    // This runs on a timer, outside any request: the title is a key (with a
+    // plural count) that creaNotifica translates for the user; the message is
+    // just the plan titles
     await creaNotifica(io, utenteId, {
       tipo: 'PROMEMORIA_ALLENAMENTO',
-      titolo: titoli.length === 1 ? 'Oggi ti aspetta un allenamento' : `Oggi ti aspettano ${titoli.length} allenamenti`,
+      titolo: 'notificheService.promemoriaAllenamento',
+      variabili: { count: titoli.length },
       messaggio: titoli.join(' · '),
       percorso: '/pianificazione'
     });

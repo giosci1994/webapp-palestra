@@ -1,0 +1,4 @@
+{
+  "notificaTitolo": "Workout closed",
+  "notificaMessaggio": "You left “{scheda}” from {giorno} open: I closed it at your last set, at {ora}. You can fix it from History."
+}

@@ -1,0 +1,4 @@
+{
+  "autenticazioneRichiesta": "Autenticazione richiesta",
+  "ruoloNonAutorizzato": "Ruolo '{ruolo}' non autorizzato. Richiesto: {richiesti}"
+}

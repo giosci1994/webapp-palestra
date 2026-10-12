@@ -10,6 +10,8 @@ import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
+import { t, localeDi } from '../i18n/index.js';
+import { linguaDiUtenteId } from '../i18n/destinatario.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -111,7 +113,7 @@ router.get('/clienti/:id', async (req, res, next) => {
       where: { utenteId: clienteId, trainerId, stato: 'ATTIVA' }
     });
     if (!iscrizione) {
-      return res.status(403).json({ successo: false, messaggio: 'Non un tuo cliente' });
+      return res.status(403).json({ successo: false, messaggio: t('ptRoutes.nonUnTuoCliente') });
     }
     const da90g = new Date(); da90g.setDate(da90g.getDate() - 90);
     const [cliente, ultime5Sessioni, record, schedeAssegnate, tutteSessioni, logSerie] = await Promise.all([
@@ -191,13 +193,13 @@ router.delete('/clienti/:clienteId/schede/:schedaId', async (req, res, next) => 
     const iscrizione = await prisma.iscrizionePT.findFirst({
       where: { utenteId: clienteId, trainerId, stato: 'ATTIVA' }
     });
-    if (!iscrizione) return res.status(403).json({ successo: false, messaggio: 'Non un tuo cliente' });
+    if (!iscrizione) return res.status(403).json({ successo: false, messaggio: t('ptRoutes.nonUnTuoCliente') });
     const scheda = await prisma.schedaAllenamento.findFirst({
       where: { id: schedaId, creatoreId: clienteId, assegnataDaPTId: trainerId }
     });
-    if (!scheda) return res.status(404).json({ successo: false, messaggio: 'Scheda non trovata' });
+    if (!scheda) return res.status(404).json({ successo: false, messaggio: t('ptRoutes.schedaNonTrovata') });
     await prisma.schedaAllenamento.delete({ where: { id: schedaId } });
-    res.json({ successo: true, messaggio: 'Scheda rimossa' });
+    res.json({ successo: true, messaggio: t('ptRoutes.schedaRimossa') });
   } catch (errore) { next(errore); }
 });
 
@@ -211,7 +213,7 @@ router.delete('/clienti/:id', async (req, res, next) => {
     });
 
     if (!iscrizione) {
-      return res.status(404).json({ successo: false, messaggio: 'Iscrizione non trovata' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.iscrizioneNonTrovata') });
     }
 
     await prisma.iscrizionePT.update({
@@ -222,15 +224,16 @@ router.delete('/clienti/:id', async (req, res, next) => {
     // Notify the client
     const io = req.app.get('io');
     if (io) {
+      const lingua = await linguaDiUtenteId(clienteId);
       io.to(`utente:${clienteId}`).emit('notifica:nuova', {
         tipo: 'iscrizione_terminata',
-        titolo: 'Iscrizione terminata',
-        messaggio: `Il tuo Personal Trainer ha terminato la collaborazione.`,
+        titolo: t('ptRoutes.iscrizioneTerminataTitolo', {}, lingua),
+        messaggio: t('ptRoutes.iscrizioneTerminataMessaggio', {}, lingua),
         timestamp: new Date().toISOString()
       });
     }
 
-    res.json({ successo: true, messaggio: 'Rapporto terminato' });
+    res.json({ successo: true, messaggio: t('ptRoutes.rapportoTerminato') });
   } catch (errore) { next(errore); }
 });
 
@@ -270,7 +273,7 @@ router.patch('/richieste/:id/accetta', async (req, res, next) => {
     });
 
     if (!richiesta) {
-      return res.status(404).json({ successo: false, messaggio: 'Richiesta non trovata' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.richiestaNonTrovata') });
     }
 
     const aggiornata = await prisma.iscrizionePT.update({
@@ -282,10 +285,11 @@ router.patch('/richieste/:id/accetta', async (req, res, next) => {
     // Notify the user
     const io = req.app.get('io');
     if (io) {
+      const lingua = await linguaDiUtenteId(richiesta.utenteId);
       io.to(`utente:${richiesta.utenteId}`).emit('notifica:nuova', {
         tipo: 'iscrizione_accettata',
-        titolo: 'Richiesta accettata! 🎉',
-        messaggio: `${req.utente.nome} ha accettato la tua richiesta di iscrizione!`,
+        titolo: t('ptRoutes.richiestaAccettataTitolo', {}, lingua),
+        messaggio: t('ptRoutes.richiestaAccettataMessaggio', { nome: req.utente.nome }, lingua),
         timestamp: new Date().toISOString()
       });
     }
@@ -304,7 +308,7 @@ router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
     });
 
     if (!richiesta) {
-      return res.status(404).json({ successo: false, messaggio: 'Richiesta non trovata' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.richiestaNonTrovata') });
     }
 
     await prisma.iscrizionePT.update({
@@ -315,15 +319,16 @@ router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
     // Notify the user
     const io = req.app.get('io');
     if (io) {
+      const lingua = await linguaDiUtenteId(richiesta.utenteId);
       io.to(`utente:${richiesta.utenteId}`).emit('notifica:nuova', {
         tipo: 'iscrizione_rifiutata',
-        titolo: 'Richiesta non accettata',
-        messaggio: `La tua richiesta di iscrizione non è stata accettata.`,
+        titolo: t('ptRoutes.richiestaRifiutataTitolo', {}, lingua),
+        messaggio: t('ptRoutes.richiestaRifiutataMessaggio', {}, lingua),
         timestamp: new Date().toISOString()
       });
     }
 
-    res.json({ successo: true, messaggio: 'Richiesta rifiutata' });
+    res.json({ successo: true, messaggio: t('ptRoutes.richiestaRifiutata') });
   } catch (errore) { next(errore); }
 });
 
@@ -370,7 +375,7 @@ router.post('/appuntamenti', async (req, res, next) => {
     });
 
     if (!iscrizione) {
-      return res.status(403).json({ successo: false, messaggio: 'Questo utente non è un tuo cliente' });
+      return res.status(403).json({ successo: false, messaggio: t('ptRoutes.utenteNonEUnTuoCliente') });
     }
 
     const appuntamento = await prisma.appuntamentoPT.create({
@@ -391,10 +396,14 @@ router.post('/appuntamenti', async (req, res, next) => {
     // Notify the client
     const io = req.app.get('io');
     if (io) {
+      // The date in the client's language, not the trainer's
+      const lingua = await linguaDiUtenteId(parseInt(clienteId));
       io.to(`utente:${clienteId}`).emit('notifica:nuova', {
         tipo: 'nuovo_appuntamento',
-        titolo: 'Nuovo appuntamento 📅',
-        messaggio: `${req.utente.nome} ha fissato: "${titolo}" per il ${new Date(dataOra).toLocaleDateString('it-IT')}`,
+        titolo: t('ptRoutes.nuovoAppuntamentoTitolo', {}, lingua),
+        messaggio: t('ptRoutes.nuovoAppuntamentoMessaggio', {
+          nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(localeDi(lingua))
+        }, lingua),
         timestamp: new Date().toISOString()
       });
     }
@@ -414,7 +423,7 @@ router.patch('/appuntamenti/:id', async (req, res, next) => {
     });
 
     if (!esistente) {
-      return res.status(404).json({ successo: false, messaggio: 'Appuntamento non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.appuntamentoNonTrovato') });
     }
 
     const dati = {};
@@ -445,11 +454,11 @@ router.delete('/appuntamenti/:id', async (req, res, next) => {
     });
 
     if (!esistente) {
-      return res.status(404).json({ successo: false, messaggio: 'Appuntamento non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.appuntamentoNonTrovato') });
     }
 
     await prisma.appuntamentoPT.delete({ where: { id } });
-    res.json({ successo: true, messaggio: 'Appuntamento eliminato' });
+    res.json({ successo: true, messaggio: t('ptRoutes.appuntamentoEliminato') });
   } catch (errore) { next(errore); }
 });
 
@@ -522,7 +531,7 @@ router.post('/schede', async (req, res, next) => {
   try {
     const { titolo, descrizione, livello, esercizi } = req.body;
     if (!titolo || !esercizi?.length) {
-      return res.status(400).json({ successo: false, messaggio: 'Titolo e almeno un esercizio sono obbligatori' });
+      return res.status(400).json({ successo: false, messaggio: t('ptRoutes.titoloEEserciziObbligatori') });
     }
 
     const scheda = await prisma.schedaAllenamento.create({
@@ -566,7 +575,7 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
     });
 
     if (!iscrizione) {
-      return res.status(403).json({ successo: false, messaggio: 'Non è un tuo cliente' });
+      return res.status(403).json({ successo: false, messaggio: t('ptRoutes.nonEUnTuoCliente') });
     }
 
     // Fetch the original plan with its exercises
@@ -576,15 +585,17 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
     });
 
     if (!schedaOriginale) {
-      return res.status(404).json({ successo: false, messaggio: 'Scheda non trovata' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.schedaNonTrovata') });
     }
 
-    // Create a copy for the client, tracking the personal trainer
+    // Create a copy for the client, tracking the personal trainer; the title
+    // says so in the client's language
+    const lingua = await linguaDiUtenteId(clienteId);
     const nuovaScheda = await prisma.schedaAllenamento.create({
       data: {
         creatoreId: clienteId,
         assegnataDaPTId: trainerId,
-        titolo: `${schedaOriginale.titolo} (da PT)`,
+        titolo: t('ptRoutes.titoloSchedaAssegnata', { titolo: schedaOriginale.titolo }, lingua),
         descrizione: schedaOriginale.descrizione,
         livello: schedaOriginale.livello,
         visibilita: 'PERSONALE',
@@ -608,8 +619,8 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
     if (io) {
       io.to(`utente:${clienteId}`).emit('notifica:nuova', {
         tipo: 'scheda_assegnata',
-        titolo: 'Nuova scheda assegnata! 💪',
-        messaggio: `${req.utente.nome} ti ha assegnato la scheda "${nuovaScheda.titolo}"`,
+        titolo: t('ptRoutes.schedaAssegnataTitolo', {}, lingua),
+        messaggio: t('ptRoutes.schedaAssegnataMessaggio', { nome: req.utente.nome, titolo: nuovaScheda.titolo }, lingua),
         dati: { schedaId: nuovaScheda.id },
         timestamp: new Date().toISOString()
       });
@@ -641,7 +652,7 @@ router.post('/annunci', async (req, res, next) => {
   try {
     const { titolo, contenuto, priorita, destinatarioId } = req.body;
     if (!titolo || !contenuto) {
-      return res.status(400).json({ successo: false, messaggio: 'Titolo e contenuto sono obbligatori' });
+      return res.status(400).json({ successo: false, messaggio: t('ptRoutes.titoloEContenutoObbligatori') });
     }
 
     // With a destinatarioId, check that it is one of their clients
@@ -650,7 +661,7 @@ router.post('/annunci', async (req, res, next) => {
         where: { utenteId: parseInt(destinatarioId), trainerId: req.utente.id, stato: 'ATTIVA' }
       });
       if (!iscrizione) {
-        return res.status(403).json({ successo: false, messaggio: 'Questo utente non è un tuo cliente' });
+        return res.status(403).json({ successo: false, messaggio: t('ptRoutes.utenteNonEUnTuoCliente') });
       }
     }
 
@@ -703,10 +714,10 @@ router.delete('/annunci/:id', async (req, res, next) => {
       where: { id, trainerId: req.utente.id }
     });
     if (!esistente) {
-      return res.status(404).json({ successo: false, messaggio: 'Annuncio non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('ptRoutes.annuncioNonTrovato') });
     }
     await prisma.annuncioPT.delete({ where: { id } });
-    res.json({ successo: true, messaggio: 'Annuncio eliminato' });
+    res.json({ successo: true, messaggio: t('ptRoutes.annuncioEliminato') });
   } catch (errore) { next(errore); }
 });
 

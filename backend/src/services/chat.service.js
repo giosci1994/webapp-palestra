@@ -6,18 +6,19 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreConflitto, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { t } from '../i18n/index.js';
 
 /**
  * Sends a contact request to another user.
  */
 export async function inviaRichiestaContatto(mittenteId, destinatarioId) {
   if (mittenteId === destinatarioId) {
-    throw new ErroreValidazione('Non puoi inviare una richiesta a te stesso');
+    throw new ErroreValidazione(t('chatService.richiestaASeStessi'));
   }
 
   // Check that the recipient exists
   const destinatario = await prisma.utente.findUnique({ where: { id: destinatarioId } });
-  if (!destinatario) throw new ErroreNonTrovato('Utente destinatario non trovato');
+  if (!destinatario) throw new ErroreNonTrovato(t('chatService.destinatarioNonTrovato'));
 
   // Check whether a request already exists (in either direction)
   const richiestaEsistente = await prisma.richiestaContatto.findFirst({
@@ -31,9 +32,9 @@ export async function inviaRichiestaContatto(mittenteId, destinatarioId) {
 
   if (richiestaEsistente) {
     if (richiestaEsistente.stato === 'BLOCCATA') {
-      throw new ErroreNonAutorizzato('Non puoi contattare questo utente');
+      throw new ErroreNonAutorizzato(t('chatService.utenteNonContattabile'));
     }
-    throw new ErroreConflitto('Esiste già una richiesta di contatto con questo utente');
+    throw new ErroreConflitto(t('chatService.richiestaGiaEsistente'));
   }
 
   const richiesta = await prisma.richiestaContatto.create({
@@ -56,12 +57,12 @@ export async function rispondiRichiestaContatto(richiestaId, utenteId, stato) {
     where: { id: richiestaId }
   });
 
-  if (!richiesta) throw new ErroreNonTrovato('Richiesta di contatto non trovata');
+  if (!richiesta) throw new ErroreNonTrovato(t('chatService.richiestaNonTrovata'));
   if (richiesta.destinatarioId !== utenteId) {
-    throw new ErroreNonAutorizzato('Puoi rispondere solo alle tue richieste');
+    throw new ErroreNonAutorizzato(t('chatService.soloTueRichieste'));
   }
   if (richiesta.stato !== 'IN_ATTESA') {
-    throw new ErroreValidazione('Questa richiesta ha già ricevuto una risposta');
+    throw new ErroreValidazione(t('chatService.richiestaGiaRisposta'));
   }
 
   const richiestaAggiornata = await prisma.richiestaContatto.update({
@@ -156,7 +157,7 @@ export async function ottieniMessaggi(conversazioneId, utenteId, { pagina = 1, l
   });
 
   if (!partecipazione) {
-    throw new ErroreNonAutorizzato('Non fai parte di questa conversazione');
+    throw new ErroreNonAutorizzato(t('chatService.nonInConversazione'));
   }
 
   const [messaggi, totale] = await Promise.all([
@@ -200,7 +201,7 @@ export async function inviaMessaggio(conversazioneId, mittenteId, contenuto) {
   });
 
   if (!partecipazione) {
-    throw new ErroreNonAutorizzato('Non fai parte di questa conversazione');
+    throw new ErroreNonAutorizzato(t('chatService.nonInConversazione'));
   }
 
   const messaggio = await prisma.messaggio.create({

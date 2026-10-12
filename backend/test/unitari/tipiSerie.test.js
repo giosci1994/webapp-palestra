@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { volumeDi, diLavoro, leggiTipo, ordineSerie } from '../../src/utils/tipiSerie.js';
 import { ErroreValidazione } from '../../src/utils/errori.js';
+import { conLingua } from '../../src/i18n/index.js';
 
 describe('volumeDi', () => {
   it('conta lavoro e drop completati, non il riscaldamento ne\' le serie saltate', () => {
@@ -33,8 +34,11 @@ describe('leggiTipo', () => {
   });
 
   it('il resto no, e dice quale serie', () => {
-    assert.throws(() => leggiTipo('lavoro', 'Serie 2: '), errore =>
-      errore instanceof ErroreValidazione && errore.message === 'Serie 2: tipo di serie non valido');
+    // Outside a request the language is English: here it is the Italian one
+    conLingua('it', () => assert.throws(() => leggiTipo('lavoro', 'Serie 2: '), errore =>
+      errore instanceof ErroreValidazione && errore.message === 'Serie 2: tipo di serie non valido'));
+    conLingua('en', () => assert.throws(() => leggiTipo('lavoro', 'Set 2: '), errore =>
+      errore instanceof ErroreValidazione && errore.message === 'Set 2: Invalid set type'));
   });
 });
 

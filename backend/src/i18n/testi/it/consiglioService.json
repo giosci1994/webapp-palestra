@@ -1,0 +1,31 @@
+{
+  "gruppiSingolari": "Petto,Schiena,Trapezio",
+  "giorniSettimana": {
+    "0": "domenica",
+    "1": "lunedì",
+    "2": "martedì",
+    "3": "mercoledì",
+    "4": "giovedì",
+    "5": "venerdì",
+    "6": "sabato"
+  },
+  "mai": "Non hai ancora allenato {gruppi}.",
+  "riposoOltreDueSettimane_one": "{gruppi} riposa da più di due settimane.",
+  "riposoOltreDueSettimane_other": "{gruppi} riposano da più di due settimane.",
+  "riposoDa_one": "{gruppi} riposa da {giorni} giorni.",
+  "riposoDa_other": "{gruppi} riposano da {giorni} giorni.",
+  "riposoDaAlmeno_one": "{gruppi} riposa da almeno {giorni} giorni.",
+  "riposoDaAlmeno_other": "{gruppi} riposano da almeno {giorni} giorni.",
+  "recuperaAncora_one": "{gruppi} recupera ancora.",
+  "recuperaAncora_other": "{gruppi} recuperano ancora.",
+  "attenzioneRecupera_one": "Attenzione: {gruppi} recupera ancora.",
+  "attenzioneRecupera_other": "Attenzione: {gruppi} recuperano ancora.",
+  "inProgrammaOggi": "In programma oggi.",
+  "inProgrammaDomani": "In programma domani.",
+  "inProgrammaDopodomani": "In programma dopodomani.",
+  "inProgrammaGiorno": "In programma {giorno}.",
+  "inizio": "Per cominciare: una scheda per {gruppi}.",
+  "riposoStanchi_one": "{gruppi} è ancora in recupero: oggi riposa.",
+  "riposoStanchi_other": "{gruppi} sono ancora in recupero: oggi riposa.",
+  "riposoTutte": "Ogni scheda caricherebbe muscoli ancora in recupero: oggi riposa."
+}

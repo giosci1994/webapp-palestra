@@ -1,0 +1,20 @@
+{
+  "emailGiaRegistrata": "Un account con questa email esiste già",
+  "tokenMancante": "Token mancante",
+  "linkVerificaNonValido": "Link di verifica non valido",
+  "linkVerificaScaduto": "Link di verifica scaduto. Richiedine uno nuovo dalla pagina di accesso.",
+  "passwordDebole": "La password deve avere almeno 8 caratteri, una maiuscola e un numero",
+  "linkResetNonValido": "Link di reset non valido",
+  "linkResetScaduto": "Link di reset scaduto. Richiedine uno nuovo.",
+  "credenzialiNonValide": "Credenziali non valide",
+  "troppiTentativi_one": "Troppi tentativi sbagliati per questo account: riprova tra {count} minuto",
+  "troppiTentativi_other": "Troppi tentativi sbagliati per questo account: riprova tra {count} minuti",
+  "accountSospeso": "Il tuo account è stato sospeso",
+  "accountInAttesa": "Il tuo account è in attesa di approvazione da parte dell'amministratore",
+  "emailNonVerificata": "Verifica la tua email prima di accedere. Controlla la posta (anche lo spam).",
+  "refreshTokenNonValido": "Refresh token non valido",
+  "accountNonAttivo": "Account non attivo",
+  "sessioneCompromessa": "Token di sicurezza compromesso, effettua nuovamente il login",
+  "refreshTokenScaduto": "Refresh token scaduto",
+  "sessioneNonTrovata": "Sessione non trovata"
+}

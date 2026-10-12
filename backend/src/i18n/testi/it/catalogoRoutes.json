@@ -1,0 +1,12 @@
+{
+  "esercizioNonValido": "Esercizio non valido",
+  "esercizioNonTrovato": "Esercizio non trovato",
+  "palestraIdNonValido": "ID palestra non valido",
+  "fasciaOrariaRovesciata": "Fascia oraria rovesciata",
+  "livello": {
+    "nessunDato": "Nessun dato",
+    "poco": "Poco affollata",
+    "medio": "Mediamente affollata",
+    "molto": "Molto affollata"
+  }
+}

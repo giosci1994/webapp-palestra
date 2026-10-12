@@ -1,0 +1,33 @@
+{
+  "nomeFile": "plan",
+  "titoloProgramma": "Training Program",
+  "titoloScheda": "Workout Plan",
+  "sottotitoloProgramma_one": "Weekly program of {sedute} sessions — {count} exercise in total",
+  "sottotitoloProgramma_other": "Weekly program of {sedute} sessions — {count} exercises in total",
+  "livello": "Level: {livello}",
+  "livelli": {
+    "BASE": "Beginner",
+    "INTERMEDIO": "Intermediate",
+    "AVANZATO": "Advanced"
+  },
+  "creataDa": "Created by {nome}",
+  "conteggioEsercizi_one": "{count} exercise",
+  "conteggioEsercizi_other": "{count} exercises",
+  "lineeGuida": "Guidelines",
+  "sessione": "Session {numero}: {titolo}",
+  "elencoEsercizi": "Exercises",
+  "schedaVuota": "This plan has no exercises yet.",
+  "note": "Notes",
+  "esportataIl": "Exported from GymMaster on {data}",
+  "intestazioni": {
+    "esercizio": "Exercise",
+    "serieReps": "Sets x Reps",
+    "recupero": "Rest",
+    "noteTecniche": "Technical Notes"
+  },
+  "numeroSerie_one": "{count} set",
+  "numeroSerie_other": "{count} sets",
+  "riscaldamento": "Warm-up",
+  "pendenza": "incline {valore}%",
+  "resistenza": "resistance {valore}"
+}

@@ -1,0 +1,7 @@
+{
+  "datiNonValidi": "Invalid message data",
+  "messaggioTroppoLungo": "Message too long (max 2000 characters)",
+  "pushNuovoMessaggio": "💬 New message",
+  "qualcuno": "Someone",
+  "telegramMessaggio": "💬 {mittente} wrote to you on GymMaster:"
+}

@@ -1,0 +1,33 @@
+{
+  "nomeFile": "scheda",
+  "titoloProgramma": "Programma di Allenamento",
+  "titoloScheda": "Scheda di Allenamento",
+  "sottotitoloProgramma_one": "Programma settimanale su {sedute} sedute — {count} esercizio complessivo",
+  "sottotitoloProgramma_other": "Programma settimanale su {sedute} sedute — {count} esercizi complessivi",
+  "livello": "Livello: {livello}",
+  "livelli": {
+    "BASE": "Base",
+    "INTERMEDIO": "Intermedio",
+    "AVANZATO": "Avanzato"
+  },
+  "creataDa": "Creata da {nome}",
+  "conteggioEsercizi_one": "{count} esercizio",
+  "conteggioEsercizi_other": "{count} esercizi",
+  "lineeGuida": "Linee Guida",
+  "sessione": "Sessione {numero}: {titolo}",
+  "elencoEsercizi": "Esercizi",
+  "schedaVuota": "Questa scheda non contiene ancora esercizi.",
+  "note": "Note",
+  "esportataIl": "Esportata da GymMaster il {data}",
+  "intestazioni": {
+    "esercizio": "Esercizio",
+    "serieReps": "Serie x Reps",
+    "recupero": "Recupero",
+    "noteTecniche": "Note Tecniche"
+  },
+  "numeroSerie_one": "{count} serie",
+  "numeroSerie_other": "{count} serie",
+  "riscaldamento": "Riscaldamento",
+  "pendenza": "pendenza {valore}%",
+  "resistenza": "resistenza {valore}"
+}

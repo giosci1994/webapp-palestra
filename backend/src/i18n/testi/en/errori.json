@@ -1,0 +1,8 @@
+{
+  "validazione": "Invalid request data",
+  "nonAutenticato": "Authentication required",
+  "nonAutorizzato": "You don't have permission to do this",
+  "nonTrovato": "Not found",
+  "conflitto": "It already exists",
+  "troppeRichieste": "Too many requests, try again later"
+}

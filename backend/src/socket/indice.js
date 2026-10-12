@@ -9,6 +9,7 @@ import { gestoreChatMessaggi } from './gestori/chat.gestore.js';
 import { gestoreNotifiche } from './gestori/notifiche.gestore.js';
 import logger from '../utils/logger.js';
 import prisma from '../config/database.js';
+import { t, linguaDaIntestazione } from '../i18n/index.js';
 
 // Map of connected users: utenteId -> Set<socketId>
 const utentiConnessi = new Map();
@@ -41,9 +42,12 @@ export function inizializzaSocket(serverHttp) {
   // --- WebSocket authentication middleware ---
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
+    // Nobody is signed in yet, so there is no user language: the browser's
+    // (Accept-Language of the handshake)
+    const lingua = linguaDaIntestazione(socket.handshake.headers['accept-language']);
 
     if (!token) {
-      return next(new Error('Autenticazione richiesta'));
+      return next(new Error(t('socketIndice.autenticazioneRichiesta', {}, lingua)));
     }
 
     try {
@@ -51,7 +55,7 @@ export function inizializzaSocket(serverHttp) {
       socket.utente = payload;
       next();
     } catch (errore) {
-      return next(new Error('Token non valido'));
+      return next(new Error(t('socketIndice.tokenNonValido', {}, lingua)));
     }
   });
 

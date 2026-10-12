@@ -1,0 +1,16 @@
+{
+  "registrazioneVerificaEmail": "Registrazione avvenuta. Controlla la tua email per verificare l'account.",
+  "registrazioneCompletata": "Registrazione avvenuta con successo.",
+  "emailGiaVerificata": "Email già verificata.",
+  "emailVerificata": "Email verificata con successo!",
+  "verificaReinviata": "Se l'indirizzo è registrato e non ancora verificato, ti abbiamo inviato una nuova email.",
+  "resetRichiesto": "Se l'indirizzo è registrato, ti abbiamo inviato un link per reimpostare la password.",
+  "passwordReimpostata": "Password reimpostata con successo. Ora puoi accedere.",
+  "loginEffettuato": "Login effettuato con successo",
+  "refreshTokenMancante": "Refresh token mancante",
+  "logoutEffettuato": "Logout effettuato con successo",
+  "dispositivoScollegato": "Dispositivo scollegato",
+  "altriDispositiviScollegati": "Gli altri dispositivi sono stati scollegati",
+  "passkeyAggiunta": "Passkey aggiunta",
+  "passkeyEliminata": "Passkey eliminata"
+}

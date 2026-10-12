@@ -4,6 +4,7 @@
 // ============================================
 
 import logger from '../utils/logger.js';
+import { t } from '../i18n/index.js';
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const EMAIL_MITTENTE = process.env.EMAIL_MITTENTE || 'GymMaster <onboarding@resend.dev>';
@@ -45,17 +46,17 @@ export async function inviaEmailVerifica(utente, token) {
     <div style="max-width:480px;margin:0 auto;background:#12121A;border:1px solid #26263A;border-radius:16px;overflow:hidden">
       <div style="padding:28px 28px 0;text-align:center">
         <div style="font-size:40px">🏋️</div>
-        <h1 style="margin:8px 0 4px;font-size:22px;color:#fff">Benvenuto su GymMaster</h1>
-        <p style="margin:0;color:#A0A0B8;font-size:14px">Ciao ${utente.nome || ''}, conferma il tuo indirizzo email per attivare l'account.</p>
+        <h1 style="margin:8px 0 4px;font-size:22px;color:#fff">${t('emailService.verifica.titolo')}</h1>
+        <p style="margin:0;color:#A0A0B8;font-size:14px">${t('emailService.verifica.saluto', { nome: utente.nome || '' })}</p>
       </div>
       <div style="padding:28px;text-align:center">
-        <a href="${link}" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;font-size:15px">Verifica la mia email</a>
-        <p style="margin:20px 0 0;color:#71718A;font-size:12px;line-height:1.5">Se il pulsante non funziona, copia questo link:<br><span style="color:#A0A0B8;word-break:break-all">${link}</span></p>
-        <p style="margin:16px 0 0;color:#71718A;font-size:12px">Il link scade tra 24 ore. Se non hai creato tu l'account, ignora questa email.</p>
+        <a href="${link}" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;font-size:15px">${t('emailService.verifica.pulsante')}</a>
+        <p style="margin:20px 0 0;color:#71718A;font-size:12px;line-height:1.5">${t('emailService.linkAlternativo')}<br><span style="color:#A0A0B8;word-break:break-all">${link}</span></p>
+        <p style="margin:16px 0 0;color:#71718A;font-size:12px">${t('emailService.verifica.scadenza')}</p>
       </div>
     </div>
   </div>`;
-  return inviaEmail({ a: utente.email, oggetto: 'Verifica il tuo indirizzo email — GymMaster', html });
+  return inviaEmail({ a: utente.email, oggetto: t('emailService.verifica.oggetto'), html });
 }
 
 /** Builds and sends the password reset email. */
@@ -66,15 +67,15 @@ export async function inviaEmailReset(utente, token) {
     <div style="max-width:480px;margin:0 auto;background:#12121A;border:1px solid #26263A;border-radius:16px;overflow:hidden">
       <div style="padding:28px 28px 0;text-align:center">
         <div style="font-size:40px">🔑</div>
-        <h1 style="margin:8px 0 4px;font-size:22px;color:#fff">Reimposta la password</h1>
-        <p style="margin:0;color:#A0A0B8;font-size:14px">Ciao ${utente.nome || ''}, hai richiesto di reimpostare la password del tuo account GymMaster.</p>
+        <h1 style="margin:8px 0 4px;font-size:22px;color:#fff">${t('emailService.reset.titolo')}</h1>
+        <p style="margin:0;color:#A0A0B8;font-size:14px">${t('emailService.reset.saluto', { nome: utente.nome || '' })}</p>
       </div>
       <div style="padding:28px;text-align:center">
-        <a href="${link}" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;font-size:15px">Reimposta la password</a>
-        <p style="margin:20px 0 0;color:#71718A;font-size:12px;line-height:1.5">Se il pulsante non funziona, copia questo link:<br><span style="color:#A0A0B8;word-break:break-all">${link}</span></p>
-        <p style="margin:16px 0 0;color:#71718A;font-size:12px">Il link scade tra 1 ora. Se non hai richiesto tu il reset, ignora questa email: la password resterà invariata.</p>
+        <a href="${link}" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;font-size:15px">${t('emailService.reset.pulsante')}</a>
+        <p style="margin:20px 0 0;color:#71718A;font-size:12px;line-height:1.5">${t('emailService.linkAlternativo')}<br><span style="color:#A0A0B8;word-break:break-all">${link}</span></p>
+        <p style="margin:16px 0 0;color:#71718A;font-size:12px">${t('emailService.reset.scadenza')}</p>
       </div>
     </div>
   </div>`;
-  return inviaEmail({ a: utente.email, oggetto: 'Reimposta la tua password — GymMaster', html });
+  return inviaEmail({ a: utente.email, oggetto: t('emailService.reset.oggetto'), html });
 }

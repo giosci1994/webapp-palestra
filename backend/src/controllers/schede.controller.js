@@ -5,6 +5,7 @@
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.service.js';
+import { t } from '../i18n/index.js';
 
 // Maps an exercise entry (from the client) to EsercizioScheda data, keeping
 // the cardio fields (duration/speed/incline/resistance/distance + warm-up).
@@ -72,11 +73,11 @@ export async function dettaglioScheda(req, res, next) {
       }
     });
 
-    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!scheda) throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
 
     // Check access: owner or global plan
     if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
-      throw new ErroreNonAutorizzato('Non hai accesso a questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.schedaNonAccessibile'));
     }
 
     res.json({ successo: true, dati: scheda });
@@ -88,12 +89,12 @@ export async function creaScheda(req, res, next) {
   try {
     const { titolo, descrizione, livello, visibilita, esercizi } = req.body;
 
-    if (!titolo) throw new ErroreValidazione('Il titolo è obbligatorio');
+    if (!titolo) throw new ErroreValidazione(t('schedeController.titoloObbligatorio'));
 
     // Only admins/personal trainers can create global plans
     const vis = visibilita || 'PERSONALE';
     if (vis === 'GLOBALE' && !['SUPERADMIN', 'PERSONAL_TRAINER'].includes(req.utente.ruolo)) {
-      throw new ErroreNonAutorizzato('Solo admin e PT possono creare schede globali');
+      throw new ErroreNonAutorizzato(t('schedeController.soloAdminPtGlobali'));
     }
 
     const scheda = await prisma.schedaAllenamento.create({
@@ -127,16 +128,16 @@ export async function clonaScheda(req, res, next) {
       where: { id },
       include: { esercizi: { orderBy: { ordineEsecuzione: 'asc' } } }
     });
-    if (!sorgente) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!sorgente) throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
 
     // Access: can be cloned only if global or owned by the user
     if (sorgente.visibilita !== 'GLOBALE' && sorgente.creatoreId !== req.utente.id) {
-      throw new ErroreNonAutorizzato('Non puoi clonare questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.nonPuoiClonare'));
     }
 
     const nuova = await prisma.schedaAllenamento.create({
       data: {
-        titolo: `${sorgente.titolo} (copia)`,
+        titolo: t('schedeController.copiaTitolo', { titolo: sorgente.titolo }),
         descrizione: sorgente.descrizione,
         livello: sorgente.livello,
         visibilita: 'PERSONALE',
@@ -162,9 +163,9 @@ export async function aggiornaScheda(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     const schedaEsistente = await prisma.schedaAllenamento.findUnique({ where: { id } });
-    if (!schedaEsistente) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!schedaEsistente) throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
     if (schedaEsistente.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.nonPuoiModificare'));
     }
 
     const { titolo, descrizione, livello, visibilita, esercizi } = req.body;
@@ -208,9 +209,9 @@ export async function eliminaScheda(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     const scheda = await prisma.schedaAllenamento.findUnique({ where: { id } });
-    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!scheda) throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
     if (scheda.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi eliminare questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.nonPuoiEliminare'));
     }
 
     // Cascade delete in a transaction: LogSerie → Sessioni → Esercizi → Scheda
@@ -227,7 +228,7 @@ export async function eliminaScheda(req, res, next) {
       await tx.schedaAllenamento.delete({ where: { id } });
     });
 
-    res.json({ successo: true, messaggio: 'Scheda eliminata' });
+    res.json({ successo: true, messaggio: t('schedeController.schedaEliminata') });
   } catch (errore) { next(errore); }
 }
 
@@ -239,9 +240,9 @@ export async function aggiungiEsercizio(req, res, next) {
 
     // Check ownership
     const scheda = await prisma.schedaAllenamento.findUnique({ where: { id: schedaId } });
-    if (!scheda) throw new ErroreNonTrovato('Scheda non trovata');
+    if (!scheda) throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
     if (scheda.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.nonPuoiModificare'));
     }
 
     // Find the current highest order
@@ -279,9 +280,9 @@ export async function aggiornaEsercizioScheda(req, res, next) {
       where: { id: esId },
       include: { scheda: { select: { creatoreId: true } } }
     });
-    if (!es) throw new ErroreNonTrovato('Esercizio scheda non trovato');
+    if (!es) throw new ErroreNonTrovato(t('schedeController.esercizioSchedaNonTrovato'));
     if (es.scheda.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.nonPuoiModificare'));
     }
 
     const aggiornato = await prisma.esercizioScheda.update({
@@ -303,13 +304,13 @@ export async function rimuoviEsercizio(req, res, next) {
       where: { id: esId },
       include: { scheda: { select: { creatoreId: true } } }
     });
-    if (!es) throw new ErroreNonTrovato('Esercizio scheda non trovato');
+    if (!es) throw new ErroreNonTrovato(t('schedeController.esercizioSchedaNonTrovato'));
     if (es.scheda.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
-      throw new ErroreNonAutorizzato('Non puoi modificare questa scheda');
+      throw new ErroreNonAutorizzato(t('schedeController.nonPuoiModificare'));
     }
 
     await prisma.esercizioScheda.delete({ where: { id: esId } });
-    res.json({ successo: true, messaggio: 'Esercizio rimosso dalla scheda' });
+    res.json({ successo: true, messaggio: t('schedeController.esercizioRimosso') });
   } catch (errore) { next(errore); }
 }
 
@@ -335,10 +336,10 @@ async function caricaSchedePerDocx(ids, utente) {
   const ordinate = [];
   for (const id of ids) {
     const scheda = trovate.get(id);
-    if (!scheda) throw new ErroreNonTrovato(`Scheda ${id} non trovata`);
+    if (!scheda) throw new ErroreNonTrovato(t('schedeController.schedaNumeroNonTrovata', { id }));
     // Same rule as the details: owner or global plan
     if (scheda.creatoreId !== utente.id && scheda.visibilita !== 'GLOBALE') {
-      throw new ErroreNonAutorizzato(`Non hai accesso alla scheda "${scheda.titolo}"`);
+      throw new ErroreNonAutorizzato(t('schedeController.schedaTitoloNonAccessibile', { titolo: scheda.titolo }));
     }
     ordinate.push(scheda);
   }
@@ -362,7 +363,7 @@ function inviaDocx(res, buffer, titolo) {
 export async function esportaSchedaDocx(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    if (Number.isNaN(id)) throw new ErroreValidazione('ID non valido');
+    if (Number.isNaN(id)) throw new ErroreValidazione(t('schedeController.idNonValido'));
 
     const schede = await caricaSchedePerDocx([id], req.utente);
     const buffer = await generaDocxSchede(schede);
@@ -382,15 +383,15 @@ export async function esportaSchedeDocxMultiplo(req, res, next) {
     const grezzi = String(req.query.ids || '').split(',').map(v => v.trim()).filter(Boolean);
     const ids = grezzi.map(v => parseInt(v, 10));
 
-    if (ids.length === 0) throw new ErroreValidazione('Indicare almeno una scheda in "ids"');
-    if (ids.some(Number.isNaN)) throw new ErroreValidazione('Parametro "ids" non valido');
-    if (ids.length > 10) throw new ErroreValidazione('Massimo 10 schede per documento');
-    if (new Set(ids).size !== ids.length) throw new ErroreValidazione('La stessa scheda e\' indicata piu\' volte');
+    if (ids.length === 0) throw new ErroreValidazione(t('schedeController.indicareAlmenoUnaScheda'));
+    if (ids.some(Number.isNaN)) throw new ErroreValidazione(t('schedeController.idsNonValido'));
+    if (ids.length > 10) throw new ErroreValidazione(t('schedeController.massimoSchedePerDocumento'));
+    if (new Set(ids).size !== ids.length) throw new ErroreValidazione(t('schedeController.stessaSchedaPiuVolte'));
 
     const schede = await caricaSchedePerDocx(ids, req.utente);
     const titolo = req.query.titolo?.toString().slice(0, 120);
 
     const buffer = await generaDocxSchede(schede, { titolo });
-    inviaDocx(res, buffer, titolo || `Programma ${schede.length} sedute`);
+    inviaDocx(res, buffer, titolo || t('schedeController.programmaSedute', { count: schede.length }));
   } catch (errore) { next(errore); }
 }

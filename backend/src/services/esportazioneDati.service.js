@@ -21,6 +21,7 @@
 
 import prisma from '../config/database.js';
 import { giornoLocale } from '../utils/date.js';
+import { t } from '../i18n/index.js';
 
 // Changes when the file's structure changes
 export const VERSIONE_FORMATO = 1;
@@ -29,7 +30,7 @@ export const VERSIONE_FORMATO = 1;
 export const CAMPI_PROFILO = [
   'id', 'email', 'nome', 'ruolo', 'stato', 'dataRegistrazione', 'emailVerificata', 'ultimoAccesso',
   'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm', 'genere', 'bio', 'obiettivoFitness',
-  'preferenzeVisibilita', 'lingua', 'profiloCompletato', 'gamificationAttiva', 'puntiEsperienza',
+  'preferenzeVisibilita', 'lingua', 'linguaApp', 'profiloCompletato', 'gamificationAttiva', 'puntiEsperienza',
   'ruoloRichiesto', 'accettazioneToS', 'accettazionePrivacy', 'consensoCookie', 'chatRetentionGiorni',
   'specializzazioni', 'anniEsperienza', 'certificazioni', 'contattoPubblico', 'tariffaIndicativa',
   'dataResetStatistiche', 'dataResetGamification'
@@ -37,12 +38,12 @@ export const CAMPI_PROFILO = [
 
 /** The Utente columns left out, and why */
 export const CAMPI_RISERVATI = {
-  passwordHash: 'segreto',
-  tokenVerificaEmail: 'segreto',
-  tokenVerificaScadenza: 'serve solo al token di verifica',
-  tokenResetPassword: 'segreto',
-  tokenResetScadenza: 'serve solo al token di reset',
-  palestraId: 'sostituito dai dati della palestra'
+  passwordHash: 'secret',
+  tokenVerificaEmail: 'secret',
+  tokenVerificaScadenza: 'only used by the verification token',
+  tokenResetPassword: 'secret',
+  tokenResetScadenza: 'only used by the reset token',
+  palestraId: "replaced by the gym's data"
 };
 
 // Profile fields saved as JSON text: in the file they become objects again
@@ -174,7 +175,8 @@ export async function esportaDatiUtente(utenteId) {
     formato: 'gymmaster-esportazione-dati',
     versioneFormato: VERSIONE_FORMATO,
     esportatoIl: new Date().toISOString(),
-    nota: 'Tutti i dati che GymMaster conserva sul tuo account. Degli altri utenti compare solo il nome.',
+    // In the language of the request that asked for the file
+    nota: t('esportazioneDatiService.nota'),
     profilo,
     schede: schede.map(({ assegnataDaPT, ...scheda }) => ({ ...scheda, assegnataDa: nomeDi(assegnataDaPT) })),
     allenamenti: sessioni.map(({ scheda, logSerie, ...sessione }) => ({

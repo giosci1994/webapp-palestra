@@ -1,0 +1,9 @@
+{
+  "richiestaScaduta": "Request expired: try again",
+  "utenteNonTrovato": "User not found",
+  "passwordNonCorretta": "Incorrect password",
+  "passkeyNonValida": "Invalid passkey: try again",
+  "passkeyGiaRegistrata": "This passkey is already registered",
+  "passkeyNonTrovata": "Passkey not found",
+  "passkeyNonRiconosciuta": "Passkey not recognized: if you deleted it from your profile, sign in with your password"
+}

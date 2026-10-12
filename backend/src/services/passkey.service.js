@@ -24,6 +24,7 @@ import { isoBase64URL } from '@simplewebauthn/server/helpers';
 import prisma from '../config/database.js';
 import { ErroreConflitto, ErroreNonAutenticato, ErroreNonAutorizzato, ErroreNonTrovato, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { t } from '../i18n/index.js';
 import { registraErrore, azzeraTentativi } from '../utils/tentativiAccesso.js';
 import { CAMPI_ACCESSO, apriSessione, controllaTentativi } from './autenticazione.service.js';
 
@@ -62,7 +63,7 @@ function prendiSfida(id, tipo) {
   const sfida = sfide.get(chiave);
   sfide.delete(chiave);
   if (!sfida || sfida.tipo !== tipo || sfida.scade < Date.now()) {
-    throw new ErroreValidazione('Richiesta scaduta: riprova');
+    throw new ErroreValidazione(t('passkeyService.richiestaScaduta'));
   }
   return sfida;
 }
@@ -90,13 +91,13 @@ export async function opzioniRegistrazione(utenteId, password) {
     where: { id: utenteId },
     select: { id: true, email: true, nome: true, passwordHash: true, passkey: { select: { credenziale: true, trasporti: true } } }
   });
-  if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+  if (!utente) throw new ErroreNonTrovato(t('passkeyService.utenteNonTrovato'));
 
   // A wrong password here counts as a failed sign-in
   controllaTentativi(utente.email);
   if (typeof password !== 'string' || !password || !await argon2.verify(utente.passwordHash, password)) {
     registraErrore(utente.email);
-    throw new ErroreNonAutorizzato('Password non corretta');
+    throw new ErroreNonAutorizzato(t('passkeyService.passwordNonCorretta'));
   }
   azzeraTentativi(utente.email);
 
@@ -119,7 +120,7 @@ export async function opzioniRegistrazione(utenteId, password) {
 /** Second half: the device's response becomes one of the user's passkeys */
 export async function verificaRegistrazione(utenteId, idSfida, risposta, nome = null) {
   const sfida = prendiSfida(idSfida, 'registrazione');
-  if (sfida.utenteId !== utenteId) throw new ErroreValidazione('Richiesta scaduta: riprova');
+  if (sfida.utenteId !== utenteId) throw new ErroreValidazione(t('passkeyService.richiestaScaduta'));
 
   const { origine, rpID } = configurazionePasskey();
   let verifica;
@@ -133,9 +134,9 @@ export async function verificaRegistrazione(utenteId, idSfida, risposta, nome = 
     });
   } catch (errore) {
     logger.warn({ utenteId, errore: errore.message }, 'Passkey rifiutata alla registrazione');
-    throw new ErroreValidazione('Passkey non valida: riprova');
+    throw new ErroreValidazione(t('passkeyService.passkeyNonValida'));
   }
-  if (!verifica.verified) throw new ErroreValidazione('Passkey non valida: riprova');
+  if (!verifica.verified) throw new ErroreValidazione(t('passkeyService.passkeyNonValida'));
 
   const { credential, credentialBackedUp } = verifica.registrationInfo;
   try {
@@ -154,7 +155,7 @@ export async function verificaRegistrazione(utenteId, idSfida, risposta, nome = 
     logger.info({ utenteId, passkeyId: passkey.id }, 'Passkey aggiunta');
     return passkey;
   } catch (errore) {
-    if (errore.code === 'P2002') throw new ErroreConflitto('Questa passkey è già registrata');
+    if (errore.code === 'P2002') throw new ErroreConflitto(t('passkeyService.passkeyGiaRegistrata'));
     throw errore;
   }
 }
@@ -164,7 +165,7 @@ export async function eliminaPasskey(utenteId, id) {
   const { count } = Number.isNaN(idPasskey)
     ? { count: 0 }
     : await prisma.passkey.deleteMany({ where: { id: idPasskey, utenteId } });
-  if (count === 0) throw new ErroreNonTrovato('Passkey non trovata');
+  if (count === 0) throw new ErroreNonTrovato(t('passkeyService.passkeyNonTrovata'));
   logger.info({ utenteId, passkeyId: idPasskey }, 'Passkey eliminata');
 }
 
@@ -182,9 +183,7 @@ export async function opzioniAccesso() {
  */
 export async function verificaAccesso(idSfida, risposta, { ricordaDispositivo = false, dispositivo = null } = {}) {
   const sfida = prendiSfida(idSfida, 'accesso');
-  const nonRiconosciuta = new ErroreNonAutenticato(
-    'Passkey non riconosciuta: se l\'hai eliminata dal profilo, entra con la password'
-  );
+  const nonRiconosciuta = new ErroreNonAutenticato(t('passkeyService.passkeyNonRiconosciuta'));
 
   const passkey = await prisma.passkey.findUnique({
     where: { credenziale: String(risposta?.id || '') },

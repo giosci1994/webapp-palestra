@@ -7,6 +7,7 @@ import * as authService from '../services/autenticazione.service.js';
 import * as passkeyService from '../services/passkey.service.js';
 import logger from '../utils/logger.js';
 import { descriviDispositivo } from '../utils/dispositivo.js';
+import { t } from '../i18n/index.js';
 
 /**
  * The refresh token travels in an HttpOnly cookie limited to the /auth routes:
@@ -34,8 +35,8 @@ export async function registrazione(req, res, next) {
     res.status(201).json({
       successo: true,
       messaggio: utente.richiedeVerificaEmail
-        ? 'Registrazione avvenuta. Controlla la tua email per verificare l\'account.'
-        : 'Registrazione avvenuta con successo.',
+        ? t('autenticazioneController.registrazioneVerificaEmail')
+        : t('autenticazioneController.registrazioneCompletata'),
       dati: utente
     });
   } catch (errore) {
@@ -52,7 +53,7 @@ export async function verificaEmail(req, res, next) {
     const esito = await authService.verificaEmailToken(req.query?.token);
     res.json({
       successo: true,
-      messaggio: esito.giaVerificata ? 'Email già verificata.' : 'Email verificata con successo!',
+      messaggio: esito.giaVerificata ? t('autenticazioneController.emailGiaVerificata') : t('autenticazioneController.emailVerificata'),
       dati: esito
     });
   } catch (errore) {
@@ -69,7 +70,7 @@ export async function reinviaVerifica(req, res, next) {
     await authService.reinviaVerifica(req.body?.email);
     res.json({
       successo: true,
-      messaggio: 'Se l\'indirizzo è registrato e non ancora verificato, ti abbiamo inviato una nuova email.'
+      messaggio: t('autenticazioneController.verificaReinviata')
     });
   } catch (errore) {
     next(errore);
@@ -85,7 +86,7 @@ export async function richiediReset(req, res, next) {
     await authService.richiediResetPassword(req.body?.email);
     res.json({
       successo: true,
-      messaggio: 'Se l\'indirizzo è registrato, ti abbiamo inviato un link per reimpostare la password.'
+      messaggio: t('autenticazioneController.resetRichiesto')
     });
   } catch (errore) {
     next(errore);
@@ -99,7 +100,7 @@ export async function richiediReset(req, res, next) {
 export async function reimpostaPassword(req, res, next) {
   try {
     await authService.reimpostaPasswordConToken(req.body?.token, req.body?.password);
-    res.json({ successo: true, messaggio: 'Password reimpostata con successo. Ora puoi accedere.' });
+    res.json({ successo: true, messaggio: t('autenticazioneController.passwordReimpostata') });
   } catch (errore) {
     next(errore);
   }
@@ -120,7 +121,7 @@ export async function login(req, res, next) {
 
     res.json({
       successo: true,
-      messaggio: 'Login effettuato con successo',
+      messaggio: t('autenticazioneController.loginEffettuato'),
       dati: {
         accessToken: risultato.accessToken,
         utente: risultato.utente
@@ -142,7 +143,7 @@ export async function refresh(req, res, next) {
     if (!tokenRefresh) {
       return res.status(401).json({
         successo: false,
-        messaggio: 'Refresh token mancante'
+        messaggio: t('autenticazioneController.refreshTokenMancante')
       });
     }
 
@@ -183,7 +184,7 @@ export async function logout(req, res, next) {
 
     res.json({
       successo: true,
-      messaggio: 'Logout effettuato con successo'
+      messaggio: t('autenticazioneController.logoutEffettuato')
     });
   } catch (errore) {
     next(errore);
@@ -210,7 +211,7 @@ export async function sessioni(req, res, next) {
 export async function chiudiSessione(req, res, next) {
   try {
     await authService.chiudiSessione(req.utente.id, req.params.famiglia);
-    res.json({ successo: true, messaggio: 'Dispositivo scollegato' });
+    res.json({ successo: true, messaggio: t('autenticazioneController.dispositivoScollegato') });
   } catch (errore) {
     next(errore);
   }
@@ -223,7 +224,7 @@ export async function chiudiSessione(req, res, next) {
 export async function chiudiAltreSessioni(req, res, next) {
   try {
     await authService.chiudiAltreSessioni(req.utente.id, req.utente.famiglia);
-    res.json({ successo: true, messaggio: 'Gli altri dispositivi sono stati scollegati' });
+    res.json({ successo: true, messaggio: t('autenticazioneController.altriDispositiviScollegati') });
   } catch (errore) {
     next(errore);
   }
@@ -255,7 +256,7 @@ export async function passkeyAccessoVerifica(req, res, next) {
     impostaCookieRefresh(req, res, risultato.refreshToken, risultato.durataGiorni);
     res.json({
       successo: true,
-      messaggio: 'Login effettuato con successo',
+      messaggio: t('autenticazioneController.loginEffettuato'),
       dati: { accessToken: risultato.accessToken, utente: risultato.utente }
     });
   } catch (errore) {
@@ -291,7 +292,7 @@ export async function passkeyRegistrazioneVerifica(req, res, next) {
     const passkey = await passkeyService.verificaRegistrazione(
       req.utente.id, id, risposta, descriviDispositivo(req.headers['user-agent'])
     );
-    res.status(201).json({ successo: true, messaggio: 'Passkey aggiunta', dati: passkey });
+    res.status(201).json({ successo: true, messaggio: t('autenticazioneController.passkeyAggiunta'), dati: passkey });
   } catch (errore) {
     next(errore);
   }
@@ -301,7 +302,7 @@ export async function passkeyRegistrazioneVerifica(req, res, next) {
 export async function passkeyElimina(req, res, next) {
   try {
     await passkeyService.eliminaPasskey(req.utente.id, req.params.id);
-    res.json({ successo: true, messaggio: 'Passkey eliminata' });
+    res.json({ successo: true, messaggio: t('autenticazioneController.passkeyEliminata') });
   } catch (errore) {
     next(errore);
   }

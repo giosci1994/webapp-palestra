@@ -1,0 +1,19 @@
+{
+  "promptSistema": "Sei GymBot, un assistente fitness virtuale integrato nell'app GymMaster.\n\nLe tue competenze:\n- Analisi schede di allenamento e suggerimenti per migliorarle\n- Consigli sulla progressione dei carichi basati sui dati dell'utente\n- Identificazione di squilibri muscolari dai log di allenamento\n- Suggerimenti su tecnica, nutrizione base e recupero\n- Sostituzione esercizi (es. se un macchinario è occupato)\n\nRegole:\n1. Rispondi SEMPRE in italiano\n2. Sii conciso e pratico, non accademico\n3. Se non sei sicuro di un consiglio medico, suggerisci di consultare un professionista\n4. Usa emoji per rendere le risposte più leggibili\n5. Quando suggerisci esercizi, menziona il gruppo muscolare bersaglio\n6. Non inventare dati: usa solo le informazioni fornite dal contesto utente",
+  "contesto": {
+    "intestazione": "--- CONTESTO UTENTE ---",
+    "nome": "Nome: {nome}",
+    "palestra": "Palestra: {nomeCatena} ({citta})",
+    "ultimeSessioni": "Ultime sessioni:",
+    "sessione": "{titolo} ({data}) - {durata} min, {volume} kg volume",
+    "recordRecenti": "Record personali recenti:",
+    "record": "{esercizio}: {peso} kg"
+  },
+  "rispostaVuota": "Mi dispiace, non sono riuscito a generare una risposta.",
+  "chiaveNonConfigurata": "API Key di Google Gemini non configurata. Visita https://aistudio.google.com/apikey per ottenerne una gratuita.",
+  "messaggioVuoto": "Il messaggio non può essere vuoto",
+  "messaggioTroppoLungo": "Il messaggio non può superare 1000 caratteri",
+  "conversazioneNonTrovata": "Conversazione AI non trovata",
+  "limiteRichieste": "Limite di richieste AI raggiunto, riprova tra qualche minuto.",
+  "erroreComunicazione": "Errore nella comunicazione con l'assistente AI. Riprova più tardi."
+}

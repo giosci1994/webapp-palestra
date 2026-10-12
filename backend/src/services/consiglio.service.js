@@ -15,6 +15,7 @@ import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_NON_MUSCOLARI, GRUPPI_PRINCIPALI } from '../utils/gruppiMuscolari.js';
 import { giornoLocale, giorniDiCalendario } from '../utils/date.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
+import { t, localeDi } from '../i18n/index.js';
 
 const ORE_RECUPERO = 48;
 const GIORNI_PIANO = 7;
@@ -31,10 +32,6 @@ const IMPORTANZA = {
   Addominali: 0.5, Polpacci: 0.5, Trapezio: 0.5, Avambracci: 0.4,
 };
 const IMPORTANZA_MINORE = 0.3;
-
-// Names that take a singular verb: "il petto riposa", "i glutei riposano"
-const SINGOLARI = new Set(['Petto', 'Schiena', 'Trapezio']);
-const GIORNI_SETTIMANA = ['domenica', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato'];
 
 const importanza = (gruppo) => IMPORTANZA[gruppo] ?? IMPORTANZA_MINORE;
 
@@ -94,32 +91,46 @@ export function valutaScheda(esercizi, ultimaDiretta, adesso) {
   return { punteggio: totale ? somma / totale : 0, contributi };
 }
 
-const elenco = (nomi) => nomi.length < 2 ? nomi.join('') : `${nomi.slice(0, -1).join(', ')} e ${nomi.at(-1)}`;
+// The sentences are built from the group names, which are Italian data
+// ("Petto"): they are translated only when they go into a sentence. A name
+// with no translation stays as it is.
+const nomeGruppo = (nome) => {
+  const chiave = `gruppi.${nome}`;
+  const testo = t(chiave);
+  return testo !== chiave ? testo : nome;
+};
+/** "Petto, Spalle e Glutei" / "Chest, Shoulders and Glutes" */
+const elenco = (nomi) => new Intl.ListFormat(localeDi(), { style: 'long', type: 'conjunction' }).format(nomi.map(nomeGruppo));
 // Once the groups to name are chosen, they are listed in the usual order:
 // "Petto e Spalle", as in plan titles, not "Spalle e Petto"
 const posizione = (gruppo) => { const i = GRUPPI_PRINCIPALI.indexOf(gruppo); return i < 0 ? GRUPPI_PRINCIPALI.length : i; };
 const inOrdine = (nomi) => [...nomi].sort((a, b) => posizione(a) - posizione(b));
-const plurale = (nomi) => nomi.length > 1 || !SINGOLARI.has(nomi[0]);
-const verbo = (nomi, singolare, pluralePer) => plurale(nomi) ? pluralePer : singolare;
+// Names that take a singular verb ("il petto riposa", "i glutei riposano"):
+// which ones depends on the language, so the list is in the texts
+const singolari = () => new Set(t('consiglioService.gruppiSingolari').split(','));
+const plurale = (nomi) => nomi.length > 1 || !singolari().has(nomi[0]);
+// The `count` of the sentences that change their verb: 1 singular, 2 plural
+const numero = (nomi) => plurale(nomi) ? 2 : 1;
 
-/** "Petto e Spalle riposano da 5 giorni" — the rested groups the plan trains the most. */
+/** "Petto e Spalle riposano da 5 giorni." — the rested groups the plan trains the most. */
 function fraseRiposati(riposati, ultimaDiretta, adesso) {
   const nomi = inOrdine(riposati.map(c => c.gruppo));
   const giorni = nomi.map(g => ultimaDiretta.get(g)).filter(Boolean).map(d => giorniDiCalendario(d, adesso));
-  if (giorni.length === 0) return `Non hai ancora allenato ${elenco(nomi)}`;
+  const gruppi = elenco(nomi);
+  if (giorni.length === 0) return t('consiglioService.mai', { gruppi });
   const minimo = Math.min(...giorni);
-  const riposa = verbo(nomi, 'riposa', 'riposano');
-  if (minimo >= 14) return `${elenco(nomi)} ${riposa} da più di due settimane`;
-  const almeno = giorni.length < nomi.length || giorni.some(g => g !== minimo) ? 'almeno ' : '';
-  return `${elenco(nomi)} ${riposa} da ${almeno}${minimo} giorni`;
+  const count = numero(nomi);
+  if (minimo >= 14) return t('consiglioService.riposoOltreDueSettimane', { gruppi, count });
+  const almeno = giorni.length < nomi.length || giorni.some(g => g !== minimo);
+  return t(almeno ? 'consiglioService.riposoDaAlmeno' : 'consiglioService.riposoDa', { gruppi, giorni: minimo, count });
 }
 
-/** "domani" (tomorrow), "dopodomani" (the day after) or the weekday, for a scheduled day within seven days. */
-function quando(data, oggi) {
+/** "In programma domani." (tomorrow), "dopodomani" (the day after) or the weekday, for a scheduled day within seven days. */
+function frasePianificata(data, oggi) {
   const giorni = Math.round((data - oggi) / 86400000);
-  if (giorni === 1) return 'domani';
-  if (giorni === 2) return 'dopodomani';
-  return GIORNI_SETTIMANA[data.getUTCDay()];
+  if (giorni === 1) return t('consiglioService.inProgrammaDomani');
+  if (giorni === 2) return t('consiglioService.inProgrammaDopodomani');
+  return t('consiglioService.inProgrammaGiorno', { giorno: t(`consiglioService.giorniSettimana.${data.getUTCDay()}`) });
 }
 
 /**
@@ -197,7 +208,8 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
     .filter(([gruppo]) => !GRUPPI_NON_MUSCOLARI.has(gruppo) && importanza(gruppo) >= 0.5)
     .sort((a, b) => b[1] - a[1])
     .map(([gruppo]) => gruppo);
-  const fraseRecupero = (nomi) => `${elenco(inOrdine(nomi))} ${verbo(nomi, 'recupera', 'recuperano')} ancora`;
+  const fraseRecupero = (nomi, chiave = 'consiglioService.recuperaAncora') =>
+    t(chiave, { gruppi: elenco(inOrdine(nomi)), count: numero(nomi) });
 
   const valutata = (s) => ({ scheda: s, ...valutaScheda(s.esercizi, ultimaDiretta, adesso) });
   const riposatiDi = (v) => v.contributi
@@ -215,9 +227,9 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
     // that just help out in a couple of exercises
     const stanchi = v.contributi.filter(c => c.bisogno < 0 && c.dirette >= 2 && importanza(c.gruppo) >= 0.5)
       .sort((a, b) => b.dirette - a.dirette).slice(0, 2).map(c => c.gruppo);
-    let testo = 'In programma oggi.';
-    if (stanchi.length) testo += ` Attenzione: ${fraseRecupero(stanchi)}.`;
-    else if (riposati.length) testo += ` ${fraseRiposati(riposati, ultimaDiretta, adesso)}.`;
+    let testo = t('consiglioService.inProgrammaOggi');
+    if (stanchi.length) testo += ` ${fraseRecupero(stanchi, 'consiglioService.attenzioneRecupera')}`;
+    else if (riposati.length) testo += ` ${fraseRiposati(riposati, ultimaDiretta, adesso)}`;
     return { motivo: 'oggi', scheda: { id: schedaDiOggi.id, titolo: schedaDiOggi.titolo }, testo };
   }
 
@@ -237,26 +249,26 @@ export async function consiglioAllenamento(utenteId, adesso = new Date()) {
       motivo: 'riposo',
       scheda: null,
       testo: stanchi.length
-        ? `${elenco(inOrdine(stanchi))} ${verbo(stanchi, 'è', 'sono')} ancora in recupero: oggi riposa.`
-        : 'Ogni scheda caricherebbe muscoli ancora in recupero: oggi riposa.'
+        ? fraseRecupero(stanchi, 'consiglioService.riposoStanchi')
+        : t('consiglioService.riposoTutte')
     };
   }
 
   const scheda = { id: migliore.scheda.id, titolo: migliore.scheda.titolo };
   if (ultimaDiretta.size === 0) {
     const principali = gruppiDellaScheda(migliore.scheda.esercizi);
-    return { motivo: 'inizio', scheda, testo: `Per cominciare: una scheda per ${elenco(inOrdine(principali))}.` };
+    return { motivo: 'inizio', scheda, testo: t('consiglioService.inizio', { gruppi: elenco(inOrdine(principali)) }) };
   }
 
-  const motivo = `${fraseRiposati(riposatiDi(migliore), ultimaDiretta, adesso)}.`;
+  const motivo = fraseRiposati(riposatiDi(migliore), ultimaDiretta, adesso);
   const prossimoPiano = piani.find(p =>
     p.stato === 'PIANIFICATO' && p.schedaId === scheda.id &&
     p.data > oggi && p.data - oggi <= GIORNI_PIANO * 86400000);
   // Of the tired muscles, name only those the suggested plan does not touch
   const gruppiScheda = new Set(migliore.contributi.map(c => c.gruppo));
   const risparmiati = inRecupero.filter(g => !gruppiScheda.has(g)).slice(0, 2);
-  const aggiunta = prossimoPiano ? `In programma ${quando(prossimoPiano.data, oggi)}.`
-    : risparmiati.length ? `${fraseRecupero(risparmiati)}.`
+  const aggiunta = prossimoPiano ? frasePianificata(prossimoPiano.data, oggi)
+    : risparmiati.length ? fraseRecupero(risparmiati)
     : '';
   const testo = aggiunta && motivo.length + 1 + aggiunta.length <= MAX_TESTO ? `${motivo} ${aggiunta}` : motivo;
 

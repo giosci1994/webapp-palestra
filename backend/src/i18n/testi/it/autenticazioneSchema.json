@@ -1,0 +1,14 @@
+{
+  "emailObbligatoria": "Email obbligatoria",
+  "emailNonValida": "Formato email non valido",
+  "emailTroppoLunga": "Email troppo lunga",
+  "passwordObbligatoria": "Password obbligatoria",
+  "passwordCorta": "La password deve avere almeno 8 caratteri",
+  "passwordLunga": "La password non può superare 128 caratteri",
+  "passwordDebole": "La password deve contenere almeno una maiuscola, una minuscola e un numero",
+  "nomeObbligatorio": "Nome obbligatorio",
+  "nomeCorto": "Il nome deve avere almeno 2 caratteri",
+  "nomeLungo": "Il nome non può superare 100 caratteri",
+  "palestraIdNonValido": "ID palestra non valido",
+  "refreshTokenObbligatorio": "Refresh token obbligatorio"
+}

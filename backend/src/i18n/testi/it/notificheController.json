@@ -1,0 +1,10 @@
+{
+  "idNonValido": "ID non valido",
+  "notificaNonTrovata": "Notifica non trovata",
+  "iscrizionePushNonValida": "Iscrizione push non valida",
+  "pushNonAttive": "Le notifiche push non sono attive sul server",
+  "provaTitolo": "🔔 Notifiche attive",
+  "provaMessaggio": "Da adesso GymMaster ti avvisa anche a schermo bloccato.",
+  "recuperoFuoriLimiti": "Il recupero va da 1 a {max} secondi",
+  "prossimoNonValido": "Il prossimo esercizio deve essere un testo breve"
+}

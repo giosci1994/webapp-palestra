@@ -1,0 +1,6 @@
+{
+  "nomeEGruppoObbligatori": "Nome e gruppo muscolare primario sono obbligatori",
+  "nuovoSuggerimentoTitolo": "Nuovo suggerimento esercizio",
+  "nuovoSuggerimentoMessaggio": "{utente} ha suggerito: \"{esercizio}\"",
+  "suggerimentoInviato": "Suggerimento inviato con successo! L'amministratore lo esaminerà."
+}

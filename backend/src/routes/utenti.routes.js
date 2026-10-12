@@ -8,6 +8,9 @@ import { listaUtenti, profilo, approva, banna, cambiaRuolo, elimina, aggiornaPro
 import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { t } from '../i18n/index.js';
+import { linguaDiUtenteId } from '../i18n/destinatario.js';
+import { LINGUA_BASE } from '../utils/lingue.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -68,20 +71,20 @@ router.delete('/account', async (req, res, next) => {
     const { password, conferma } = req.body || {};
 
     if (conferma !== 'ELIMINA') {
-      throw new ErroreValidazione('Conferma mancante');
+      throw new ErroreValidazione(t('utentiRoutes.confermaMancante'));
     }
     if (!password || typeof password !== 'string') {
-      throw new ErroreValidazione('Password richiesta per confermare l\'eliminazione');
+      throw new ErroreValidazione(t('utentiRoutes.passwordRichiesta'));
     }
 
     const utente = await prisma.utente.findUnique({
       where: { id: req.utente.id },
       select: { id: true, passwordHash: true, ruolo: true }
     });
-    if (!utente) throw new ErroreNonTrovato('Utente non trovato');
+    if (!utente) throw new ErroreNonTrovato(t('utentiRoutes.utenteNonTrovato'));
 
     if (!await argon2.verify(utente.passwordHash, password)) {
-      throw new ErroreNonAutorizzato('Password non corretta');
+      throw new ErroreNonAutorizzato(t('utentiRoutes.passwordNonCorretta'));
     }
 
     // The last administrator cannot disappear: that would leave an
@@ -89,7 +92,7 @@ router.delete('/account', async (req, res, next) => {
     if (utente.ruolo === 'SUPERADMIN') {
       const altri = await prisma.utente.count({ where: { ruolo: 'SUPERADMIN', id: { not: utente.id } } });
       if (altri === 0) {
-        throw new ErroreNonAutorizzato('Sei l\'unico amministratore: nominane un altro prima di eliminare l\'account');
+        throw new ErroreNonAutorizzato(t('utentiRoutes.unicoAmministratore'));
       }
     }
 
@@ -99,7 +102,7 @@ router.delete('/account', async (req, res, next) => {
     // session of a user who no longer exists. Same path it was set with
     // (autenticazione.controller.js), otherwise the browser keeps it.
     res.clearCookie('refreshToken', { httpOnly: true, sameSite: 'strict', path: '/api/v1/auth' });
-    res.json({ successo: true, messaggio: 'Account eliminato definitivamente', dati: riepilogo });
+    res.json({ successo: true, messaggio: t('utentiRoutes.accountEliminato'), dati: riepilogo });
   } catch (errore) { next(errore); }
 });
 
@@ -111,7 +114,7 @@ router.post('/reset-statistiche', async (req, res, next) => {
       where: { id: req.utente.id },
       data: { dataResetStatistiche: new Date() }
     });
-    res.json({ successo: true, messaggio: 'Statistiche azzerate con successo' });
+    res.json({ successo: true, messaggio: t('utentiRoutes.statisticheAzzerate') });
   } catch (errore) { next(errore); }
 });
 
@@ -123,7 +126,7 @@ router.post('/reset-gamification', async (req, res, next) => {
       where: { id: req.utente.id },
       data: { dataResetGamification: new Date(), puntiEsperienza: 0 }
     });
-    res.json({ successo: true, messaggio: 'Progressi gamification azzerati con successo' });
+    res.json({ successo: true, messaggio: t('utentiRoutes.gamificationAzzerata') });
   } catch (errore) { next(errore); }
 });
 
@@ -163,13 +166,14 @@ router.patch('/completa-profilo', async (req, res, next) => {
     // Handle the request for the personal trainer role
     if (tipoAccount === 'PERSONAL_TRAINER' && req.utente.ruolo === 'UTENTE') {
       datiAggiornamento.ruoloRichiesto = 'PERSONAL_TRAINER';
-      // Notify the admins via Socket.IO
+      // Notify the admins via Socket.IO (a broadcast: no single recipient
+      // language, so the text goes in the base language)
       const io = req.app.get('io');
       if (io) {
         io.emit('notifica:admin', {
           tipo: 'richiesta_ruolo',
-          titolo: 'Richiesta ruolo Personal Trainer',
-          messaggio: `${req.utente.nome} ha richiesto il ruolo di Personal Trainer.`,
+          titolo: t('utentiRoutes.richiestaRuoloPtTitolo', {}, LINGUA_BASE),
+          messaggio: t('utentiRoutes.richiestaRuoloPtMessaggio', { nome: req.utente.nome }, LINGUA_BASE),
           utenteId: req.utente.id,
           timestamp: new Date().toISOString()
         });
@@ -220,7 +224,7 @@ router.delete('/telegram', async (req, res, next) => {
   try {
     const { scollegaTelegram } = await import('../services/bot.service.js');
     await scollegaTelegram(req.utente.id);
-    res.json({ successo: true, messaggio: 'Telegram scollegato' });
+    res.json({ successo: true, messaggio: t('utentiRoutes.telegramScollegato') });
   } catch (errore) { next(errore); }
 });
 
@@ -254,7 +258,7 @@ router.get('/personal-trainers/:id', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
     const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ successo: false, messaggio: 'ID non valido' });
+    if (isNaN(id)) return res.status(400).json({ successo: false, messaggio: t('utentiRoutes.idNonValido') });
 
     const pt = await prisma.utente.findFirst({
       where: { id, ruolo: 'PERSONAL_TRAINER', stato: 'ATTIVO' },
@@ -272,7 +276,7 @@ router.get('/personal-trainers/:id', async (req, res, next) => {
         }
       }
     });
-    if (!pt) return res.status(404).json({ successo: false, messaggio: 'Personal Trainer non trovato' });
+    if (!pt) return res.status(404).json({ successo: false, messaggio: t('utentiRoutes.personalTrainerNonTrovato') });
 
     const schede = await prisma.schedaAllenamento.findMany({
       where: { creatoreId: id, visibilita: 'GLOBALE' },
@@ -293,7 +297,7 @@ router.post('/richiedi-pt', async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
     if (req.utente.ruolo !== 'UTENTE') {
-      return res.status(400).json({ successo: false, messaggio: 'Solo gli utenti standard possono richiedere il ruolo PT' });
+      return res.status(400).json({ successo: false, messaggio: t('utentiRoutes.soloUtentiStandard') });
     }
     await prisma.utente.update({
       where: { id: req.utente.id },
@@ -301,15 +305,16 @@ router.post('/richiedi-pt', async (req, res, next) => {
     });
     const io = req.app.get('io');
     if (io) {
+      // A broadcast to the admins: the text goes in the base language
       io.emit('notifica:admin', {
         tipo: 'richiesta_ruolo',
-        titolo: 'Richiesta ruolo Personal Trainer',
-        messaggio: `${req.utente.nome} ha richiesto il ruolo di Personal Trainer.`,
+        titolo: t('utentiRoutes.richiestaRuoloPtTitolo', {}, LINGUA_BASE),
+        messaggio: t('utentiRoutes.richiestaRuoloPtMessaggio', { nome: req.utente.nome }, LINGUA_BASE),
         utenteId: req.utente.id,
         timestamp: new Date().toISOString()
       });
     }
-    res.json({ successo: true, messaggio: 'Richiesta inviata. Un amministratore la valuterà a breve.' });
+    res.json({ successo: true, messaggio: t('utentiRoutes.richiestaInviata') });
   } catch (errore) { next(errore); }
 });
 
@@ -328,14 +333,14 @@ router.post('/iscrizione-pt', async (req, res, next) => {
     // Prisma and turn into a 500 error
     const idTrainer = Number(trainerId);
     if (!Number.isInteger(idTrainer) || idTrainer <= 0) {
-      throw new ErroreValidazione('Personal Trainer non valido');
+      throw new ErroreValidazione(t('utentiRoutes.personalTrainerNonValido'));
     }
     if (messaggio != null && typeof messaggio !== 'string') {
-      throw new ErroreValidazione('Il messaggio deve essere un testo');
+      throw new ErroreValidazione(t('utentiRoutes.messaggioNonTesto'));
     }
     const testoMessaggio = messaggio?.trim() || null;
     if (testoMessaggio && testoMessaggio.length > MESSAGGIO_PT_MAX) {
-      throw new ErroreValidazione(`Il messaggio può avere al massimo ${MESSAGGIO_PT_MAX} caratteri`);
+      throw new ErroreValidazione(t('utentiRoutes.messaggioTroppoLungo', { max: MESSAGGIO_PT_MAX }));
     }
 
     // Check that the user is not already enrolled with a personal trainer
@@ -347,8 +352,8 @@ router.post('/iscrizione-pt', async (req, res, next) => {
       return res.status(400).json({
         successo: false,
         messaggio: iscrizioneEsistente.stato === 'IN_ATTESA'
-          ? 'Hai già una richiesta in attesa'
-          : 'Sei già iscritto presso un Personal Trainer'
+          ? t('utentiRoutes.richiestaGiaInAttesa')
+          : t('utentiRoutes.giaIscritto')
       });
     }
 
@@ -358,7 +363,7 @@ router.post('/iscrizione-pt', async (req, res, next) => {
     });
 
     if (!trainer) {
-      return res.status(404).json({ successo: false, messaggio: 'Personal Trainer non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('utentiRoutes.personalTrainerNonTrovato') });
     }
 
     const iscrizione = await prisma.iscrizionePT.create({
@@ -375,10 +380,11 @@ router.post('/iscrizione-pt', async (req, res, next) => {
     // Notify the personal trainer
     const io = req.app.get('io');
     if (io) {
+      const lingua = await linguaDiUtenteId(idTrainer);
       io.to(`utente:${idTrainer}`).emit('notifica:nuova', {
         tipo: 'nuova_iscrizione',
-        titolo: 'Nuova richiesta di iscrizione! 🆕',
-        messaggio: `${req.utente.nome} vuole iscriversi come tuo cliente.`,
+        titolo: t('utentiRoutes.nuovaRichiestaTitolo', {}, lingua),
+        messaggio: t('utentiRoutes.nuovaRichiestaMessaggio', { nome: req.utente.nome }, lingua),
         timestamp: new Date().toISOString()
       });
     }
@@ -396,7 +402,7 @@ router.delete('/iscrizione-pt', async (req, res, next) => {
     });
 
     if (!iscrizione) {
-      return res.status(404).json({ successo: false, messaggio: 'Nessuna iscrizione attiva' });
+      return res.status(404).json({ successo: false, messaggio: t('utentiRoutes.nessunaIscrizione') });
     }
 
     await prisma.iscrizionePT.update({
@@ -404,7 +410,7 @@ router.delete('/iscrizione-pt', async (req, res, next) => {
       data: { stato: 'TERMINATA', dataRisposta: new Date() }
     });
 
-    res.json({ successo: true, messaggio: 'Iscrizione terminata' });
+    res.json({ successo: true, messaggio: t('utentiRoutes.iscrizioneTerminata') });
   } catch (errore) { next(errore); }
 });
 
@@ -487,11 +493,12 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
         orderBy: { creatoIl: 'desc' },
         take: 20
       }),
-      // Plans assigned by the personal trainer (with the "da PT" suffix)
+      // Plans assigned by a personal trainer; the oldest ones, from before
+      // assegnataDaPTId, only have the "(da PT)" suffix in the title
       prisma.schedaAllenamento.findMany({
         where: {
           creatoreId: utenteId,
-          titolo: { contains: '(da PT)' }
+          OR: [{ assegnataDaPTId: { not: null } }, { titolo: { contains: '(da PT)' } }]
         },
         include: {
           esercizi: {
@@ -544,7 +551,7 @@ router.get('/mio-pt/dashboard', async (req, res, next) => {
 // Stops an admin from running destructive actions on their own account (self-ban/demotion/deletion)
 const vietaSuSeStesso = (req, res, next) => {
   if (parseInt(req.params.id) === req.utente.id) {
-    return res.status(400).json({ successo: false, messaggio: 'Non puoi eseguire questa azione sul tuo stesso account' });
+    return res.status(400).json({ successo: false, messaggio: t('utentiRoutes.azioneSuTeStesso') });
   }
   next();
 };

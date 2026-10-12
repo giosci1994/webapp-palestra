@@ -4,6 +4,14 @@
 // ============================================
 
 import { ErroreValidazione } from '../utils/errori.js';
+import { t } from '../i18n/index.js';
+
+/**
+ * The text of a zod issue. The schemas write translation keys as messages
+ * ('autenticazioneSchema.passwordCorta'): they become text in the request's
+ * language. Zod's own default messages ("Required") are not keys and stay.
+ */
+const testoDelProblema = problema => (/^\w+\.[\w.]+$/.test(problema.message) ? t(problema.message) : problema.message);
 
 /**
  * Creates a validation middleware based on a Zod schema.
@@ -30,7 +38,7 @@ export function valida(schemi) {
         errori.push(
           ...risultato.error.errors.map(e => ({
             campo: e.path.join('.'),
-            messaggio: e.message,
+            messaggio: testoDelProblema(e),
             origine: 'body'
           }))
         );
@@ -47,7 +55,7 @@ export function valida(schemi) {
         errori.push(
           ...risultato.error.errors.map(e => ({
             campo: e.path.join('.'),
-            messaggio: e.message,
+            messaggio: testoDelProblema(e),
             origine: 'query'
           }))
         );
@@ -63,7 +71,7 @@ export function valida(schemi) {
         errori.push(
           ...risultato.error.errors.map(e => ({
             campo: e.path.join('.'),
-            messaggio: e.message,
+            messaggio: testoDelProblema(e),
             origine: 'params'
           }))
         );
@@ -74,7 +82,7 @@ export function valida(schemi) {
 
     // If there are errors, reject the request
     if (errori.length > 0) {
-      return next(new ErroreValidazione('Dati della richiesta non validi', errori));
+      return next(new ErroreValidazione(t('errori.validazione'), errori));
     }
 
     next();
@@ -90,7 +98,7 @@ const ID_MASSIMO = 2147483647;
  */
 export function idNumerico(req, res, next, valore, nome) {
   if (!/^\d+$/.test(valore) || Number(valore) < 1 || Number(valore) > ID_MASSIMO) {
-    return next(new ErroreValidazione(`Parametro "${nome}" non valido`));
+    return next(new ErroreValidazione(t('validazione.parametroNonValido', { nome })));
   }
   next();
 }

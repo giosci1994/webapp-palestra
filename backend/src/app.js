@@ -15,6 +15,7 @@ import { inizializzaSocket } from './socket/indice.js';
 import router from './routes/indice.js';
 import logger from './utils/logger.js';
 import { ErroreApp } from './utils/errori.js';
+import { linguaRichiesta, linguaDaIntestazione, t } from './i18n/index.js';
 
 const AMBIENTE = process.env.AMBIENTE || 'sviluppo';
 
@@ -48,11 +49,19 @@ export function creaServer() {
     });
   }
 
+  // --- Language of the request (Accept-Language), kept for the whole request.
+  // After the body parsers: their callbacks would lose it ---
+  app.use(linguaRichiesta);
+
   // --- Mount the API routes ---
   app.use('/api/v1', router);
 
   // --- Centralized error handling ---
   app.use((errore, req, res, next) => {
+    // The body parsers and CORS run before the request's language is set, so
+    // the errors they raise get it from the header
+    const lingua = req.lingua || linguaDaIntestazione(req.headers['accept-language']);
+
     // The app's custom errors
     if (errore instanceof ErroreApp) {
       return res.status(errore.codiceStato).json({
@@ -68,7 +77,7 @@ export function creaServer() {
       return res.status(403).json({
         successo: false,
         codice: 'CORS_BLOCCATO',
-        messaggio: 'Origine non consentita'
+        messaggio: t('app.origineNonConsentita', {}, lingua)
       });
     }
 
@@ -78,7 +87,7 @@ export function creaServer() {
       return res.status(404).json({
         successo: false,
         codice: 'NON_TROVATO',
-        messaggio: 'Elemento non trovato'
+        messaggio: t('app.elementoNonTrovato', {}, lingua)
       });
     }
 
@@ -87,7 +96,7 @@ export function creaServer() {
       return res.status(400).json({
         successo: false,
         codice: 'JSON_NON_VALIDO',
-        messaggio: 'Il corpo della richiesta non è un JSON valido'
+        messaggio: t('app.jsonNonValido', {}, lingua)
       });
     }
 
@@ -98,7 +107,7 @@ export function creaServer() {
       successo: false,
       codice: 'ERRORE_INTERNO',
       messaggio: AMBIENTE === 'produzione'
-        ? 'Si è verificato un errore interno del server'
+        ? t('app.erroreInterno', {}, lingua)
         : errore.message
     });
   });

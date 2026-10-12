@@ -4,6 +4,7 @@
 // ============================================
 
 import * as botService from '../services/bot.service.js';
+import { t } from '../i18n/index.js';
 
 /** POST /api/v1/bot/collega { chatId, codice } */
 export async function collega(req, res, next) {
@@ -27,7 +28,7 @@ export async function messaggio(req, res, next) {
 export async function annulla(req, res, next) {
   try {
     await botService.annullaBozza(req.utenteTelegram.id);
-    res.json({ successo: true, messaggio: 'Bozza annullata' });
+    res.json({ successo: true, messaggio: t('botController.bozzaAnnullata') });
   } catch (errore) { next(errore); }
 }
 
@@ -58,14 +59,26 @@ export async function statistiche(req, res, next) {
 
 // ─── Guided creation with buttons ───
 
+// The regions and groups are sent back as they are to pick one; the labels
+// (`etichette`, `etichettaRegione`, `etichettaGruppo`) are the names to show,
+// in the user's language.
 export async function guidaCategorie(req, res, next) {
-  try { res.json({ successo: true, dati: { regioni: await botService.categorieEsercizi() } }); }
-  catch (errore) { next(errore); }
+  try {
+    const regioni = await botService.categorieEsercizi();
+    res.json({ successo: true, dati: { regioni, etichette: botService.etichette(regioni, botService.nomeRegione) } });
+  } catch (errore) { next(errore); }
 }
 
 export async function guidaGruppi(req, res, next) {
-  try { res.json({ successo: true, dati: { gruppi: await botService.gruppiPerRegione(req.body.bodyRegion) } }); }
-  catch (errore) { next(errore); }
+  try {
+    const { bodyRegion } = req.body;
+    const gruppi = await botService.gruppiPerRegione(bodyRegion);
+    res.json({ successo: true, dati: {
+      gruppi,
+      etichette: botService.etichette(gruppi, botService.nomeGruppo),
+      etichettaRegione: botService.nomeRegione(bodyRegion)
+    } });
+  } catch (errore) { next(errore); }
 }
 
 export async function guidaEsercizi(req, res, next) {
@@ -74,7 +87,7 @@ export async function guidaEsercizi(req, res, next) {
     const esercizi = soloPiuUsati
       ? await botService.eserciziPiuUsati(req.utenteTelegram.id)
       : await botService.eserciziPerGruppo(req.utenteTelegram.id, gruppo);
-    res.json({ successo: true, dati: { esercizi } });
+    res.json({ successo: true, dati: { esercizi, etichettaGruppo: soloPiuUsati ? null : botService.nomeGruppo(gruppo) } });
   } catch (errore) { next(errore); }
 }
 

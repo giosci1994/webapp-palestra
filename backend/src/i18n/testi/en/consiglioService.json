@@ -1,0 +1,31 @@
+{
+  "gruppiSingolari": "Petto,Schiena",
+  "giorniSettimana": {
+    "0": "Sunday",
+    "1": "Monday",
+    "2": "Tuesday",
+    "3": "Wednesday",
+    "4": "Thursday",
+    "5": "Friday",
+    "6": "Saturday"
+  },
+  "mai": "You haven't trained {gruppi} yet.",
+  "riposoOltreDueSettimane_one": "{gruppi} has rested for over two weeks.",
+  "riposoOltreDueSettimane_other": "{gruppi} have rested for over two weeks.",
+  "riposoDa_one": "{gruppi} has rested for {giorni} days.",
+  "riposoDa_other": "{gruppi} have rested for {giorni} days.",
+  "riposoDaAlmeno_one": "{gruppi} has rested for at least {giorni} days.",
+  "riposoDaAlmeno_other": "{gruppi} have rested for at least {giorni} days.",
+  "recuperaAncora_one": "{gruppi} is still recovering.",
+  "recuperaAncora_other": "{gruppi} are still recovering.",
+  "attenzioneRecupera_one": "Heads up: {gruppi} is still recovering.",
+  "attenzioneRecupera_other": "Heads up: {gruppi} are still recovering.",
+  "inProgrammaOggi": "Scheduled for today.",
+  "inProgrammaDomani": "Scheduled for tomorrow.",
+  "inProgrammaDopodomani": "Scheduled the day after tomorrow.",
+  "inProgrammaGiorno": "Scheduled for {giorno}.",
+  "inizio": "To start: a plan for {gruppi}.",
+  "riposoStanchi_one": "{gruppi} is still recovering: rest today.",
+  "riposoStanchi_other": "{gruppi} are still recovering: rest today.",
+  "riposoTutte": "Every plan would load muscles that are still recovering: rest today."
+}

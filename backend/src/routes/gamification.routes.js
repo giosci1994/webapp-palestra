@@ -7,59 +7,61 @@ import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
+import { t } from '../i18n/index.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 router.use(verificaToken);
 
-// Badge definitions
+// Badge definitions: the name and description are in the translation files
+// (gamificationRoutes.badge.<chiave>) and are translated when the response is built
 const BADGE = [
   // --- Sessions ---
-  { id: 'primo_allenamento', nome: 'Prima Volta', icona: '🎯', desc: 'Completa il primo allenamento', xp: 50, check: (s) => s.sessioni >= 1 },
-  { id: 'costante', nome: 'Costante', icona: '📅', desc: '10 sessioni completate', xp: 100, check: (s) => s.sessioni >= 10 },
-  { id: 'veterano', nome: 'Veterano', icona: '🏅', desc: '50 sessioni completate', xp: 300, check: (s) => s.sessioni >= 50 },
-  { id: 'centurione', nome: 'Centurione', icona: '💯', desc: '100 sessioni completate', xp: 500, check: (s) => s.sessioni >= 100 },
-  { id: 'duecento_sessioni', nome: 'Instancabile', icona: '🦾', desc: '200 sessioni completate', xp: 800, check: (s) => s.sessioni >= 200 },
+  { id: 'primo_allenamento', chiave: 'primaVolta', icona: '🎯', xp: 50, check: (s) => s.sessioni >= 1 },
+  { id: 'costante', chiave: 'costante', icona: '📅', xp: 100, check: (s) => s.sessioni >= 10 },
+  { id: 'veterano', chiave: 'veterano', icona: '🏅', xp: 300, check: (s) => s.sessioni >= 50 },
+  { id: 'centurione', chiave: 'centurione', icona: '💯', xp: 500, check: (s) => s.sessioni >= 100 },
+  { id: 'duecento_sessioni', chiave: 'instancabile', icona: '🦾', xp: 800, check: (s) => s.sessioni >= 200 },
   // --- Volume ---
-  { id: 'tonnellata', nome: 'Tonnellata', icona: '🏋️', desc: '1.000 kg di volume totale', xp: 100, check: (s) => s.volume >= 1000 },
-  { id: 'mostro', nome: 'Mostro', icona: '👹', desc: '10.000 kg di volume totale', xp: 300, check: (s) => s.volume >= 10000 },
-  { id: 'titano', nome: 'Titano', icona: '⚡', desc: '100.000 kg di volume totale', xp: 1000, check: (s) => s.volume >= 100000 },
-  { id: 'atlas', nome: 'Atlas', icona: '🌍', desc: '500.000 kg di volume totale', xp: 2000, check: (s) => s.volume >= 500000 },
-  { id: 'volume_millionario', nome: 'Milionario', icona: '💰', desc: '1.000.000 kg di volume totale', xp: 3000, check: (s) => s.volume >= 1000000 },
+  { id: 'tonnellata', chiave: 'tonnellata', icona: '🏋️', xp: 100, check: (s) => s.volume >= 1000 },
+  { id: 'mostro', chiave: 'mostro', icona: '👹', xp: 300, check: (s) => s.volume >= 10000 },
+  { id: 'titano', chiave: 'titano', icona: '⚡', xp: 1000, check: (s) => s.volume >= 100000 },
+  { id: 'atlas', chiave: 'atlas', icona: '🌍', xp: 2000, check: (s) => s.volume >= 500000 },
+  { id: 'volume_millionario', chiave: 'milionario', icona: '💰', xp: 3000, check: (s) => s.volume >= 1000000 },
   // --- Records ---
-  { id: 'primo_record', nome: 'Primo Record', icona: '🎖️', desc: 'Stabilisci il primo record personale', xp: 50, check: (s) => s.record >= 1 },
-  { id: 'recordman', nome: 'Recordman', icona: '🏆', desc: 'Stabilisci 5 record personali', xp: 150, check: (s) => s.record >= 5 },
-  { id: 'recordman_elite', nome: 'Recordman Elite', icona: '👑', desc: '20 record personali', xp: 400, check: (s) => s.record >= 20 },
+  { id: 'primo_record', chiave: 'primoRecord', icona: '🎖️', xp: 50, check: (s) => s.record >= 1 },
+  { id: 'recordman', chiave: 'recordman', icona: '🏆', xp: 150, check: (s) => s.record >= 5 },
+  { id: 'recordman_elite', chiave: 'recordmanElite', icona: '👑', xp: 400, check: (s) => s.record >= 20 },
   // --- Duration ---
-  { id: 'maratoneta', nome: 'Maratoneta', icona: '🏃', desc: '10 ore di allenamento totali', xp: 200, check: (s) => s.durata >= 600 },
-  { id: 'maratoneta_pro', nome: 'Ultra Maratoneta', icona: '🏅', desc: '50 ore di allenamento totali', xp: 500, check: (s) => s.durata >= 3000 },
+  { id: 'maratoneta', chiave: 'maratoneta', icona: '🏃', xp: 200, check: (s) => s.durata >= 600 },
+  { id: 'maratoneta_pro', chiave: 'ultraMaratoneta', icona: '🏅', xp: 500, check: (s) => s.durata >= 3000 },
   // --- Plans ---
-  { id: 'creatore', nome: 'Creatore', icona: '📋', desc: 'Crea 3 schede di allenamento', xp: 100, check: (s) => s.schede >= 3 },
-  { id: 'creatore_pro', nome: 'Architect', icona: '🏗️', desc: 'Crea 10 schede di allenamento', xp: 300, check: (s) => s.schede >= 10 },
+  { id: 'creatore', chiave: 'creatore', icona: '📋', xp: 100, check: (s) => s.schede >= 3 },
+  { id: 'creatore_pro', chiave: 'architect', icona: '🏗️', xp: 300, check: (s) => s.schede >= 10 },
   // --- Social ---
-  { id: 'sociale', nome: 'Sociale', icona: '💬', desc: 'Invia 10 messaggi in chat', xp: 50, check: (s) => s.messaggi >= 10 },
-  { id: 'chatterbox', nome: 'Chatterbox', icona: '🗣️', desc: 'Invia 100 messaggi in chat', xp: 150, check: (s) => s.messaggi >= 100 },
+  { id: 'sociale', chiave: 'sociale', icona: '💬', xp: 50, check: (s) => s.messaggi >= 10 },
+  { id: 'chatterbox', chiave: 'chatterbox', icona: '🗣️', xp: 150, check: (s) => s.messaggi >= 100 },
   // --- Streak ---
-  { id: 'streak_7', nome: 'Settimana Perfetta', icona: '🔥', desc: '7 giorni di streak', xp: 200, check: (s) => s.streak >= 7 },
-  { id: 'streak_30', nome: 'Mese Perfetto', icona: '🌟', desc: '30 giorni di streak', xp: 500, check: (s) => s.streak >= 30 },
-  { id: 'streak_100', nome: 'Centuria', icona: '💎', desc: '100 giorni di streak', xp: 1000, check: (s) => s.streak >= 100 },
+  { id: 'streak_7', chiave: 'settimanaPerfetta', icona: '🔥', xp: 200, check: (s) => s.streak >= 7 },
+  { id: 'streak_30', chiave: 'mesePerfetto', icona: '🌟', xp: 500, check: (s) => s.streak >= 30 },
+  { id: 'streak_100', chiave: 'centuria', icona: '💎', xp: 1000, check: (s) => s.streak >= 100 },
 ];
 
 // XP levels
 function calcolaLivello(xp) {
-  if (xp < 100) return { livello: 1, nome: 'Principiante', prossimo: 100 };
-  if (xp < 300) return { livello: 2, nome: 'Apprendista', prossimo: 300 };
-  if (xp < 600) return { livello: 3, nome: 'Intermedio', prossimo: 600 };
-  if (xp < 1000) return { livello: 4, nome: 'Avanzato', prossimo: 1000 };
-  if (xp < 1500) return { livello: 5, nome: 'Esperto', prossimo: 1500 };
-  if (xp < 2500) return { livello: 6, nome: 'Maestro', prossimo: 2500 };
-  if (xp < 4000) return { livello: 7, nome: 'Campione', prossimo: 4000 };
-  if (xp < 6000) return { livello: 8, nome: 'Leggenda', prossimo: 6000 };
-  if (xp < 9000) return { livello: 9, nome: 'Mito', prossimo: 9000 };
-  if (xp < 13000) return { livello: 10, nome: 'Divinità', prossimo: 13000 };
-  if (xp < 18000) return { livello: 11, nome: 'Titano Supremo', prossimo: 18000 };
-  return { livello: 12, nome: 'Immortale', prossimo: null };
+  if (xp < 100) return { livello: 1, nome: t('gamificationRoutes.livello.principiante'), prossimo: 100 };
+  if (xp < 300) return { livello: 2, nome: t('gamificationRoutes.livello.apprendista'), prossimo: 300 };
+  if (xp < 600) return { livello: 3, nome: t('gamificationRoutes.livello.intermedio'), prossimo: 600 };
+  if (xp < 1000) return { livello: 4, nome: t('gamificationRoutes.livello.avanzato'), prossimo: 1000 };
+  if (xp < 1500) return { livello: 5, nome: t('gamificationRoutes.livello.esperto'), prossimo: 1500 };
+  if (xp < 2500) return { livello: 6, nome: t('gamificationRoutes.livello.maestro'), prossimo: 2500 };
+  if (xp < 4000) return { livello: 7, nome: t('gamificationRoutes.livello.campione'), prossimo: 4000 };
+  if (xp < 6000) return { livello: 8, nome: t('gamificationRoutes.livello.leggenda'), prossimo: 6000 };
+  if (xp < 9000) return { livello: 9, nome: t('gamificationRoutes.livello.mito'), prossimo: 9000 };
+  if (xp < 13000) return { livello: 10, nome: t('gamificationRoutes.livello.divinita'), prossimo: 13000 };
+  if (xp < 18000) return { livello: 11, nome: t('gamificationRoutes.livello.titanoSupremo'), prossimo: 18000 };
+  return { livello: 12, nome: t('gamificationRoutes.livello.immortale'), prossimo: null };
 }
 
 // GET /api/v1/gamification/profilo — User gamification profile
@@ -97,7 +99,12 @@ router.get('/profilo', async (req, res, next) => {
 
     res.json({ successo: true, dati: {
       xp: xpTotale, livello, stats,
-      badge: BADGE.map(b => ({ ...b, sbloccato: b.check(stats), check: undefined })),
+      badge: BADGE.map(({ chiave, check, ...b }) => ({
+        ...b,
+        nome: t(`gamificationRoutes.badge.${chiave}.nome`),
+        desc: t(`gamificationRoutes.badge.${chiave}.desc`),
+        sbloccato: check(stats)
+      })),
       badgeSbloccati: badgeSbloccati.length, badgeTotali: BADGE.length
     }});
   } catch (errore) { next(errore); }
@@ -141,7 +148,7 @@ router.get('/profilo-pubblico/:id', async (req, res, next) => {
     });
 
     if (!utente || utente.stato !== 'ATTIVO') {
-      return res.status(404).json({ successo: false, messaggio: 'Utente non trovato' });
+      return res.status(404).json({ successo: false, messaggio: t('gamificationRoutes.utenteNonTrovato') });
     }
 
     // Parse privacy
@@ -229,7 +236,7 @@ router.get('/classifica-record', async (req, res, next) => {
         };
       }
       // Avoid duplicates of the same user (take only the best record)
-      if (perEsercizio[eid].top.length < 3 && !perEsercizio[eid].top.find(t => t.utente.id === r.utenteId)) {
+      if (perEsercizio[eid].top.length < 3 && !perEsercizio[eid].top.find(voce => voce.utente.id === r.utenteId)) {
         perEsercizio[eid].top.push({
           utente: r.utente,
           pesoMax: r.pesoMaxRaggiunto,

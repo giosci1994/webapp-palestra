@@ -17,6 +17,7 @@ import crypto from 'crypto';
 import prisma from '../config/database.js';
 import { ErroreConflitto, ErroreNonAutenticato, ErroreNonTrovato, ErroreTroppeRichieste, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { t } from '../i18n/index.js';
 import { emailConfigurata, inviaEmailVerifica, inviaEmailReset } from './email.service.js';
 import { nuovoToken, improntaToken, tokenSuccessivo } from '../utils/token.js';
 import { attesaPer, registraErrore, azzeraTentativi } from '../utils/tentativiAccesso.js';
@@ -47,7 +48,7 @@ export async function registraUtente({ email, password, nome, palestraId }) {
   });
 
   if (utenteEsistente) {
-    throw new ErroreConflitto('Un account con questa email esiste già');
+    throw new ErroreConflitto(t('autenticazioneService.emailGiaRegistrata'));
   }
 
   // Hash the password with Argon2id
@@ -100,15 +101,15 @@ export async function registraUtente({ email, password, nome, palestraId }) {
  * Checks an email token: marks the email as verified if the token is valid and not expired.
  */
 export async function verificaEmailToken(token) {
-  if (!token) throw new ErroreValidazione('Token mancante');
+  if (!token) throw new ErroreValidazione(t('autenticazioneService.tokenMancante'));
   const utente = await prisma.utente.findFirst({
     where: { tokenVerificaEmail: improntaToken(token) },
     select: { id: true, emailVerificata: true, tokenVerificaScadenza: true }
   });
-  if (!utente) throw new ErroreValidazione('Link di verifica non valido');
+  if (!utente) throw new ErroreValidazione(t('autenticazioneService.linkVerificaNonValido'));
   if (utente.emailVerificata) return { giaVerificata: true };
   if (utente.tokenVerificaScadenza && utente.tokenVerificaScadenza < new Date()) {
-    throw new ErroreValidazione('Link di verifica scaduto. Richiedine uno nuovo dalla pagina di accesso.');
+    throw new ErroreValidazione(t('autenticazioneService.linkVerificaScaduto'));
   }
   await prisma.utente.update({
     where: { id: utente.id },
@@ -167,17 +168,17 @@ export async function richiediResetPassword(email) {
  * Resets the password with a valid, unexpired token.
  */
 export async function reimpostaPasswordConToken(token, nuovaPassword) {
-  if (!token) throw new ErroreValidazione('Token mancante');
+  if (!token) throw new ErroreValidazione(t('autenticazioneService.tokenMancante'));
   if (!nuovaPassword || !/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(nuovaPassword)) {
-    throw new ErroreValidazione('La password deve avere almeno 8 caratteri, una maiuscola e un numero');
+    throw new ErroreValidazione(t('autenticazioneService.passwordDebole'));
   }
   const utente = await prisma.utente.findFirst({
     where: { tokenResetPassword: improntaToken(token) },
     select: { id: true, email: true, tokenResetScadenza: true }
   });
-  if (!utente) throw new ErroreValidazione('Link di reset non valido');
+  if (!utente) throw new ErroreValidazione(t('autenticazioneService.linkResetNonValido'));
   if (utente.tokenResetScadenza && utente.tokenResetScadenza < new Date()) {
-    throw new ErroreValidazione('Link di reset scaduto. Richiedine uno nuovo.');
+    throw new ErroreValidazione(t('autenticazioneService.linkResetScaduto'));
   }
   const passwordHash = await argon2.hash(nuovaPassword, ARGON2_CONFIG);
   await prisma.utente.update({
@@ -223,7 +224,7 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
     // Count unknown emails too: counting only members' emails would reveal them
     registraErrore(email);
     // Generic message for safety (does not reveal whether the email exists)
-    throw new ErroreNonAutenticato('Credenziali non valide');
+    throw new ErroreNonAutenticato(t('autenticazioneService.credenzialiNonValide'));
   }
 
   // Check the password
@@ -231,7 +232,7 @@ export async function loginUtente({ email, password, ricordaDispositivo = false 
 
   if (!passwordValida) {
     registraErrore(email);
-    throw new ErroreNonAutenticato('Credenziali non valide');
+    throw new ErroreNonAutenticato(t('autenticazioneService.credenzialiNonValide'));
   }
   azzeraTentativi(email);
 
@@ -246,9 +247,7 @@ export function controllaTentativi(email) {
   const attesa = attesaPer(email);
   if (attesa > 0) {
     const minuti = Math.ceil(attesa / 60000);
-    throw new ErroreTroppeRichieste(
-      `Troppi tentativi sbagliati per questo account: riprova tra ${minuti} ${minuti === 1 ? 'minuto' : 'minuti'}`
-    );
+    throw new ErroreTroppeRichieste(t('autenticazioneService.troppiTentativi', { count: minuti }));
   }
 }
 
@@ -261,16 +260,16 @@ export function controllaTentativi(email) {
 export async function apriSessione(utente, { ricordaDispositivo = false, dispositivo = null } = {}) {
   // Check the account status
   if (utente.stato === 'BANNATO') {
-    throw new ErroreNonAutenticato('Il tuo account è stato sospeso');
+    throw new ErroreNonAutenticato(t('autenticazioneService.accountSospeso'));
   }
 
   if (utente.stato === 'IN_ATTESA') {
-    throw new ErroreNonAutenticato('Il tuo account è in attesa di approvazione da parte dell\'amministratore');
+    throw new ErroreNonAutenticato(t('autenticazioneService.accountInAttesa'));
   }
 
   // Email not verified (only if verification is on): block access
   if (utente.emailVerificata === false) {
-    throw new ErroreNonAutenticato('Verifica la tua email prima di accedere. Controlla la posta (anche lo spam).');
+    throw new ErroreNonAutenticato(t('autenticazioneService.emailNonVerificata'), 'EMAIL_NON_VERIFICATA');
   }
 
   // Generate the tokens — longer lifetime if "remember device" is on
@@ -331,7 +330,7 @@ export async function rinnovaToken(tokenRefresh) {
   });
 
   if (!tokenSalvato) {
-    throw new ErroreNonAutenticato('Refresh token non valido');
+    throw new ErroreNonAutenticato(t('autenticazioneService.refreshTokenNonValido'));
   }
 
   const successivo = tokenSuccessivo(tokenRefresh);
@@ -340,7 +339,7 @@ export async function rinnovaToken(tokenRefresh) {
     // One rotation behind: the replacement, never used, is still active
     const sostituto = await prisma.refreshToken.findUnique({ where: { token: improntaToken(successivo) } });
     if (sostituto && !sostituto.revocato && sostituto.scadenza > new Date()) {
-      if (tokenSalvato.utente.stato !== 'ATTIVO') throw new ErroreNonAutenticato('Account non attivo');
+      if (tokenSalvato.utente.stato !== 'ATTIVO') throw new ErroreNonAutenticato(t('autenticazioneService.accountNonAttivo'));
       return {
         accessToken: generaAccessToken(tokenSalvato.utente, tokenSalvato.famiglia),
         refreshToken: successivo,
@@ -354,15 +353,15 @@ export async function rinnovaToken(tokenRefresh) {
       data: { revocato: true }
     });
     logger.warn({ utenteId: tokenSalvato.utenteId }, 'Tentativo di riutilizzo refresh token revocato — tutti i token revocati');
-    throw new ErroreNonAutenticato('Token di sicurezza compromesso, effettua nuovamente il login');
+    throw new ErroreNonAutenticato(t('autenticazioneService.sessioneCompromessa'));
   }
 
   if (tokenSalvato.scadenza < new Date()) {
-    throw new ErroreNonAutenticato('Refresh token scaduto');
+    throw new ErroreNonAutenticato(t('autenticazioneService.refreshTokenScaduto'));
   }
 
   if (tokenSalvato.utente.stato !== 'ATTIVO') {
-    throw new ErroreNonAutenticato('Account non attivo');
+    throw new ErroreNonAutenticato(t('autenticazioneService.accountNonAttivo'));
   }
 
   // Carry over the token's original lifetime
@@ -432,14 +431,14 @@ export async function elencaSessioni(utenteId, famigliaCorrente) {
   // family: keep the most recent one
   const viste = new Set();
   return attivi
-    .filter(t => !viste.has(t.famiglia) && viste.add(t.famiglia))
-    .map(t => ({
-      famiglia: t.famiglia,
-      dispositivo: t.dispositivo,
-      iniziataIl: t.iniziataIl,
-      ultimoUso: t.creato,
-      scadenza: t.scadenza,
-      corrente: t.famiglia === famigliaCorrente
+    .filter(r => !viste.has(r.famiglia) && viste.add(r.famiglia))
+    .map(r => ({
+      famiglia: r.famiglia,
+      dispositivo: r.dispositivo,
+      iniziataIl: r.iniziataIl,
+      ultimoUso: r.creato,
+      scadenza: r.scadenza,
+      corrente: r.famiglia === famigliaCorrente
     }))
     .sort((a, b) => b.corrente - a.corrente);
 }
@@ -447,7 +446,7 @@ export async function elencaSessioni(utenteId, famigliaCorrente) {
 /** Closes the session of another of the user's devices */
 export async function chiudiSessione(utenteId, famiglia) {
   const { count } = await prisma.refreshToken.deleteMany({ where: { utenteId, famiglia: String(famiglia) } });
-  if (count === 0) throw new ErroreNonTrovato('Sessione non trovata');
+  if (count === 0) throw new ErroreNonTrovato(t('autenticazioneService.sessioneNonTrovata'));
   logger.info({ utenteId }, 'Sessione chiusa da un altro dispositivo');
 }
 
@@ -510,7 +509,7 @@ async function creaRefreshToken({ token, utenteId, durataGiorni, famiglia, dispo
       utenteId,
       OR: [
         { scadenza: { lt: new Date() } },
-        { revocato: true, famiglia: { notIn: sessioniAperte.map(t => t.famiglia) } }
+        { revocato: true, famiglia: { notIn: sessioniAperte.map(r => r.famiglia) } }
       ]
     }
   });

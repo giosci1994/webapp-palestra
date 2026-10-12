@@ -1,0 +1,10 @@
+{
+  "richiestaASeStessi": "You can't send a request to yourself",
+  "destinatarioNonTrovato": "Recipient not found",
+  "utenteNonContattabile": "You can't contact this user",
+  "richiestaGiaEsistente": "A contact request with this user already exists",
+  "richiestaNonTrovata": "Contact request not found",
+  "soloTueRichieste": "You can only answer your own requests",
+  "richiestaGiaRisposta": "This request has already been answered",
+  "nonInConversazione": "You are not part of this conversation"
+}
