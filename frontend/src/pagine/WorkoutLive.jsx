@@ -795,7 +795,7 @@ export default function WorkoutLive() {
               className="flex items-center justify-between px-3 py-2 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] transition-colors"
             >
               <span className="text-sm font-medium text-[var(--testo-secondario)]">
-                {t('workoutLive.serieFatte.titolo', { totale: serieEsercizio.length })}
+                {t('workoutLive.serieFatte.titolo', { count: serieEsercizio.length })}
               </span>
               <span className="text-xs text-[var(--testo-terziario)]">{mostraSerieCompletate ? '▲' : '▼'}</span>
             </button>

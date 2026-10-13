@@ -117,8 +117,9 @@ describe('errors of the services', () => {
 
 describe('workout reminder, on a timer: in the language of the person who receives it', () => {
   it('each user gets the title in their own language, with the plural', async () => {
-    const adesso = new Date();
-    const oggi = new Date(Date.UTC(adesso.getUTCFullYear(), adesso.getUTCMonth(), adesso.getUTCDate()));
+    // Today as the reminder sees it: the Copenhagen day. The UTC day differs
+    // between midnight and 2 am (1 am in winter), and the test failed then
+    const oggi = giornoLocale(new Date());
     const inglese = await creaUtente({ lingua: 'en' });
     const italiano = await creaUtente({ lingua: 'it' });
     for (const [chi, schede] of [[inglese, 2], [italiano, 1]]) {

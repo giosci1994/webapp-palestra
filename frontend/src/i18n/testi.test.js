@@ -40,6 +40,14 @@ describe('translation files', () => {
     });
   }
 
+  it('writes placeholders the way traduci() reads them: {name}, not {{name}} or ICU plurals', () => {
+    // traduci() fills only {name}: "{{count}} sets" would show as "{3} sets",
+    // and an ICU "{count, plural, ...}" as it is. Plurals are "<key>_one" / "<key>_other"
+    const sbagliati = LINGUE.flatMap(l => Object.entries(testiDi(l))
+      .filter(([, v]) => /\{\{|\{\s*\w+\s*,\s*(plural|select)\s*,/.test(v)).map(([k]) => `${l}:${k}`));
+    expect(sbagliati).toEqual([]);
+  });
+
   it('has no empty texts', () => {
     const vuoti = LINGUE.flatMap(l => Object.entries(testiDi(l))
       .filter(([, v]) => typeof v !== 'string' || !v.trim()).map(([k]) => `${l}:${k}`));

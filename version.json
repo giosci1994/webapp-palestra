@@ -1,7 +1,21 @@
 {
-  "versione": "1.5.3",
-  "build": "2026-10-12",
+  "versione": "1.5.4",
+  "build": "2026-10-13",
   "changelog": [
+    {
+      "versione": "1.5.4",
+      "data": "2026-10-13",
+      "modifiche": [
+        "Correzioni alle statistiche e all'interfaccia",
+        "Statistiche: il volume sollevato, i muscoli allenati, la frequenza settimanale e l'attività annuale ora mostrano correttamente tutti i dati del periodo selezionato, non più limitati dalla data di reset",
+        "Durante l'allenamento: corretto il contatore delle serie completate che mostrava il codice della traduzione invece del numero"
+      ],
+      "modificheEn": [
+        "Statistics and UI fixes",
+        "Statistics: lifted volume, trained muscles, weekly frequency and annual activity now correctly show all data for the selected period, no longer limited by the reset date",
+        "During workout: fixed the completed sets counter that was showing translation code instead of the number"
+      ]
+    },
     {
       "versione": "1.5.3",
       "data": "2026-10-12",

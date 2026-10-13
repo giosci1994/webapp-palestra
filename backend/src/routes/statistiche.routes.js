@@ -187,13 +187,11 @@ const unDecimale = (n) => Math.round(n * 10) / 10;
 router.get('/muscoli', async (req, res, next) => {
   try {
     const giorni = Math.min(Math.max(parseInt(req.query.giorni) || 30, 1), 3650);
-    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
-    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
     const inizioPeriodo = new Date(Date.now() - giorni * 86400000);
 
     // The working sets: warm-up and drop sets are not sets for the muscle
     const serie = await prisma.logSerie.findMany({
-      where: { completato: true, ...SOLO_LAVORO, sessione: { utenteId: req.utente.id, dataInizio: { gte: resetDate } } },
+      where: { completato: true, ...SOLO_LAVORO, sessione: { utenteId: req.utente.id, dataInizio: { gte: inizioPeriodo } } },
       select: {
         sessioneId: true, pesoEffettivo: true, repEffettive: true, durataMinuti: true,
         esercizio: { select: { id: true, nome: true, nomeIt: true, gruppoMuscoloPrimario: true, gruppoMuscoloSecondario: true } },
@@ -374,8 +372,6 @@ router.get('/progressione/:esercizioId', async (req, res, next) => {
 // GET /api/v1/statistiche/frequenza — Workouts done and scheduled, last 12 weeks
 router.get('/frequenza', async (req, res, next) => {
   try {
-    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
-    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
     const questaSettimana = lunediUTC(new Date());
     const inizio = new Date(questaSettimana - 11 * SETTIMANA);
     const fine = new Date(questaSettimana + SETTIMANA);
@@ -385,7 +381,7 @@ router.get('/frequenza', async (req, res, next) => {
         where: {
           utenteId: req.utente.id,
           dataFine: { not: null },
-          dataInizio: { gte: inizio > resetDate ? inizio : resetDate, lt: fine }
+          dataInizio: { gte: inizio, lt: fine }
         },
         select: { dataInizio: true }
       }),
@@ -420,8 +416,6 @@ router.get('/frequenza', async (req, res, next) => {
 const GIORNI_ATTIVITA = 53 * 7;
 router.get('/attivita-annuale', async (req, res, next) => {
   try {
-    const utenteDb = await prisma.utente.findUnique({ where: { id: req.utente.id }, select: { dataResetStatistiche: true } });
-    const resetDate = utenteDb?.dataResetStatistiche || new Date(0);
     // One extra day: the first local day starts the evening before in UTC
     const inizio = new Date(Date.now() - (GIORNI_ATTIVITA + 1) * 86400000);
 
@@ -429,7 +423,7 @@ router.get('/attivita-annuale', async (req, res, next) => {
       where: {
         utenteId: req.utente.id,
         dataFine: { not: null },
-        dataInizio: { gte: inizio > resetDate ? inizio : resetDate }
+        dataInizio: { gte: inizio }
       },
       select: { dataInizio: true, _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } } }
     });
