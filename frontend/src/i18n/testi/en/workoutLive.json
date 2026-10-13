@@ -51,8 +51,8 @@
     "nascondi": "Hide video"
   },
   "serieFatte": {
-    "titolo_one": "{{count}} set completed",
-    "titolo_other": "{{count}} sets completed",
+    "titolo_one": "{count} set completed",
+    "titolo_other": "{count} sets completed",
     "riscaldamento": "🔥 Warm-up",
     "serie": "Set {numero} ✓",
     "livello": "(Lvl {livello})"
