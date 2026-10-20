@@ -86,10 +86,12 @@ jobs:
         run: docker compose --profile controlli down -v
 
   rilascio:
-    # The script runs unattended in production: shellcheck and its tests, with
-    # fake docker, curl, npm and npx on a test git repository
+    # The release scripts: the one that installs on the server (unattended in
+    # production) and the one behind the "Rilascia" button. shellcheck and
+    # their tests, with fake docker, curl, npm, npx and gh on test repositories
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - run: shellcheck deploy/rilascio.sh deploy/test/rilascio.test.sh
+      - run: shellcheck deploy/*.sh deploy/test/*.sh
       - run: bash deploy/test/rilascio.test.sh
+      - run: bash deploy/test/pubblica-release.test.sh
