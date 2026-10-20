@@ -14,6 +14,7 @@ import { t, localeDi } from '../i18n/index.js';
 import { fusoDiUtenteId, linguaDiUtenteId } from '../i18n/destinatario.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { chiaveGiorno, fusoDi, inizioGiorno } from '../utils/date.js';
+import { creaEsercizio } from '../services/esercizi.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -457,31 +458,7 @@ router.delete('/appuntamenti/:id', async (req, res, next) => {
 // POST /api/v1/pt/esercizi — Create an exercise (same logic as the admin)
 router.post('/esercizi', async (req, res, next) => {
   try {
-    const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId,
-            descrizione, linkVideo, difficulty, bodyRegion, mechanics, posture,
-            movementPattern, laterality, forceType, classification } = req.body;
-
-    const esercizio = await prisma.esercizio.create({
-      data: {
-        nome,
-        gruppoMuscoloPrimario,
-        gruppoMuscoloSecondario: gruppoMuscoloSecondario || null,
-        attrezzaturaRichiestaId: attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null,
-        descrizione: descrizione || null,
-        linkVideo: linkVideo || null,
-        difficulty: difficulty || null,
-        bodyRegion: bodyRegion || null,
-        mechanics: mechanics || null,
-        posture: posture || null,
-        movementPattern: movementPattern || null,
-        laterality: laterality || null,
-        forceType: forceType || null,
-        classification: classification || null,
-      },
-      include: { attrezzatura: { select: { id: true, nome: true } } }
-    });
-
-    res.status(201).json({ successo: true, dati: esercizio });
+    res.status(201).json({ successo: true, dati: await creaEsercizio(req.body) });
   } catch (errore) { next(errore); }
 });
 

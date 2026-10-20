@@ -1,0 +1,7 @@
+{
+  "obbligatorio": "The field {campo} is required",
+  "nonTesto": "The field {campo} must be text",
+  "troppoLungo": "The field {campo} can be at most {massimo} characters",
+  "linkVideoNonValido": "The video link must be a web address (http or https)",
+  "attrezzaturaNonTrovata": "Equipment not found"
+}

@@ -16,6 +16,7 @@ import logger from '../utils/logger.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
 import { creaNotifica } from '../services/notifiche.service.js';
+import { aggiornaEsercizio, creaEsercizio } from '../services/esercizi.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -82,57 +83,14 @@ router.delete('/palestre/:id', async (req, res, next) => {
 // POST /api/v1/admin/esercizi — Create an exercise
 router.post('/esercizi', async (req, res, next) => {
   try {
-    const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo,
-            difficulty, bodyRegion, mechanics, posture, movementPattern, laterality, forceType, classification } = req.body;
-    const esercizio = await prisma.esercizio.create({
-      data: {
-        nome,
-        gruppoMuscoloPrimario,
-        gruppoMuscoloSecondario: gruppoMuscoloSecondario || null,
-        attrezzaturaRichiestaId: attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null,
-        descrizione: descrizione || null,
-        linkVideo: linkVideo || null,
-        difficulty: difficulty || null,
-        bodyRegion: bodyRegion || null,
-        mechanics: mechanics || null,
-        posture: posture || null,
-        movementPattern: movementPattern || null,
-        laterality: laterality || null,
-        forceType: forceType || null,
-        classification: classification || null,
-      },
-      include: { attrezzatura: { select: { id: true, nome: true } } }
-    });
-    res.status(201).json({ successo: true, dati: esercizio });
+    res.status(201).json({ successo: true, dati: await creaEsercizio(req.body) });
   } catch (errore) { next(errore); }
 });
 
 // PUT /api/v1/admin/esercizi/:id — Update an exercise
 router.put('/esercizi/:id', async (req, res, next) => {
   try {
-    const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo,
-            difficulty, bodyRegion, mechanics, posture, movementPattern, laterality, forceType, classification } = req.body;
-    const esercizio = await prisma.esercizio.update({
-      where: { id: parseInt(req.params.id) },
-      data: {
-        nome,
-        gruppoMuscoloPrimario,
-        gruppoMuscoloSecondario,
-        attrezzaturaRichiestaId: attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null,
-        descrizione,
-        linkVideo,
-        difficulty: difficulty || null,
-        bodyRegion: bodyRegion || null,
-        mechanics: mechanics || null,
-        posture: posture || null,
-        movementPattern: movementPattern || null,
-        laterality: laterality || null,
-        forceType: forceType || null,
-        classification: classification || null,
-      },
-      include: { attrezzatura: { select: { id: true, nome: true } } }
-    });
-    res.json({ successo: true, dati: esercizio });
+    res.json({ successo: true, dati: await aggiornaEsercizio(parseInt(req.params.id), req.body) });
   } catch (errore) { next(errore); }
 });
 
