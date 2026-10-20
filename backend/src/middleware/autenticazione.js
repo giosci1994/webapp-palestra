@@ -8,6 +8,7 @@ import prisma from '../config/database.js';
 import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { linguaSupportata, t } from '../i18n/index.js';
+import { conFuso, fusoDi, fusoValido } from '../utils/date.js';
 
 /**
  * JWT authentication middleware.
@@ -43,6 +44,7 @@ export async function verificaToken(req, res, next) {
         chatRetentionGiorni: true,
         lingua: true,
         linguaApp: true,
+        fusoOrario: true,
         ...(payload.famiglia && {
           refreshTokens: { where: { famiglia: payload.famiglia, revocato: false }, select: { id: true }, take: 1 }
         })
@@ -75,9 +77,19 @@ export async function verificaToken(req, res, next) {
       datiUtente.linguaApp = req.lingua;
     }
 
-    // Attach the user to the request, with the session it comes from
+    // The phone's time zone, for the user's days, weeks and reminder hour
+    // (utils/date.js). Saved like the language: a write only when it changes
+    const fuso = fusoValido(req.headers['x-fuso-orario']);
+    if (fuso && datiUtente.fusoOrario !== fuso) {
+      prisma.utente.update({ where: { id: utente.id }, data: { fusoOrario: fuso } })
+        .catch(err => logger.warn({ utenteId: utente.id, err: err.message }, 'Fuso orario dell\'app non salvato'));
+      datiUtente.fusoOrario = fuso;
+    }
+
+    // Attach the user to the request, with the session it comes from, and
+    // run the rest of the request in their time zone
     req.utente = { ...datiUtente, famiglia: payload.famiglia ?? null };
-    next();
+    conFuso(fusoDi(datiUtente), next);
   } catch (errore) {
     if (errore instanceof ErroreNonAutenticato) {
       return next(errore);

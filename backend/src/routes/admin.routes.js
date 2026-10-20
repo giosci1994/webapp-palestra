@@ -15,7 +15,8 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
-import { linguaDiUtenteId } from '../i18n/destinatario.js';
+import { creaNotifica } from '../services/notifiche.service.js';
+import { aggiornaEsercizio, creaEsercizio } from '../services/esercizi.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -82,57 +83,14 @@ router.delete('/palestre/:id', async (req, res, next) => {
 // POST /api/v1/admin/esercizi — Create an exercise
 router.post('/esercizi', async (req, res, next) => {
   try {
-    const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo,
-            difficulty, bodyRegion, mechanics, posture, movementPattern, laterality, forceType, classification } = req.body;
-    const esercizio = await prisma.esercizio.create({
-      data: {
-        nome,
-        gruppoMuscoloPrimario,
-        gruppoMuscoloSecondario: gruppoMuscoloSecondario || null,
-        attrezzaturaRichiestaId: attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null,
-        descrizione: descrizione || null,
-        linkVideo: linkVideo || null,
-        difficulty: difficulty || null,
-        bodyRegion: bodyRegion || null,
-        mechanics: mechanics || null,
-        posture: posture || null,
-        movementPattern: movementPattern || null,
-        laterality: laterality || null,
-        forceType: forceType || null,
-        classification: classification || null,
-      },
-      include: { attrezzatura: { select: { id: true, nome: true } } }
-    });
-    res.status(201).json({ successo: true, dati: esercizio });
+    res.status(201).json({ successo: true, dati: await creaEsercizio(req.body) });
   } catch (errore) { next(errore); }
 });
 
 // PUT /api/v1/admin/esercizi/:id — Update an exercise
 router.put('/esercizi/:id', async (req, res, next) => {
   try {
-    const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo,
-            difficulty, bodyRegion, mechanics, posture, movementPattern, laterality, forceType, classification } = req.body;
-    const esercizio = await prisma.esercizio.update({
-      where: { id: parseInt(req.params.id) },
-      data: {
-        nome,
-        gruppoMuscoloPrimario,
-        gruppoMuscoloSecondario,
-        attrezzaturaRichiestaId: attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null,
-        descrizione,
-        linkVideo,
-        difficulty: difficulty || null,
-        bodyRegion: bodyRegion || null,
-        mechanics: mechanics || null,
-        posture: posture || null,
-        movementPattern: movementPattern || null,
-        laterality: laterality || null,
-        forceType: forceType || null,
-        classification: classification || null,
-      },
-      include: { attrezzatura: { select: { id: true, nome: true } } }
-    });
-    res.json({ successo: true, dati: esercizio });
+    res.json({ successo: true, dati: await aggiornaEsercizio(parseInt(req.params.id), req.body) });
   } catch (errore) { next(errore); }
 });
 
@@ -236,18 +194,13 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
       }
     });
 
-    // Notify the user who made the suggestion
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(suggerimento.utenteId);
-      io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
-        tipo: 'suggerimento_approvato',
-        titolo: t('adminRoutes.esercizioApprovatoTitolo', {}, lingua),
-        messaggio: t('adminRoutes.esercizioApprovatoMessaggio', { nome: suggerimento.nome }, lingua),
-        dati: { esercizioId: esercizio.id },
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the user who made the suggestion, in their language
+    await creaNotifica(req.app.get('io'), suggerimento.utenteId, {
+      titolo: 'adminRoutes.esercizioApprovatoTitolo',
+      messaggio: 'adminRoutes.esercizioApprovatoMessaggio',
+      variabili: { nome: suggerimento.nome },
+      percorso: '/catalogo'
+    });
 
     res.json({
       successo: true,
@@ -285,19 +238,13 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
       }
     });
 
-    // Notify the user
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(suggerimento.utenteId);
-      io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
-        tipo: 'suggerimento_rifiutato',
-        titolo: t('adminRoutes.suggerimentoRifiutatoTitolo', {}, lingua),
-        messaggio: motivoRifiuto
-          ? t('adminRoutes.suggerimentoRifiutatoConMotivo', { nome: suggerimento.nome, motivo: motivoRifiuto }, lingua)
-          : t('adminRoutes.suggerimentoRifiutatoSenzaMotivo', { nome: suggerimento.nome }, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the user, in their language
+    await creaNotifica(req.app.get('io'), suggerimento.utenteId, {
+      titolo: 'adminRoutes.suggerimentoRifiutatoTitolo',
+      messaggio: motivoRifiuto ? 'adminRoutes.suggerimentoRifiutatoConMotivo' : 'adminRoutes.suggerimentoRifiutatoSenzaMotivo',
+      variabili: { nome: suggerimento.nome, motivo: motivoRifiuto },
+      percorso: '/catalogo'
+    });
 
     res.json({ successo: true, messaggio: t('adminRoutes.suggerimentoRifiutato') });
   } catch (errore) { next(errore); }

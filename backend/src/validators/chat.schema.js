@@ -23,25 +23,3 @@ export const schemaRispostaContatto = z.object({
     invalid_type_error: 'chatSchema.statoRispostaNonValido'
   })
 });
-
-/** Schema for sending a message */
-export const schemaMessaggio = z.object({
-  conversazioneId: z
-    .number({ required_error: 'chatSchema.conversazioneIdObbligatorio' })
-    .int()
-    .positive('chatSchema.conversazioneIdNonValido'),
-  contenuto: z
-    .string({ required_error: 'chatSchema.contenutoObbligatorio' })
-    .min(1, 'chatSchema.messaggioVuoto')
-    .max(2000, 'chatSchema.messaggioLungo')
-    .trim()
-});
-
-/** Schema for updating the chat preferences */
-export const schemaPreferenzeChat = z.object({
-  chatRetentionGiorni: z
-    .number()
-    .int()
-    .min(0, 'chatSchema.ritenzioneMinima')
-    .max(365, 'chatSchema.ritenzioneMassima')
-});

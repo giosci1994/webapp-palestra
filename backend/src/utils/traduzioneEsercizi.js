@@ -19,7 +19,7 @@
 // too. Squat, plank, burpee, swing, snatch, clean, curl, hip thrust stay as
 // they are: translating them would make the names less recognisable, not more.
 
-export const RUOLI = {
+const RUOLI = {
   ATTREZZO: 'attrezzo',      // goes at the end, after "con"
   POSIZIONE: 'posizione',    // seated, standing, kneeling…
   VARIANTE: 'variante',      // reverse, alternating, isometric…
@@ -29,7 +29,7 @@ export const RUOLI = {
 
 // Longest match first: "single arm cable" before "cable".
 // [ English, Italian, role ]
-export const TERMINI = [
+const TERMINI = [
   // ---------- Equipment (with the quantity built in) ----------
   ['single arm kettlebell', 'Kettlebell a Un Braccio', RUOLI.ATTREZZO],
   ['single arm dumbbell', 'Manubrio a Un Braccio', RUOLI.ATTREZZO],
@@ -509,13 +509,9 @@ const maiuscola = (p) => p.charAt(0).toUpperCase() + p.slice(1);
 // must be left alone, not "translated" a second time.
 const MARCATORI_ITALIANI = /\b(con|ai|alla|alle|della|dello|dei|delle|su|da|il|la|lo|le|un|una|bilanciere|manubri|manubrio|panca|cavi|cavo|sbarra|piegamenti|affondi|alzate|croci|stacco|rematore|trazioni|estensioni|distensioni|tirate|polpacci|gambe|piedi|testa|terra|sessione|cyclette|vogatore|ellittica|tapis)\b/i;
 
-// The exercises up to this id are the hand-curated catalogue: already in
-// Italian, and often already bilingual with the English in brackets
-// ("Lat Machine (Lat Pulldown)"). They must be left untouched.
-export const ULTIMO_ID_CATALOGO_CURATO = 60;
 
 /** true if the name is already Italian and must not be translated. */
-export function eGiaItaliano(nome) {
+function eGiaItaliano(nome) {
   const base = nome.replace(/\([^)]*\)/g, ' ');
   return MARCATORI_ITALIANI.test(base);
 }

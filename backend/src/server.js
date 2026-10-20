@@ -12,7 +12,6 @@ import logger from './utils/logger.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { orarioLocale } from './utils/date.js';
 
 // --- Configuration ---
 const PORTA = parseInt(process.env.PORTA_BACKEND) || 3000;
@@ -49,12 +48,11 @@ setInterval(async () => {
 // process restart a daily timer would start again from zero and the reminder
 // would be skipped. inviaPromemoriaAllenamenti is idempotent (it does not send
 // twice on the same day), so repeating the check is harmless.
+// Each user gets it from 8 in the morning of their own time zone: the hour is
+// checked per user (services/notifiche.service.js).
 const INTERVALLO_PROMEMORIA = 60 * 60 * 1000; // 1 hour
-const ORA_MINIMA_PROMEMORIA = 8;              // not before 8 in the morning
 setInterval(async () => {
   try {
-    const { ora } = orarioLocale();
-    if (ora < ORA_MINIMA_PROMEMORIA) return;
     await inviaPromemoriaAllenamenti(io);
   } catch (errore) {
     logger.error({ errore: errore.message }, 'Errore nell\'invio dei promemoria allenamento');

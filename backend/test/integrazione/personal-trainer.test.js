@@ -91,3 +91,48 @@ describe('a plan assigned by the trainer', () => {
     assert.deepEqual(dashboard.corpo.dati.schedeAssegnate.map(s => s.titolo).sort(), ['Forza (from your PT)', 'Vecchia (da PT)']);
   });
 });
+
+describe('notifications between users and trainers', () => {
+  // They used to be only a socket event: whoever was offline never got them,
+  // and they vanished from the bell on reload. Now they are saved like the others
+  const notificheDi = chi => prisma.allenamentoNotifica.findMany({ where: { utenteId: chi.id }, orderBy: { id: 'asc' } });
+
+  it('the request reaches the trainer, and the answer reaches the user: all saved, with their link', async () => {
+    assert.equal((await iscriviti({ trainerId: trainer.id })).stato, 201);
+    const [richiesta] = await notificheDi(trainer);
+    assert.equal(richiesta.tipo, 'RICHIESTA_PT');
+    assert.equal(richiesta.percorso, '/pt');
+    assert.match(richiesta.messaggio, new RegExp(utente.nome));
+
+    const { id } = await prisma.iscrizionePT.findFirst({ where: { utenteId: utente.id } });
+    assert.equal((await server.richiesta('PATCH', `/pt/richieste/${id}/accetta`, { token: tokenPer(trainer), corpo: {} })).stato, 200);
+    assert.equal((await server.richiesta('DELETE', `/pt/clienti/${utente.id}`, { token: tokenPer(trainer) })).stato, 200);
+    const [accettata, terminata] = await notificheDi(utente);
+    assert.equal(accettata.percorso, `/trainer/${trainer.id}`);
+    assert.match(accettata.messaggio, /Coach Anna/);
+    assert.equal(terminata.percorso, '/trova-pt');
+  });
+
+  it('a rejected request is saved too', async () => {
+    await iscriviti({ trainerId: trainer.id });
+    const { id } = await prisma.iscrizionePT.findFirst({ where: { utenteId: utente.id } });
+    assert.equal((await server.richiesta('PATCH', `/pt/richieste/${id}/rifiuta`, { token: tokenPer(trainer), corpo: {} })).stato, 200);
+    const [rifiutata] = await notificheDi(utente);
+    assert.equal(rifiutata.percorso, '/trova-pt');
+  });
+
+  it('a request to become a trainer reaches only the active admins, each in their own language', async () => {
+    const adminIt = await creaUtente({ ruolo: 'SUPERADMIN', lingua: 'it' });
+    const adminEn = await creaUtente({ ruolo: 'SUPERADMIN', lingua: 'en' });
+    const sospeso = await creaUtente({ ruolo: 'SUPERADMIN', stato: 'BANNATO' });
+    assert.equal((await server.richiesta('POST', '/utenti/richiedi-pt', { token: tokenPer(utente) })).stato, 200);
+
+    const [it, en] = [(await notificheDi(adminIt))[0], (await notificheDi(adminEn))[0]];
+    assert.equal(it.percorso, '/admin/utenti');
+    assert.notEqual(it.titolo, en.titolo);
+    assert.match(it.messaggio, new RegExp(utente.nome));
+    assert.equal((await notificheDi(sospeso)).length, 0);
+    assert.equal((await notificheDi(trainer)).length, 0);
+    assert.equal((await notificheDi(utente)).length, 0);
+  });
+});

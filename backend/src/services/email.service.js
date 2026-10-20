@@ -16,7 +16,7 @@ export function emailConfigurata() {
 }
 
 /** Sends an email through Resend. Returns { inviata: boolean }. */
-export async function inviaEmail({ a, oggetto, html }) {
+async function inviaEmail({ a, oggetto, html }) {
   if (!emailConfigurata()) {
     logger.warn({ a, oggetto }, 'Email non inviata: RESEND_API_KEY non configurata');
     return { inviata: false };

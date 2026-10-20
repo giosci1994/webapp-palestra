@@ -94,5 +94,3 @@ export function useSocket() {
   }
   return contesto;
 }
-
-export default SocketContesto;

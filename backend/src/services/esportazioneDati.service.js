@@ -24,13 +24,13 @@ import { giornoLocale } from '../utils/date.js';
 import { t } from '../i18n/index.js';
 
 // Changes when the file's structure changes
-export const VERSIONE_FORMATO = 1;
+const VERSIONE_FORMATO = 1;
 
 /** The Utente columns that go into the file */
 export const CAMPI_PROFILO = [
   'id', 'email', 'nome', 'ruolo', 'stato', 'dataRegistrazione', 'emailVerificata', 'ultimoAccesso',
   'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm', 'genere', 'bio', 'obiettivoFitness',
-  'preferenzeVisibilita', 'lingua', 'linguaApp', 'profiloCompletato', 'gamificationAttiva', 'puntiEsperienza',
+  'preferenzeVisibilita', 'lingua', 'linguaApp', 'fusoOrario', 'profiloCompletato', 'gamificationAttiva', 'puntiEsperienza',
   'ruoloRichiesto', 'accettazioneToS', 'accettazionePrivacy', 'consensoCookie', 'chatRetentionGiorni',
   'specializzazioni', 'anniEsperienza', 'certificazioni', 'contattoPubblico', 'tariffaIndicativa',
   'dataResetStatistiche', 'dataResetGamification'

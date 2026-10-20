@@ -193,5 +193,3 @@ export function useAuth() {
   }
   return contesto;
 }
-
-export default AuthContesto;

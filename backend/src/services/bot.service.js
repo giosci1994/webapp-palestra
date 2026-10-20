@@ -13,6 +13,7 @@ import redis from '../config/redis.js';
 import { ErroreApp, ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
+import { fusoCorrente } from '../utils/date.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -142,7 +143,7 @@ function tokenizza(testo) {
 }
 
 /** Finds the best catalog candidates (Italian and English) for a description. */
-export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
+async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   let tokens = tokenizza(descrizione);
   if (tokens.length === 0) {
     const fallback = String(descrizione || '').toLowerCase().trim();
@@ -637,7 +638,7 @@ export async function statisticheTesto(utenteId) {
     t('botService.statistiche.tempo', { valore: ore }),
     t('botService.statistiche.record', { valore: record })
   ];
-  if (ultima) righe.push('', t('botService.statistiche.ultimoAllenamento', { data: new Date(ultima.dataInizio).toLocaleDateString(locale) }));
+  if (ultima) righe.push('', t('botService.statistiche.ultimoAllenamento', { data: new Date(ultima.dataInizio).toLocaleDateString(locale, { timeZone: fusoCorrente() }) }));
   return { testo: righe.join('\n') };
 }
 

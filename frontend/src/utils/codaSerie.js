@@ -28,7 +28,7 @@ const DURATA_MIN = 1;
 const DURATA_MAX = 600;
 
 /** A new key for an entry: a UUID, or something similar where it is not available */
-export function nuovoId() {
+function nuovoId() {
   if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 }

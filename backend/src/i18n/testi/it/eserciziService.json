@@ -1,0 +1,7 @@
+{
+  "obbligatorio": "Il campo {campo} è obbligatorio",
+  "nonTesto": "Il campo {campo} deve essere un testo",
+  "troppoLungo": "Il campo {campo} può avere al massimo {massimo} caratteri",
+  "linkVideoNonValido": "Il link del video deve essere un indirizzo web (http o https)",
+  "attrezzaturaNonTrovata": "Attrezzatura non trovata"
+}

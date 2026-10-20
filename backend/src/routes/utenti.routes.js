@@ -9,10 +9,20 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
-import { linguaDiUtenteId } from '../i18n/destinatario.js';
-import { LINGUA_BASE } from '../utils/lingue.js';
+import { creaNotifica, notificaAdmin } from '../services/notifiche.service.js';
 
 const router = Router();
+
+/** The admins get the request to become a personal trainer, each in their language */
+function notificaRichiestaPT(req) {
+  return notificaAdmin(req.app.get('io'), {
+    tipo: 'RICHIESTA_PT',
+    titolo: 'utentiRoutes.richiestaRuoloPtTitolo',
+    messaggio: 'utentiRoutes.richiestaRuoloPtMessaggio',
+    variabili: { nome: req.utente.nome },
+    percorso: '/admin/utenti'
+  });
+}
 // Ids in the URL are positive integers (middleware/validazione.js)
 router.param('id', idNumerico);
 
@@ -166,18 +176,7 @@ router.patch('/completa-profilo', async (req, res, next) => {
     // Handle the request for the personal trainer role
     if (tipoAccount === 'PERSONAL_TRAINER' && req.utente.ruolo === 'UTENTE') {
       datiAggiornamento.ruoloRichiesto = 'PERSONAL_TRAINER';
-      // Notify the admins via Socket.IO (a broadcast: no single recipient
-      // language, so the text goes in the base language)
-      const io = req.app.get('io');
-      if (io) {
-        io.emit('notifica:admin', {
-          tipo: 'richiesta_ruolo',
-          titolo: t('utentiRoutes.richiestaRuoloPtTitolo', {}, LINGUA_BASE),
-          messaggio: t('utentiRoutes.richiestaRuoloPtMessaggio', { nome: req.utente.nome }, LINGUA_BASE),
-          utenteId: req.utente.id,
-          timestamp: new Date().toISOString()
-        });
-      }
+      await notificaRichiestaPT(req);
     }
 
     const utenteAggiornato = await prisma.utente.update({
@@ -303,17 +302,7 @@ router.post('/richiedi-pt', async (req, res, next) => {
       where: { id: req.utente.id },
       data: { ruoloRichiesto: 'PERSONAL_TRAINER' }
     });
-    const io = req.app.get('io');
-    if (io) {
-      // A broadcast to the admins: the text goes in the base language
-      io.emit('notifica:admin', {
-        tipo: 'richiesta_ruolo',
-        titolo: t('utentiRoutes.richiestaRuoloPtTitolo', {}, LINGUA_BASE),
-        messaggio: t('utentiRoutes.richiestaRuoloPtMessaggio', { nome: req.utente.nome }, LINGUA_BASE),
-        utenteId: req.utente.id,
-        timestamp: new Date().toISOString()
-      });
-    }
+    await notificaRichiestaPT(req);
     res.json({ successo: true, messaggio: t('utentiRoutes.richiestaInviata') });
   } catch (errore) { next(errore); }
 });
@@ -377,17 +366,14 @@ router.post('/iscrizione-pt', async (req, res, next) => {
       }
     });
 
-    // Notify the personal trainer
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(idTrainer);
-      io.to(`utente:${idTrainer}`).emit('notifica:nuova', {
-        tipo: 'nuova_iscrizione',
-        titolo: t('utentiRoutes.nuovaRichiestaTitolo', {}, lingua),
-        messaggio: t('utentiRoutes.nuovaRichiestaMessaggio', { nome: req.utente.nome }, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the personal trainer, in their language
+    await creaNotifica(req.app.get('io'), idTrainer, {
+      tipo: 'RICHIESTA_PT',
+      titolo: 'utentiRoutes.nuovaRichiestaTitolo',
+      messaggio: 'utentiRoutes.nuovaRichiestaMessaggio',
+      variabili: { nome: req.utente.nome },
+      percorso: '/pt'
+    });
 
     res.status(201).json({ successo: true, dati: iscrizione });
   } catch (errore) { next(errore); }

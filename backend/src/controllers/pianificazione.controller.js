@@ -7,7 +7,7 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { gruppiDellaScheda } from '../services/consiglio.service.js';
-import { giornoLocale, orarioLocale } from '../utils/date.js';
+import { FUSO_ORARIO, giornoLocale, orarioLocale } from '../utils/date.js';
 import { t } from '../i18n/index.js';
 
 // Days of the week as used across the app: 0 = Monday … 6 = Sunday
@@ -136,7 +136,9 @@ const SCARTO_TOLLERATO = 5; // percentage points of crowding
  */
 async function orarioConsigliato(utenteId, palestraId, adesso) {
   if (!palestraId) return null;
-  const { ora, giornoSettimana } = orarioLocale(adesso);
+  // The crowd levels are in the gym's local time, and so are the hours the
+  // user trains there: here the gym's time zone, not the request's
+  const { ora, giornoSettimana } = orarioLocale(adesso, FUSO_ORARIO);
   const [righe, sessioni] = await Promise.all([
     prisma.afluenzaPalestra.findMany({
       where: { palestraId, giornoSettimana },
@@ -152,7 +154,7 @@ async function orarioConsigliato(utenteId, palestraId, adesso) {
   ]);
   if (righe.length === 0) return null;
 
-  const oreAbituali = sessioni.map(s => orarioLocale(s.dataInizio).ora).sort((a, b) => a - b);
+  const oreAbituali = sessioni.map(s => orarioLocale(s.dataInizio, FUSO_ORARIO).ora).sort((a, b) => a - b);
   const mediana = oreAbituali.length >= 3 ? oreAbituali[Math.floor(oreAbituali.length / 2)] : null;
   const fascia = mediana == null
     ? FASCIA_PREDEFINITA
@@ -202,7 +204,7 @@ export async function allenamentiDiOggi(req, res, next) {
 }
 
 /** The content of /oggi, with the current instant as a parameter so it can be tested. */
-export async function riepilogoDiOggi(utenteId, adesso = new Date()) {
+async function riepilogoDiOggi(utenteId, adesso = new Date()) {
   const oggi = giornoLocale(adesso);
 
   const piani = await prisma.allenamentoPianificato.findMany({

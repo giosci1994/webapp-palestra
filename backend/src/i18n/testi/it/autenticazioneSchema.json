@@ -9,6 +9,5 @@
   "nomeObbligatorio": "Nome obbligatorio",
   "nomeCorto": "Il nome deve avere almeno 2 caratteri",
   "nomeLungo": "Il nome non può superare 100 caratteri",
-  "palestraIdNonValido": "ID palestra non valido",
-  "refreshTokenObbligatorio": "Refresh token obbligatorio"
+  "palestraIdNonValido": "ID palestra non valido"
 }
