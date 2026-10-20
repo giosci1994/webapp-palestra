@@ -1,7 +1,21 @@
 {
-  "versione": "1.5.5",
+  "versione": "1.5.6",
   "build": "2026-10-20",
   "changelog": [
+    {
+      "versione": "1.5.6",
+      "data": "2026-10-20",
+      "modifiche": [
+        "L'app si apre più in fretta: all'avvio scarica meno della metà del codice, e ogni pagina arriva quando la apri",
+        "Si scaricano solo i testi della lingua che usi",
+        "Gli aggiornamenti dell'app sono più leggeri: cambiano solo le pagine toccate"
+      ],
+      "modificheEn": [
+        "The app opens faster: at start-up it downloads less than half of the code, and each page arrives when you open it",
+        "Only the texts of the language you use are downloaded",
+        "App updates are lighter: only the pages that changed are downloaded again"
+      ]
+    },
     {
       "versione": "1.5.5",
       "data": "2026-10-20",
