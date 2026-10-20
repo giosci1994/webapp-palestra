@@ -6,10 +6,11 @@
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 
-const TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+// Read when sending (not at import): the same in production, and the tests can set it
+const token = () => (process.env.TELEGRAM_BOT_TOKEN || '').trim();
 
 function telegramAttivo() {
-  return TOKEN.trim().length > 0;
+  return token().length > 0;
 }
 
 // Minimal escaping for Telegram's HTML parse_mode
@@ -30,7 +31,7 @@ export async function inviaNotificaTelegram(utenteId, testo) {
     });
     if (!coll?.telegramChatId) return;
 
-    const risposta = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    const risposta = await fetch(`https://api.telegram.org/bot${token()}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
