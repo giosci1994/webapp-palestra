@@ -178,7 +178,9 @@ $(novita_della_versione)"
 NGINX='^(nginx/|docker-compose\.yml$)'
 
 # true if one of the changed files matches the expression
-cambiato() { printf '%s\n' "$1" | grep -qE "$2"; }
+# (a here-string, not a pipe: with pipefail, grep -q leaving early could make
+# printf fail with SIGPIPE and the whole check answer "not changed")
+cambiato() { grep -qE "$2" <<<"$1"; }
 
 # Prepares everything possible without touching the site: images and frontend.
 # $1: the files changed from what is running (bot and scraper only if needed)

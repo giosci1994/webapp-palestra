@@ -46,7 +46,9 @@ if [ -n "$ultima" ] && [ "$(printf '%s\n%s\n' "$ultima" "$versione" | sort -V | 
 fi
 
 voce="$(jq -c --arg v "$versione" '.changelog[] | select(.versione == $v)' version.json | head -n 1)"
-[ -n "$voce" ] && [ "$(jq '.modifiche | length' <<<"$voce")" -gt 0 ] || errore "nel changelog di version.json manca la voce della $versione"
+if [ -z "$voce" ] || [ "$(jq '.modifiche | length' <<<"$voce")" -eq 0 ]; then
+  errore "nel changelog di version.json manca la voce della $versione"
+fi
 
 # The tests of this exact commit: finished, and green
 read -r stato esito < <(gh run list --workflow test.yml --commit "$commit" --limit 1 --json status,conclusion \
