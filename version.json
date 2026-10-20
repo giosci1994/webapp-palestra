@@ -1,7 +1,25 @@
 {
-  "versione": "1.5.4",
-  "build": "2026-10-13",
+  "versione": "1.5.5",
+  "build": "2026-10-20",
   "changelog": [
+    {
+      "versione": "1.5.5",
+      "data": "2026-10-20",
+      "modifiche": [
+        "Notifiche più affidabili: richieste e risposte dei personal trainer, schede assegnate, appuntamenti, annunci e suggerimenti di esercizi restano nella campanella e arrivano anche sul telefono",
+        "Gli admin ricevono davvero le richieste per diventare personal trainer",
+        "Giorni, settimane e serie di allenamenti seguono il tuo fuso orario, e il promemoria arriva alle 8 della tua mattina",
+        "Durante l'allenamento l'app non si ricarica più quando esce una nuova versione: si aggiorna dopo",
+        "Creazione degli esercizi più sicura: i campi vengono controllati prima di salvarli"
+      ],
+      "modificheEn": [
+        "More reliable notifications: trainer requests and answers, assigned plans, appointments, announcements and exercise suggestions stay in the bell and reach your phone too",
+        "Admins now really receive the requests to become a personal trainer",
+        "Days, weeks and workout streaks follow your time zone, and the reminder comes at 8 in your morning",
+        "During a workout the app no longer reloads when a new version comes out: it updates afterwards",
+        "Safer exercise creation: the fields are checked before saving"
+      ]
+    },
     {
       "versione": "1.5.4",
       "data": "2026-10-13",
