@@ -120,28 +120,33 @@ export async function cambiaPassword(req, res, next) {
   }
 }
 
+/**
+ * Version, build date and stack from version.json, read once: it changes only
+ * with a release, which recreates the backend. The changelog stays out: the
+ * app does not show it, and it is most of the file.
+ */
+let infoVersione;
+function leggiInfoVersione() {
+  if (!infoVersione) {
+    try {
+      const { versione, build, stack } = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../../../version.json'), 'utf-8'));
+      infoVersione = { versione, build, stack };
+    } catch {
+      infoVersione = { versione: '1.0.0', build: 'N/A', stack: {} };
+    }
+  }
+  return infoVersione;
+}
+
 /** GET /api/v1/utenti/info-app — Technical info about the application */
 export async function infoApp(req, res, next) {
   try {
-    // Read version.json from the project root
-    const __dirname = dirname(fileURLToPath(import.meta.url));
-    const versionPath = resolve(__dirname, '../../../version.json');
-    let versionData;
-    try {
-      versionData = JSON.parse(readFileSync(versionPath, 'utf-8'));
-    } catch {
-      versionData = { versione: '1.0.0', build: 'N/A', changelog: [], stack: {} };
-    }
-
     res.json({
       successo: true,
       dati: {
-        versione: versionData.versione,
-        build: versionData.build,
+        ...leggiInfoVersione(),
         nodeVersion: process.version,
-        ambiente: process.env.AMBIENTE || 'sviluppo',
-        stack: versionData.stack,
-        changelog: versionData.changelog
+        ambiente: process.env.AMBIENTE || 'sviluppo'
       }
     });
   } catch (errore) {
