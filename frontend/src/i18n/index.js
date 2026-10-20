@@ -54,15 +54,33 @@ export function appiattisci(moduli) {
   return testi;
 }
 
-/** Every folder under testi/ is a language: { en: { "<namespace>.<key>": text }, it: {...} } */
-const TESTI = (() => {
-  const perLingua = {};
-  for (const [percorso, contenuto] of Object.entries(import.meta.glob('./testi/*/*.json', { eager: true, import: 'default' }))) {
-    const lingua = percorso.split('/').at(-2);
-    (perLingua[lingua] ??= {})[percorso] = contenuto;
+// Only the language in use is loaded: every folder under testi/ is a language,
+// and its index.js puts all its texts in one file the app downloads when that
+// language is needed (caricaLingua). The English muscle groups and equipment
+// are always there: the search finds "chest" in an Italian catalogue too.
+const LINGUE_DA_CARICARE = import.meta.glob('./testi/*/index.js', { import: 'default' });
+
+/** The loaded texts: { en: { "<namespace>.<key>": text }, it: {...} } */
+const TESTI = { [LINGUA_BASE]: appiattisci(import.meta.glob('./testi/en/{gruppi,attrezzi}.json', { eager: true, import: 'default' })) };
+const caricamenti = new Map();
+const pronte = new Set();
+
+/** Loads the texts of a language (once); resolves when they can be used */
+export function caricaLingua(lingua) {
+  if (!caricamenti.has(lingua)) {
+    const carica = LINGUE_DA_CARICARE[`./testi/${lingua}/index.js`];
+    caricamenti.set(lingua, (carica ? carica() : Promise.resolve({})).then(moduli => {
+      TESTI[lingua] = { ...TESTI[lingua], ...appiattisci(moduli) };
+      pronte.add(lingua);
+    }));
   }
-  return Object.fromEntries(Object.entries(perLingua).map(([lingua, moduli]) => [lingua, appiattisci(moduli)]));
-})();
+  return caricamenti.get(lingua);
+}
+
+/** All the languages (for the tests, which check them against each other) */
+export function caricaTutteLeLingue() {
+  return Promise.all(LINGUE.map(caricaLingua));
+}
 
 // --- Picking a language ---
 
@@ -123,7 +141,9 @@ export function linguaScelta() {
 
 /**
  * Applies a choice: "en", "it", or null to follow the phone. It is kept on
- * this phone too, so the app opens in that language before signing in.
+ * this phone too, so the app opens in that language before signing in. The
+ * texts of a language not loaded yet are downloaded first: the switch
+ * happens when they arrive (right away if they are already there).
  */
 export function scegli(lingua) {
   const scelta = LINGUE.includes(lingua) ? lingua : null;
@@ -133,7 +153,12 @@ export function scegli(lingua) {
   } catch {
     // Not saved on the phone: it still applies until the app is closed
   }
-  applica(scegliLingua(scelta, lingueDelTelefono()));
+  const nuova = scegliLingua(scelta, lingueDelTelefono());
+  if (pronte.has(nuova)) {
+    applica(nuova);
+    return Promise.resolve();
+  }
+  return caricaLingua(nuova).then(() => applica(nuova));
 }
 
 /**

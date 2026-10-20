@@ -9,6 +9,8 @@ export default defineConfig({
     // Pure functions for now: no simulated DOM
     environment: 'node',
     // The time zone of the app's users, whatever the test machine's is
-    env: { TZ: 'Europe/Rome' }
+    env: { TZ: 'Europe/Rome' },
+    // The app loads only the language in use; the tests need them all
+    setupFiles: ['./src/i18n/preparaTest.js']
   }
 });
