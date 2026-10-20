@@ -31,7 +31,7 @@ export function ordinaSerie(serie) {
 }
 
 /** Working-weight percentages and reps of the warm-up ramp */
-export const RAMPA = [
+const RAMPA = [
   { quota: 0.4, rep: 10 },
   { quota: 0.6, rep: 5 },
   { quota: 0.8, rep: 3 }

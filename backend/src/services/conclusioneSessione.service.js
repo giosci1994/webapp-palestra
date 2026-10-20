@@ -28,7 +28,7 @@ export const MINUTI_INATTIVITA = 120;
  * An open workout with no sets is deleted only after a day: the sets may
  * still be queued on a phone with no network, and arrive late
  */
-export const ORE_SESSIONE_VUOTA = 24;
+const ORE_SESSIONE_VUOTA = 24;
 
 /** For sets logged before they had a time: estimated minutes per set */
 const MINUTI_PER_SERIE = 3;

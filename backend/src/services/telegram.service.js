@@ -8,7 +8,7 @@ import logger from '../utils/logger.js';
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 
-export function telegramAttivo() {
+function telegramAttivo() {
   return TOKEN.trim().length > 0;
 }
 

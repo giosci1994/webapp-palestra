@@ -51,10 +51,3 @@ export const schemaLogin = z.object({
   // zod drops the fields the schema does not know
   ricordaDispositivo: z.boolean().optional()
 });
-
-/** Schema for the token refresh */
-export const schemaRefresh = z.object({
-  refreshToken: z
-    .string({ required_error: 'autenticazioneSchema.refreshTokenObbligatorio' })
-    .min(1, 'autenticazioneSchema.refreshTokenObbligatorio')
-});

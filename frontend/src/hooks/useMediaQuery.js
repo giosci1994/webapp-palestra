@@ -12,7 +12,7 @@ import { useCallback, useSyncExternalStore } from 'react';
  * useSyncExternalStore is React's way to read a value that changes
  * outside React: no state copied and re-synced in an effect.
  */
-export function useMediaQuery(query) {
+function useMediaQuery(query) {
   const iscriviti = useCallback((avvisa) => {
     if (typeof window === 'undefined' || !window.matchMedia) return () => {};
     const mq = window.matchMedia(query);

@@ -14,7 +14,7 @@
 import { ErroreValidazione } from './errori.js';
 import { t } from '../i18n/index.js';
 
-export const TIPI_SERIE = ['LAVORO', 'RISCALDAMENTO', 'DROP'];
+const TIPI_SERIE = ['LAVORO', 'RISCALDAMENTO', 'DROP'];
 
 /** Prisma filter: the working sets (counts, records, maxes, progression) */
 export const SOLO_LAVORO = { tipo: 'LAVORO' };

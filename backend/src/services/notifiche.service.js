@@ -118,7 +118,7 @@ export async function segnaTutteLette(utenteId) {
 }
 
 /** Not before this hour, in the user's own time zone */
-export const ORA_PROMEMORIA = 8;
+const ORA_PROMEMORIA = 8;
 
 /**
  * Reminder of the workouts scheduled for today, from 8 in the morning: today

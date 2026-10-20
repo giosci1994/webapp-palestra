@@ -31,7 +31,7 @@ function testo(corpo, campo, massimo, obbligatorio = false) {
  * The exercise fields from a request body, checked.
  * @returns {Promise<object>} the data for prisma.esercizio (without nomeIt)
  */
-export async function leggiEsercizio(corpo = {}) {
+async function leggiEsercizio(corpo = {}) {
   const dati = {
     nome: testo(corpo, 'nome', 200, true),
     gruppoMuscoloPrimario: testo(corpo, 'gruppoMuscoloPrimario', 60, true),

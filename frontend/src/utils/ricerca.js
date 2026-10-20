@@ -68,7 +68,7 @@ export function distanza(a, b, massimo = Infinity) {
 }
 
 /** Gym abbreviations: each one counts as any one of its expansions */
-export const ABBREVIAZIONI = {
+const ABBREVIAZIONI = {
   rdl: ['stacco rumeno', 'romanian deadlift'],
   sldl: ['stacco gambe tese', 'stiff leg deadlift'],
   ohp: ['military press', 'overhead press', 'lento avanti'],
@@ -139,7 +139,7 @@ function punteggioCercata({ diretta, espansioni }, parole) {
  * @param {{ principali: (e) => string[], secondari?: (e) => string[] }} campi
  *   principali: the names; secondari: other text that counts less (muscle group, equipment)
  */
-export function indicizza(elementi, { principali, secondari = () => [] }) {
+function indicizza(elementi, { principali, secondari = () => [] }) {
   // Every word appears only once in the vocabulary, and the items share
   // it: scores are computed per word, not per item
   const vocabolario = new Map();

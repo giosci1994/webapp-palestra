@@ -509,7 +509,7 @@ export async function salvaComeScheda(req, res, next) {
 }
 
 /** How long after the end a workout closed by mistake can be resumed */
-export const RIAPERTURA_MAX_MINUTI = 30;
+const RIAPERTURA_MAX_MINUTI = 30;
 
 /**
  * PATCH /sessioni/:id/riapri — "I closed it by mistake": the workout just

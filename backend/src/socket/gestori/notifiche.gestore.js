@@ -4,7 +4,7 @@
 // ============================================
 
 import logger from '../../utils/logger.js';
-import { segnaLetta, creaNotifica as creaNotificaPersistita } from '../../services/notifiche.service.js';
+import { segnaLetta } from '../../services/notifiche.service.js';
 
 /**
  * Registers the notification handlers for a socket.
@@ -28,23 +28,4 @@ export function gestoreNotifiche(io, socket, utentiConnessi) {
       logger.warn({ err, notificaId }, 'Impossibile segnare la notifica come letta');
     }
   });
-}
-
-/**
- * Sends a notification to a specific user.
- * Usable from any backend service.
- *
- * @param {import('socket.io').Server} io - Socket.io instance
- * @param {number} utenteId - ID of the recipient user
- * @param {Object} notifica - Notification object
- * @param {string} notifica.tipo - Type (e.g. 'nuova_richiesta', 'messaggio', 'record')
- * @param {string} notifica.titolo - Title of the notification
- * @param {string} notifica.messaggio - Body of the notification
- * @param {Object} [notifica.dati] - Extra data
- */
-export function inviaNotifica(io, utenteId, notifica) {
-  // Deprecated: it only emitted, without saving anything, so whoever was not
-  // connected lost the notification. Use creaNotifica from the service, which
-  // persists and then emits. Kept as a simple forward for compatibility.
-  return creaNotificaPersistita(io, utenteId, notifica);
 }

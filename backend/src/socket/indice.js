@@ -124,12 +124,3 @@ export function inizializzaSocket(serverHttp) {
   logger.info('🔌 Socket.io inizializzato');
   return io;
 }
-
-/**
- * Checks whether a user is currently connected.
- */
-export function utenteConnesso(utenteId) {
-  return utentiConnessi.has(utenteId);
-}
-
-export { utentiConnessi };

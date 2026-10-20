@@ -49,7 +49,6 @@ export function useAutoAggiornamento() {
       const dati = await risposta.json();
 
       if (dati.versione && dati.versione !== VERSIONE_CORRENTE) {
-        console.log(`[AutoUpdate] Nuova versione disponibile: ${dati.versione} (attuale: ${VERSIONE_CORRENTE})`);
         setNuovaVersione(dati.versione);
         setAggiornamentoDisponibile(true);
 

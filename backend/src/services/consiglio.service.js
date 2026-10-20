@@ -39,7 +39,7 @@ const importanza = (gruppo) => IMPORTANZA[gruppo] ?? IMPORTANZA_MINORE;
  * How much a group needs training: -1 if still recovering, then it grows
  * with the days of rest up to 1 (idle for two weeks or never trained).
  */
-export function bisogno(ultima, adesso) {
+function bisogno(ultima, adesso) {
   if (!ultima) return 1;
   if (adesso - ultima < ORE_RECUPERO * 3600000) return -1;
   const giorni = giorniDiCalendario(ultima, adesso);
@@ -53,7 +53,7 @@ export function bisogno(ultima, adesso) {
  * Scheduled sets per group, weighted as in the stats (secondary groups at
  * half), and the direct ones apart: only these say what the plan is about.
  */
-export function seriePerGruppo(esercizi) {
+function seriePerGruppo(esercizi) {
   const perGruppo = new Map();
   const diretti = new Map();
   let totale = 0;
@@ -81,7 +81,7 @@ export function gruppiDellaScheda(esercizi, quanti = 3) {
  * How useful a plan is right now: the average, per scheduled set, of the
  * need of the groups it trains. Negative if it mostly works recovering muscles.
  */
-export function valutaScheda(esercizi, ultimaDiretta, adesso) {
+function valutaScheda(esercizi, ultimaDiretta, adesso) {
   const { perGruppo, diretti, totale } = seriePerGruppo(esercizi);
   const contributi = [...perGruppo].map(([gruppo, serie]) => {
     const b = bisogno(ultimaDiretta.get(gruppo), adesso);

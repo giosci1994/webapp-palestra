@@ -204,7 +204,7 @@ export async function allenamentiDiOggi(req, res, next) {
 }
 
 /** The content of /oggi, with the current instant as a parameter so it can be tested. */
-export async function riepilogoDiOggi(utenteId, adesso = new Date()) {
+async function riepilogoDiOggi(utenteId, adesso = new Date()) {
   const oggi = giornoLocale(adesso);
 
   const piani = await prisma.allenamentoPianificato.findMany({

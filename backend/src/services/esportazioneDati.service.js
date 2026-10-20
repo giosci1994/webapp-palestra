@@ -24,7 +24,7 @@ import { giornoLocale } from '../utils/date.js';
 import { t } from '../i18n/index.js';
 
 // Changes when the file's structure changes
-export const VERSIONE_FORMATO = 1;
+const VERSIONE_FORMATO = 1;
 
 /** The Utente columns that go into the file */
 export const CAMPI_PROFILO = [

@@ -11,14 +11,14 @@ import { localeCorrente } from '../i18n/index.js';
  * The catalog's bars, recognized by the equipment name, and their empty weight.
  * `nome` is a translation key: show it with t()
  */
-export const BILANCIERI = [
+const BILANCIERI = [
   { schema: /olimpic/i, nome: 'dischi.bilancieri.olimpico', peso: 20 },
   { schema: /\bez\b/i, nome: 'dischi.bilancieri.ez', peso: 10 },
   { schema: /trap bar|hex bar/i, nome: 'dischi.bilancieri.trapBar', peso: 25 }
 ];
 
 /** A gym's plates, heaviest first */
-export const DISCHI = [25, 20, 15, 10, 5, 2.5, 1.25];
+const DISCHI = [25, 20, 15, 10, 5, 2.5, 1.25];
 
 /** The barbell the exercise uses, or null */
 export function bilanciereDi(esercizio) {

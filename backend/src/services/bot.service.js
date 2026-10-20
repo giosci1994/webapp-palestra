@@ -143,7 +143,7 @@ function tokenizza(testo) {
 }
 
 /** Finds the best catalog candidates (Italian and English) for a description. */
-export async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
+async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   let tokens = tokenizza(descrizione);
   if (tokens.length === 0) {
     const fallback = String(descrizione || '').toLowerCase().trim();
