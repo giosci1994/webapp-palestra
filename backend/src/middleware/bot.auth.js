@@ -7,6 +7,7 @@
 import prisma from '../config/database.js';
 import { ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { t, conLingua, linguaSupportata } from '../i18n/index.js';
+import { conFuso, fusoDi } from '../utils/date.js';
 
 /** Checks the X-Bot-Secret header. The bot routes are never exposed publicly. */
 export function verificaSegretoBot(req, res, next) {
@@ -31,7 +32,7 @@ export async function risolviUtenteTelegram(req, res, next) {
     const collegamento = await prisma.collegamentoTelegram.findUnique({
       where: { telegramChatId: BigInt(chatId) },
       include: {
-        utente: { select: { id: true, nome: true, ruolo: true, stato: true, palestraId: true, lingua: true, linguaApp: true } }
+        utente: { select: { id: true, nome: true, ruolo: true, stato: true, palestraId: true, lingua: true, linguaApp: true, fusoOrario: true } }
       }
     });
 
@@ -60,8 +61,8 @@ export async function risolviUtenteTelegram(req, res, next) {
     // The bot writes its own texts in the same language
     res.set('Content-Language', lingua);
     // Whatever the route builds from here on (t() in the controller and the
-    // services) is in that language too
-    conLingua(lingua, next);
+    // services) is in that language too, with the dates in the user's time zone
+    conLingua(lingua, () => conFuso(fusoDi(utente), next));
   } catch (errore) {
     next(errore);
   }

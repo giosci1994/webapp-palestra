@@ -30,14 +30,16 @@ export async function avviaServer() {
   /**
    * @param {string} metodo
    * @param {string} percorso - after /api/v1, for example '/sessioni/3'
-   * @param {{ token?: string, corpo?: any, cookie?: string, ip?: string, userAgent?: string, lingua?: string|null }} [opzioni]
+   * @param {{ token?: string, corpo?: any, cookie?: string, ip?: string, userAgent?: string, lingua?: string|null, fuso?: string }} [opzioni]
    *   lingua: the app's language (Accept-Language); Italian by default, as the tests
    *   check the Italian messages; null sends no header
    * @returns {Promise<{ stato: number, corpo: any, testo: string, intestazioni: Headers, cookieRicevuti: string[] }>}
    */
-  async function richiesta(metodo, percorso, { token, corpo, cookie, ip = nuovoIp(), userAgent, lingua = 'it' } = {}) {
+  async function richiesta(metodo, percorso, { token, corpo, cookie, ip = nuovoIp(), userAgent, lingua = 'it', fuso } = {}) {
     const intestazioni = { 'cf-connecting-ip': ip };
     if (lingua) intestazioni['accept-language'] = lingua;
+    // The phone's time zone, as the app sends it (X-Fuso-Orario)
+    if (fuso) intestazioni['x-fuso-orario'] = fuso;
     if (userAgent) intestazioni['user-agent'] = userAgent;
     if (token) intestazioni.authorization = `Bearer ${token}`;
     if (cookie) intestazioni.cookie = cookie;

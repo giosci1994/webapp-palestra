@@ -5,7 +5,8 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
-import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
+import { fusoCorrente, giornoLocale } from '../utils/date.js';
+import { fusoDiUtenteId } from '../i18n/destinatario.js';
 import { t, localeDi } from '../i18n/index.js';
 import { concludiSessione, controllaRecord, STATI_DA_CHIUDERE } from '../services/conclusioneSessione.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
@@ -378,6 +379,14 @@ export async function dettaglioSessione(req, res, next) {
  * left open for hours, it ends at the last set and the response says so
  * (dimenticata).
  */
+/**
+ * The time zone of a workout's owner, for its calendar day: the request's,
+ * unless a superadmin is acting on someone else's workout
+ */
+function fusoDelProprietario(sessione, req) {
+  return sessione.utenteId === req.utente.id ? fusoCorrente() : fusoDiUtenteId(sessione.utenteId);
+}
+
 export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -392,7 +401,8 @@ export async function completaSessione(req, res, next) {
     // "Termina" tapped without a network arrives when the connection is back:
     // what counts is the time it was tapped, not the time it arrived
     const adesso = conclusaIl != null ? orarioDalTelefono(conclusaIl, sessione.dataInizio) : undefined;
-    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso });
+    const fuso = await fusoDelProprietario(sessione, req);
+    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso, fuso });
 
     res.json({
       successo: true,
@@ -480,7 +490,7 @@ export async function salvaComeScheda(req, res, next) {
     if (!esercizi.length) throw new ErroreValidazione(t('sessioniController.nessunaSerieDaSalvare'));
 
     // The plan's title and description are saved in the language of the request
-    const data = (opzioni) => sessione.dataInizio.toLocaleDateString(localeDi(), { timeZone: FUSO_ORARIO, ...opzioni });
+    const data = (opzioni) => sessione.dataInizio.toLocaleDateString(localeDi(), { timeZone: fusoCorrente(), ...opzioni });
     const suffisso = ` (${data({ day: 'numeric', month: 'short' })})`;
     const scheda = await prisma.schedaAllenamento.create({
       data: {
@@ -912,6 +922,7 @@ export async function modificaSessione(req, res, next) {
     // An ongoing one is closed with "Termina": here it would clash with the
     // sets the workout is still recording
     if (!sessione.dataFine) throw new ErroreValidazione(t('sessioniController.soloConcluso'));
+    const fuso = await fusoDelProprietario(sessione, req);
 
     const { dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
     const dati = {};
@@ -1027,13 +1038,13 @@ export async function modificaSessione(req, res, next) {
 
       // Moved to another day, the workout no longer closes the one scheduled
       // on the old day, but the one on the new day
-      if (dati.dataInizio && giornoLocale(dati.dataInizio).getTime() !== giornoLocale(sessione.dataInizio).getTime()) {
+      if (dati.dataInizio && giornoLocale(dati.dataInizio, fuso).getTime() !== giornoLocale(sessione.dataInizio, fuso).getTime()) {
         await tx.allenamentoPianificato.updateMany({
           where: { sessioneId: id },
           data: { stato: 'PIANIFICATO', sessioneId: null }
         });
         await tx.allenamentoPianificato.updateMany({
-          where: { utenteId: sessione.utenteId, schedaId: sessione.schedaId, data: giornoLocale(dati.dataInizio), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
+          where: { utenteId: sessione.utenteId, schedaId: sessione.schedaId, data: giornoLocale(dati.dataInizio, fuso), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
           data: { stato: 'COMPLETATO', sessioneId: id }
         });
       }

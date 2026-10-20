@@ -126,6 +126,7 @@ model Utente {
   preferenzeVisibilita String?   @map("preferenze_visibilita") // JSON: {"palestra":true,...}
   lingua               String?                                 // App language chosen in Profile ("en", "it"); null follows the phone
   linguaApp            String?   @map("lingua_app")            // Language the app last used, for messages sent outside a request (push, reminders)
+  fusoOrario           String?   @map("fuso_orario")           // Time zone of the phone the app last used ("Europe/Rome"): the user's days, weeks and reminder hour; null = the gym's
 
   // Onboarding & compliance
   profiloCompletato    Boolean   @default(false) @map("profilo_completato")

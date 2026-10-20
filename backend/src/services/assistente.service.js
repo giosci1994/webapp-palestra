@@ -8,6 +8,7 @@ import prisma from '../config/database.js';
 import { ErroreApp, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
+import { fusoCorrente } from '../utils/date.js';
 
 // Initializes the Gemini client (lazily)
 let clientAI = null;
@@ -204,7 +205,7 @@ async function costruisciContestoUtente(utenteId) {
     for (const s of ultimeSessioni) {
       contesto += `\n- ${t('assistenteService.contesto.sessione', {
         titolo: s.scheda.titolo,
-        data: s.dataInizio.toLocaleDateString(localeDi()),
+        data: s.dataInizio.toLocaleDateString(localeDi(), { timeZone: fusoCorrente() }),
         durata: s.durataMinuti || '?',
         volume: s.volumeTotaleKg || '?'
       })}`;

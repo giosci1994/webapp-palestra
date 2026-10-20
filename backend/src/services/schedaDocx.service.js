@@ -8,6 +8,7 @@ import {
   Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType
 } from 'docx';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
+import { fusoCorrente } from '../utils/date.js';
 
 // Palette and sizes copied from the template the user provided: navy blue
 // for headers and session titles, neutral grays for the body.
@@ -268,7 +269,7 @@ export async function generaDocxSchede(schede, opzioni = {}) {
     alignment: AlignmentType.CENTER,
     spacing: { before: 400 },
     children: [new TextRun({
-      text: t('schedaDocxService.esportataIl', { data: new Date().toLocaleDateString(localeDi()) }),
+      text: t('schedaDocxService.esportataIl', { data: new Date().toLocaleDateString(localeDi(), { timeZone: fusoCorrente() }) }),
       size: 16, color: '9999AA', font: FONT
     })]
   }));

@@ -56,7 +56,7 @@ export function configuraCORS() {
     },
     credentials: true, // Needed for HttpOnly cookies
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Fuso-Orario'],
     maxAge: 86400 // Cache the preflight for 24 hours
   });
 }

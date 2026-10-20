@@ -117,9 +117,10 @@ describe('errors of the services', () => {
 
 describe('workout reminder, on a timer: in the language of the person who receives it', () => {
   it('each user gets the title in their own language, with the plural', async () => {
-    // Today as the reminder sees it: the Copenhagen day. The UTC day differs
-    // between midnight and 2 am (1 am in winter), and the test failed then
-    const oggi = giornoLocale(new Date());
+    // A fixed instant, after 8 in the morning: the reminder does not go out
+    // earlier, so the test does not depend on when it runs
+    const adesso = new Date('2026-10-12T08:00:00Z');
+    const oggi = giornoLocale(adesso, 'Europe/Copenhagen');
     const inglese = await creaUtente({ lingua: 'en' });
     const italiano = await creaUtente({ lingua: 'it' });
     for (const [chi, schede] of [[inglese, 2], [italiano, 1]]) {
@@ -128,7 +129,7 @@ describe('workout reminder, on a timer: in the language of the person who receiv
         await prisma.allenamentoPianificato.create({ data: { utenteId: chi.id, schedaId: scheda.id, data: oggi } });
       }
     }
-    assert.equal(await inviaPromemoriaAllenamenti(null), 2);
+    assert.equal(await inviaPromemoriaAllenamenti(null, adesso), 2);
     const titolo = async chi => (await prisma.allenamentoNotifica.findFirst({ where: { utenteId: chi.id } })).titolo;
     assert.equal(await titolo(inglese), 'You have 2 workouts today');
     assert.equal(await titolo(italiano), 'Oggi ti aspetta un allenamento');

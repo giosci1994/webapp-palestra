@@ -13,7 +13,7 @@
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
-import { giornoLocale, FUSO_ORARIO } from '../utils/date.js';
+import { fusoCorrente, fusoDi, giornoLocale } from '../utils/date.js';
 import { creaNotifica } from './notifiche.service.js';
 import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
@@ -67,9 +67,11 @@ export function fineEffettiva(dataInizio, serie, adesso = new Date()) {
  * completed sets, the day's calendar entry marked as done, personal records
  * of whoever trained.
  * @param {object} sessione - the sessioni_allenamento row
- * @param {{ noteFinali?: string, adesso?: Date }} [opzioni]
+ * @param {{ noteFinali?: string, adesso?: Date, fuso?: string }} [opzioni]
+ *   fuso: the user's time zone, for the day of the calendar entry (the
+ *   request's by default; the timer passes the owner's)
  */
-export async function concludiSessione(sessione, { noteFinali, adesso = new Date() } = {}) {
+export async function concludiSessione(sessione, { noteFinali, adesso = new Date(), fuso = fusoCorrente() } = {}) {
   const serie = await prisma.logSerie.findMany({ where: { sessioneId: sessione.id } });
   const completate = serie.filter(s => s.completato);
   // Warm-up is not volume (utils/tipiSerie.js)
@@ -91,7 +93,7 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
     where: {
       utenteId: sessione.utenteId,
       schedaId: sessione.schedaId,
-      data: giornoLocale(sessione.dataInizio),
+      data: giornoLocale(sessione.dataInizio, fuso),
       stato: { in: STATI_DA_CHIUDERE },
       sessioneId: null
     },
@@ -106,9 +108,9 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
   return { sessione: aggiornata, recordPersonali, dimenticata };
 }
 
-// How dates and times are written in each language (the same as the app)
-const formatoGiorno = (lingua) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: FUSO_ORARIO, weekday: 'long', day: 'numeric', month: 'long' });
-const formatoOra = (lingua) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: FUSO_ORARIO, hour: '2-digit', minute: '2-digit' });
+// How dates and times are written in each language (the same as the app), in the user's time zone
+const formatoGiorno = (lingua, fuso) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: fuso, weekday: 'long', day: 'numeric', month: 'long' });
+const formatoOra = (lingua, fuso) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: fuso, hour: '2-digit', minute: '2-digit' });
 
 /**
  * The periodic check (server.js): workouts idle for more than
@@ -122,7 +124,8 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
     where: { dataFine: null, dataInizio: { lt: new Date(adesso.getTime() - MINUTI_INATTIVITA * MINUTO) } },
     include: {
       logSerie: { select: { registrataIl: true } },
-      scheda: { select: { titolo: true } }
+      scheda: { select: { titolo: true } },
+      utente: { select: { fusoOrario: true } }
     }
   });
 
@@ -138,10 +141,11 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
       continue;
     }
 
-    const { sessione } = await concludiSessione(aperta, { adesso });
+    // No request here: the day of the workout, and the day and time inside the
+    // notification, are in the user's time zone; the text in their language
+    const fuso = fusoDi(aperta.utente);
+    const { sessione } = await concludiSessione(aperta, { adesso, fuso });
     chiuse++;
-    // No request here: the notification is in the user's language, and so are
-    // the day and the time inside it
     const lingua = await linguaDiUtenteId(aperta.utenteId);
     await creaNotifica(io, aperta.utenteId, {
       tipo: 'SISTEMA',
@@ -149,8 +153,8 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
       messaggio: 'conclusioneSessioneService.notificaMessaggio',
       variabili: {
         scheda: aperta.scheda.titolo,
-        giorno: formatoGiorno(lingua).format(aperta.dataInizio),
-        ora: formatoOra(lingua).format(sessione.dataFine)
+        giorno: formatoGiorno(lingua, fuso).format(aperta.dataInizio),
+        ora: formatoOra(lingua, fuso).format(sessione.dataFine)
       },
       percorso: '/storico'
     });

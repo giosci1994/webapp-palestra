@@ -8,7 +8,7 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { gruppiDiEsercizio, GRUPPI_PRINCIPALI, GRUPPI_NON_MUSCOLARI } from '../utils/gruppiMuscolari.js';
 import { consiglioAllenamento } from '../services/consiglio.service.js';
-import { giornoLocale } from '../utils/date.js';
+import { chiaveGiorno, giorniDiFila, lunediDelGiorno, lunediLocale } from '../utils/date.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 import { t } from '../i18n/index.js';
@@ -21,13 +21,8 @@ router.use(verificaToken);
 
 const SETTIMANA = 7 * 86400000;
 
-/** Start (Monday 00:00 UTC) of the week of a date, in milliseconds. */
-function lunediUTC(d) {
-  const x = new Date(d);
-  x.setUTCHours(0, 0, 0, 0);
-  x.setUTCDate(x.getUTCDate() - ((x.getUTCDay() + 6) % 7));
-  return x.getTime();
-}
+// Days and weeks are those of the user's time zone (utils/date.js): the
+// request runs in it, so chiaveGiorno and lunediLocale need no argument
 
 // GET /api/v1/statistiche/riepilogo — General user summary
 router.get('/riepilogo', async (req, res, next) => {
@@ -51,21 +46,8 @@ router.get('/riepilogo', async (req, res, next) => {
       where: { utenteId, dataRecord: { gte: resetDate } } 
     });
 
-    // Streak (consecutive days with at least one session)
-    const giorniAllenamento = [...new Set(
-      sessioni.map(s => s.dataInizio.toISOString().split('T')[0])
-    )].sort().reverse();
-
-    let streak = 0;
-    const oggi = new Date().toISOString().split('T')[0];
-    for (let i = 0; i < giorniAllenamento.length; i++) {
-      const giorno = new Date(giorniAllenamento[i]);
-      const atteso = new Date();
-      atteso.setDate(atteso.getDate() - i);
-      if (giorno.toISOString().split('T')[0] === atteso.toISOString().split('T')[0]) {
-        streak++;
-      } else break;
-    }
+    // Streak: consecutive local days with at least one session, up to today
+    const streak = giorniDiFila(sessioni.map(s => s.dataInizio));
 
     // Plans created
     const schedeCreate = await prisma.schedaAllenamento.count({ where: { creatoreId: utenteId } });
@@ -74,8 +56,8 @@ router.get('/riepilogo', async (req, res, next) => {
     // times a week almost always has a day streak of 0 or 1: the week streak
     // really tells whether you are consistent. The current week does not
     // break the streak until it is over.
-    const settimaneAttive = new Set(sessioni.map(s => lunediUTC(s.dataInizio)));
-    const questaSettimana = lunediUTC(new Date());
+    const settimaneAttive = new Set(sessioni.map(s => lunediLocale(s.dataInizio)));
+    const questaSettimana = lunediLocale(new Date());
     let settimaneDiFila = 0;
     for (let w = settimaneAttive.has(questaSettimana) ? questaSettimana : questaSettimana - SETTIMANA;
          settimaneAttive.has(w); w -= SETTIMANA) {
@@ -126,7 +108,7 @@ router.get('/sessioni', async (req, res, next) => {
     // Aggregate by day
     const perGiorno = {};
     sessioni.forEach(s => {
-      const giorno = s.dataInizio.toISOString().split('T')[0];
+      const giorno = chiaveGiorno(s.dataInizio);
       if (!perGiorno[giorno]) {
         perGiorno[giorno] = { data: giorno, sessioni: 0, durata: 0, volume: 0 };
       }
@@ -341,7 +323,7 @@ router.get('/progressione/:esercizioId', async (req, res, next) => {
 
     const perGiorno = new Map();
     for (const s of serie) {
-      const giorno = s.sessione.dataInizio.toISOString().split('T')[0];
+      const giorno = chiaveGiorno(s.sessione.dataInizio);
       let p = perGiorno.get(giorno);
       if (!p) {
         p = { data: giorno, migliore: null, stimato: null, massimale: null };
@@ -372,16 +354,19 @@ router.get('/progressione/:esercizioId', async (req, res, next) => {
 // GET /api/v1/statistiche/frequenza — Workouts done and scheduled, last 12 weeks
 router.get('/frequenza', async (req, res, next) => {
   try {
-    const questaSettimana = lunediUTC(new Date());
+    const questaSettimana = lunediLocale(new Date());
     const inizio = new Date(questaSettimana - 11 * SETTIMANA);
     const fine = new Date(questaSettimana + SETTIMANA);
+    // The local weeks start up to a day away from these UTC midnights: the
+    // sessions are read with a day more on each side, then placed by local day
+    const margine = 86400000;
 
     const [sessioni, piani] = await Promise.all([
       prisma.sessioneAllenamento.findMany({
         where: {
           utenteId: req.utente.id,
           dataFine: { not: null },
-          dataInizio: { gte: inizio, lt: fine }
+          dataInizio: { gte: new Date(inizio.getTime() - margine), lt: new Date(fine.getTime() + margine) }
         },
         select: { dataInizio: true }
       }),
@@ -397,13 +382,14 @@ router.get('/frequenza', async (req, res, next) => {
       fatti: 0,
       programmati: 0
     }));
-    const indice = (d) => 11 - Math.round((questaSettimana - lunediUTC(d)) / SETTIMANA);
+    // Sessions are instants (their local week); the schedule has calendar days already
+    const indice = (lunedi) => 11 - Math.round((questaSettimana - lunedi) / SETTIMANA);
     for (const s of sessioni) {
-      const i = indice(s.dataInizio);
+      const i = indice(lunediLocale(s.dataInizio));
       if (i >= 0 && i < 12) settimane[i].fatti++;
     }
     for (const p of piani) {
-      const i = indice(p.data);
+      const i = indice(lunediDelGiorno(p.data));
       if (i >= 0 && i < 12) settimane[i].programmati++;
     }
 
@@ -430,7 +416,7 @@ router.get('/attivita-annuale', async (req, res, next) => {
 
     const perGiorno = new Map();
     for (const s of sessioni) {
-      const giorno = giornoLocale(s.dataInizio).toISOString().slice(0, 10);
+      const giorno = chiaveGiorno(s.dataInizio);
       const voce = perGiorno.get(giorno) || { giorno, allenamenti: 0, serie: 0 };
       voce.allenamenti++;
       voce.serie += s._count.logSerie;

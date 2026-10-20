@@ -11,8 +11,9 @@ import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 import { t, localeDi } from '../i18n/index.js';
-import { linguaDiUtenteId } from '../i18n/destinatario.js';
+import { fusoDiUtenteId, linguaDiUtenteId } from '../i18n/destinatario.js';
 import { creaNotifica } from '../services/notifiche.service.js';
+import { chiaveGiorno, fusoDi, inizioGiorno } from '../utils/date.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -30,10 +31,10 @@ router.use(autorizza('PERSONAL_TRAINER', 'SUPERADMIN'));
 router.get('/dashboard', async (req, res, next) => {
   try {
     const trainerId = req.utente.id;
-    const oggi = new Date();
-    oggi.setHours(0, 0, 0, 0);
-    const domani = new Date(oggi);
-    domani.setDate(domani.getDate() + 1);
+    // Today in the trainer's time zone, from local midnight to local midnight
+    // (a day of 23 or 25 hours when daylight saving time changes)
+    const oggi = inizioGiorno();
+    const domani = inizioGiorno(new Date(oggi.getTime() + 30 * 3600000));
 
     const [clientiAttivi, richiesteInAttesa, appuntamentiOggi, sessioniClienti] = await Promise.all([
       // No. of active clients
@@ -124,7 +125,7 @@ router.get('/clienti/:id', async (req, res, next) => {
           id: true, nome: true, email: true, immagineProfilo: true,
           obiettivoFitness: true, pesoKg: true, altezzaCm: true,
           genere: true, bio: true, dataNascita: true,
-          puntiEsperienza: true, dataRegistrazione: true, dataResetStatistiche: true,
+          puntiEsperienza: true, dataRegistrazione: true, dataResetStatistiche: true, fusoOrario: true,
           _count: { select: { sessioni: true, recordPersonali: true } }
         }
       }),
@@ -156,9 +157,12 @@ router.get('/clienti/:id', async (req, res, next) => {
     ]);
     const resetDate = cliente?.dataResetStatistiche || new Date(0);
     const sv = tutteSessioni.filter(s => s.dataInizio >= resetDate);
+    // The client's days, in the client's time zone (not sent to the trainer)
+    const fusoCliente = fusoDi(cliente);
+    if (cliente) delete cliente.fusoOrario;
     const perGiorno = {};
     sv.filter(s => s.dataInizio >= da90g).forEach(s => {
-      const g = s.dataInizio.toISOString().split('T')[0];
+      const g = chiaveGiorno(s.dataInizio, fusoCliente);
       if (!perGiorno[g]) perGiorno[g] = { data: g, sessioni: 0, durata: 0, volume: 0 };
       perGiorno[g].sessioni++; perGiorno[g].durata += s.durataMinuti || 0; perGiorno[g].volume += s.volumeTotaleKg || 0;
     });
@@ -383,12 +387,12 @@ router.post('/appuntamenti', async (req, res, next) => {
       }
     });
 
-    // Notify the client, with the date in their language, not the trainer's
-    const lingua = await linguaDiUtenteId(parseInt(clienteId));
+    // Notify the client, with the date in their language and time zone, not the trainer's
+    const [lingua, fuso] = await Promise.all([linguaDiUtenteId(parseInt(clienteId)), fusoDiUtenteId(parseInt(clienteId))]);
     await creaNotifica(req.app.get('io'), parseInt(clienteId), {
       titolo: 'ptRoutes.nuovoAppuntamentoTitolo',
       messaggio: 'ptRoutes.nuovoAppuntamentoMessaggio',
-      variabili: { nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(localeDi(lingua)) },
+      variabili: { nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(localeDi(lingua), { timeZone: fuso }) },
       percorso: '/dashboard'
     });
 

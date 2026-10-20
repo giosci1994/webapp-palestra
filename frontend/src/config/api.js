@@ -7,6 +7,19 @@ import { linguaCorrente, traduci } from '../i18n/index.js';
 
 const BASE_URL = '/api/v1';
 
+/**
+ * The phone's time zone ("Europe/Rome"), sent with every request: the server
+ * uses it for the user's days, weeks and reminder hour (backend utils/date.js)
+ */
+function intestazioneFuso() {
+  try {
+    const fuso = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return fuso ? { 'X-Fuso-Orario': fuso } : {};
+  } catch {
+    return {};
+  }
+}
+
 let accessToken = null;
 let refreshPromise = null;
 let onSessioneScaduta = null;
@@ -51,8 +64,9 @@ export async function apiChiamata(percorso, opzioni = {}) {
     method: metodo,
     headers: {
       'Content-Type': 'application/json',
-      // The app's language, for the server's messages
+      // The app's language, for the server's messages, and the phone's time zone
       'Accept-Language': linguaCorrente(),
+      ...intestazioneFuso(),
       ...headers
     },
     credentials: 'include', // For the refresh token cookie
@@ -182,6 +196,7 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
     method: 'GET',
     headers: {
       'Accept-Language': linguaCorrente(),
+      ...intestazioneFuso(),
       ...(accessToken && { Authorization: `Bearer ${accessToken}` })
     },
     credentials: 'include'

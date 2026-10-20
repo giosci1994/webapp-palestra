@@ -8,6 +8,7 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
+import { giorniDiFila } from '../utils/date.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -81,13 +82,8 @@ router.get('/profilo', async (req, res, next) => {
 
     const volume = sessioni.reduce((s, x) => s + (x.volumeTotaleKg || 0), 0);
     const durata = sessioni.reduce((s, x) => s + (x.durataMinuti || 0), 0);
-    const giorniSet = new Set(sessioni.map(s => s.dataInizio.toISOString().split('T')[0]));
-    const giorniOrd = [...giorniSet].sort().reverse();
-    let streak = 0;
-    for (let i = 0; i < giorniOrd.length; i++) {
-      const atteso = new Date(); atteso.setDate(atteso.getDate() - i);
-      if (giorniOrd[i] === atteso.toISOString().split('T')[0]) streak++; else break;
-    }
+    // Consecutive local days with a workout, up to today (the user's time zone)
+    const streak = giorniDiFila(sessioni.map(s => s.dataInizio));
 
     const stats = { sessioni: sessioni.length, volume, durata, record, schede, messaggi, streak };
     const badgeSbloccati = BADGE.filter(b => b.check(stats));

@@ -7,7 +7,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { inviaPush } from './push.service.js';
 import { linguaDiUtenteId, traduciPer } from '../i18n/destinatario.js';
-import { giornoLocale } from '../utils/date.js';
+import { fusoDi, giornoLocale, inizioGiorno, orarioLocale } from '../utils/date.js';
 
 // How many notifications to keep per user: past this threshold the oldest
 // ones are deleted, so the table does not grow forever.
@@ -117,36 +117,42 @@ export async function segnaTutteLette(utenteId) {
   return esito.count;
 }
 
+/** Not before this hour, in the user's own time zone */
+export const ORA_PROMEMORIA = 8;
+
 /**
- * Reminder of the workouts scheduled for today.
+ * Reminder of the workouts scheduled for today, from 8 in the morning: today
+ * and the hour are each user's own (their time zone, utils/date.js).
  *
- * The server calls it periodically. It is written so it can run several
- * times a day without duplicating anything: before sending, it checks whether
- * a reminder created today already exists for that user, which makes the
+ * The server calls it every hour. It is written so it can run several times
+ * a day without duplicating anything: before sending, it checks whether a
+ * reminder was created since the user's local midnight, which makes the
  * operation safe even after a process restart.
  */
-export async function inviaPromemoriaAllenamenti(io) {
-  const adesso = new Date();
-  const oggi = giornoLocale(adesso);
-  const inizioGiornata = giornoLocale(adesso);
-
+export async function inviaPromemoriaAllenamenti(io, adesso = new Date()) {
+  // Today is a different calendar day across time zones: the schedule is read
+  // from yesterday to tomorrow (UTC), then each plan is checked in its user's
+  const giorno = 86400000;
+  const oggiUTC = giornoLocale(adesso, 'UTC').getTime();
   const previsti = await prisma.allenamentoPianificato.findMany({
-    where: { data: oggi, stato: 'PIANIFICATO' },
-    include: { scheda: { select: { titolo: true } } }
+    where: { data: { gte: new Date(oggiUTC - giorno), lte: new Date(oggiUTC + giorno) }, stato: 'PIANIFICATO' },
+    include: { scheda: { select: { titolo: true } }, utente: { select: { fusoOrario: true } } }
   });
-  if (previsti.length === 0) return 0;
 
   // Group by user: a single reminder even with several plans in the day
   const perUtente = new Map();
   for (const p of previsti) {
-    if (!perUtente.has(p.utenteId)) perUtente.set(p.utenteId, []);
-    perUtente.get(p.utenteId).push(p.scheda.titolo);
+    const fuso = fusoDi(p.utente);
+    if (p.data.getTime() !== giornoLocale(adesso, fuso).getTime()) continue;
+    if (orarioLocale(adesso, fuso).ora < ORA_PROMEMORIA) continue;
+    if (!perUtente.has(p.utenteId)) perUtente.set(p.utenteId, { fuso, titoli: [] });
+    perUtente.get(p.utenteId).titoli.push(p.scheda.titolo);
   }
 
   let inviati = 0;
-  for (const [utenteId, titoli] of perUtente) {
+  for (const [utenteId, { fuso, titoli }] of perUtente) {
     const giaInviato = await prisma.allenamentoNotifica.findFirst({
-      where: { utenteId, tipo: 'PROMEMORIA_ALLENAMENTO', creatoIl: { gte: inizioGiornata } },
+      where: { utenteId, tipo: 'PROMEMORIA_ALLENAMENTO', creatoIl: { gte: inizioGiorno(adesso, fuso) } },
       select: { id: true }
     });
     if (giaInviato) continue;

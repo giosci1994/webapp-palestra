@@ -9,6 +9,7 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreValidazione } from '../utils/errori.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
+import { FUSO_ORARIO, orarioLocale } from '../utils/date.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -118,14 +119,8 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
     const palestraId = parseInt(req.params.id);
     if (isNaN(palestraId)) return res.status(400).json({ successo: false, errore: t('catalogoRoutes.palestraIdNonValido') });
 
-    // Use the Europe/Copenhagen time zone to work out the day/hour
-    const adesso = new Date();
-    const opzioniTZ = { timeZone: 'Europe/Copenhagen' };
-    const oraLocale = parseInt(adesso.toLocaleString('en-US', { ...opzioniTZ, hour: 'numeric', hour12: false }));
-    // Day calculation: 0=Mon, 6=Sun
-    const giornoJS = new Date(adesso.toLocaleString('en-US', opzioniTZ)).getDay(); // 0=Sun
-    const giornoSettimana = (giornoJS + 6) % 7; // 0=Mon, 6=Sun
-    const oraCorrente = oraLocale;
+    // The day and hour of the gym (0 = Monday), whatever the user's time zone
+    const { ora: oraCorrente, giornoSettimana } = orarioLocale(new Date(), FUSO_ORARIO);
 
     // Data for the whole day (24 hours, only valid hours 0-23)
     const datiGiornata = await prisma.afluenzaPalestra.findMany({
