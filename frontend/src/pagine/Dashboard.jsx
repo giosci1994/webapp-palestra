@@ -3,7 +3,7 @@
 // Main hub: Activity and Statistics
 // ============================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
@@ -15,7 +15,6 @@ import {
   Megaphone, Dumbbell, Users, Clock, BarChart3, Calendar, PlayCircle, Building,
   CalendarHeart, FileText, CheckCircle, CalendarClock
 } from 'lucide-react';
-import Statistiche from './Statistiche.jsx';
 import CaroselloAzioni from '../componenti/specifici/CaroselloAzioni.jsx';
 import MiglioriOrari from '../componenti/specifici/MiglioriOrari.jsx';
 import Calendario from '../componenti/comuni/Calendario.jsx';
@@ -23,6 +22,11 @@ import SezioneCollassabile from '../componenti/comuni/SezioneCollassabile.jsx';
 import { useTelefono } from '../hooks/useMediaQuery.js';
 import { useLingua } from '../hooks/useLingua.js';
 import { localeCorrente } from '../i18n/index.js';
+import { caricaPagina } from '../utils/caricaPagina.js';
+import Spinner from '../componenti/comuni/Spinner.jsx';
+
+// The Statistics tab (with all its charts) is loaded only when it is opened
+const Statistiche = caricaPagina(() => import('./Statistiche.jsx'));
 
 // The tab ids are compared in the code; what is shown for each is a translation key
 const ETICHETTE_TAB = {
@@ -623,7 +627,9 @@ export default function Dashboard() {
             transition={{ duration: 0.2 }}
             className="w-full"
           >
-            <Statistiche />
+            <Suspense fallback={<div className="flex justify-center py-16"><Spinner /></div>}>
+              <Statistiche />
+            </Suspense>
           </motion.div>
         )}
 
