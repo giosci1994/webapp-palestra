@@ -8,12 +8,14 @@
       "modifiche": [
         "L'app si apre più in fretta: all'avvio scarica meno della metà del codice, e ogni pagina arriva quando la apri",
         "Si scaricano solo i testi della lingua che usi",
-        "Gli aggiornamenti dell'app sono più leggeri: cambiano solo le pagine toccate"
+        "Gli aggiornamenti dell'app sono più leggeri: cambiano solo le pagine toccate",
+        "Se hai collegato Telegram, quando l'app è chiusa ti arrivano lì anche le notifiche: promemoria, personal trainer, schede e avvisi"
       ],
       "modificheEn": [
         "The app opens faster: at start-up it downloads less than half of the code, and each page arrives when you open it",
         "Only the texts of the language you use are downloaded",
-        "App updates are lighter: only the pages that changed are downloaded again"
+        "App updates are lighter: only the pages that changed are downloaded again",
+        "If you linked Telegram, your notifications arrive there too when the app is closed: reminders, trainer, plans and alerts"
       ]
     },
     {

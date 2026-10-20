@@ -141,7 +141,7 @@
   },
   "telegram": {
     "titolo": "📲 Bot Telegram",
-    "descrizione": "Collega il tuo account al bot Telegram per leggere le tue schede e crearne di nuove parlando con l'assistente direttamente in chat.",
+    "descrizione": "Collega il tuo account al bot Telegram per leggere le tue schede e crearne di nuove parlando con l'assistente direttamente in chat. Quando l'app è chiusa, lì ti arrivano anche le notifiche e i messaggi.",
     "collegato": "✅ Account collegato",
     "scollega": "Scollega",
     "invia": "Apri il bot e invia questo codice (valido 10 minuti):",

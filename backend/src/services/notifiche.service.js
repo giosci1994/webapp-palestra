@@ -6,6 +6,7 @@
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { inviaPush } from './push.service.js';
+import { escapeHtml, inviaNotificaTelegram } from './telegram.service.js';
 import { linguaDiUtenteId, traduciPer } from '../i18n/destinatario.js';
 import { fusoDi, giornoLocale, inizioGiorno, orarioLocale } from '../utils/date.js';
 
@@ -48,6 +49,10 @@ export async function creaNotifica(io, utenteId, { tipo = 'SISTEMA', titolo, mes
     // notifications; with the app open the service worker leaves it to the
     // notification bell)
     inviaPush(utenteId, { titolo, messaggio, percorso: percorso || '/', tag: tipo }).catch(() => {});
+
+    // And on Telegram for whoever does not have the app open, if they linked
+    // it in Profile (as for chat messages)
+    avvisaSuTelegram(io, utenteId, { titolo, messaggio, percorso, lingua }).catch(() => {});
 
     potaVecchie(utenteId).catch(() => {});
     return notifica;
@@ -95,6 +100,27 @@ export async function segnaLetta(utenteId, notificaId) {
     data: { letta: true }
   });
   return esito.count > 0;
+}
+
+/** The page of the app as a full link, for messages outside the app; null without APP_URL */
+function linkApp(percorso) {
+  if (!process.env.APP_URL) return null;
+  try { return new URL(percorso || '/', process.env.APP_URL).href; } catch { return null; }
+}
+
+/**
+ * The notification on Telegram, if the user has no connection open (the app
+ * is closed or in the background) and linked Telegram. Title, text and a
+ * link to the page, in the user's language.
+ */
+async function avvisaSuTelegram(io, utenteId, { titolo, messaggio, percorso, lingua }) {
+  const collegato = io ? (await io.in(`utente:${utenteId}`).fetchSockets()).length > 0 : false;
+  if (collegato) return;
+  const righe = [`🔔 <b>${escapeHtml(titolo)}</b>`];
+  if (messaggio) righe.push(escapeHtml(messaggio));
+  const link = linkApp(percorso);
+  if (link) righe.push(`<a href="${escapeHtml(link).replace(/"/g, '&quot;')}">${escapeHtml(traduciPer(lingua, 'notificheService.telegramApri'))}</a>`);
+  await inviaNotificaTelegram(utenteId, righe.join('\n'));
 }
 
 /**

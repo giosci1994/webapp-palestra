@@ -141,7 +141,7 @@
   },
   "telegram": {
     "titolo": "📲 Telegram bot",
-    "descrizione": "Link your account to the Telegram bot to read your plans and create new ones by chatting with the assistant.",
+    "descrizione": "Link your account to the Telegram bot to read your plans and create new ones by chatting with the assistant. When the app is closed, your notifications and messages arrive there too.",
     "collegato": "✅ Account linked",
     "scollega": "Unlink",
     "invia": "Open the bot and send this code (valid for 10 minutes):",

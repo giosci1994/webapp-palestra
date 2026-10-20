@@ -1,4 +1,5 @@
 {
   "promemoriaAllenamento_one": "Oggi ti aspetta un allenamento",
-  "promemoriaAllenamento_other": "Oggi ti aspettano {count} allenamenti"
+  "promemoriaAllenamento_other": "Oggi ti aspettano {count} allenamenti",
+  "telegramApri": "Apri in GymMaster"
 }
