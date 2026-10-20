@@ -1,0 +1,42 @@
+# The release button: Actions → Rilascia → Run workflow (branch: master).
+# It publishes the release of the version in version.json on the tip of
+# master, after checking that it is new, has its changelog entry and that the
+# tests of that commit are green (deploy/pubblica-release.sh). The server then
+# installs it within a couple of minutes (deploy/rilascio.sh).
+# "Solo prova" runs every check and shows the notes, without publishing.
+name: Rilascia
+
+on:
+  workflow_dispatch:
+    inputs:
+      prova:
+        description: 'Solo prova: controlla tutto ma non pubblica'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # create the tag and the release
+  actions: read     # read the result of the tests
+
+# Two presses close together: the second one waits, then finds the tag already there
+concurrency:
+  group: rilascia
+  cancel-in-progress: false
+
+jobs:
+  rilascia:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Si rilascia solo da master
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "::error::Lancialo dal branch master (scelto: ${{ github.ref_name }})"
+          exit 1
+      - uses: actions/checkout@v7
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Controlli e pubblicazione
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash deploy/pubblica-release.sh ${{ inputs.prova && '--prova' || '' }}

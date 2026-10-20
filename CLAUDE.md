@@ -22,7 +22,7 @@ Rules:
 
 - Backend: `cd backend && npm test` runs the unit and integration tests. It needs Docker: it starts a throwaway Postgres and Redis (`backend/test/docker-compose.yml`) and never touches the real database. Without Docker: `npm run test:unitari` (CI runs the others on the PR anyway).
 - Frontend: `cd frontend && npm test` (Vitest) and `npm run lint`: ESLint is at zero errors and zero warnings, and CI blocks both (`--max-warnings 0`). To load data in an effect: `api.get(...).then(...)` with the state updated in the callbacks, and "loading" derived from what has been loaded (see Statistiche, Storico).
-- Releases: `bash deploy/test/rilascio.test.sh` tests `deploy/rilascio.sh` with fake docker, curl and npm. Whoever changes the script updates its tests too.
+- Releases: `bash deploy/test/rilascio.test.sh` tests `deploy/rilascio.sh` with fake docker, curl and npm, and `bash deploy/test/pubblica-release.test.sh` the release button's script with a fake gh. Whoever changes a script updates its tests too.
 - Whoever changes a piece of logic (records, volume, dates, permissions, authentication) adds or updates its test: in the backend in `backend/test/` with `node:test`, in the frontend next to the file (`*.test.js`). Pull requests run them on GitHub Actions (`.github/workflows/test.yml`).
 
 ## Database
@@ -39,6 +39,6 @@ Rules:
 
 ## Releases
 
-- The GitHub release has tag `v` + the version in `version.json` (for example `v1.2.1`) and starts from `master`. On the server `deploy/rilascio.sh` installs it on its own within a couple of minutes: database copy, images, migrations, frontend, version check, stories, Telegram message; if something fails it goes back to the previous version. Details in `deploy/README.md`.
+- Giovanni decides the version number and when to release; several pull requests can add their lines to the same version's changelog entry. He releases with the **Rilascia** button (Actions → Rilascia → Run workflow, `deploy/pubblica-release.sh`): tag `v` + the version in `version.json` on the tip of `master`, only if the version is new, has its changelog entry and the tests of that commit are green. Do not publish releases from a work session. On the server `deploy/rilascio.sh` installs it on its own within a couple of minutes: database copy, images, migrations, frontend, version check, stories, Telegram message; if something fails it goes back to the previous version. Details in `deploy/README.md`.
 - Changes to the server's `.env`, fixes to the data in the database and Cloudflare settings cannot be made from the repository. If a change needs them, the PR says so clearly in an "On release" section.
 - A new environment variable goes in `.env.example` with its comment, and the code must work without it (the feature stays off) until it is set.
