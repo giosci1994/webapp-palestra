@@ -107,10 +107,16 @@ export function useAutoAggiornamento() {
     if (!('serviceWorker' in navigator)) return;
 
     const gestisciControllerChange = () => {
-      // A new SW took control → reload to load the new files
-      if (!haForzatoRef.current) {
-        window.location.reload();
+      // A new SW took control → reload to load the new files, but not in the
+      // middle of a workout (the rest timer would be lost): the update stays
+      // pending and happens on the next return to the app outside the workout,
+      // or at the next version check
+      if (haForzatoRef.current) return;
+      if (inAllenamento()) {
+        setAggiornamentoDisponibile(true);
+        return;
       }
+      window.location.reload();
     };
 
     navigator.serviceWorker.addEventListener('controllerchange', gestisciControllerChange);
