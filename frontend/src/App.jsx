@@ -2,6 +2,7 @@
 // GymMaster — App Router
 // ============================================
 
+import { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contesti/AuthContesto.jsx';
 import { SocketProvider } from './contesti/SocketContesto.jsx';
@@ -12,43 +13,48 @@ import { useAutoAggiornamento } from './hooks/useAutoAggiornamento.js';
 import { RefreshCw } from 'lucide-react';
 import { useLingua } from './hooks/useLingua.js';
 import Testo from './i18n/Testo.jsx';
+import { SpinnerPagina } from './componenti/comuni/Spinner.jsx';
+import { caricaPagina } from './utils/caricaPagina.js';
+import Login from './pagine/Login.jsx';
+import Dashboard from './pagine/Dashboard.jsx';
+
+// Login and Dashboard, the pages the app opens on, are in the main file; every
+// other page is loaded when it is opened (utils/caricaPagina.js)
 
 // Public pages
-import Login from './pagine/Login.jsx';
-import Registrazione from './pagine/Registrazione.jsx';
-import VerificaEmail from './pagine/VerificaEmail.jsx';
-import PasswordDimenticata from './pagine/PasswordDimenticata.jsx';
-import ReimpostaPassword from './pagine/ReimpostaPassword.jsx';
-import Onboarding from './pagine/Onboarding.jsx';
+const Registrazione = caricaPagina(() => import('./pagine/Registrazione.jsx'));
+const VerificaEmail = caricaPagina(() => import('./pagine/VerificaEmail.jsx'));
+const PasswordDimenticata = caricaPagina(() => import('./pagine/PasswordDimenticata.jsx'));
+const ReimpostaPassword = caricaPagina(() => import('./pagine/ReimpostaPassword.jsx'));
+const Onboarding = caricaPagina(() => import('./pagine/Onboarding.jsx'));
 
 // Legal pages
-import PrivacyPolicy from './pagine/legale/PrivacyPolicy.jsx';
-import CookiePolicy from './pagine/legale/CookiePolicy.jsx';
-import TerminiServizio from './pagine/legale/TerminiServizio.jsx';
+const PrivacyPolicy = caricaPagina(() => import('./pagine/legale/PrivacyPolicy.jsx'));
+const CookiePolicy = caricaPagina(() => import('./pagine/legale/CookiePolicy.jsx'));
+const TerminiServizio = caricaPagina(() => import('./pagine/legale/TerminiServizio.jsx'));
 
 // Protected pages
-import Dashboard from './pagine/Dashboard.jsx';
-import Profilo from './pagine/Profilo.jsx';
-import SchedeAllenamento from './pagine/SchedeAllenamento.jsx';
-import DettaglioScheda from './pagine/DettaglioScheda.jsx';
-import WorkoutLive from './pagine/WorkoutLive.jsx';
-import Chat from './pagine/Chat.jsx';
-import Conversazione from './pagine/Conversazione.jsx';
-import Assistente from './pagine/Assistente.jsx';
-import Statistiche from './pagine/Statistiche.jsx';
-import AdminUtenti from './pagine/AdminUtenti.jsx';
-import AdminPalestre from './pagine/AdminPalestre.jsx';
-import AdminEsercizi from './pagine/AdminEsercizi.jsx';
-import AdminNovita from './pagine/AdminNovita.jsx';
-import Gamification from './pagine/Gamification.jsx';
-import Allenamento from './pagine/Allenamento.jsx';
-import StoricoAllenamenti from './pagine/StoricoAllenamenti.jsx';
-import CatalogoEsercizi from './pagine/CatalogoEsercizi.jsx';
-import DashboardPT from './pagine/DashboardPT.jsx';
-import TrainerProfilo from './pagine/TrainerProfilo.jsx';
-import TrovaPT from './pagine/TrovaPT.jsx';
-import Composizione from './pagine/Composizione.jsx';
-import Pianificazione from './pagine/Pianificazione.jsx';
+const Profilo = caricaPagina(() => import('./pagine/Profilo.jsx'));
+const SchedeAllenamento = caricaPagina(() => import('./pagine/SchedeAllenamento.jsx'));
+const DettaglioScheda = caricaPagina(() => import('./pagine/DettaglioScheda.jsx'));
+const WorkoutLive = caricaPagina(() => import('./pagine/WorkoutLive.jsx'));
+const Chat = caricaPagina(() => import('./pagine/Chat.jsx'));
+const Conversazione = caricaPagina(() => import('./pagine/Conversazione.jsx'));
+const Assistente = caricaPagina(() => import('./pagine/Assistente.jsx'));
+const Statistiche = caricaPagina(() => import('./pagine/Statistiche.jsx'));
+const AdminUtenti = caricaPagina(() => import('./pagine/AdminUtenti.jsx'));
+const AdminPalestre = caricaPagina(() => import('./pagine/AdminPalestre.jsx'));
+const AdminEsercizi = caricaPagina(() => import('./pagine/AdminEsercizi.jsx'));
+const AdminNovita = caricaPagina(() => import('./pagine/AdminNovita.jsx'));
+const Gamification = caricaPagina(() => import('./pagine/Gamification.jsx'));
+const Allenamento = caricaPagina(() => import('./pagine/Allenamento.jsx'));
+const StoricoAllenamenti = caricaPagina(() => import('./pagine/StoricoAllenamenti.jsx'));
+const CatalogoEsercizi = caricaPagina(() => import('./pagine/CatalogoEsercizi.jsx'));
+const DashboardPT = caricaPagina(() => import('./pagine/DashboardPT.jsx'));
+const TrainerProfilo = caricaPagina(() => import('./pagine/TrainerProfilo.jsx'));
+const TrovaPT = caricaPagina(() => import('./pagine/TrovaPT.jsx'));
+const Composizione = caricaPagina(() => import('./pagine/Composizione.jsx'));
+const Pianificazione = caricaPagina(() => import('./pagine/Pianificazione.jsx'));
 
 // --- Smart redirect: back to the last visited route ---
 function RedirectIniziale() {
@@ -90,6 +96,8 @@ export default function App() {
       <TrackerRotta />
       <AuthProvider>
         <SocketProvider>
+          {/* The pages inside the layout wait under the sidebar (LayoutAutenticato); here the public ones */}
+          <Suspense fallback={<SpinnerPagina />}>
           <Routes>
             {/* Public pages */}
             <Route path="/login" element={<Login />} />
@@ -134,6 +142,7 @@ export default function App() {
             <Route path="/" element={<RedirectIniziale />} />
             <Route path="*" element={<RedirectIniziale />} />
           </Routes>
+          </Suspense>
 
           {/* Global cookie banner */}
           <CookieBanner />

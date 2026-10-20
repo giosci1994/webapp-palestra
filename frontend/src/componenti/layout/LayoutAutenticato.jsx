@@ -3,10 +3,10 @@
 // Wrapper with Sidebar (desktop) and BottomNav (mobile)
 // ============================================
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contesti/AuthContesto.jsx';
-import { SpinnerPagina } from '../comuni/Spinner.jsx';
+import Spinner, { SpinnerPagina } from '../comuni/Spinner.jsx';
 import Sidebar from './Sidebar.jsx';
 import BarraNavigazione from './BarraNavigazione.jsx';
 import NovitaStorie from '../specifici/NovitaStorie.jsx';
@@ -58,7 +58,10 @@ export default function LayoutAutenticato() {
         >
           {/* The key resets the error when the page changes */}
           <RecuperoErrori key={location.pathname}>
-            <Outlet />
+            {/* Pages are loaded when they are opened: meanwhile the sidebar stays */}
+            <Suspense fallback={<div className="flex justify-center py-16"><Spinner /></div>}>
+              <Outlet />
+            </Suspense>
           </RecuperoErrori>
         </div>
       </main>

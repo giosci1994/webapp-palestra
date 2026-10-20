@@ -280,7 +280,7 @@ export default function Profilo() {
     if (infoApp) return;
     api.get('/utenti/info-app')
       .then(r => setInfoApp(r.dati))
-      .catch(() => setInfoApp({ versione: 'N/A', stack: {}, changelog: [] }));
+      .catch(() => setInfoApp({ versione: 'N/A', stack: {} }));
   };
 
   /** The data a tab loads when it opens */

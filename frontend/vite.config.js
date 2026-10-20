@@ -115,12 +115,12 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
+        // No chunk of its own for recharts: it would pull in shared helpers the
+        // start of the app needs too, and load all the charts with it. Left
+        // to Vite, the charts go with the pages that draw them
         manualChunks(id) {
           if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router')) {
             return 'vendor';
-          }
-          if (id.includes('node_modules/recharts')) {
-            return 'charts';
           }
           if (id.includes('node_modules/framer-motion')) {
             return 'animation';
