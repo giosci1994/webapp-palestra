@@ -97,6 +97,17 @@ export async function segnaLetta(utenteId, notificaId) {
   return esito.count > 0;
 }
 
+/**
+ * The same notification for every active admin, each in their own language
+ * (exercise suggestions, requests to become a personal trainer).
+ * @returns {Promise<number>} how many admins it reached
+ */
+export async function notificaAdmin(io, dati) {
+  const admin = await prisma.utente.findMany({ where: { ruolo: 'SUPERADMIN', stato: 'ATTIVO' }, select: { id: true } });
+  await Promise.all(admin.map(({ id }) => creaNotifica(io, id, dati)));
+  return admin.length;
+}
+
 /** Marks all of the user's notifications as read. */
 export async function segnaTutteLette(utenteId) {
   const esito = await prisma.allenamentoNotifica.updateMany({

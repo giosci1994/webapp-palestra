@@ -12,6 +12,7 @@ import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 import { t, localeDi } from '../i18n/index.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
+import { creaNotifica } from '../services/notifiche.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -221,17 +222,13 @@ router.delete('/clienti/:id', async (req, res, next) => {
       data: { stato: 'TERMINATA', dataRisposta: new Date() }
     });
 
-    // Notify the client
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(clienteId);
-      io.to(`utente:${clienteId}`).emit('notifica:nuova', {
-        tipo: 'iscrizione_terminata',
-        titolo: t('ptRoutes.iscrizioneTerminataTitolo', {}, lingua),
-        messaggio: t('ptRoutes.iscrizioneTerminataMessaggio', {}, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the client, in their language
+    await creaNotifica(req.app.get('io'), clienteId, {
+      tipo: 'RICHIESTA_PT',
+      titolo: 'ptRoutes.iscrizioneTerminataTitolo',
+      messaggio: 'ptRoutes.iscrizioneTerminataMessaggio',
+      percorso: '/trova-pt'
+    });
 
     res.json({ successo: true, messaggio: t('ptRoutes.rapportoTerminato') });
   } catch (errore) { next(errore); }
@@ -282,17 +279,14 @@ router.patch('/richieste/:id/accetta', async (req, res, next) => {
       include: { utente: { select: { id: true, nome: true } } }
     });
 
-    // Notify the user
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(richiesta.utenteId);
-      io.to(`utente:${richiesta.utenteId}`).emit('notifica:nuova', {
-        tipo: 'iscrizione_accettata',
-        titolo: t('ptRoutes.richiestaAccettataTitolo', {}, lingua),
-        messaggio: t('ptRoutes.richiestaAccettataMessaggio', { nome: req.utente.nome }, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the user, in their language
+    await creaNotifica(req.app.get('io'), richiesta.utenteId, {
+      tipo: 'RICHIESTA_PT',
+      titolo: 'ptRoutes.richiestaAccettataTitolo',
+      messaggio: 'ptRoutes.richiestaAccettataMessaggio',
+      variabili: { nome: req.utente.nome },
+      percorso: `/trainer/${req.utente.id}`
+    });
 
     res.json({ successo: true, dati: aggiornata });
   } catch (errore) { next(errore); }
@@ -316,17 +310,13 @@ router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
       data: { stato: 'RIFIUTATA', dataRisposta: new Date() }
     });
 
-    // Notify the user
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(richiesta.utenteId);
-      io.to(`utente:${richiesta.utenteId}`).emit('notifica:nuova', {
-        tipo: 'iscrizione_rifiutata',
-        titolo: t('ptRoutes.richiestaRifiutataTitolo', {}, lingua),
-        messaggio: t('ptRoutes.richiestaRifiutataMessaggio', {}, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the user, in their language
+    await creaNotifica(req.app.get('io'), richiesta.utenteId, {
+      tipo: 'RICHIESTA_PT',
+      titolo: 'ptRoutes.richiestaRifiutataTitolo',
+      messaggio: 'ptRoutes.richiestaRifiutataMessaggio',
+      percorso: '/trova-pt'
+    });
 
     res.json({ successo: true, messaggio: t('ptRoutes.richiestaRifiutata') });
   } catch (errore) { next(errore); }
@@ -393,20 +383,14 @@ router.post('/appuntamenti', async (req, res, next) => {
       }
     });
 
-    // Notify the client
-    const io = req.app.get('io');
-    if (io) {
-      // The date in the client's language, not the trainer's
-      const lingua = await linguaDiUtenteId(parseInt(clienteId));
-      io.to(`utente:${clienteId}`).emit('notifica:nuova', {
-        tipo: 'nuovo_appuntamento',
-        titolo: t('ptRoutes.nuovoAppuntamentoTitolo', {}, lingua),
-        messaggio: t('ptRoutes.nuovoAppuntamentoMessaggio', {
-          nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(localeDi(lingua))
-        }, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the client, with the date in their language, not the trainer's
+    const lingua = await linguaDiUtenteId(parseInt(clienteId));
+    await creaNotifica(req.app.get('io'), parseInt(clienteId), {
+      titolo: 'ptRoutes.nuovoAppuntamentoTitolo',
+      messaggio: 'ptRoutes.nuovoAppuntamentoMessaggio',
+      variabili: { nome: req.utente.nome, titolo, data: new Date(dataOra).toLocaleDateString(localeDi(lingua)) },
+      percorso: '/dashboard'
+    });
 
     res.status(201).json({ successo: true, dati: appuntamento });
   } catch (errore) { next(errore); }
@@ -614,17 +598,14 @@ router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
       }
     });
 
-    // Notify the client
-    const io = req.app.get('io');
-    if (io) {
-      io.to(`utente:${clienteId}`).emit('notifica:nuova', {
-        tipo: 'scheda_assegnata',
-        titolo: t('ptRoutes.schedaAssegnataTitolo', {}, lingua),
-        messaggio: t('ptRoutes.schedaAssegnataMessaggio', { nome: req.utente.nome, titolo: nuovaScheda.titolo }, lingua),
-        dati: { schedaId: nuovaScheda.id },
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the client, in their language
+    await creaNotifica(req.app.get('io'), clienteId, {
+      tipo: 'SCHEDA_ASSEGNATA',
+      titolo: 'ptRoutes.schedaAssegnataTitolo',
+      messaggio: 'ptRoutes.schedaAssegnataMessaggio',
+      variabili: { nome: req.utente.nome, titolo: nuovaScheda.titolo },
+      percorso: `/schede/${nuovaScheda.id}`
+    });
 
     res.status(201).json({ successo: true, dati: nuovaScheda });
   } catch (errore) { next(errore); }
@@ -676,31 +657,19 @@ router.post('/annunci', async (req, res, next) => {
       include: { destinatario: { select: { id: true, nome: true } } }
     });
 
-    // Notify clients: only the recipient if there is one; otherwise all of them
-    const io = req.app.get('io');
-    if (io) {
-      if (destinatarioId) {
-        io.to(`utente:${destinatarioId}`).emit('notifica:nuova', {
-          tipo: 'annuncio_pt',
-          titolo: `📢 ${titolo}`,
-          messaggio: contenuto.substring(0, 100),
-          timestamp: new Date().toISOString()
-        });
-      } else {
-        const clienti = await prisma.iscrizionePT.findMany({
+    // Notify clients: only the recipient if there is one; otherwise all of them.
+    // The text is the trainer's own, so it is not translated
+    const destinatari = destinatarioId
+      ? [parseInt(destinatarioId)]
+      : (await prisma.iscrizionePT.findMany({
           where: { trainerId: req.utente.id, stato: 'ATTIVA' },
           select: { utenteId: true }
-        });
-        clienti.forEach(c => {
-          io.to(`utente:${c.utenteId}`).emit('notifica:nuova', {
-            tipo: 'annuncio_pt',
-            titolo: `📢 ${titolo}`,
-            messaggio: contenuto.substring(0, 100),
-            timestamp: new Date().toISOString()
-          });
-        });
-      }
-    }
+        })).map(c => c.utenteId);
+    await Promise.all(destinatari.map(id => creaNotifica(req.app.get('io'), id, {
+      titolo: `📢 ${titolo}`,
+      messaggio: contenuto.substring(0, 100),
+      percorso: '/dashboard'
+    })));
 
     res.status(201).json({ successo: true, dati: annuncio });
   } catch (errore) { next(errore); }

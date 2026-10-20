@@ -15,7 +15,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
-import { linguaDiUtenteId } from '../i18n/destinatario.js';
+import { creaNotifica } from '../services/notifiche.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -236,18 +236,13 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
       }
     });
 
-    // Notify the user who made the suggestion
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(suggerimento.utenteId);
-      io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
-        tipo: 'suggerimento_approvato',
-        titolo: t('adminRoutes.esercizioApprovatoTitolo', {}, lingua),
-        messaggio: t('adminRoutes.esercizioApprovatoMessaggio', { nome: suggerimento.nome }, lingua),
-        dati: { esercizioId: esercizio.id },
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the user who made the suggestion, in their language
+    await creaNotifica(req.app.get('io'), suggerimento.utenteId, {
+      titolo: 'adminRoutes.esercizioApprovatoTitolo',
+      messaggio: 'adminRoutes.esercizioApprovatoMessaggio',
+      variabili: { nome: suggerimento.nome },
+      percorso: '/catalogo'
+    });
 
     res.json({
       successo: true,
@@ -285,19 +280,13 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
       }
     });
 
-    // Notify the user
-    const io = req.app.get('io');
-    if (io) {
-      const lingua = await linguaDiUtenteId(suggerimento.utenteId);
-      io.to(`utente:${suggerimento.utenteId}`).emit('notifica:nuova', {
-        tipo: 'suggerimento_rifiutato',
-        titolo: t('adminRoutes.suggerimentoRifiutatoTitolo', {}, lingua),
-        messaggio: motivoRifiuto
-          ? t('adminRoutes.suggerimentoRifiutatoConMotivo', { nome: suggerimento.nome, motivo: motivoRifiuto }, lingua)
-          : t('adminRoutes.suggerimentoRifiutatoSenzaMotivo', { nome: suggerimento.nome }, lingua),
-        timestamp: new Date().toISOString()
-      });
-    }
+    // Notify the user, in their language
+    await creaNotifica(req.app.get('io'), suggerimento.utenteId, {
+      titolo: 'adminRoutes.suggerimentoRifiutatoTitolo',
+      messaggio: motivoRifiuto ? 'adminRoutes.suggerimentoRifiutatoConMotivo' : 'adminRoutes.suggerimentoRifiutatoSenzaMotivo',
+      variabili: { nome: suggerimento.nome, motivo: motivoRifiuto },
+      percorso: '/catalogo'
+    });
 
     res.json({ successo: true, messaggio: t('adminRoutes.suggerimentoRifiutato') });
   } catch (errore) { next(errore); }

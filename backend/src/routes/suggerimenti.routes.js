@@ -6,7 +6,8 @@
 import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import prisma from '../config/database.js';
-import { t, linguaDiUtente } from '../i18n/index.js';
+import { t } from '../i18n/index.js';
+import { notificaAdmin } from '../services/notifiche.service.js';
 
 const router = Router();
 router.use(verificaToken);
@@ -37,27 +38,13 @@ router.post('/', async (req, res, next) => {
       }
     });
 
-    // Notify the connected admins via Socket.io
-    const io = req.app.get('io');
-    if (io) {
-      // Find every admin
-      const admins = await prisma.utente.findMany({
-        where: { ruolo: 'SUPERADMIN', stato: 'ATTIVO' },
-        select: { id: true, lingua: true, linguaApp: true }
-      });
-
-      // Each admin gets the text in their own language, not the requester's
-      for (const admin of admins) {
-        const lingua = linguaDiUtente(admin);
-        io.to(`utente:${admin.id}`).emit('notifica:nuova', {
-          tipo: 'suggerimento_esercizio',
-          titolo: t('suggerimentiRoutes.nuovoSuggerimentoTitolo', {}, lingua),
-          messaggio: t('suggerimentiRoutes.nuovoSuggerimentoMessaggio', { utente: req.utente.nome, esercizio: nome }, lingua),
-          dati: { suggerimentoId: suggerimento.id },
-          timestamp: new Date().toISOString()
-        });
-      }
-    }
+    // Every admin gets it, in their own language: saved, live and as push
+    await notificaAdmin(req.app.get('io'), {
+      titolo: 'suggerimentiRoutes.nuovoSuggerimentoTitolo',
+      messaggio: 'suggerimentiRoutes.nuovoSuggerimentoMessaggio',
+      variabili: { utente: req.utente.nome, esercizio: nome },
+      percorso: '/admin/esercizi'
+    });
 
     res.status(201).json({
       successo: true,
