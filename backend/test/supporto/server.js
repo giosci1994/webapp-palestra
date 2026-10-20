@@ -34,6 +34,7 @@ export async function avviaServer() {
    *   lingua: the app's language (Accept-Language); Italian by default, as the tests
    *   check the Italian messages; null sends no header
    * @returns {Promise<{ stato: number, corpo: any, testo: string, intestazioni: Headers, cookieRicevuti: string[] }>}
+   *   corpo: the JSON of the response; null if it is not JSON (a .docx download)
    */
   async function richiesta(metodo, percorso, { token, corpo, cookie, ip = nuovoIp(), userAgent, lingua = 'it', fuso } = {}) {
     const intestazioni = { 'cf-connecting-ip': ip };
@@ -51,9 +52,10 @@ export async function avviaServer() {
       body: corpo === undefined ? undefined : JSON.stringify(corpo)
     });
     const testo = await risposta.text();
+    const json = (risposta.headers.get('content-type') || '').includes('json');
     return {
       stato: risposta.status,
-      corpo: testo ? JSON.parse(testo) : null,
+      corpo: testo && json ? JSON.parse(testo) : null,
       testo,
       intestazioni: risposta.headers,
       cookieRicevuti: risposta.headers.getSetCookie()
