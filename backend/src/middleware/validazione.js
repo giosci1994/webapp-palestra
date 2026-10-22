@@ -90,7 +90,7 @@ export function valida(schemi) {
 }
 
 /** Table ids are Postgres 32-bit integers */
-const ID_MASSIMO = 2147483647;
+export const ID_MASSIMO = 2147483647;
 
 /**
  * For router.param: an id in the URL must be a positive integer. Without this

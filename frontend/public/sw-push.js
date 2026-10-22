@@ -30,14 +30,23 @@ self.addEventListener('push', (evento) => {
   })());
 });
 
-// Tap on the notification: opens the app on the right page, reusing the window if there is one
+// Tap on the notification: opens the app on the right page, reusing the
+// window if there is one. A window already on that page only comes to the
+// front: navigating would reload it (the end of the rest, in the middle of a
+// workout).
 self.addEventListener('notificationclick', (evento) => {
   evento.notification.close();
   const indirizzo = new URL(evento.notification.data?.percorso || '/', self.location.origin).href;
 
   evento.waitUntil((async () => {
-    const finestre = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const finestra = finestre.find(f => new URL(f.url).origin === self.location.origin);
+    const finestre = (await self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+      .filter(f => new URL(f.url).origin === self.location.origin);
+    const giaLi = finestre.find(f => new URL(f.url).href === indirizzo);
+    if (giaLi) {
+      await giaLi.focus();
+      return;
+    }
+    const finestra = finestre[0];
     if (finestra) {
       await finestra.focus();
       if ('navigate' in finestra) await finestra.navigate(indirizzo).catch(() => {});

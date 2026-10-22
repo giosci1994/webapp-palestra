@@ -6,6 +6,7 @@ import * as notificheService from '../services/notifiche.service.js';
 import * as pushService from '../services/push.service.js';
 import { ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 import { t } from '../i18n/index.js';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 
 /** GET /api/v1/notifiche?limite=&soloNonLette= — List + unread count */
 export async function lista(req, res, next) {
@@ -109,16 +110,20 @@ export async function provaPush(req, res, next) {
 
 /**
  * POST /api/v1/notifiche/push/recupero — Notifies when the rest ends
- * (body: { secondi, prossimo? }: prossimo is what comes next, "Panca piana · serie 2")
+ * (body: { secondi, prossimo?, sessioneId? }: prossimo is what comes next,
+ * "Panca piana · serie 2"; sessioneId the workout the tap goes back to)
  */
 export async function programmaRecupero(req, res, next) {
   try {
-    const { secondi, prossimo } = req.body || {};
+    const { secondi, prossimo, sessioneId } = req.body || {};
     if (!Number.isInteger(secondi) || secondi < 1 || secondi > pushService.RECUPERO_MASSIMO) {
       throw new ErroreValidazione(t('notificheController.recuperoFuoriLimiti', { max: pushService.RECUPERO_MASSIMO }));
     }
     if (prossimo != null && !testoBreve(prossimo, 120)) throw new ErroreValidazione(t('notificheController.prossimoNonValido'));
-    pushService.programmaFineRecupero(req.utente.id, secondi, prossimo);
+    if (sessioneId != null && !(Number.isInteger(sessioneId) && sessioneId >= 1 && sessioneId <= ID_MASSIMO)) {
+      throw new ErroreValidazione(t('notificheController.sessioneNonValida'));
+    }
+    pushService.programmaFineRecupero(req.utente.id, secondi, prossimo, sessioneId);
     res.json({ successo: true });
   } catch (errore) { next(errore); }
 }

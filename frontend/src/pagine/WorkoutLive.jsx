@@ -493,10 +493,11 @@ export default function WorkoutLive() {
     setDurataRecupero(secondi);
     setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
-    // The app's timer stops with the screen locked: tell the server
+    // The app's timer stops with the screen locked: tell the server, with
+    // this workout, where the tap on the notification comes back to
     if (push.iscritto) {
       avvisoRecuperoRef.current = true;
-      api.post('/notifiche/push/recupero', { secondi, prossimo }).catch(() => {});
+      api.post('/notifiche/push/recupero', { secondi, prossimo, sessioneId: Number(id) }).catch(() => {});
     }
   };
 

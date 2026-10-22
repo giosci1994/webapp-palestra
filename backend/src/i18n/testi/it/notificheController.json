@@ -6,5 +6,6 @@
   "provaTitolo": "🔔 Notifiche attive",
   "provaMessaggio": "Da adesso GymMaster ti avvisa anche a schermo bloccato.",
   "recuperoFuoriLimiti": "Il recupero va da 1 a {max} secondi",
-  "prossimoNonValido": "Il prossimo esercizio deve essere un testo breve"
+  "prossimoNonValido": "Il prossimo esercizio deve essere un testo breve",
+  "sessioneNonValida": "Allenamento non valido"
 }
