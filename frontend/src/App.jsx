@@ -46,6 +46,7 @@ const AdminUtenti = caricaPagina(() => import('./pagine/AdminUtenti.jsx'));
 const AdminPalestre = caricaPagina(() => import('./pagine/AdminPalestre.jsx'));
 const AdminEsercizi = caricaPagina(() => import('./pagine/AdminEsercizi.jsx'));
 const AdminNovita = caricaPagina(() => import('./pagine/AdminNovita.jsx'));
+const AdminAllenamenti = caricaPagina(() => import('./pagine/AdminAllenamenti.jsx'));
 const Gamification = caricaPagina(() => import('./pagine/Gamification.jsx'));
 const Allenamento = caricaPagina(() => import('./pagine/Allenamento.jsx'));
 const StoricoAllenamenti = caricaPagina(() => import('./pagine/StoricoAllenamenti.jsx'));
@@ -127,6 +128,7 @@ export default function App() {
               <Route path="/admin/palestre" element={<AdminPalestre />} />
               <Route path="/admin/esercizi" element={<AdminEsercizi />} />
               <Route path="/admin/novita" element={<AdminNovita />} />
+              <Route path="/admin/allenamenti" element={<AdminAllenamenti />} />
               <Route path="/allenamento" element={<Allenamento />} />
               <Route path="/storico" element={<StoricoAllenamenti />} />
               <Route path="/catalogo" element={<CatalogoEsercizi />} />

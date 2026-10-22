@@ -635,13 +635,90 @@ export default function WorkoutLive() {
     );
   }
 
+  // Exercise search drawer: during the workout, and to pick the first
+  // exercise of a free workout
+  const cassettoRicerca = (
+  <AnimatePresence>
+    {mostraRicercaEsercizi && (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+        onClick={(e) => e.target === e.currentTarget && setMostraRicercaEsercizi(false)}
+      >
+        <motion.div
+          initial={{ y: '100%' }}
+          animate={{ y: 0 }}
+          exit={{ y: '100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="glass-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl h-[85vh] flex flex-col overflow-hidden"
+        >
+          <div className="p-4 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
+            <h3 className="font-bold text-lg">{t('workoutLive.ricerca.titolo')}</h3>
+            <button onClick={() => setMostraRicercaEsercizi(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors">✕</button>
+          </div>
+          
+          <div className="p-4 border-b border-[var(--bordo)]">
+            <input
+              type="text"
+              placeholder={t('workoutLive.ricerca.cerca')}
+              value={ricercaTesto}
+              onChange={(e) => setRicercaTesto(e.target.value)}
+              className="w-full bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-xl px-4 py-3 text-sm focus:border-[var(--accent)] outline-none"
+              autoFocus
+            />
+          </div>
+
+          <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
+            {eserciziVisibili.map((es) => (
+              <button
+                key={es.id}
+                onClick={() => aggiungiEsercizioExtra(es)}
+                className="flex items-center justify-between p-3 rounded-xl border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors text-left"
+              >
+                <div>
+                  <p className="font-semibold text-sm">{preferiti.has(es.id) && <span title={t('workoutLive.ricerca.preferito')}>⭐ </span>}{nomeEsercizio(es)}</p>
+                  <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{nomeGruppo(es.gruppoMuscoloPrimario)} · {es.attrezzatura?.nome ? nomeAttrezzatura(es.attrezzatura.nome) : t('workoutLive.ricerca.varie')}</p>
+                </div>
+                <span className="text-[var(--accent)] font-bold">➕</span>
+              </button>
+            ))}
+{restanti > 0 && (
+              <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
+                {t('workoutLive.ricerca.mostraAltri', { numero: formattaNumero(restanti) })}
+              </button>
+            )}
+            {catalogoEsercizi.length > 0 && eserciziFiltrati.length === 0 && (
+              <p className="text-center text-[var(--testo-terziario)] text-sm py-4">{t('workoutLive.ricerca.nessunoTrovato')}</p>
+            )}
+            {catalogoEsercizi.length === 0 && (
+              <p className="text-center text-[var(--testo-terziario)] text-sm py-4">{t('workoutLive.ricerca.caricamento')}</p>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+  );
+
   if (!esercizioAttuale) {
+    // A free workout starts empty: the exercises are added one by one
+    const libero = sessione && !sessione.schedaId;
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="glass-card p-8 text-center">
-          <p className="text-[var(--testo-secondario)]">{t('workoutLive.nessunEsercizio')}</p>
-          <button onClick={() => naviga('/schede')} className="btn-primario mt-4">{t('workoutLive.tornaAlleSchede')}</button>
+        <div className="glass-card p-8 text-center max-w-sm">
+          <p className="text-[var(--testo-secondario)]">{libero ? t('workoutLive.libero.vuoto') : t('workoutLive.nessunEsercizio')}</p>
+          {libero ? (
+            <div className="flex flex-col gap-2 mt-4">
+              <button onClick={apriRicerca} className="btn-primario">{t('workoutLive.libero.aggiungi')}</button>
+              <button onClick={() => naviga('/dashboard')} className="btn-secondario">{t('workoutLive.libero.esci')}</button>
+            </div>
+          ) : (
+            <button onClick={() => naviga('/schede')} className="btn-primario mt-4">{t('workoutLive.tornaAlleSchede')}</button>
+          )}
         </div>
+        {cassettoRicerca}
       </div>
     );
   }
@@ -1169,69 +1246,7 @@ export default function WorkoutLive() {
         )}
       </AnimatePresence>
 
-      {/* Exercise search drawer */}
-      <AnimatePresence>
-        {mostraRicercaEsercizi && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
-            onClick={(e) => e.target === e.currentTarget && setMostraRicercaEsercizi(false)}
-          >
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="glass-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl h-[85vh] flex flex-col overflow-hidden"
-            >
-              <div className="p-4 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
-                <h3 className="font-bold text-lg">{t('workoutLive.ricerca.titolo')}</h3>
-                <button onClick={() => setMostraRicercaEsercizi(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-terziario)] hover:bg-[var(--bordo-hover)] transition-colors">✕</button>
-              </div>
-              
-              <div className="p-4 border-b border-[var(--bordo)]">
-                <input
-                  type="text"
-                  placeholder={t('workoutLive.ricerca.cerca')}
-                  value={ricercaTesto}
-                  onChange={(e) => setRicercaTesto(e.target.value)}
-                  className="w-full bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-xl px-4 py-3 text-sm focus:border-[var(--accent)] outline-none"
-                  autoFocus
-                />
-              </div>
-
-              <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
-                {eserciziVisibili.map((es) => (
-                  <button
-                    key={es.id}
-                    onClick={() => aggiungiEsercizioExtra(es)}
-                    className="flex items-center justify-between p-3 rounded-xl border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors text-left"
-                  >
-                    <div>
-                      <p className="font-semibold text-sm">{preferiti.has(es.id) && <span title={t('workoutLive.ricerca.preferito')}>⭐ </span>}{nomeEsercizio(es)}</p>
-                      <p className="text-[10px] text-[var(--testo-terziario)] mt-0.5">{nomeGruppo(es.gruppoMuscoloPrimario)} · {es.attrezzatura?.nome ? nomeAttrezzatura(es.attrezzatura.nome) : t('workoutLive.ricerca.varie')}</p>
-                    </div>
-                    <span className="text-[var(--accent)] font-bold">➕</span>
-                  </button>
-                ))}
-{restanti > 0 && (
-                  <button onClick={mostraAltri} className="text-sm text-[var(--accent)] py-3 hover:underline">
-                    {t('workoutLive.ricerca.mostraAltri', { numero: formattaNumero(restanti) })}
-                  </button>
-                )}
-                {catalogoEsercizi.length > 0 && eserciziFiltrati.length === 0 && (
-                  <p className="text-center text-[var(--testo-terziario)] text-sm py-4">{t('workoutLive.ricerca.nessunoTrovato')}</p>
-                )}
-                {catalogoEsercizi.length === 0 && (
-                  <p className="text-center text-[var(--testo-terziario)] text-sm py-4">{t('workoutLive.ricerca.caricamento')}</p>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {cassettoRicerca}
     </div>
   );
 }

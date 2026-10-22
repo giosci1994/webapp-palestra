@@ -12,7 +12,7 @@ import { useLingua } from '../hooks/useLingua.js';
 import { LIVELLI } from '../utils/costanti.js';
 import { nomeGruppo } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play } from 'lucide-react';
+import { Play, Plus } from 'lucide-react';
 
 // The two plan views live outside Allenamento: declared inside it, they would
 // be new components on every render of the page, recreated from scratch
@@ -212,6 +212,22 @@ export default function Allenamento() {
         <h1 className="text-3xl font-extrabold mb-1">{t('allenamento.titolo')}</h1>
         <p className="text-[var(--testo-secondario)]">{t('allenamento.sottotitolo')}</p>
       </div>
+
+      {/* Without a plan: the exercises are chosen during the workout */}
+      <button
+        type="button"
+        onClick={() => avviaAllenamento(null)}
+        disabled={avviando}
+        className="glass-card w-full mb-8 px-5 py-4 flex items-center gap-4 text-left border border-dashed border-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors disabled:opacity-50"
+      >
+        <span className="shrink-0 w-11 h-11 rounded-xl bg-[var(--accent-dim)] text-[var(--accent)] flex items-center justify-center">
+          <Plus size={22} />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-bold">{t('allenamento.libero.titolo')}</span>
+          <span className="block text-sm text-[var(--testo-secondario)]">{t('allenamento.libero.testo')}</span>
+        </span>
+      </button>
 
       {caricamento ? (
         <div className="flex justify-center py-12">

@@ -1,0 +1,10 @@
+{
+  "almenoDue": "Scegli almeno due allenamenti da unire",
+  "nonTrovato": "Allenamento non trovato",
+  "utentiDiversi": "Si possono unire solo allenamenti dello stesso utente",
+  "notificaTitolo": "Allenamento sistemato",
+  "notificaUniti": "L'amministratore ha unito {count} tuoi allenamenti in uno solo: «{titolo}»",
+  "notificaCorretto": "L'amministratore ha corretto il tuo allenamento «{titolo}»",
+  "notificaChiuso": "L'amministratore ha chiuso il tuo allenamento «{titolo}», che era rimasto aperto",
+  "notificaEliminato": "L'amministratore ha eliminato il tuo allenamento «{titolo}»"
+}

@@ -47,6 +47,5 @@
   },
   "allenamentoInCorso": "Hai già un allenamento in corso",
   "riaperturaScadutaGiorno": "Un allenamento chiuso in automatico si può riprendere solo entro la giornata",
-  "allenamentoLibero": "Allenamento libero",
-  "riaperturaLibero": "Un allenamento libero non si riprende: puoi correggerlo dallo Storico"
+  "allenamentoLibero": "Allenamento libero"
 }

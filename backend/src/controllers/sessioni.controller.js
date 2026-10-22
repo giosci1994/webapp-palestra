@@ -12,6 +12,7 @@ import {
   concludiSessione, chiudiAperta, controllaRecord, riapribileFinoA, STATI_DA_CHIUDERE, RIAPERTURA_MAX_MINUTI
 } from '../services/conclusioneSessione.service.js';
 import { titoloAllenamento } from '../utils/titoloAllenamento.js';
+import { avvisaSeDiUnAltro } from '../services/allenamentiDaControllare.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
 /** List of the user's workouts */
@@ -36,7 +37,7 @@ export async function listaSessioni(req, res, next) {
 
 // What a workout's history entry needs: used by the list and by the edit,
 // which returns the corrected workout ready to show
-const INCLUDI_STORICO = {
+export const INCLUDI_STORICO = {
   scheda: {
     select: {
       id: true,
@@ -317,14 +318,16 @@ export async function sessioneInCorso(req, res, next) {
  * that workout in `dettagli.sessione`: the app asks whether to resume it.
  * With `chiudiAperte: true` the open ones are closed first (at their last set
  * if they were left idle; deleted if they have no sets), then the new one starts.
+ * With `libero: true` instead of a plan it is a free workout: it starts empty
+ * and the exercises are added during it.
  */
 export async function avviaSessione(req, res, next) {
   try {
-    const { schedaId, minutiRiscaldamento, chiudiAperte } = req.body;
-    if (!schedaId) throw new ErroreValidazione(t('sessioniController.schedaIdObbligatorio'));
+    const { schedaId, minutiRiscaldamento, chiudiAperte, libero } = req.body;
+    if (libero !== true && !schedaId) throw new ErroreValidazione(t('sessioniController.schedaIdObbligatorio'));
 
     // Check that the plan exists
-    const scheda = await prisma.schedaAllenamento.findUnique({
+    const scheda = libero === true ? null : await prisma.schedaAllenamento.findUnique({
       where: { id: parseInt(schedaId) },
       include: {
         esercizi: {
@@ -338,10 +341,10 @@ export async function avviaSessione(req, res, next) {
       }
     });
 
-    if (!scheda) throw new ErroreNonTrovato(t('sessioniController.schedaNonTrovata'));
+    if (libero !== true && !scheda) throw new ErroreNonTrovato(t('sessioniController.schedaNonTrovata'));
     // As for the plan details: one's own (including those assigned by the
     // personal trainer, who puts them in the client's name) and global ones
-    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
+    if (scheda && scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
       throw new ErroreNonAutorizzato(t('sessioniController.schedaNonAccessibile'));
     }
 
@@ -358,7 +361,7 @@ export async function avviaSessione(req, res, next) {
     const sessione = await prisma.sessioneAllenamento.create({
       data: {
         utenteId: req.utente.id,
-        schedaId: parseInt(schedaId),
+        schedaId: scheda?.id ?? null,
         dataInizio: new Date(),
         minutiRiscaldamento: minutiRiscaldamento || null
       },
@@ -452,6 +455,8 @@ export async function completaSessione(req, res, next) {
     const adesso = conclusaIl != null ? orarioDalTelefono(conclusaIl, sessione.dataInizio) : undefined;
     const fuso = await fusoDelProprietario(sessione, req);
     const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso, fuso });
+    // Closed by an admin: the owner is told
+    await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaChiuso');
 
     res.json({
       successo: true,
@@ -577,7 +582,6 @@ export async function riapriSessione(req, res, next) {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
     }
     if (!sessione.dataFine) throw new ErroreValidazione(t('sessioniController.ancoraInCorso'));
-    if (!sessione.schedaId) throw new ErroreValidazione(t('sessioniController.riaperturaLibero'));
     if (Date.now() > riapribileFinoA(sessione, await fusoDelProprietario(sessione, req)).getTime()) {
       throw new ErroreValidazione(sessione.chiusaAutomaticamente
         ? t('sessioniController.riaperturaScadutaGiorno')
@@ -720,6 +724,7 @@ export async function eliminaSessione(req, res, next) {
       prisma.logSerie.deleteMany({ where: { sessioneId: id } }),
       prisma.sessioneAllenamento.delete({ where: { id } })
     ]);
+    await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaEliminato');
 
     res.json({ successo: true, messaggio: t('sessioniController.sessioneEliminata') });
   } catch (errore) { next(errore); }
@@ -776,20 +781,23 @@ export async function registraSessionePassata(req, res, next) {
   try {
     const { schedaId, dataInizio, durataMinuti, minutiRiscaldamento, noteFinali, serie } = req.body;
 
-    if (!schedaId) throw new ErroreValidazione(t('sessioniController.schedaIdObbligatorio'));
-    const idScheda = parseInt(schedaId);
+    // Without a plan it is a free workout (a free workout done without a
+    // network, recreated by the phone's queue)
+    const idScheda = schedaId == null ? null : parseInt(schedaId);
     if (Number.isNaN(idScheda)) throw new ErroreValidazione(t('sessioniController.schedaIdNonValido'));
 
     const inizio = leggiInizio(dataInizio);
     const durata = leggiDurata(durataMinuti);
 
-    const scheda = await prisma.schedaAllenamento.findUnique({
-      where: { id: idScheda },
-      select: { id: true, creatoreId: true, visibilita: true }
-    });
-    if (!scheda) throw new ErroreNonTrovato(t('sessioniController.schedaNonTrovata'));
-    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
-      throw new ErroreNonAutorizzato(t('sessioniController.schedaNonAccessibile'));
+    if (idScheda != null) {
+      const scheda = await prisma.schedaAllenamento.findUnique({
+        where: { id: idScheda },
+        select: { id: true, creatoreId: true, visibilita: true }
+      });
+      if (!scheda) throw new ErroreNonTrovato(t('sessioniController.schedaNonTrovata'));
+      if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
+        throw new ErroreNonAutorizzato(t('sessioniController.schedaNonAccessibile'));
+      }
     }
 
     // The sets are optional: whoever has only the watch summary records date
@@ -848,10 +856,12 @@ export async function registraSessionePassata(req, res, next) {
 
       // If that day was in the calendar, the workout shows as done: this way
       // it does not stay marked as "to do" after being recorded.
-      await tx.allenamentoPianificato.updateMany({
-        where: { utenteId: req.utente.id, schedaId: idScheda, data: giornoLocale(inizio), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
-        data: { stato: 'COMPLETATO', sessioneId: creata.id }
-      });
+      if (idScheda != null) {
+        await tx.allenamentoPianificato.updateMany({
+          where: { utenteId: req.utente.id, schedaId: idScheda, data: giornoLocale(inizio), stato: { in: STATI_DA_CHIUDERE }, sessioneId: null },
+          data: { stato: 'COMPLETATO', sessioneId: creata.id }
+        });
+      }
 
       return creata;
     });
@@ -1110,6 +1120,8 @@ export async function modificaSessione(req, res, next) {
       const recordPersonali = await riallineaRecord(tx, sessione.utenteId, toccati);
       return { aggiornata, recordPersonali };
     });
+
+    await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaCorretto');
 
     res.json({ successo: true, dati: formattaPerStorico(aggiornata), recordPersonali });
   } catch (errore) { next(errore); }

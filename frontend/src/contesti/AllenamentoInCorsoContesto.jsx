@@ -52,12 +52,14 @@ export function AllenamentoInCorsoProvider({ children }) {
   }, [naviga]);
 
   /**
-   * Starts a workout on the plan. true if it started; false if the user has
-   * to choose first (another workout is open). Other errors are thrown.
+   * Starts a workout on the plan, or a free one with schedaId null. true if
+   * it started; false if the user has to choose first (another workout is
+   * open). Other errors are thrown.
    */
   const avvia = useCallback(async (schedaId, { chiudiAperte = false } = {}) => {
     try {
-      const risposta = await api.post('/sessioni', { schedaId: Number(schedaId), ...(chiudiAperte && { chiudiAperte: true }) });
+      const dove = schedaId == null ? { libero: true } : { schedaId: Number(schedaId) };
+      const risposta = await api.post('/sessioni', { ...dove, ...(chiudiAperte && { chiudiAperte: true }) });
       setScelta(null);
       setInCorso(null);
       naviga(`/allenamento/${risposta.dati.id}`, { state: { sessione: risposta.dati } });

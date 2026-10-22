@@ -115,5 +115,10 @@
     "mostraAltri": "Mostra altri ({numero})",
     "nessunoTrovato": "Nessun esercizio trovato",
     "caricamento": "Caricamento esercizi..."
+  },
+  "libero": {
+    "vuoto": "Allenamento libero: aggiungi gli esercizi che vuoi fare, uno alla volta.",
+    "aggiungi": "Aggiungi un esercizio",
+    "esci": "Esci"
   }
 }

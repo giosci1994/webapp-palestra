@@ -115,5 +115,10 @@
     "mostraAltri": "Show more ({numero})",
     "nessunoTrovato": "No exercises found",
     "caricamento": "Loading exercises..."
+  },
+  "libero": {
+    "vuoto": "Free workout: add the exercises you want to do, one at a time.",
+    "aggiungi": "Add an exercise",
+    "esci": "Leave"
   }
 }

@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 import { 
   Home, ClipboardList, Dumbbell, History, BarChart2, MessageCircle,
   Bot, Trophy, Users, Building, BookOpen, LogOut, Menu, Library, UserCheck, Sparkles,
-  CalendarClock
+  CalendarClock, ClipboardCheck
 } from 'lucide-react';
 
 // Menu entries: `chiave` is a translation key, shown with t() when rendering
@@ -36,7 +36,8 @@ const MENU_ADMIN = [
   { percorso: '/admin/utenti', Icona: Users, chiave: 'sidebar.admin.utenti' },
   { percorso: '/admin/palestre', Icona: Building, chiave: 'sidebar.admin.palestre' },
   { percorso: '/admin/esercizi', Icona: BookOpen, chiave: 'sidebar.admin.esercizi', badgeKey: 'suggerimenti' },
-  { percorso: '/admin/novita', Icona: Sparkles, chiave: 'sidebar.admin.novita' }
+  { percorso: '/admin/novita', Icona: Sparkles, chiave: 'sidebar.admin.novita' },
+  { percorso: '/admin/allenamenti', Icona: ClipboardCheck, chiave: 'sidebar.admin.allenamenti' }
 ];
 
 const MENU_PT = [

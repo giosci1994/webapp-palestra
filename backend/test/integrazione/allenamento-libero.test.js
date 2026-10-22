@@ -115,12 +115,8 @@ describe('a free workout', () => {
     assert.equal(gruppi.find(g => g.nome === 'Petto').seriePeriodo, 3);
   });
 
-  it('cannot be resumed, but can be corrected, moved to another day, saved as a plan and deleted', async () => {
+  it('can be corrected, moved to another day, saved as a plan and deleted', async () => {
     const sessione = await libero('Push + Gambe', new Date(Date.now() - 70 * MINUTO));
-
-    const riprendi = await chiedi('PATCH', `/sessioni/${sessione.id}/riapri`);
-    assert.equal(riprendi.stato, 400);
-    assert.equal(riprendi.corpo.messaggio, 'Un allenamento libero non si riprende: puoi correggerlo dallo Storico');
 
     const corretto = await chiedi('PATCH', `/sessioni/${sessione.id}`, { dataInizio: giorniFa(3).toISOString(), noteFinali: 'Unito' });
     assert.equal(corretto.stato, 200);
@@ -135,6 +131,32 @@ describe('a free workout', () => {
 
     assert.equal((await chiedi('DELETE', `/sessioni/${sessione.id}`)).stato, 200);
     assert.equal(await leggi(sessione), null);
+  });
+
+  it('starts empty, without a plan; with another workout open, the app asks first', async () => {
+    const risposta = await chiedi('POST', '/sessioni', { libero: true });
+    assert.equal(risposta.stato, 201);
+    assert.deepEqual([risposta.corpo.dati.schedaId, risposta.corpo.dati.scheda, risposta.corpo.dati.titolo], [null, null, null]);
+
+    const altro = await chiedi('POST', '/sessioni', { libero: true });
+    assert.equal(altro.stato, 409);
+    assert.equal(altro.corpo.dettagli.sessione.scheda, null);
+    assert.equal((await chiedi('POST', '/sessioni', { libero: 'true' })).stato, 400);
+
+    // Sets of any exercise, then "Termina", and it can be resumed like the others
+    const id = risposta.corpo.dati.id;
+    assert.equal((await chiedi('POST', `/sessioni/${id}/serie`, { esercizioId: panca.id, serieNumero: 1, pesoEffettivo: 60, repEffettive: 10 })).stato, 201);
+    assert.equal((await chiedi('PATCH', `/sessioni/${id}/completa`, {})).stato, 200);
+    assert.equal((await chiedi('PATCH', `/sessioni/${id}/riapri`)).stato, 200);
+  });
+
+  it('a free workout done without a network is saved afterwards without a plan', async () => {
+    const risposta = await chiedi('POST', '/sessioni/passata', {
+      dataInizio: giorniFa(1).toISOString(), durataMinuti: 40,
+      serie: [{ esercizioId: panca.id, serieNumero: 1, pesoEffettivo: 70, repEffettive: 8 }]
+    });
+    assert.equal(risposta.stato, 201);
+    assert.equal((await leggi(risposta.corpo.dati)).schedaId, null);
   });
 
   it('left open, the server closes it like the others', async () => {

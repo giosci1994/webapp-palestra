@@ -47,6 +47,5 @@
   },
   "allenamentoInCorso": "You already have a workout in progress",
   "riaperturaScadutaGiorno": "A workout closed automatically can only be resumed on the same day",
-  "allenamentoLibero": "Free workout",
-  "riaperturaLibero": "A free workout cannot be resumed: you can correct it from the history"
+  "allenamentoLibero": "Free workout"
 }
