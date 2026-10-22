@@ -4,11 +4,13 @@
 // ============================================
 
 import prisma from '../config/database.js';
-import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato } from '../utils/errori.js';
+import { ErroreNonTrovato, ErroreValidazione, ErroreNonAutorizzato, ErroreConflitto } from '../utils/errori.js';
 import { fusoCorrente, giornoLocale } from '../utils/date.js';
 import { fusoDiUtenteId } from '../i18n/destinatario.js';
 import { t, localeDi } from '../i18n/index.js';
-import { concludiSessione, controllaRecord, STATI_DA_CHIUDERE } from '../services/conclusioneSessione.service.js';
+import {
+  concludiSessione, controllaRecord, riapribileFinoA, STATI_DA_CHIUDERE, RIAPERTURA_MAX_MINUTI
+} from '../services/conclusioneSessione.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 
 /** List of the user's workouts */
@@ -91,6 +93,9 @@ export function formattaPerStorico(s) {
     minutiRiscaldamento: s.minutiRiscaldamento,
     volumeTotaleKg: s.volumeTotaleKg,
     noteFinali: s.noteFinali,
+    chiusaAutomaticamente: s.chiusaAutomaticamente,
+    // Until when "Riprendi" is offered (the request runs in the user's time zone)
+    riapribileFinoA: riapribileFinoA(s),
     scheda: {
       id: s.scheda.id,
       titolo: s.scheda.titolo,
@@ -278,10 +283,41 @@ export async function ultimiCarichi(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** Starts a new workout */
+/**
+ * The user's open workouts, the most recent first: what the app shows to
+ * resume it (the bar "Allenamento in corso", the choice before starting another)
+ */
+async function sessioniAperte(utenteId) {
+  const aperte = await prisma.sessioneAllenamento.findMany({
+    where: { utenteId, dataFine: null },
+    orderBy: { dataInizio: 'desc' },
+    select: {
+      id: true, dataInizio: true,
+      scheda: { select: { id: true, titolo: true } },
+      _count: { select: { logSerie: { where: { completato: true, ...SOLO_LAVORO } } } }
+    }
+  });
+  return aperte.map(({ _count, ...aperta }) => ({ ...aperta, serie: _count.logSerie }));
+}
+
+/** GET /api/v1/sessioni/in-corso — The open workout to resume, if any (the most recent) */
+export async function sessioneInCorso(req, res, next) {
+  try {
+    const [aperta = null] = await sessioniAperte(req.utente.id);
+    res.json({ successo: true, dati: aperta });
+  } catch (errore) { next(errore); }
+}
+
+/**
+ * Starts a new workout.
+ * With another one still open the answer is 409 ALLENAMENTO_IN_CORSO, with
+ * that workout in `dettagli.sessione`: the app asks whether to resume it.
+ * With `chiudiAperte: true` the open ones are closed first (at their last set
+ * if they were left idle; deleted if they have no sets), then the new one starts.
+ */
 export async function avviaSessione(req, res, next) {
   try {
-    const { schedaId, minutiRiscaldamento } = req.body;
+    const { schedaId, minutiRiscaldamento, chiudiAperte } = req.body;
     if (!schedaId) throw new ErroreValidazione(t('sessioniController.schedaIdObbligatorio'));
 
     // Check that the plan exists
@@ -304,6 +340,23 @@ export async function avviaSessione(req, res, next) {
     // personal trainer, who puts them in the client's name) and global ones
     if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
       throw new ErroreNonAutorizzato(t('sessioniController.schedaNonAccessibile'));
+    }
+
+    // Starting over is how forgotten workouts piled up: first, the open one
+    const aperte = await sessioniAperte(req.utente.id);
+    if (aperte.length > 0 && chiudiAperte !== true) {
+      throw new ErroreConflitto(t('sessioniController.allenamentoInCorso'), {
+        codice: 'ALLENAMENTO_IN_CORSO',
+        dettagli: { sessione: aperte[0] }
+      });
+    }
+    for (const { id } of aperte) {
+      if (await prisma.logSerie.count({ where: { sessioneId: id } })) {
+        await concludiSessione(await prisma.sessioneAllenamento.findUnique({ where: { id } }));
+      } else {
+        // Without a single set it was not a workout
+        await prisma.sessioneAllenamento.delete({ where: { id } });
+      }
     }
 
     const sessione = await prisma.sessioneAllenamento.create({
@@ -508,14 +561,13 @@ export async function salvaComeScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** How long after the end a workout closed by mistake can be resumed */
-const RIAPERTURA_MAX_MINUTI = 30;
-
 /**
  * PATCH /sessioni/:id/riapri — "I closed it by mistake": the workout just
  * finished goes back to ongoing, and the next close recalculates its duration,
- * volume and records. Only within half an hour of the end: a workout from days
- * ago is corrected from the history, not reopened.
+ * volume and records. Only within half an hour of the end, or until the end
+ * of the day for one the server closed because it was forgotten open
+ * (riapribileFinoA): a workout from days ago is corrected from the history,
+ * not reopened.
  */
 export async function riapriSessione(req, res, next) {
   try {
@@ -528,8 +580,10 @@ export async function riapriSessione(req, res, next) {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
     }
     if (!sessione.dataFine) throw new ErroreValidazione(t('sessioniController.ancoraInCorso'));
-    if (Date.now() - sessione.dataFine.getTime() > RIAPERTURA_MAX_MINUTI * 60000) {
-      throw new ErroreValidazione(t('sessioniController.riaperturaScaduta', { count: RIAPERTURA_MAX_MINUTI }));
+    if (Date.now() > riapribileFinoA(sessione, await fusoDelProprietario(sessione, req)).getTime()) {
+      throw new ErroreValidazione(sessione.chiusaAutomaticamente
+        ? t('sessioniController.riaperturaScadutaGiorno')
+        : t('sessioniController.riaperturaScaduta', { count: RIAPERTURA_MAX_MINUTI }));
     }
 
     const riaperta = await prisma.$transaction(async (tx) => {
@@ -539,9 +593,11 @@ export async function riapriSessione(req, res, next) {
         where: { sessioneId: id, stato: 'COMPLETATO' },
         data: { stato: 'PIANIFICATO', sessioneId: null }
       });
+      // Resuming counts as activity: the server does not close it again as
+      // forgotten before two hours without sets
       return tx.sessioneAllenamento.update({
         where: { id },
-        data: { dataFine: null, durataMinuti: null, volumeTotaleKg: null }
+        data: { dataFine: null, durataMinuti: null, volumeTotaleKg: null, chiusaAutomaticamente: false, riapertaIl: new Date() }
       });
     });
 

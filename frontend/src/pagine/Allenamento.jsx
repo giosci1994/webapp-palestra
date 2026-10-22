@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
+import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import { api } from '../config/api.js';
 import { useLingua } from '../hooks/useLingua.js';
 import { LIVELLI } from '../utils/costanti.js';
@@ -146,6 +147,7 @@ export default function Allenamento() {
   const { t } = useLingua();
   const { utente } = useAuth();
   const naviga = useNavigate();
+  const { avvia } = useAllenamentoInCorso();
   const [schede, setSchede] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
   const [schedaSelezionata, setSchedaSelezionata] = useState(null);
@@ -189,8 +191,12 @@ export default function Allenamento() {
   const avviaAllenamento = async (schedaId) => {
     try {
       setAvviando(true);
-      const risposta = await api.post('/sessioni', { schedaId: parseInt(schedaId) });
-      naviga(`/allenamento/${risposta.dati.id}`, { state: { sessione: risposta.dati } });
+      // With another workout open the user chooses first (AllenamentoInCorsoContesto):
+      // the plan's box closes, so the choice is the only window on screen
+      if (!(await avvia(schedaId))) {
+        setAvviando(false);
+        chiudiRiquadro();
+      }
     } catch (err) {
       alert(err.message);
       setAvviando(false);

@@ -22,9 +22,9 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
-      // The provider and its hook in the same file (useAuth, useSocket) are
+      // The provider and its hook in the same file (useAuth, useSocket, ...) are
       // the usual context pattern: hot reloading handles them anyway
-      'react-refresh/only-export-components': ['error', { allowExportNames: ['useAuth', 'useSocket'] }],
+      'react-refresh/only-export-components': ['error', { allowExportNames: ['useAuth', 'useSocket', 'useAllenamentoInCorso'] }],
     },
   },
 ])

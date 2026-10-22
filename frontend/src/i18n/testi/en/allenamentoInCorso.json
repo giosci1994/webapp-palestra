@@ -1,0 +1,12 @@
+{
+  "etichetta": "Workout in progress",
+  "iniziato": "started {quando}",
+  "riprendi": "Resume",
+  "scelta": {
+    "titolo": "You already have a workout open",
+    "testo": "Resume it to carry on where you were, or finish it and start the new one: a workout left open skews your statistics.",
+    "testoVuoto": "It has no sets yet: if you start the new one, it is deleted.",
+    "chiudiEInizia": "Finish it and start the new one",
+    "avvio": "Starting…"
+  }
+}

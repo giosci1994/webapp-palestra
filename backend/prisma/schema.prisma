@@ -448,6 +448,12 @@ model SessioneAllenamento {
   minutiRiscaldamento Int?      @map("minuti_riscaldamento")
   volumeTotaleKg      Float?    @map("volume_totale_kg")
   noteFinali          String?   @map("note_finali")
+  // Closed by the server because it was forgotten open: it can be resumed
+  // until the end of that day, not only for 30 minutes
+  chiusaAutomaticamente Boolean @default(false) @map("chiusa_automaticamente")
+  // When it was last resumed: it counts as activity, so the server does not
+  // close it again right away as forgotten
+  riapertaIl          DateTime? @map("riaperta_il")
 
   utente   Utente              @relation(fields: [utenteId], references: [id])
   scheda   SchedaAllenamento   @relation(fields: [schedaId], references: [id])

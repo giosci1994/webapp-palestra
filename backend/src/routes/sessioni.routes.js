@@ -26,6 +26,8 @@ router.post('/passata', controller.registraSessionePassata);
 router.get('/storico', controller.storicoSessioniCompleto);
 router.get('/precedente/:schedaId', controller.ultimaSessioneScheda);
 router.get('/ultimi-carichi', controller.ultimiCarichi);
+// GET /api/v1/sessioni/in-corso — The open workout to resume, if any
+router.get('/in-corso', controller.sessioneInCorso);
 
 router.get('/:id', controller.dettaglioSessione);
 // PATCH /api/v1/sessioni/:id — Correct a finished workout (times, notes, sets)

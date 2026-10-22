@@ -1,0 +1,12 @@
+{
+  "etichetta": "Allenamento in corso",
+  "iniziato": "iniziato {quando}",
+  "riprendi": "Riprendi",
+  "scelta": {
+    "titolo": "Hai già un allenamento aperto",
+    "testo": "Riprendilo per continuare da dove eri, oppure chiudilo e inizia quello nuovo: un allenamento lasciato aperto falsa le statistiche.",
+    "testoVuoto": "Non ha ancora nessuna serie: se inizi quello nuovo, viene eliminato.",
+    "chiudiEInizia": "Chiudilo e inizia il nuovo",
+    "avvio": "Avvio…"
+  }
+}

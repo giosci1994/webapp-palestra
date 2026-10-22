@@ -44,5 +44,7 @@
     "rpeNonValido": "Set {n}: invalid RPE (1 to 10)",
     "durataNonValida": "Set {n}: invalid duration",
     "livelloNonValido": "Set {n}: invalid level"
-  }
+  },
+  "allenamentoInCorso": "You already have a workout in progress",
+  "riaperturaScadutaGiorno": "A workout closed automatically can only be resumed on the same day"
 }
