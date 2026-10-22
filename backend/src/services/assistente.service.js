@@ -9,6 +9,7 @@ import { ErroreApp, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { fusoCorrente } from '../utils/date.js';
+import { titoloAllenamento } from '../utils/titoloAllenamento.js';
 
 // Initializes the Gemini client (lazily)
 let clientAI = null;
@@ -196,6 +197,7 @@ async function costruisciContestoUtente(utenteId) {
       dataInizio: true,
       durataMinuti: true,
       volumeTotaleKg: true,
+      titolo: true,
       scheda: { select: { titolo: true } }
     }
   });
@@ -204,7 +206,7 @@ async function costruisciContestoUtente(utenteId) {
     contesto += `\n\n${t('assistenteService.contesto.ultimeSessioni')}`;
     for (const s of ultimeSessioni) {
       contesto += `\n- ${t('assistenteService.contesto.sessione', {
-        titolo: s.scheda.titolo,
+        titolo: titoloAllenamento(s),
         data: s.dataInizio.toLocaleDateString(localeDi(), { timeZone: fusoCorrente() }),
         durata: s.durataMinuti || '?',
         volume: s.volumeTotaleKg || '?'

@@ -285,8 +285,8 @@ export async function eliminaUtente(utenteId) {
   }
 
   // Reuse eliminaAccount: it handles the case where other users have trained
-  // with this user's plans (RESTRICT foreign key on SessioneAllenamento.scheda).
-  // Plans in use are transferred to an administrator instead of being deleted.
+  // with this user's plans, which are transferred to an administrator
+  // instead of being deleted.
   await eliminaAccount(utenteId);
 
   logger.info({ utenteId }, 'Utente eliminato dall\'admin');

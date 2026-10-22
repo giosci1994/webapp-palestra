@@ -11,7 +11,7 @@
   "scaricaConteggio": "Scarica {numero}",
   "downloadFallito": "Download non riuscito",
   "nomeFileProgramma": "programma",
-  "confermaElimina": "Sei sicuro di voler eliminare questa scheda?",
+  "confermaElimina": "Sei sicuro di voler eliminare questa scheda? Gli allenamenti già fatti con questa scheda restano nello Storico.",
   "tab": {
     "tutte": "Tutte",
     "mie": "Le mie",

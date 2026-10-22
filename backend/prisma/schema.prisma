@@ -441,7 +441,10 @@ model EsercizioScheda {
 model SessioneAllenamento {
   id                  Int       @id @default(autoincrement())
   utenteId            Int       @map("utente_id")
-  schedaId            Int       @map("scheda_id")
+  // Empty for a free workout: two workouts merged into one, or done with a
+  // plan that was then deleted. It keeps its sets, and its name in `titolo`
+  schedaId            Int?      @map("scheda_id")
+  titolo              String?
   dataInizio          DateTime  @map("data_inizio")
   dataFine            DateTime? @map("data_fine")
   durataMinuti        Int?      @map("durata_minuti")
@@ -456,7 +459,7 @@ model SessioneAllenamento {
   riapertaIl          DateTime? @map("riaperta_il")
 
   utente   Utente              @relation(fields: [utenteId], references: [id])
-  scheda   SchedaAllenamento   @relation(fields: [schedaId], references: [id])
+  scheda   SchedaAllenamento?  @relation(fields: [schedaId], references: [id], onDelete: SetNull)
   logSerie LogSerie[]
   pianificazione AllenamentoPianificato?
 

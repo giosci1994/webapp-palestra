@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { useLingua } from '../hooks/useLingua.js';
-import { formattaData, formattaDurata, nomeEsercizio, nomeGruppo, eCardioNelloStorico } from '../utils/formattatori.js';
+import { formattaData, formattaDurata, nomeEsercizio, nomeGruppo, eCardioNelloStorico, titoloAllenamento } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
 import { diLavoro } from '../utils/tipiSerie.js';
 import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
@@ -196,7 +196,7 @@ export default function StoricoAllenamenti() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-lg">📋</span>
-                      <h3 className="font-semibold text-lg truncate">{sessione.scheda.titolo}</h3>
+                      <h3 className="font-semibold text-lg truncate">{titoloAllenamento(sessione)}</h3>
                     </div>
                     <p className="text-xs text-[var(--testo-terziario)]">
                       {formattaData(sessione.dataInizio, true)}
@@ -310,7 +310,7 @@ export default function StoricoAllenamenti() {
               {/* Drawer header */}
               <div className="px-card-inner py-5 border-b border-[var(--bordo)] flex items-center justify-between sticky top-0 bg-[var(--bg-primario)]/90 backdrop-blur-md z-10">
                 <div className="min-w-0">
-                  <h3 className="font-bold text-lg truncate">{sessioneAperta.scheda.titolo}</h3>
+                  <h3 className="font-bold text-lg truncate">{titoloAllenamento(sessioneAperta)}</h3>
                   <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
                     {formattaData(sessioneAperta.dataInizio, true)}
                   </p>

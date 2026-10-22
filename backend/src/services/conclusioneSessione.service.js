@@ -18,6 +18,7 @@ import { creaNotifica } from './notifiche.service.js';
 import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
 import { localeDi } from '../i18n/index.js';
+import { titoloAllenamento } from '../utils/titoloAllenamento.js';
 
 const MINUTO = 60 * 1000;
 
@@ -78,7 +79,8 @@ export const RIAPERTURA_MAX_MINUTI = 30;
  * @returns {Date | null}
  */
 export function riapribileFinoA(sessione, fuso = fusoCorrente()) {
-  if (!sessione.dataFine) return null;
+  // A free workout has no plan for the workout page to follow
+  if (!sessione.dataFine || !sessione.schedaId) return null;
   const fine = new Date(sessione.dataFine);
   const minimo = fine.getTime() + RIAPERTURA_MAX_MINUTI * MINUTO;
   if (!sessione.chiusaAutomaticamente) return new Date(minimo);
@@ -116,16 +118,18 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
   });
 
   // If this plan was on the calendar that day, it counts as done
-  await prisma.allenamentoPianificato.updateMany({
-    where: {
-      utenteId: sessione.utenteId,
-      schedaId: sessione.schedaId,
-      data: giornoLocale(sessione.dataInizio, fuso),
-      stato: { in: STATI_DA_CHIUDERE },
-      sessioneId: null
-    },
-    data: { stato: 'COMPLETATO', sessioneId: sessione.id }
-  });
+  if (sessione.schedaId) {
+    await prisma.allenamentoPianificato.updateMany({
+      where: {
+        utenteId: sessione.utenteId,
+        schedaId: sessione.schedaId,
+        data: giornoLocale(sessione.dataInizio, fuso),
+        stato: { in: STATI_DA_CHIUDERE },
+        sessioneId: null
+      },
+      data: { stato: 'COMPLETATO', sessioneId: sessione.id }
+    });
+  }
 
   // Records belong to whoever trained, even if the superadmin closes it, and
   // to the day of the workout: when it is closed late (forgotten open, or with
@@ -138,6 +142,26 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
 // How dates and times are written in each language (the same as the app), in the user's time zone
 const formatoGiorno = (lingua, fuso) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: fuso, weekday: 'long', day: 'numeric', month: 'long' });
 const formatoOra = (lingua, fuso) => new Intl.DateTimeFormat(localeDi(lingua), { timeZone: fuso, hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Closes an open workout before something else happens to it (another
+ * workout starts, its plan is deleted): at its last set if it was left idle,
+ * like "Termina"; one without a single set was not a workout, and is deleted.
+ * @param {number} id
+ */
+export async function chiudiAperta(id) {
+  const sessione = await prisma.sessioneAllenamento.findUnique({
+    where: { id },
+    include: { _count: { select: { logSerie: true } }, utente: { select: { fusoOrario: true } } }
+  });
+  if (!sessione || sessione.dataFine) return;
+  if (sessione._count.logSerie === 0) {
+    await prisma.sessioneAllenamento.delete({ where: { id } });
+    return;
+  }
+  // The day of the workout in its owner's time zone, whoever closes it
+  await concludiSessione(sessione, { fuso: fusoDi(sessione.utente) });
+}
 
 /**
  * The periodic check (server.js): workouts idle for more than
@@ -179,7 +203,7 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
       titolo: 'conclusioneSessioneService.notificaTitolo',
       messaggio: 'conclusioneSessioneService.notificaMessaggio',
       variabili: {
-        scheda: aperta.scheda.titolo,
+        scheda: titoloAllenamento(aperta, lingua),
         giorno: formatoGiorno(lingua, fuso).format(aperta.dataInizio),
         ora: formatoOra(lingua, fuso).format(sessione.dataFine)
       },

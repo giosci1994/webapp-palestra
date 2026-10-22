@@ -8,7 +8,7 @@ import { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dumbbell, RotateCcw, Play } from 'lucide-react';
 import { useLingua } from '../../hooks/useLingua.js';
-import { formattaDataRelativa } from '../../utils/formattatori.js';
+import { formattaDataRelativa, titoloAllenamento } from '../../utils/formattatori.js';
 
 /**
  * @param {object} p
@@ -56,7 +56,7 @@ export default function SceltaAllenamentoInCorso({ sessione, avviando, errore, o
             </h2>
 
             <div className="mt-3 rounded-2xl bg-[var(--bg-terziario)] px-4 py-3">
-              <p className="font-semibold">{sessione.scheda.titolo}</p>
+              <p className="font-semibold">{titoloAllenamento(sessione)}</p>
               <p className="text-sm text-[var(--testo-secondario)] mt-0.5">
                 {t('allenamentoInCorso.iniziato', { quando: formattaDataRelativa(sessione.dataInizio) })}
                 {' · '}

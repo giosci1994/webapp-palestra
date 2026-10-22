@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import { api } from '../config/api.js';
-import { formattaDataRelativa, aStringaData, lunediDi } from '../utils/formattatori.js';
+import { formattaDataRelativa, aStringaData, lunediDi, titoloAllenamento } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, ChevronRight, ClipboardList, History, 
@@ -436,7 +436,7 @@ export default function Dashboard() {
                       {sessioniRecenti.slice(0,3).map((sessione, sIdx, sArr) => (
                         <li key={sessione.id} className={`px-card-inner border-b border-[var(--bordo-light)] last:border-0 flex justify-between items-center group py-5 ${sIdx === sArr.length - 1 ? 'card-list-ultimo' : ''}`}>
                           <div>
-                            <p className="text-[var(--testo-primario)] font-medium text-base">{sessione.scheda?.titolo || t('dashboard.ultimeAttivita.sessioneLibera')}</p>
+                            <p className="text-[var(--testo-primario)] font-medium text-base">{titoloAllenamento(sessione)}</p>
                             <p className="text-xs text-[var(--testo-terziario)] mt-1">{formattaDataRelativa(sessione.dataInizio)}</p>
                           </div>
                           <button 

@@ -43,7 +43,7 @@ describe('starting a workout with another one open', () => {
     assert.equal(risposta.corpo.messaggio, 'Hai già un allenamento in corso');
     // The completed working sets: the warm-up does not count
     assert.deepEqual(risposta.corpo.dettagli.sessione, {
-      id: vecchio.id, dataInizio: vecchio.dataInizio.toISOString(), scheda: { id: push.id, titolo: 'Push' }, serie: 2
+      id: vecchio.id, dataInizio: vecchio.dataInizio.toISOString(), titolo: null, scheda: { id: push.id, titolo: 'Push' }, serie: 2
     });
     assert.equal(await prisma.sessioneAllenamento.count(), 1);
 
@@ -117,7 +117,7 @@ describe('the workout in progress', () => {
     await aperto(5, [[1]], altro, await creaScheda(altro, [panca]));
 
     assert.deepEqual((await inCorso()).corpo.dati, {
-      id: ultimo.id, dataInizio: ultimo.dataInizio.toISOString(), scheda: { id: gambe.id, titolo: 'Gambe' }, serie: 2
+      id: ultimo.id, dataInizio: ultimo.dataInizio.toISOString(), titolo: null, scheda: { id: gambe.id, titolo: 'Gambe' }, serie: 2
     });
   });
 });

@@ -7,7 +7,7 @@
 import { Dumbbell, RotateCcw } from 'lucide-react';
 import { useLingua } from '../../hooks/useLingua.js';
 import { useAllenamentoInCorso } from '../../contesti/AllenamentoInCorsoContesto.jsx';
-import { formattaDataRelativa } from '../../utils/formattatori.js';
+import { formattaDataRelativa, titoloAllenamento } from '../../utils/formattatori.js';
 
 export default function BarraAllenamentoInCorso() {
   const { t } = useLingua();
@@ -22,7 +22,7 @@ export default function BarraAllenamentoInCorso() {
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-bold uppercase tracking-wider text-[var(--accent)]">{t('allenamentoInCorso.etichetta')}</p>
-        <p className="text-sm font-semibold truncate">{inCorso.scheda.titolo}</p>
+        <p className="text-sm font-semibold truncate">{titoloAllenamento(inCorso)}</p>
         <p className="text-xs text-[var(--testo-secondario)] truncate">
           {t('allenamentoInCorso.iniziato', { quando: formattaDataRelativa(inCorso.dataInizio) })}
           {' · '}

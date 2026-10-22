@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import {
   formattaData, aStringaData, aStringaOra, lunediDi, formattaDataRelativa, formattaNumero,
   formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale,
-  nomeGruppo, nomeAttrezzatura
+  nomeGruppo, nomeAttrezzatura, titoloAllenamento
 } from './formattatori.js';
 import { scegli } from '../i18n/index.js';
 
@@ -120,6 +120,19 @@ describe('nomi degli esercizi', () => {
     expect(nomeEsercizio({ nome: 'Lat Machine (Lat Pulldown)', nomeIt: null })).toBe('Lat Pulldown');
     expect(nomeEsercizio(curato)).toBe('Panca piana');
     expect(nomeEsercizioOriginale(importato)).toBeNull();
+  });
+});
+
+describe('titoloAllenamento', () => {
+  it("a workout on a plan shows the plan's name", () => {
+    expect(titoloAllenamento({ scheda: { titolo: 'Push' }, titolo: null })).toBe('Push');
+  });
+
+  it('a free workout shows its own name, or "Allenamento libero" in the language of the app', () => {
+    expect(titoloAllenamento({ scheda: null, titolo: 'Push + Gambe' })).toBe('Push + Gambe');
+    expect(titoloAllenamento({ scheda: null, titolo: null })).toBe('Allenamento libero');
+    scegli('en');
+    expect(titoloAllenamento({ scheda: null })).toBe('Free workout');
   });
 });
 
