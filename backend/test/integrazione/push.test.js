@@ -100,15 +100,23 @@ describe('push con le chiavi VAPID', () => {
 
   it('fine del recupero: la push arriva allo scadere, urgente e con vita breve', async () => {
     await chiama('POST', '/iscrizione', iscrizione());
-    assert.equal((await chiama('POST', '/recupero', { secondi: 1, prossimo: 'Panca piana · serie 2' })).stato, 200);
+    assert.equal((await chiama('POST', '/recupero', { secondi: 1, prossimo: 'Panca piana · serie 2', sessioneId: 42 })).stato, 200);
     assert.equal(invii.mock.callCount(), 0);
     await attendi(1300);
     assert.equal(invii.mock.callCount(), 1);
     const [, contenuto, opzioni] = invii.mock.calls[0].arguments;
+    // The tap goes back to the workout, not to the list of plans
     assert.deepEqual(JSON.parse(contenuto), {
-      titolo: '⏱️ Recupero finito', messaggio: 'Tocca a te: Panca piana · serie 2', percorso: '/allenamento', tag: 'recupero'
+      titolo: '⏱️ Recupero finito', messaggio: 'Tocca a te: Panca piana · serie 2', percorso: '/allenamento/42', tag: 'recupero'
     });
     assert.deepEqual([opzioni.urgency, opzioni.TTL], ['high', 60]);
+  });
+
+  it("from an app that does not send the workout yet, the tap opens the workout page", async () => {
+    await chiama('POST', '/iscrizione', iscrizione());
+    await chiama('POST', '/recupero', { secondi: 1 });
+    await attendi(1300);
+    assert.equal(JSON.parse(invii.mock.calls[0].arguments[1]).percorso, '/allenamento');
   });
 
   it('un recupero interrotto, o sostituito da uno nuovo, non avvisa', async () => {
@@ -123,7 +131,10 @@ describe('push con le chiavi VAPID', () => {
   });
 
   it('recupero non valido: 400', async () => {
-    for (const corpo of [{}, { secondi: 0 }, { secondi: 901 }, { secondi: '30' }, { secondi: 30, prossimo: 'x'.repeat(121) }]) {
+    for (const corpo of [
+      {}, { secondi: 0 }, { secondi: 901 }, { secondi: '30' }, { secondi: 30, prossimo: 'x'.repeat(121) },
+      { secondi: 30, sessioneId: '42' }, { secondi: 30, sessioneId: 0 }, { secondi: 30, sessioneId: 2.5 }, { secondi: 30, sessioneId: 2 ** 31 }
+    ]) {
       assert.equal((await chiama('POST', '/recupero', corpo)).stato, 400, JSON.stringify(corpo).slice(0, 60));
     }
   });

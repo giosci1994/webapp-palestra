@@ -131,8 +131,12 @@ export const RECUPERO_MASSIMO = 15 * 60;
 
 const recuperi = new Map();
 
-/** Schedules the end-of-rest push in `secondi` seconds, replacing any one already waiting */
-export function programmaFineRecupero(utenteId, secondi, prossimo) {
+/**
+ * Schedules the end-of-rest push in `secondi` seconds, replacing any one
+ * already waiting. The tap opens the workout `sessioneId`: /allenamento alone
+ * is the page that lists the plans, and took the user out of the workout.
+ */
+export function programmaFineRecupero(utenteId, secondi, prossimo, sessioneId) {
   annullaFineRecupero(utenteId);
   const timer = setTimeout(() => {
     recuperi.delete(utenteId);
@@ -141,7 +145,7 @@ export function programmaFineRecupero(utenteId, secondi, prossimo) {
       titolo: 'pushService.fineRecuperoTitolo',
       messaggio: prossimo ? 'pushService.fineRecuperoMessaggio' : 'pushService.fineRecuperoMessaggioSenza',
       variabili: { prossimo },
-      percorso: '/allenamento',
+      percorso: sessioneId ? `/allenamento/${sessioneId}` : '/allenamento',
       tag: 'recupero',
       urgente: true,
       durataSecondi: 60

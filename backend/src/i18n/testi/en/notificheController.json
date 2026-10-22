@@ -6,5 +6,6 @@
   "provaTitolo": "🔔 Notifications on",
   "provaMessaggio": "From now on GymMaster will alert you even when your screen is locked.",
   "recuperoFuoriLimiti": "The rest must be between 1 and {max} seconds",
-  "prossimoNonValido": "The next exercise must be a short text"
+  "prossimoNonValido": "The next exercise must be a short text",
+  "sessioneNonValida": "Invalid workout"
 }
