@@ -1,7 +1,21 @@
 {
-  "versione": "1.5.7",
+  "versione": "1.5.8",
   "build": "2026-10-22",
   "changelog": [
+    {
+      "versione": "1.5.8",
+      "data": "2026-10-22",
+      "modifiche": [
+        "Puoi iniziare un allenamento libero, senza scheda, scegliendo gli esercizi mentre ti alleni",
+        "Eliminando una scheda, gli allenamenti fatti con quella scheda restano nello Storico",
+        "Se l'amministratore sistema un tuo allenamento (per esempio unendone due rimasti aperti), ricevi una notifica"
+      ],
+      "modificheEn": [
+        "You can start a free workout, without a plan, choosing the exercises as you train",
+        "Deleting a plan keeps the workouts done with it in your history",
+        "If the admin fixes one of your workouts (for example merging two left open), you get a notification"
+      ]
+    },
     {
       "versione": "1.5.7",
       "data": "2026-10-22",
