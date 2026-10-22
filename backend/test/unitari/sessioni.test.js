@@ -160,6 +160,7 @@ describe('formattaPerStorico', () => {
     noteFinali: 'Buona',
     chiusaAutomaticamente: false,
     utenteId: 3,
+    schedaId: 4,
     scheda: { id: 4, titolo: 'Push', esercizi: [{ id: 1 }, { id: 2 }, { id: 3 }] },
     _count: { logSerie: 3 },
     // As the history query orders them: by exercise, then by number
@@ -192,6 +193,7 @@ describe('formattaPerStorico', () => {
       // Closed with "Termina": it can be resumed for half an hour
       riapribileFinoA: new Date('2026-10-08T18:40:00Z'),
       scheda: { id: 4, titolo: 'Push', numEsercizi: 3 },
+      titolo: 'Push',
       serieCompletate: 3
     });
   });

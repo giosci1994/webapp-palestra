@@ -12,7 +12,7 @@ import Testo from '../i18n/Testo.jsx';
 import { localeCorrente } from '../i18n/index.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo } from '../utils/formattatori.js';
+import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area,
@@ -817,7 +817,7 @@ export default function DashboardPT() {
                   <div className="flex flex-col gap-1">
                     {clienteDettaglio.ultime5Sessioni.map(s => (
                       <div key={s.id} className="flex justify-between text-xs py-1.5 px-2 rounded bg-[var(--bg-terziario)]">
-                        <span className="truncate flex-1">{s.scheda?.titolo}</span>
+                        <span className="truncate flex-1">{titoloAllenamento(s)}</span>
                         <span className="text-[var(--testo-terziario)] ml-2">{new Date(s.dataInizio).toLocaleDateString(localeCorrente())}</span>
                       </div>
                     ))}

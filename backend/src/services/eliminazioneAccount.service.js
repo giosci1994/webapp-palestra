@@ -66,8 +66,8 @@ export async function eliminaAccount(utenteId) {
     })).count;
 
     // 6. Plans created. Those nobody else has trained with are deleted; the
-    //    others go to the administrator, because deleting them would also
-    //    delete the history of whoever used them.
+    //    others go to the administrator, so whoever trained with them keeps
+    //    their workouts on the plan (deleted, they would become free workouts).
     const schede = await tx.schedaAllenamento.findMany({
       where: { creatoreId: utenteId },
       select: { id: true, _count: { select: { sessioni: true } } }

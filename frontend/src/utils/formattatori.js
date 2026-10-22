@@ -105,6 +105,15 @@ export function nomeEsercizio(esercizio) {
 }
 
 /**
+ * The name a workout shows: its plan's; for a free workout (two merged into
+ * one, or done with a plan that was then deleted) its own, or "Free workout".
+ * @param {{ scheda?: { titolo: string } | null, titolo?: string | null }} sessione
+ */
+export function titoloAllenamento(sessione) {
+  return sessione?.scheda?.titolo || sessione?.titolo || traduci('comune.allenamentoLibero');
+}
+
+/**
  * Is an exercise from the history ({ esercizio, serie }) shown as cardio,
  * with minutes and level instead of weight and reps? The muscle group counts,
  * but so does how the sets were logged: the workout also logs in minutes the

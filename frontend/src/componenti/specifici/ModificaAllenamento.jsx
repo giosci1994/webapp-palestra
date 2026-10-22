@@ -9,7 +9,7 @@ import { X, Save, Pencil, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import { api } from '../../config/api.js';
 import { useLingua } from '../../hooks/useLingua.js';
 import Testo from '../../i18n/Testo.jsx';
-import { nomeEsercizio, formattaDurata, aStringaData, aStringaOra, eCardioNelloStorico } from '../../utils/formattatori.js';
+import { nomeEsercizio, formattaDurata, aStringaData, aStringaOra, eCardioNelloStorico, titoloAllenamento } from '../../utils/formattatori.js';
 import { DURATA_SOSPETTA_MINUTI } from '../../utils/costanti.js';
 
 // The type of a set (utils/tipiSerie.js) changes by tapping its number:
@@ -226,7 +226,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
             <h3 id="titolo-modifica-allenamento" className="font-bold text-lg flex items-center gap-2">
               <Pencil size={18} className="text-[var(--accent)] shrink-0" /> {t('modificaAllenamento.titolo')}
             </h3>
-            <p className="text-xs text-[var(--testo-secondario)] mt-1 truncate">{sessione.scheda.titolo}</p>
+            <p className="text-xs text-[var(--testo-secondario)] mt-1 truncate">{titoloAllenamento(sessione)}</p>
           </div>
           <button onClick={chiudi} aria-label={t('comune.chiudi')} className="p-1.5 rounded text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] transition-colors shrink-0">
             <X size={20} />

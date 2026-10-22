@@ -28,5 +28,6 @@
   "esercizi_one": "{count} exercise",
   "esercizi_other": "{count} exercises",
   "serie_one": "{count} set",
-  "serie_other": "{count} sets"
+  "serie_other": "{count} sets",
+  "allenamentoLibero": "Free workout"
 }

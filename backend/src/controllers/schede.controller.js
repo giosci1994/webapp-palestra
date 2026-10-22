@@ -6,6 +6,7 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.service.js';
 import { t } from '../i18n/index.js';
+import { eliminaScheda as eliminaSchedaTenendoAllenamenti } from '../services/schede.service.js';
 
 // Maps an exercise entry (from the client) to EsercizioScheda data, keeping
 // the cardio fields (duration/speed/incline/resistance/distance + warm-up).
@@ -214,19 +215,8 @@ export async function eliminaScheda(req, res, next) {
       throw new ErroreNonAutorizzato(t('schedeController.nonPuoiEliminare'));
     }
 
-    // Cascade delete in a transaction: LogSerie → Sessioni → Esercizi → Scheda
-    await prisma.$transaction(async (tx) => {
-      // 1. Delete the set logs of the linked workouts
-      await tx.logSerie.deleteMany({
-        where: { sessione: { schedaId: id } }
-      });
-      // 2. Delete the linked workouts
-      await tx.sessioneAllenamento.deleteMany({ where: { schedaId: id } });
-      // 3. Delete the plan's exercises
-      await tx.esercizioScheda.deleteMany({ where: { schedaId: id } });
-      // 4. Delete the plan
-      await tx.schedaAllenamento.delete({ where: { id } });
-    });
+    // The workouts done with it stay, as free workouts
+    await eliminaSchedaTenendoAllenamenti(id);
 
     res.json({ successo: true, messaggio: t('schedeController.schedaEliminata') });
   } catch (errore) { next(errore); }

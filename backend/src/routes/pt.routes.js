@@ -15,6 +15,7 @@ import { fusoDiUtenteId, linguaDiUtenteId } from '../i18n/destinatario.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { chiaveGiorno, fusoDi, inizioGiorno } from '../utils/date.js';
 import { creaEsercizio } from '../services/esercizi.service.js';
+import { eliminaScheda } from '../services/schede.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -204,7 +205,8 @@ router.delete('/clienti/:clienteId/schede/:schedaId', async (req, res, next) => 
       where: { id: schedaId, creatoreId: clienteId, assegnataDaPTId: trainerId }
     });
     if (!scheda) return res.status(404).json({ successo: false, messaggio: t('ptRoutes.schedaNonTrovata') });
-    await prisma.schedaAllenamento.delete({ where: { id: schedaId } });
+    // The client's workouts done with it stay, as free workouts
+    await eliminaScheda(schedaId);
     res.json({ successo: true, messaggio: t('ptRoutes.schedaRimossa') });
   } catch (errore) { next(errore); }
 });
