@@ -4,8 +4,9 @@
 // ============================================
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
+import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa, aStringaData, lunediDi } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,7 +39,7 @@ const ETICHETTE_TAB = {
 export default function Dashboard() {
   const { t } = useLingua();
   const { utente, isAdmin } = useAuth();
-  const naviga = useNavigate();
+  const { avvia } = useAllenamentoInCorso();
   
   const [tabAttivo, setTabAttivo] = useState('attività');
   const [sessioniRecenti, setSessioniRecenti] = useState([]);
@@ -170,8 +171,8 @@ export default function Dashboard() {
   const avviaAllenamento = async (schedaId) => {
     try {
       setAvviando(true);
-      const risposta = await api.post('/sessioni', { schedaId: parseInt(schedaId) });
-      naviga(`/allenamento/${risposta.dati.id}`, { state: { sessione: risposta.dati } });
+      // With another workout open the user chooses first (AllenamentoInCorsoContesto)
+      if (!(await avvia(schedaId))) setAvviando(false);
     } catch (err) {
       alert(err.message);
       setAvviando(false);

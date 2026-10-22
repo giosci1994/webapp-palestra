@@ -53,8 +53,13 @@ export class ErroreNonTrovato extends ErroreApp {
 
 /** 409 — Conflict (e.g. email already registered) */
 export class ErroreConflitto extends ErroreApp {
-  constructor(messaggio = traduci('errori.conflitto')) {
-    super(messaggio, 409, 'CONFLITTO');
+  /**
+   * @param {string} [codice] - a code of its own, for the app to tell this conflict from others
+   * @param {object} [dettagli] - what the app needs to solve it
+   */
+  constructor(messaggio = traduci('errori.conflitto'), { codice = 'CONFLITTO', dettagli = null } = {}) {
+    super(messaggio, 409, codice);
+    this.dettagli = dettagli;
   }
 }
 

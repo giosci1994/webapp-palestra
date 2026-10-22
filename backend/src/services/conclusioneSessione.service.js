@@ -13,7 +13,7 @@
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
-import { fusoCorrente, fusoDi, giornoLocale } from '../utils/date.js';
+import { fusoCorrente, fusoDi, giornoLocale, inizioGiorno } from '../utils/date.js';
 import { creaNotifica } from './notifiche.service.js';
 import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
@@ -41,25 +41,50 @@ export const STATI_DA_CHIUDERE = ['PIANIFICATO', 'SALTATO'];
 
 /**
  * When a workout being closed now actually ended.
- * If the last activity (the last set, or the start if there are none) is
- * recent, now; otherwise the workout was forgotten open and ends with the
- * last set. Sets with no time (logged before they had one) count
- * MINUTI_PER_SERIE minutes each from the start.
+ * If the last activity (the last set, or the start if there are none, or the
+ * moment it was resumed) is recent, now; otherwise the workout was forgotten
+ * open and ends with the last set. Sets with no time (logged before they had
+ * one) count MINUTI_PER_SERIE minutes each from the start.
  * @param {Date} dataInizio
  * @param {{ registrataIl: Date | null }[]} serie - all of them, skipped ones too
+ * @param {Date} [adesso]
+ * @param {Date | null} [riapertaIl] - when it was last resumed
  * @returns {{ fine: Date, dimenticata: boolean }}
  */
-export function fineEffettiva(dataInizio, serie, adesso = new Date()) {
+export function fineEffettiva(dataInizio, serie, adesso = new Date(), riapertaIl = null) {
   const inizio = dataInizio.getTime();
   const orari = serie.filter(s => s.registrataIl).map(s => new Date(s.registrataIl).getTime());
-  const ultimaAttivita = orari.length
+  const ultimaSerie = orari.length
     ? Math.max(...orari)
     : inizio + serie.length * MINUTI_PER_SERIE * MINUTO;
+  const ultimaAttivita = Math.max(ultimaSerie, riapertaIl ? new Date(riapertaIl).getTime() : 0);
 
   if (adesso.getTime() - ultimaAttivita <= MINUTI_INATTIVITA * MINUTO) {
     return { fine: adesso, dimenticata: false };
   }
-  return { fine: new Date(Math.max(ultimaAttivita, inizio)), dimenticata: true };
+  // Resuming it was not training: a workout resumed and forgotten again ends with its last set
+  return { fine: new Date(Math.max(ultimaSerie, inizio)), dimenticata: true };
+}
+
+/** For how long a workout closed with "Termina" can be resumed */
+export const RIAPERTURA_MAX_MINUTI = 30;
+
+/**
+ * Until when a finished workout can be resumed: RIAPERTURA_MAX_MINUTI after
+ * the end; one the server closed because it was forgotten open, until the end
+ * of that day in the user's time zone (and never less). null if it is still
+ * open.
+ * @param {{ dataFine: Date | null, chiusaAutomaticamente?: boolean }} sessione
+ * @returns {Date | null}
+ */
+export function riapribileFinoA(sessione, fuso = fusoCorrente()) {
+  if (!sessione.dataFine) return null;
+  const fine = new Date(sessione.dataFine);
+  const minimo = fine.getTime() + RIAPERTURA_MAX_MINUTI * MINUTO;
+  if (!sessione.chiusaAutomaticamente) return new Date(minimo);
+  // The next local midnight: a day lasts 23 to 25 hours, 30 hours always reach the next one
+  const domani = inizioGiorno(new Date(inizioGiorno(fine, fuso).getTime() + 30 * 60 * MINUTO), fuso);
+  return new Date(Math.max(minimo, domani.getTime()));
 }
 
 /**
@@ -67,16 +92,17 @@ export function fineEffettiva(dataInizio, serie, adesso = new Date()) {
  * completed sets, the day's calendar entry marked as done, personal records
  * of whoever trained.
  * @param {object} sessione - the sessioni_allenamento row
- * @param {{ noteFinali?: string, adesso?: Date, fuso?: string }} [opzioni]
+ * @param {{ noteFinali?: string, adesso?: Date, fuso?: string, automatica?: boolean }} [opzioni]
  *   fuso: the user's time zone, for the day of the calendar entry (the
  *   request's by default; the timer passes the owner's)
+ *   automatica: closed by the server, not by the user (chiudiSessioniDimenticate)
  */
-export async function concludiSessione(sessione, { noteFinali, adesso = new Date(), fuso = fusoCorrente() } = {}) {
+export async function concludiSessione(sessione, { noteFinali, adesso = new Date(), fuso = fusoCorrente(), automatica = false } = {}) {
   const serie = await prisma.logSerie.findMany({ where: { sessioneId: sessione.id } });
   const completate = serie.filter(s => s.completato);
   // Warm-up is not volume (utils/tipiSerie.js)
   const volumeTotale = volumeDi(completate);
-  const { fine, dimenticata } = fineEffettiva(sessione.dataInizio, serie, adesso);
+  const { fine, dimenticata } = fineEffettiva(sessione.dataInizio, serie, adesso, sessione.riapertaIl);
 
   const aggiornata = await prisma.sessioneAllenamento.update({
     where: { id: sessione.id },
@@ -84,6 +110,7 @@ export async function concludiSessione(sessione, { noteFinali, adesso = new Date
       dataFine: fine,
       durataMinuti: Math.round((fine.getTime() - sessione.dataInizio.getTime()) / MINUTO),
       volumeTotaleKg: Math.round(volumeTotale * 10) / 10,
+      chiusaAutomaticamente: automatica,
       ...(noteFinali !== undefined && { noteFinali: noteFinali || null })
     }
   });
@@ -132,7 +159,7 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
   let chiuse = 0;
   let eliminate = 0;
   for (const aperta of aperte) {
-    if (!fineEffettiva(aperta.dataInizio, aperta.logSerie, adesso).dimenticata) continue;
+    if (!fineEffettiva(aperta.dataInizio, aperta.logSerie, adesso, aperta.riapertaIl).dimenticata) continue;
 
     if (aperta.logSerie.length === 0) {
       if (adesso.getTime() - aperta.dataInizio.getTime() < ORE_SESSIONE_VUOTA * 60 * MINUTO) continue;
@@ -144,7 +171,7 @@ export async function chiudiSessioniDimenticate(io, adesso = new Date()) {
     // No request here: the day of the workout, and the day and time inside the
     // notification, are in the user's time zone; the text in their language
     const fuso = fusoDi(aperta.utente);
-    const { sessione } = await concludiSessione(aperta, { adesso, fuso });
+    const { sessione } = await concludiSessione(aperta, { adesso, fuso, automatica: true });
     chiuse++;
     const lingua = await linguaDiUtenteId(aperta.utenteId);
     await creaNotifica(io, aperta.utenteId, {

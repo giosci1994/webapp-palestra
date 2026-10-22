@@ -44,5 +44,7 @@
     "rpeNonValido": "Serie {n}: RPE non valido (da 1 a 10)",
     "durataNonValida": "Serie {n}: durata non valida",
     "livelloNonValido": "Serie {n}: livello non valido"
-  }
+  },
+  "allenamentoInCorso": "Hai già un allenamento in corso",
+  "riaperturaScadutaGiorno": "Un allenamento chiuso in automatico si può riprendere solo entro la giornata"
 }

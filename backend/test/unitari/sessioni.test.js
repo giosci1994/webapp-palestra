@@ -158,6 +158,7 @@ describe('formattaPerStorico', () => {
     minutiRiscaldamento: 10,
     volumeTotaleKg: 1520,
     noteFinali: 'Buona',
+    chiusaAutomaticamente: false,
     utenteId: 3,
     scheda: { id: 4, titolo: 'Push', esercizi: [{ id: 1 }, { id: 2 }, { id: 3 }] },
     _count: { logSerie: 3 },
@@ -187,6 +188,9 @@ describe('formattaPerStorico', () => {
       minutiRiscaldamento: 10,
       volumeTotaleKg: 1520,
       noteFinali: 'Buona',
+      chiusaAutomaticamente: false,
+      // Closed with "Termina": it can be resumed for half an hour
+      riapribileFinoA: new Date('2026-10-08T18:40:00Z'),
       scheda: { id: 4, titolo: 'Push', numEsercizi: 3 },
       serieCompletate: 3
     });

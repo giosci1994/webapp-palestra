@@ -200,8 +200,9 @@ describe('correzione di un allenamento: orari e calendario', () => {
 });
 
 describe('avvio e chiusura di un allenamento', () => {
+  // chiudiAperte: each start closes the one before (allenamento-in-corso.test.js)
   const avvia = (chi, schedaId) =>
-    server.richiesta('POST', '/sessioni', { token: tokenPer(chi), corpo: { schedaId } });
+    server.richiesta('POST', '/sessioni', { token: tokenPer(chi), corpo: { schedaId, chiudiAperte: true } });
 
   it('si avvia sulle proprie schede e su quelle globali, non sulle schede private degli altri', async () => {
     const altro = await creaUtente();

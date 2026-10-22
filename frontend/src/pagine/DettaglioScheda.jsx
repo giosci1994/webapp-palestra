@@ -12,11 +12,13 @@ import { LIVELLI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
 import { useAuth } from '../contesti/AuthContesto.jsx';
+import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 
 export default function DettaglioScheda() {
   const { t } = useLingua();
   const { id } = useParams();
   const naviga = useNavigate();
+  const { avvia } = useAllenamentoInCorso();
   const { utente } = useAuth();
   const [scheda, setScheda] = useState(null);
   const [caricamento, setCaricamento] = useState(true);
@@ -48,8 +50,8 @@ export default function DettaglioScheda() {
 
   const avviaAllenamento = async () => {
     try {
-      const risposta = await api.post('/sessioni', { schedaId: parseInt(id) });
-      naviga(`/allenamento/${risposta.dati.id}`, { state: { sessione: risposta.dati } });
+      // With another workout open the user chooses first (AllenamentoInCorsoContesto)
+      await avvia(id);
     } catch (err) {
       alert(err.message);
     }

@@ -10,13 +10,17 @@ import { useLingua } from '../hooks/useLingua.js';
 import { formattaData, formattaDurata, nomeEsercizio, nomeGruppo, eCardioNelloStorico } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
 import { diLavoro } from '../utils/tipiSerie.js';
-import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
 
-/** Finished recently: it can still be resumed (PATCH /sessioni/:id/riapri). */
-const riprendibile = (sessione) => sessione.dataFine && Date.now() - new Date(sessione.dataFine).getTime() <= RIAPERTURA_MAX_MINUTI * 60000;
+/**
+ * It can still be resumed (PATCH /sessioni/:id/riapri): the server says until
+ * when, 30 minutes after "Termina" or until the end of the day for a workout
+ * it closed because it was left open.
+ */
+const riprendibile = (sessione) => Boolean(sessione.riapribileFinoA) && Date.now() < new Date(sessione.riapribileFinoA).getTime();
 
 /** Duration of a workout left open by mistake: it skews the statistics and needs fixing. */
 const durataSospetta = (sessione) => sessione.durataMinuti > DURATA_SOSPETTA_MINUTI;
@@ -476,14 +480,16 @@ export default function StoricoAllenamenti() {
                   })}
                 </div>
 
-                {/* Resume: only right after finishing */}
+                {/* Resume: right after finishing, or the same day if the server closed it */}
                 {riprendibile(sessioneAperta) && (
                   <button
                     onClick={() => riprendiAllenamento(sessioneAperta)}
                     disabled={riprendendo}
                     className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition-all disabled:opacity-50"
                   >
-                    {riprendendo ? t('storicoAllenamenti.unAttimo') : t('storicoAllenamenti.riprendi')}
+                    {riprendendo
+                      ? t('storicoAllenamenti.unAttimo')
+                      : t(sessioneAperta.chiusaAutomaticamente ? 'storicoAllenamenti.riprendiChiusoDaSolo' : 'storicoAllenamenti.riprendi')}
                   </button>
                 )}
 
