@@ -1,7 +1,21 @@
 {
-  "versione": "1.5.6",
-  "build": "2026-10-20",
+  "versione": "1.5.7",
+  "build": "2026-10-22",
   "changelog": [
+    {
+      "versione": "1.5.7",
+      "data": "2026-10-22",
+      "modifiche": [
+        "Toccando la notifica di fine recupero torni all'allenamento in corso, invece di finire sull'elenco delle schede",
+        "Se hai già un allenamento aperto, l'app ti chiede se riprenderlo prima di iniziarne un altro, e una barra in alto ti riporta all'allenamento in corso",
+        "Un allenamento chiuso in automatico perché rimasto aperto si può riprendere fino a fine giornata"
+      ],
+      "modificheEn": [
+        "Tapping the end-of-rest notification takes you back to your workout instead of the list of plans",
+        "If a workout is already open, the app asks whether to resume it before starting another one, and a bar at the top takes you back to the workout in progress",
+        "A workout closed automatically because it was left open can be resumed until the end of the day"
+      ]
+    },
     {
       "versione": "1.5.6",
       "data": "2026-10-20",
