@@ -17,5 +17,9 @@
     "testo_other": "This plan has {count} exercises. Ready to start?",
     "avvio": "Starting...",
     "inizia": "Start workout"
+  },
+  "libero": {
+    "titolo": "Free workout",
+    "testo": "No plan: choose the exercises as you train"
   }
 }

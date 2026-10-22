@@ -1,0 +1,26 @@
+{
+  "titolo": "Workouts to check",
+  "sottotitolo": "Workouts left open, overlapping, closed automatically, too long or without sets: they skew the statistics. Correct them, merge them or mark them as checked. The user gets a notification.",
+  "caricamento": "Loading…",
+  "nessuno": "No workouts to check 🎉",
+  "inCorso": "In progress",
+  "seleziona": "Select to merge",
+  "selezionati_one": "{count} workout selected: choose at least another one of the same user",
+  "selezionati_other": "{count} workouts selected: they will become a single free workout",
+  "utentiDiversi": "Only workouts of the same user can be merged",
+  "unisci": "Merge",
+  "confermaUnisci_one": "Merge {count} workout?",
+  "confermaUnisci_other": "Merge {count} workouts into a single free workout, with all the sets?",
+  "correggi": "Correct",
+  "controllato": "It's fine",
+  "chiudi": "Close at the last set",
+  "elimina": "Delete",
+  "confermaElimina": "Delete this workout with all its sets? The user will get a notification.",
+  "motivi": {
+    "aperto": "Open",
+    "sovrapposto": "Overlaps another",
+    "chiusoInAutomatico": "Closed automatically",
+    "durataSospetta": "Suspicious duration",
+    "senzaSerie": "No sets"
+  }
+}

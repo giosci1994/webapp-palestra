@@ -79,8 +79,7 @@ export const RIAPERTURA_MAX_MINUTI = 30;
  * @returns {Date | null}
  */
 export function riapribileFinoA(sessione, fuso = fusoCorrente()) {
-  // A free workout has no plan for the workout page to follow
-  if (!sessione.dataFine || !sessione.schedaId) return null;
+  if (!sessione.dataFine) return null;
   const fine = new Date(sessione.dataFine);
   const minimo = fine.getTime() + RIAPERTURA_MAX_MINUTI * MINUTO;
   if (!sessione.chiusaAutomaticamente) return new Date(minimo);

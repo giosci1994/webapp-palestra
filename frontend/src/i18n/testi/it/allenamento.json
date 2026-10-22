@@ -17,5 +17,9 @@
     "testo_other": "Questa scheda contiene {count} esercizi. Sei pronto per iniziare?",
     "avvio": "Avvio in corso...",
     "inizia": "Inizia Allenamento"
+  },
+  "libero": {
+    "titolo": "Allenamento libero",
+    "testo": "Senza scheda: scegli gli esercizi mentre ti alleni"
   }
 }

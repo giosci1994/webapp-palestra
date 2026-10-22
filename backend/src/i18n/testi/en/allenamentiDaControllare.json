@@ -1,0 +1,10 @@
+{
+  "almenoDue": "Choose at least two workouts to merge",
+  "nonTrovato": "Workout not found",
+  "utentiDiversi": "Only workouts of the same user can be merged",
+  "notificaTitolo": "Workout fixed",
+  "notificaUniti": "An admin merged {count} of your workouts into one: “{titolo}”",
+  "notificaCorretto": "An admin corrected your workout “{titolo}”",
+  "notificaChiuso": "An admin closed your workout “{titolo}”, which had been left open",
+  "notificaEliminato": "An admin deleted your workout “{titolo}”"
+}

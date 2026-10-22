@@ -1,0 +1,26 @@
+{
+  "titolo": "Allenamenti da controllare",
+  "sottotitolo": "Allenamenti rimasti aperti, sovrapposti, chiusi in automatico, troppo lunghi o senza serie: falsano le statistiche. Correggili, uniscili o segnali come controllati. L'utente riceve una notifica.",
+  "caricamento": "Caricamento…",
+  "nessuno": "Nessun allenamento da controllare 🎉",
+  "inCorso": "In corso",
+  "seleziona": "Seleziona per unire",
+  "selezionati_one": "{count} allenamento selezionato: scegline almeno un altro dello stesso utente",
+  "selezionati_other": "{count} allenamenti selezionati: diventeranno un unico allenamento libero",
+  "utentiDiversi": "Si possono unire solo allenamenti dello stesso utente",
+  "unisci": "Unisci",
+  "confermaUnisci_one": "Unire {count} allenamento?",
+  "confermaUnisci_other": "Unire {count} allenamenti in un unico allenamento libero, con tutte le serie?",
+  "correggi": "Correggi",
+  "controllato": "Va bene così",
+  "chiudi": "Chiudi all'ultima serie",
+  "elimina": "Elimina",
+  "confermaElimina": "Eliminare questo allenamento con tutte le sue serie? L'utente riceverà una notifica.",
+  "motivi": {
+    "aperto": "Aperto",
+    "sovrapposto": "Sovrapposto a un altro",
+    "chiusoInAutomatico": "Chiuso in automatico",
+    "durataSospetta": "Durata sospetta",
+    "senzaSerie": "Senza serie"
+  }
+}

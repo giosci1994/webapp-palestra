@@ -17,6 +17,7 @@ import { idNumerico } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { aggiornaEsercizio, creaEsercizio } from '../services/esercizi.service.js';
+import { elencoDaControllare, segnaControllato, unisciAllenamenti } from '../services/allenamentiDaControllare.service.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -269,6 +270,33 @@ router.put('/banner', async (req, res, next) => {
     }
     
     res.json({ successo: true, dati });
+  } catch (errore) { next(errore); }
+});
+
+// ============================
+// WORKOUTS TO CHECK
+// ============================
+// Corrected, closed and deleted through /sessioni/:id, as the owner would
+
+// GET /api/v1/admin/allenamenti — Workouts left open, overlapping, closed by the server, too long or empty
+router.get('/allenamenti', async (req, res, next) => {
+  try {
+    res.json({ successo: true, dati: await elencoDaControllare() });
+  } catch (errore) { next(errore); }
+});
+
+// POST /api/v1/admin/allenamenti/unisci — { ids }: merged into one free workout
+router.post('/allenamenti/unisci', async (req, res, next) => {
+  try {
+    res.json({ successo: true, dati: await unisciAllenamenti(req.body?.ids, req.app.get('io')) });
+  } catch (errore) { next(errore); }
+});
+
+// PATCH /api/v1/admin/allenamenti/:id/controllato — It is fine: it leaves the list
+router.patch('/allenamenti/:id/controllato', async (req, res, next) => {
+  try {
+    await segnaControllato(parseInt(req.params.id));
+    res.json({ successo: true });
   } catch (errore) { next(errore); }
 });
 
