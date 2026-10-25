@@ -26,6 +26,7 @@ import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaData, formattaDurata, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import FineAllenamento from '../componenti/specifici/FineAllenamento.jsx';
 
 /** The load proposal by outcome: label (a translation key) and colors of the card */
 const STILE_PROPOSTA = {
@@ -85,6 +86,9 @@ export default function WorkoutLive() {
   const [mostraRiepilogo, setMostraRiepilogo] = useState(false);
   const [riprendendo, setRiprendendo] = useState(false);
   const [chiudendo, setChiudendo] = useState(false);
+  // "Termina" first asks what time you finished (componenti/specifici/FineAllenamento.jsx)
+  const [chiediFine, setChiediFine] = useState(false);
+  const [fineScelta, setFineScelta] = useState(null);
   // "Termina" queued: while it is there the workout is closed only on the
   // phone; once sent, the server's response brings the records and the end
   const [idChiusura, setIdChiusura] = useState(null);
@@ -112,6 +116,10 @@ export default function WorkoutLive() {
   const nuoviRecord = chiusura.risposta?.recordPersonali || [];
   // Closed hours after the last set: the server makes it end there (and it cannot be resumed)
   const finitoAllUltimaSerie = chiusura.risposta?.dimenticata ? new Date(chiusura.risposta.dati.dataFine) : null;
+  // Ended at a time picked long before now: the server no longer lets it be
+  // resumed (RIAPERTURA_MAX_MINUTI after the end). Still queued on the phone,
+  // instead, it is resumed by taking "Termina" out of the queue
+  const fineChiusura = chiusura.risposta?.dati?.dataFine ? new Date(chiusura.risposta.dati.dataFine) : (fineScelta != null ? new Date(fineScelta) : null);
   const [mostraVideo, setMostraVideo] = useState(false);
   const [mostraSerieCompletate, setMostraSerieCompletate] = useState(false);
   const [tempoInizio, setTempoInizio] = useState(() => ss ? ss.tempoInizio : Date.now());
@@ -399,7 +407,7 @@ export default function WorkoutLive() {
       completato: true
     };
     const voce = registraSerie(dati);
-    const nuoveCompletate = [...serieCompletate, { ...dati, idClient: voce.id }];
+    const nuoveCompletate = [...serieCompletate, { ...dati, idClient: voce.id, registrataIl: voce.il }];
     salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate });
     setSerieCompletate(nuoveCompletate);
     return true;
@@ -436,7 +444,11 @@ export default function WorkoutLive() {
     }));
 
     riposaUnAttimo();
-    const registrate = [datiSerie, ...dropFatti].map(dati => ({ ...dati, idClient: registraSerie(dati).id }));
+    // With the time they were done: "Termina" proposes the last set as the end when it was long ago
+    const registrate = [datiSerie, ...dropFatti].map(dati => {
+      const voce = registraSerie(dati);
+      return { ...dati, idClient: voce.id, registrataIl: voce.il };
+    });
     const nuoveCompletate = [...serieCompletate, ...registrate];
     // Once the exercise is finished we move straight to the next not completed one.
     // prossimoIdx already excludes the current exercise, and this set does not
@@ -550,11 +562,15 @@ export default function WorkoutLive() {
   };
 
   // "Termina" is queued after the sets: it is sent with them, or when the network is back.
-  // The summary waits a little for the sending (for the records), then shows anyway
-  const completaAllenamento = async () => {
+  // The summary waits a little for the sending (for the records), then shows anyway.
+  // `fine`: the end picked in FineAllenamento, in milliseconds
+  const completaAllenamento = async (fine) => {
     if (chiudendo) return;
     setChiudendo(true);
-    const voce = accoda(utenteId, { tipo: 'completa', sessione: perLaCoda(sessione), dati: { noteFinali: '' } });
+    setFineScelta(fine);
+    const voce = accoda(utenteId, {
+      tipo: 'completa', sessione: perLaCoda(sessione), dati: { noteFinali: '', fine: new Date(fine).toISOString() }
+    });
     try {
       await entro(inviaOra(utenteId), ATTESA_CHIUSURA_MS, 'Rete lenta');
     } catch {
@@ -563,6 +579,7 @@ export default function WorkoutLive() {
     annullaAvvisoRecupero();
     chiudiNotificheRecupero();
     setIdChiusura(voce.id);
+    setChiediFine(false);
     setMostraRiepilogo(true);
     setChiudendo(false);
     pulisciProgressi(); // Clear localStorage on completion
@@ -571,6 +588,7 @@ export default function WorkoutLive() {
 
   const tornaAllAllenamento = () => {
     setIdChiusura(null);
+    setFineScelta(null);
     setMostraRiepilogo(false);
     salvaProgressi(statoAttuale());
     wakeLock.attiva();
@@ -707,6 +725,10 @@ export default function WorkoutLive() {
             <p className="text-xs text-[var(--testo-terziario)] mt-3">
               {t('workoutLive.riepilogo.rimastoAperto', { ora: finitoAllUltimaSerie.toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
             </p>
+          ) : !chiusura.inCoda && fineChiusura && oraAttuale - fineChiusura > RIAPERTURA_MAX_MINUTI * 60 * 1000 ? (
+            <p className="text-xs text-[var(--testo-terziario)] mt-3">
+              {t('workoutLive.riepilogo.terminatoAlle', { ora: fineChiusura.toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
+            </p>
           ) : (
             <>
               <button onClick={riprendiAllenamento} disabled={riprendendo} className="btn-secondario w-full mt-3">
@@ -828,7 +850,7 @@ export default function WorkoutLive() {
         </div>
         <div className="flex items-center gap-2">
           {wakeLock.attivo && <span className="text-xs text-[var(--successo)]">{t('workoutLive.barra.schermoAttivo')}</span>}
-          <button onClick={completaAllenamento} disabled={chiudendo}
+          <button onClick={() => setChiediFine(true)} disabled={chiudendo}
                   className="text-sm font-medium text-[var(--pericolo)] px-3 py-1.5 rounded-[var(--raggio-md)] hover:bg-[var(--pericolo-dim)] disabled:opacity-60">
             {chiudendo ? t('workoutLive.unAttimo') : t('workoutLive.barra.termina')}
           </button>
@@ -1243,7 +1265,7 @@ export default function WorkoutLive() {
                 )}
               </>
             ) : (
-              <button onClick={completaAllenamento} disabled={chiudendo} className="btn-enorme successo disabled:opacity-60">
+              <button onClick={() => setChiediFine(true)} disabled={chiudendo} className="btn-enorme successo disabled:opacity-60">
                 {chiudendo ? t('workoutLive.unAttimo') : t('workoutLive.azioni.completaAllenamento')}
               </button>
             )}
@@ -1332,6 +1354,18 @@ export default function WorkoutLive() {
       </AnimatePresence>
 
       {cassettoRicerca}
+
+      <AnimatePresence>
+        {chiediFine && (
+          <FineAllenamento
+            inizio={sessione?.dataInizio ? new Date(sessione.dataInizio).getTime() : tempoInizio}
+            serie={serieCompletate}
+            inviando={chiudendo}
+            onTermina={completaAllenamento}
+            onAnnulla={() => setChiediFine(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

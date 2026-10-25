@@ -442,6 +442,11 @@ function fusoDelProprietario(sessione, req) {
  * left open for hours, it ends at the last set and the response says so
  * (dimenticata).
  *
+ * `fine`: the end the user picked ("Termina" asks what time you finished,
+ * proposing the last set when it was long ago). It counts instead of the
+ * server's estimate, kept between the start and the moment "Termina" was
+ * tapped.
+ *
  * A workout the user already finished stays as it is (giaConclusa): "Termina"
  * tapped again on an old screen (a notification opened hours later, another
  * device) took the end to now. One the server closed because it was
@@ -450,7 +455,7 @@ function fusoDelProprietario(sessione, req) {
 export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    const { noteFinali, conclusaIl } = req.body;
+    const { noteFinali, conclusaIl, fine } = req.body;
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
     if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
@@ -464,8 +469,12 @@ export async function completaSessione(req, res, next) {
     // "Termina" tapped without a network arrives when the connection is back:
     // what counts is the time it was tapped, not the time it arrived
     const adesso = conclusaIl != null ? orarioDalTelefono(conclusaIl, sessione.dataInizio) : undefined;
+    // Not after the tap: a time picked later than that would be in the future
+    const fineDichiarata = fine != null ? orarioDalTelefono(fine, sessione.dataInizio, adesso) : undefined;
     const fuso = await fusoDelProprietario(sessione, req);
-    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso, fuso });
+    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, {
+      noteFinali, adesso, fine: fineDichiarata, fuso
+    });
     // Closed by an admin: the owner is told
     await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaChiuso');
 

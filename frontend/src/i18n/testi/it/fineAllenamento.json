@@ -1,0 +1,17 @@
+{
+  "titolo": "Termina allenamento",
+  "iniziato": "Iniziato alle {ora}",
+  "domanda": "A che ora hai finito?",
+  "adesso": "Adesso · {ora}",
+  "ultimaSerie": "Ultima serie · {ora}",
+  "dopoPausa": "La tua ultima serie è delle {ora}, più di {minuti} minuti fa: se hai finito allora, lascia quest'ora.",
+  "durata": "Durata: {durata}",
+  "continua": "Continua l'allenamento",
+  "termina": "Termina",
+  "errori": {
+    "nonValida": "Scegli l'ora in cui hai finito.",
+    "prima": "È prima dell'inizio dell'allenamento ({ora}).",
+    "futuro": "Quest'ora non è ancora arrivata.",
+    "troppoLunga": "Così l'allenamento durerebbe più di {ore} ore: controlla l'ora di fine."
+  }
+}
