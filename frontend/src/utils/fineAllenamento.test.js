@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { ultimaSerieIl, fineProposta, fineDaOra, erroreFine, PAUSA_DOPO_ULTIMA_SERIE_MINUTI } from './fineAllenamento.js';
+import { ultimaSerieIl, fineProposta, fineDaOra, erroreFine, fineDaInviare, minutiDiAllenamento, PAUSA_DOPO_ULTIMA_SERIE_MINUTI } from './fineAllenamento.js';
 
 const MINUTO = 60 * 1000;
 /** A local time on 6 October 2026 (the day after for giorno 7), in milliseconds */
@@ -79,9 +79,36 @@ describe('erroreFine', () => {
   it('says what is wrong', () => {
     expect(erroreFine(null, inizio, adesso)).toBe('nonValida');
     expect(erroreFine(alle(17, 30), inizio, adesso)).toBe('prima');
-    expect(erroreFine(inizio + 30 * 1000, inizio, adesso)).toBe('prima');
+    expect(erroreFine(alle(17, 59), inizio, adesso)).toBe('prima');
     expect(erroreFine(alle(22, 0), inizio, adesso)).toBe('futuro');
     expect(erroreFine(alle(4, 1, 7), inizio, alle(8, 30, 7))).toBe('troppoLunga');
     expect(erroreFine(alle(4, 0, 7), inizio, alle(8, 30, 7))).toBeNull();
+  });
+});
+
+describe('a workout of less than a minute (a try, closed right away)', () => {
+  // Started at 23:21:40, "Termina" at 23:22:10
+  const inizio = alle(23, 21) + 40 * 1000;
+  const adesso = alle(23, 22) + 10 * 1000;
+
+  it('"Adesso" is fine, not "before the start"', () => {
+    expect(erroreFine(adesso, inizio, adesso)).toBeNull();
+  });
+
+  it('the start minute typed in the field is the start itself', () => {
+    const fine = fineDaOra('23:21', inizio, adesso);
+    expect(erroreFine(fine, inizio, adesso)).toBeNull();
+    expect(fineDaInviare(fine, inizio)).toBe(inizio);
+    expect(minutiDiAllenamento(fineDaInviare(fine, inizio), inizio)).toBe(0);
+  });
+
+  it('the minute before the start is before the start', () => {
+    expect(erroreFine(fineDaOra('23:20', inizio, adesso), inizio, adesso)).toBe('prima');
+  });
+
+  it('the morning after, the start minute of the evening before is that evening', () => {
+    const mattina = alle(8, 30, 7);
+    expect(fineDaOra('23:21', inizio, mattina)).toBe(alle(23, 21));
+    expect(erroreFine(alle(23, 21), inizio, mattina)).toBeNull();
   });
 });

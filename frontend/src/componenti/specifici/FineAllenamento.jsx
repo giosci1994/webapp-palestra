@@ -11,7 +11,8 @@ import { motion } from 'framer-motion';
 import { useLingua } from '../../hooks/useLingua.js';
 import { aStringaOra, formattaDurata } from '../../utils/formattatori.js';
 import {
-  ultimaSerieIl, fineProposta, fineDaOra, erroreFine, PAUSA_DOPO_ULTIMA_SERIE_MINUTI, DURATA_MAX_MINUTI
+  ultimaSerieIl, fineProposta, fineDaOra, erroreFine, fineDaInviare, minutiDiAllenamento,
+  PAUSA_DOPO_ULTIMA_SERIE_MINUTI, DURATA_MAX_MINUTI
 } from '../../utils/fineAllenamento.js';
 
 /** Now, read when "Termina" is confirmed, not while rendering */
@@ -68,7 +69,7 @@ export default function FineAllenamento({ inizio, serie, inviando = false, onTer
       setErrore(testoErrore(codice));
       return;
     }
-    onTermina(scelta);
+    onTermina(fineDaInviare(scelta, inizio));
   };
 
   // A quick choice for the last set only when it is not now
@@ -125,7 +126,9 @@ export default function FineAllenamento({ inizio, serie, inviando = false, onTer
         <p className={`text-sm ${problema ? 'text-[var(--pericolo)]' : 'text-[var(--testo-secondario)]'}`} role={problema ? 'alert' : undefined}>
           {errore || (problema
             ? testoErrore(problema)
-            : t('fineAllenamento.durata', { durata: formattaDurata(Math.round((fine - inizio) / MINUTO)) }))}
+            : minutiDiAllenamento(fine, inizio) > 0
+              ? t('fineAllenamento.durata', { durata: formattaDurata(minutiDiAllenamento(fine, inizio)) })
+              : t('fineAllenamento.durataBreve'))}
         </p>
 
         <div className="flex gap-3">

@@ -6,6 +6,7 @@
   "ultimaSerie": "Last set · {ora}",
   "dopoPausa": "Your last set was at {ora}, more than {minuti} minutes ago: if you finished then, keep this time.",
   "durata": "Duration: {durata}",
+  "durataBreve": "Duration: less than a minute",
   "continua": "Keep training",
   "termina": "Finish",
   "errori": {
