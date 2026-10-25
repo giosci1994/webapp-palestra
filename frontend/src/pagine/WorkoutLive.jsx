@@ -23,6 +23,7 @@ import { usePushNotifiche } from '../hooks/usePushNotifiche.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
+import { leggiRecupero, salvaRecupero, togliRecupero } from '../utils/recupero.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaData, formattaDurata, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,6 +36,8 @@ const STILE_PROPOSTA = {
   scarico: { etichetta: 'workoutLive.proposta.scarico', colore: 'var(--avviso)', bordo: 'var(--avviso)', sfondo: 'var(--bg-terziario)' }
 };
 const kg = n => n.toLocaleString(localeCorrente(), { maximumFractionDigits: 2 });
+/** Now, read in event handlers (a rest that starts), not while rendering */
+const adesso = () => Date.now();
 
 /** How long "Termina" (finish) waits for the queue to send, before showing the summary offline */
 const ATTESA_CHIUSURA_MS = 8000;
@@ -49,10 +52,14 @@ export default function WorkoutLive() {
   const location = useLocation();
   const naviga = useNavigate();
   const wakeLock = useWakeLock();
-  const timer = useTimer();
+  // A rest still running when the app was closed carries on, with the time
+  // that passed meanwhile (utils/recupero.js)
+  const [recuperoSalvato] = useState(() => leggiRecupero(id, Date.now()));
+  const recuperoRef = useRef(recuperoSalvato);
+  const timer = useTimer(recuperoSalvato?.fine ?? null);
   // With push notifications on, the end of the rest arrives even with the screen locked
   const push = usePushNotifiche();
-  const avvisoRecuperoRef = useRef(false);
+  const avvisoRecuperoRef = useRef(recuperoSalvato?.avvisato ?? false);
   // Sets, skips and "Termina" go through the queue on the phone (utils/codaSerie.js):
   // they are sent right away if there is a network, otherwise as soon as it is back
   const { utente } = useAuth();
@@ -104,14 +111,14 @@ export default function WorkoutLive() {
   const [caricamento, setCaricamento] = useState(!location.state?.sessione);
   // Rest started by the last set: it is active until the timer reaches zero
   // (timerAttivo, derived from the timer without an effect that turns it off)
-  const [recuperoAvviato, setRecuperoAvviato] = useState(false);
+  const [recuperoAvviato, setRecuperoAvviato] = useState(Boolean(recuperoSalvato));
   // Duration of the rest in progress: the progress bar cannot use the current
   // exercise's one, which after the automatic switch is already the next one
-  const [durataRecupero, setDurataRecupero] = useState(0);
+  const [durataRecupero, setDurataRecupero] = useState(recuperoSalvato?.durata ?? 0);
   // Rest at the top of the screen instead of in place of the fields: after the
   // last set the next exercise is already shown, so during the rest you see
   // what is coming and can move to the machine.
-  const [recuperoInCima, setRecuperoInCima] = useState(false);
+  const [recuperoInCima, setRecuperoInCima] = useState(recuperoSalvato?.inCima ?? false);
   const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
   const nuoviRecord = chiusura.risposta?.recordPersonali || [];
   // Closed hours after the last set: the server makes it end there (and it cannot be resumed)
@@ -175,7 +182,8 @@ export default function WorkoutLive() {
   /** Clear the saved progress (completion or abandonment) */
   const pulisciProgressi = useCallback(() => {
     localStorage.removeItem(CHIAVE_PROGRESSO);
-  }, [CHIAVE_PROGRESSO]);
+    togliRecupero(id);
+  }, [CHIAVE_PROGRESSO, id]);
 
   // Update the clock every second
   useEffect(() => {
@@ -212,11 +220,13 @@ export default function WorkoutLive() {
 
   // Already over: progress left in the browser would bring it back as in
   // progress, and the end-of-rest notification would keep leading here
+  const { resetta: azzeraRecupero } = timer;
   useEffect(() => {
     if (!giaConclusa) return;
     pulisciProgressi();
+    azzeraRecupero();
     chiudiNotificheRecupero();
-  }, [giaConclusa, pulisciProgressi]);
+  }, [giaConclusa, pulisciProgressi, azzeraRecupero]);
 
   // Back in the app, the end-of-rest notification has done its job: it does
   // not stay among the notifications until the end of the workout
@@ -528,7 +538,8 @@ export default function WorkoutLive() {
    * @param {string} prossimo - what comes next, for the notification: "Panca piana · serie 2"
    */
   const avviaRecupero = (secondi, inCima, prossimo) => {
-    timer.avvia(secondi);
+    const fine = adesso() + secondi * 1000;
+    timer.avvia(secondi, { fine });
     setDurataRecupero(secondi);
     setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
@@ -538,6 +549,9 @@ export default function WorkoutLive() {
       avvisoRecuperoRef.current = true;
       api.post('/notifiche/push/recupero', { secondi, prossimo, sessioneId: Number(id) }).catch(() => {});
     }
+    // Kept on the phone: closed and reopened, the app finds the rest where the clock says
+    recuperoRef.current = { fine, durata: secondi, inCima, avvisato: avvisoRecuperoRef.current };
+    salvaRecupero(id, recuperoRef.current);
   };
 
   /** Rest interrupted or workout finished: no notification */
@@ -552,13 +566,21 @@ export default function WorkoutLive() {
     setRecuperoAvviato(false);
     setRecuperoInCima(false);
     annullaAvvisoRecupero();
+    recuperoRef.current = null;
+    togliRecupero(id);
   };
 
   const cambiaEsercizio = (nuovoIndice) => {
     apriEsercizio(nuovoIndice);
     // The rest is about the body, not the exercise: if it is running it
     // keeps going, at the top, above the exercise just picked
-    if (timerAttivo) setRecuperoInCima(true);
+    if (timerAttivo) {
+      setRecuperoInCima(true);
+      if (recuperoRef.current) {
+        recuperoRef.current = { ...recuperoRef.current, inCima: true };
+        salvaRecupero(id, recuperoRef.current);
+      }
+    }
   };
 
   // "Termina" is queued after the sets: it is sent with them, or when the network is back.
