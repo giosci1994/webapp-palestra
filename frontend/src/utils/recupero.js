@@ -37,9 +37,10 @@ export function statoRecupero(fine, adesso) {
 
 /**
  * Keeps the rest of workout `sessioneId` on the phone.
- * @param {{ fine: number, durata: number, inCima: boolean, avvisato: boolean }} recupero
+ * @param {{ fine: number, durata: number, inCima: boolean, avvisato: boolean, esercizio?: number }} recupero
  *   durata: seconds, for the progress bar; inCima: shown at the top, above the
- *   next exercise; avvisato: the server will send the end-of-rest push
+ *   next exercise; avvisato: the server will send the end-of-rest push;
+ *   esercizio: index of the exercise whose set started it (one more set of it)
  */
 export function salvaRecupero(sessioneId, recupero, archivio = globalThis.localStorage) {
   try {
@@ -74,5 +75,11 @@ export function leggiRecupero(sessioneId, adesso, archivio = globalThis.localSto
     togliRecupero(sessioneId, archivio);
     return null;
   }
-  return { fine: recupero.fine, durata: recupero.durata, inCima: Boolean(recupero.inCima), avvisato: Boolean(recupero.avvisato) };
+  return {
+    fine: recupero.fine,
+    durata: recupero.durata,
+    inCima: Boolean(recupero.inCima),
+    avvisato: Boolean(recupero.avvisato),
+    esercizio: Number.isInteger(recupero.esercizio) ? recupero.esercizio : null
+  };
 }

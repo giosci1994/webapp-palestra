@@ -14,6 +14,26 @@ import { diLavoro } from './tipiSerie.js';
 export const ESERCIZIO_EXTRA = { serieTarget: 3, repTarget: 10, recuperoSecondi: 90 };
 
 /**
+ * The sets planned today for an exercise of the workout: those set during it
+ * (serieOggi: one more because today you have more strength, one less), the
+ * plan's otherwise. The plan itself does not change, and the load proposal
+ * keeps reading the plan's serieTarget.
+ */
+export const serieDiOggi = esercizio => esercizio?.serieOggi ?? esercizio?.serieTarget;
+
+/** The most sets of one exercise in a workout, adding them as you go */
+export const SERIE_MAX_OGGI = 20;
+
+/**
+ * Today's sets after a change: never fewer than those already done (they are
+ * in the history: they are removed from there), never fewer than one, never
+ * more than SERIE_MAX_OGGI.
+ * @param {number} quante - the number asked for
+ * @param {number} fatte - working sets already done today
+ */
+export const limitaSerieOggi = (quante, fatte) => Math.min(SERIE_MAX_OGGI, Math.max(1, fatte, quante));
+
+/**
  * @param {object} sessione - from GET /sessioni/:id: scheda with its exercises, logSerie with the exercise
  * @returns {{ eserciziLive: object[], serieCompletate: object[], esercizioIdx: number, serieCorrente: number, tempoInizio: number }}
  */
@@ -28,12 +48,15 @@ export function statoDaSessione(sessione) {
     if (nellaScheda.has(s.esercizioId) || extra.some(e => e.esercizioId === s.esercizioId)) continue;
     extra.push({ esercizioId: s.esercizioId, esercizio: s.esercizio, ...ESERCIZIO_EXTRA });
   }
-  const eserciziLive = [...eserciziScheda, ...extra];
-
-  // Start again from the first exercise with sets still to do: skipped ones
-  // count as done, as during the workout; warm-up and drop sets do not
+  // Skipped sets count as done, as during the workout; warm-up and drop sets do not
   const registrate = esercizioId => serie.filter(s => s.esercizioId === esercizioId && diLavoro(s)).length;
-  let esercizioIdx = eserciziLive.findIndex(e => registrate(e.esercizioId) < (e.serieTarget ?? 1));
+  // More sets than the plan: some were added during the workout, and today's
+  // sets are those, not the plan's
+  const eserciziLive = [...eserciziScheda, ...extra].map(e =>
+    registrate(e.esercizioId) > (e.serieTarget ?? 0) ? { ...e, serieOggi: registrate(e.esercizioId) } : e);
+
+  // Start again from the first exercise with sets still to do
+  let esercizioIdx = eserciziLive.findIndex(e => registrate(e.esercizioId) < (serieDiOggi(e) ?? 1));
   if (esercizioIdx === -1) esercizioIdx = Math.max(0, eserciziLive.length - 1);
   const attuale = eserciziLive[esercizioIdx];
 

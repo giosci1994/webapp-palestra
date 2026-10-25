@@ -127,5 +127,48 @@
       ],
       "ctaTesto": "Start a workout"
     }
+  },
+  {
+    "versione": "1.6.0",
+    "titolo": "Una serie in più, oggi",
+    "sottotitolo": "Quando hai forza da vendere",
+    "icona": "💪",
+    "punti": [
+      {
+        "icona": "➕",
+        "testo": "Con − e + accanto a \"Serie 2 / 3\" aggiungi o togli serie all'esercizio che stai facendo"
+      },
+      {
+        "icona": "📋",
+        "testo": "Vale solo per quel giorno: la scheda resta com'è, e anche la proposta del carico"
+      },
+      {
+        "icona": "↩️",
+        "testo": "Appena finito un esercizio, durante il recupero tocca \"Ancora una serie\" per tornarci"
+      }
+    ],
+    "ctaTesto": "Inizia un allenamento",
+    "ctaRotta": "/allenamento",
+    "coloreInizio": "#8b5cf6",
+    "coloreFine": "#06b6d4",
+    "en": {
+      "titolo": "One more set, today",
+      "sottotitolo": "When you have strength to spare",
+      "punti": [
+        {
+          "icona": "➕",
+          "testo": "With − and + next to \"Set 2 / 3\" you add or remove sets of the exercise you are doing"
+        },
+        {
+          "icona": "📋",
+          "testo": "It is just for that day: the plan stays as it is, and so does the load suggestion"
+        },
+        {
+          "icona": "↩️",
+          "testo": "Right after finishing an exercise, tap \"One more set\" during the rest to go back to it"
+        }
+      ],
+      "ctaTesto": "Start a workout"
+    }
   }
 ]

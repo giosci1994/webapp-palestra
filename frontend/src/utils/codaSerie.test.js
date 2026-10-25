@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  accoda, leggiCoda, togliDallaCoda, esitoErrore, sessionePassataDa, inviaCoda, inviaOra, rispostaPer, ascoltaCoda
+  accoda, leggiCoda, togliDallaCoda, esitoErrore, sessionePassataDa, inviaCoda, inviaOra, rispostaPer, ascoltaCoda,
+  togliSessioneDallaCoda, rimettiInCoda
 } from './codaSerie.js';
 
 /** An in-memory localStorage; `pieno` makes every write fail */
@@ -230,5 +231,40 @@ describe('inviaOra', () => {
 
     await Promise.all([inviaOra(utente, { chiama, archivio }), inviaOra(utente, { chiama, archivio })]);
     expect(chiamate.map(c => c.body.serieNumero)).toEqual([1, 2]);
+  });
+});
+
+describe('a workout thrown away', () => {
+  const ALTRA = { id: 8, schedaId: 3, dataInizio: '2026-10-11T09:00:00.000Z' };
+
+  it('its queued entries leave the queue, those of other workouts stay', () => {
+    const a = serie('08:10');
+    const b = serie('09:10', {}, ALTRA);
+    const c = termina('08:50');
+    expect(togliSessioneDallaCoda(utente, 7, archivio)).toEqual([a, c]);
+    expect(leggiCoda(utente, archivio)).toEqual([b]);
+    // Nothing queued for it: nothing changes
+    expect(togliSessioneDallaCoda(utente, 7, archivio)).toEqual([]);
+    expect(leggiCoda(utente, archivio)).toEqual([b]);
+  });
+
+  it('if deleting does not go through, they go back in front, in their order', () => {
+    const a = serie('08:10');
+    const c = termina('08:50');
+    const voci = togliSessioneDallaCoda(utente, 7, archivio);
+    const b = serie('09:10', {}, ALTRA);
+    rimettiInCoda(utente, voci, archivio);
+    expect(leggiCoda(utente, archivio)).toEqual([a, c, b]);
+    // Put back twice, still once each
+    rimettiInCoda(utente, voci, archivio);
+    expect(leggiCoda(utente, archivio)).toEqual([a, c, b]);
+  });
+
+  it('taken out, they cannot come back as a past workout', async () => {
+    serie('08:10');
+    togliSessioneDallaCoda(utente, 7, archivio);
+    const { chiama, chiamate } = serverFinto();
+    expect(await inviaCoda(utente, { chiama, archivio })).toEqual({ inviate: 0, rimaste: 0 });
+    expect(chiamate).toEqual([]);
   });
 });
