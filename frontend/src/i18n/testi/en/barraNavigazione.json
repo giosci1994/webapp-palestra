@@ -2,6 +2,8 @@
   "home": "Home",
   "schede": "Plans",
   "allenamento": "Workout",
-  "chat": "Chat",
-  "profilo": "Profile"
+  "chat": "Chat and notifications",
+  "profilo": "Profile",
+  "daLeggere_one": "{count} unread",
+  "daLeggere_other": "{count} unread"
 }

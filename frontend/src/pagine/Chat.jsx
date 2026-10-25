@@ -1,16 +1,23 @@
 // ============================================
 // GymMaster — Chat page
-// Conversation list + contact requests
+// Conversation list, notifications and contact requests. On the phone it is
+// also the notification centre: the bell is only in the desktop sidebar
 // ============================================
 
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { CheckCheck } from 'lucide-react';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
 import { RUOLI } from '../utils/costanti.js';
 import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNotifiche } from '../contesti/NotificheContesto.jsx';
+import ListaNotifiche from '../componenti/comuni/ListaNotifiche.jsx';
+import { testoContatore } from '../utils/notifiche.js';
+
+const TABS = ['chat', 'notifiche', 'richieste'];
 
 export default function Chat() {
   const { t } = useLingua();
@@ -21,7 +28,12 @@ export default function Chat() {
   const [mostraCerca, setMostraCerca] = useState(false);
   const [ricerca, setRicerca] = useState('');
   const [risultatiRicerca, setRisultatiRicerca] = useState([]);
-  const [tab, setTab] = useState('chat'); // chat, requests
+  const { nonLette, caricate: notificheCaricate, segnaTutteLette } = useNotifiche();
+  // The tab is in the address (?tab=notifiche): back from where a
+  // notification led, the notifications are still there
+  const [parametri, setParametri] = useSearchParams();
+  const tab = TABS.includes(parametri.get('tab')) ? parametri.get('tab') : 'chat';
+  const setTab = nuova => setParametri(nuova === 'chat' ? {} : { tab: nuova }, { replace: true });
 
   // On first load with the spinner; once a request is accepted, the list updates in place
   const caricaDati = useCallback(() => Promise.all([
@@ -89,16 +101,27 @@ export default function Chat() {
           </button>
         </div>
         
-        {/* Tabs: Chat / Requests */}
-        <div className="flex gap-2 mt-4">
+        {/* Tabs: Chat / Notifications / Requests */}
+        <div className="flex gap-2 mt-4 flex-wrap">
           <button onClick={() => setTab('chat')}
-                  className={`px-4 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all ${
                     tab === 'chat' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
             {t('chat.tabChat')}
           </button>
+          <button onClick={() => setTab('notifiche')}
+                  className={`px-3 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all relative ${
+                    tab === 'notifiche' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
+                  }`}>
+            {t('chat.tabNotifiche')}
+            {nonLette > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-[var(--pericolo)] text-white text-xs flex items-center justify-center font-bold">
+                {testoContatore(nonLette)}
+              </span>
+            )}
+          </button>
           <button onClick={() => setTab('richieste')}
-                  className={`px-4 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all relative ${
+                  className={`px-3 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all relative ${
                     tab === 'richieste' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
             {t('chat.tabRichieste')}
@@ -152,7 +175,25 @@ export default function Chat() {
 
       {/* Content */}
       <div className="flex-1 pb-6">
-      {caricamento ? (
+      {tab === 'notifiche' ? (
+        /* Notification list: the same as the bell's on desktop */
+        !notificheCaricate ? (
+          <div className="flex justify-center py-12">
+            <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {nonLette > 0 && (
+              <button type="button" onClick={segnaTutteLette} className="self-end text-xs text-[var(--accent)] hover:underline flex items-center gap-1">
+                <CheckCheck size={14} /> {t('campanellaNotifiche.segnaTutteLette')}
+              </button>
+            )}
+            <div className="glass-card overflow-hidden">
+              <ListaNotifiche />
+            </div>
+          </div>
+        )
+      ) : caricamento ? (
         <div className="flex justify-center py-12">
           <div className="w-8 h-8 border-3 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
         </div>

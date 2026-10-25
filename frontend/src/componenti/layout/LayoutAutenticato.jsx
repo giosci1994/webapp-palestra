@@ -14,6 +14,7 @@ import PromemoriaAllenamento from '../specifici/PromemoriaAllenamento.jsx';
 import RecuperoErrori from '../comuni/RecuperoErrori.jsx';
 import { useInvioCoda } from '../../hooks/useCodaSerie.js';
 import { AllenamentoInCorsoProvider } from '../../contesti/AllenamentoInCorsoContesto.jsx';
+import { NotificheProvider } from '../../contesti/NotificheContesto.jsx';
 import BarraAllenamentoInCorso from '../specifici/BarraAllenamentoInCorso.jsx';
 
 export default function LayoutAutenticato() {
@@ -39,48 +40,51 @@ export default function LayoutAutenticato() {
   const isImmersivo = location.pathname.match(/^\/chat\/.+/) || location.pathname.match(/^\/allenamento\/.+/);
 
   return (
-    // The open workout: the bar to resume it, and the choice before starting another one
+    // The open workout: the bar to resume it, and the choice before starting another one.
+    // Notifications and messages to read: the bell (desktop) and the bottom bar (phone)
     <AllenamentoInCorsoProvider>
-      <div className="min-h-screen min-h-[100dvh] bg-[var(--bg-primario)] flex flex-col md:flex-row">
-        {/* Sidebar — desktop only */}
-        <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+      <NotificheProvider>
+        <div className="min-h-screen min-h-[100dvh] bg-[var(--bg-primario)] flex flex-col md:flex-row">
+          {/* Sidebar — desktop only */}
+          <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
-        {/* Invisible spacer to keep the layout intact. */}
-        <div className={`hidden md:block ${isCollapsed ? 'w-24' : 'w-72'} shrink-0 pointer-events-none transition-all duration-300`}></div>
+          {/* Invisible spacer to keep the layout intact. */}
+          <div className={`hidden md:block ${isCollapsed ? 'w-24' : 'w-72'} shrink-0 pointer-events-none transition-all duration-300`}></div>
 
-        {/* Main content */}
-        <main className="flex-1 min-w-0 transition-all flex justify-center w-full" style={{ paddingBottom: isImmersivo ? '0px' : 'calc(90px + var(--safe-bottom))' }}>
-          <div 
-            className="w-full max-w-5xl relative flex-1 flex flex-col"
-            style={{ 
-              paddingTop: isImmersivo ? '0px' : 'calc(24px + var(--safe-top))', 
-              paddingBottom: isImmersivo ? '0px' : 'calc(24px + var(--safe-bottom))',
-              paddingLeft: isImmersivo ? '0px' : 'calc(clamp(16px, 4vw, 32px) + var(--safe-left))',
-              paddingRight: isImmersivo ? '0px' : 'calc(clamp(16px, 4vw, 32px) + var(--safe-right))',
-              boxSizing: 'border-box'
-            }}
-          >
-            {!isImmersivo && <BarraAllenamentoInCorso />}
+          {/* Main content */}
+          <main className="flex-1 min-w-0 transition-all flex justify-center w-full" style={{ paddingBottom: isImmersivo ? '0px' : 'calc(90px + var(--safe-bottom))' }}>
+            <div 
+              className="w-full max-w-5xl relative flex-1 flex flex-col"
+              style={{ 
+                paddingTop: isImmersivo ? '0px' : 'calc(24px + var(--safe-top))', 
+                paddingBottom: isImmersivo ? '0px' : 'calc(24px + var(--safe-bottom))',
+                paddingLeft: isImmersivo ? '0px' : 'calc(clamp(16px, 4vw, 32px) + var(--safe-left))',
+                paddingRight: isImmersivo ? '0px' : 'calc(clamp(16px, 4vw, 32px) + var(--safe-right))',
+                boxSizing: 'border-box'
+              }}
+            >
+              {!isImmersivo && <BarraAllenamentoInCorso />}
 
-            {/* The key resets the error when the page changes */}
-            <RecuperoErrori key={location.pathname}>
-              {/* Pages are loaded when they are opened: meanwhile the sidebar stays */}
-              <Suspense fallback={<div className="flex justify-center py-16"><Spinner /></div>}>
-                <Outlet />
-              </Suspense>
-            </RecuperoErrori>
-          </div>
-        </main>
+              {/* The key resets the error when the page changes */}
+              <RecuperoErrori key={location.pathname}>
+                {/* Pages are loaded when they are opened: meanwhile the sidebar stays */}
+                <Suspense fallback={<div className="flex justify-center py-16"><Spinner /></div>}>
+                  <Outlet />
+                </Suspense>
+              </RecuperoErrori>
+            </div>
+          </main>
 
-        {/* Bottom Navigation — mobile only (hidden on full-screen pages: a chat, the workout in progress) */}
-        {!isImmersivo && <BarraNavigazione />}
+          {/* Bottom Navigation — mobile only (hidden on full-screen pages: a chat, the workout in progress) */}
+          {!isImmersivo && <BarraNavigazione />}
 
-        {/* In-app "what's new" (bubble + stories) */}
-        {!isImmersivo && <NovitaStorie onOccupato={setStorieOccupate} />}
+          {/* In-app "what's new" (bubble + stories) */}
+          {!isImmersivo && <NovitaStorie onOccupato={setStorieOccupate} />}
 
-        {/* When the app opens: the workout scheduled for today */}
-        <PromemoriaAllenamento inAttesa={isImmersivo || storieOccupate} />
-      </div>
+          {/* When the app opens: the workout scheduled for today */}
+          <PromemoriaAllenamento inAttesa={isImmersivo || storieOccupate} />
+        </div>
+      </NotificheProvider>
     </AllenamentoInCorsoProvider>
   );
 }

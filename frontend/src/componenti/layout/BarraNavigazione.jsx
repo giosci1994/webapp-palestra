@@ -1,18 +1,22 @@
 // ============================================
 // GymMaster — Mobile navigation bar
-// Bottom navigation with 5 tabs
+// Bottom navigation with 5 tabs. The chat tab is also the notification
+// centre (the bell is in the desktop sidebar): its badge counts unread
+// messages and notifications
 // ============================================
 
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, ClipboardList, Dumbbell, MessageCircle, User } from 'lucide-react';
 import { useLingua } from '../../hooks/useLingua.js';
+import { useNotifiche } from '../../contesti/NotificheContesto.jsx';
+import { testoContatore } from '../../utils/notifiche.js';
 
 // `chiave` is a translation key, shown with t() when rendering
 const TABS = [
   { percorso: '/dashboard', Icona: Home, chiave: 'barraNavigazione.home' },
   { percorso: '/schede', Icona: ClipboardList, chiave: 'barraNavigazione.schede' },
   { percorso: '/allenamento', Icona: Dumbbell, chiave: 'barraNavigazione.allenamento', principale: true },
-  { percorso: '/chat', Icona: MessageCircle, chiave: 'barraNavigazione.chat' },
+  { percorso: '/chat', Icona: MessageCircle, chiave: 'barraNavigazione.chat', daLeggere: true },
   { percorso: '/profilo', Icona: User, chiave: 'barraNavigazione.profilo' }
 ];
 
@@ -21,6 +25,8 @@ const HOME = '/dashboard';
 export default function BarraNavigazione() {
   const { t } = useLingua();
   const { pathname } = useLocation();
+  const { nonLette, messaggiNonLetti } = useNotifiche();
+  const daLeggere = nonLette + messaggiNonLetti;
 
   // The tabs must not pile up in the history: otherwise the "back" swipe
   // walks back through every tab already opened instead of going back to
@@ -49,7 +55,9 @@ export default function BarraNavigazione() {
               key={tab.percorso}
               to={tab.percorso}
               replace={sostituisci(tab.percorso)}
-              aria-label={t(tab.chiave)}
+              aria-label={tab.daLeggere && daLeggere > 0
+                ? `${t(tab.chiave)}, ${t('barraNavigazione.daLeggere', { count: daLeggere })}`
+                : t(tab.chiave)}
               className={({ isActive }) =>
                 `flex items-center justify-center rounded-full transition-all duration-200 ${
                   tab.principale ? 'z-10' : 'p-2 min-w-[44px] min-h-[44px]'
@@ -71,7 +79,17 @@ export default function BarraNavigazione() {
                       <Icona size={28} />
                     </div>
                   ) : (
-                    <Icona size={24} className={isActive ? 'text-[var(--accent)] drop-shadow-[0_0_8px_var(--accent)]' : ''} />
+                    <span className="relative flex">
+                      <Icona size={24} className={isActive ? 'text-[var(--accent)] drop-shadow-[0_0_8px_var(--accent)]' : ''} />
+                      {tab.daLeggere && daLeggere > 0 && (
+                        <span
+                          className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
+                          style={{ background: 'var(--pericolo, #ef4444)', color: '#fff' }}
+                        >
+                          {testoContatore(daLeggere)}
+                        </span>
+                      )}
+                    </span>
                   )}
                 </>
               )}

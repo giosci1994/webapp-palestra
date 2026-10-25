@@ -2,6 +2,8 @@
   "home": "Home",
   "schede": "Schede",
   "allenamento": "Allenamento",
-  "chat": "Chat",
-  "profilo": "Profilo"
+  "chat": "Chat e notifiche",
+  "profilo": "Profilo",
+  "daLeggere_one": "{count} da leggere",
+  "daLeggere_other": "{count} da leggere"
 }
