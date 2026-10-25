@@ -4,7 +4,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
-import { creaUtente, creaEsercizio, creaScheda, creaRecord, tokenPer, giorniFa, GIORNO, MINUTO } from '../supporto/dati.js';
+import { creaUtente, creaEsercizio, creaScheda, creaRecord, tokenPer, giorniFa, MINUTO } from '../supporto/dati.js';
 
 let server;
 let utente;
@@ -39,7 +39,7 @@ describe('your gamification profile', () => {
 
     // Today and yesterday: two days in a row
     await allenamento(utente, scheda, new Date(), { minuti: 60, volume: 1200 });
-    await allenamento(utente, scheda, new Date(Date.now() - GIORNO), { minuti: 30 });
+    await allenamento(utente, scheda, giorniFa(1), { minuti: 30 });
     // Not counted: still open, and from before the reset
     await allenamento(utente, scheda, new Date(), { conclusa: false });
     await allenamento(utente, scheda, giorniFa(20), { minuti: 600, volume: 50000 });

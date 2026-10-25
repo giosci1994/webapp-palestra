@@ -8,15 +8,13 @@
 import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
 import { prisma } from './database.js';
+import { MINUTO, GIORNO, giorniFa } from './giorni.js';
 
 let progressivo = 0;
 const unico = () => ++progressivo;
 
-export const MINUTO = 60 * 1000;
-export const GIORNO = 24 * 60 * MINUTO;
-
-/** The instant n days ago */
-export const giorniFa = n => new Date(Date.now() - n * GIORNO);
+// Days ago on the calendar, not in steps of 24 hours (giorni.js)
+export { MINUTO, GIORNO, giorniFa };
 
 /**
  * An active user. The password becomes a real hash only if a test logs in:
