@@ -99,6 +99,25 @@ export function togliDallaCoda(utenteId, ids, archivio = globalThis.localStorage
   return true;
 }
 
+/**
+ * Takes out of the queue the entries of a workout that is being deleted:
+ * arriving after it, the server would not find it and they would become a
+ * past workout (sessionePassataDa), bringing back what was thrown away.
+ * @returns {object[]} the entries taken out, to put back if deleting fails
+ */
+export function togliSessioneDallaCoda(utenteId, sessioneId, archivio = globalThis.localStorage) {
+  const voci = leggiCoda(utenteId, archivio).filter(v => v.sessione?.id === sessioneId);
+  if (voci.length) togliDallaCoda(utenteId, voci.map(v => v.id), archivio);
+  return voci;
+}
+
+/** Puts entries back at the front of the queue, in their order (a delete that did not go through) */
+export function rimettiInCoda(utenteId, voci, archivio = globalThis.localStorage) {
+  if (!voci.length) return;
+  const presenti = new Set(leggiCoda(utenteId, archivio).map(v => v.id));
+  scriviCoda(utenteId, [...voci.filter(v => !presenti.has(v.id)), ...leggiCoda(utenteId, archivio)], archivio);
+}
+
 // --- Sending ---
 
 /**

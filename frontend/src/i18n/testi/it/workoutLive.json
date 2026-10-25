@@ -26,6 +26,10 @@
     "riprendi": "↩️ Riprendi l'allenamento",
     "riprendiFino": "Puoi ancora riprenderlo fino alle {ora}."
   },
+  "elimina": {
+    "conferma": "Eliminare questo allenamento? Le serie registrate non verranno salvate e non compariranno nello Storico.",
+    "senzaRete": "Senza connessione non posso eliminarlo: riprova quando torna la rete."
+  },
   "serieCorrente": "Serie {numero} / {totale}",
   "serieOggi": {
     "aggiungi": "Aggiungi una serie, solo per oggi",

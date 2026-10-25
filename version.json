@@ -7,11 +7,13 @@
       "data": "2026-10-25",
       "modifiche": [
         "Durante l'allenamento puoi aggiungere o togliere serie all'esercizio che stai facendo, con − e + accanto a \"Serie 2 / 3\": vale solo per quel giorno, la scheda resta com'è. Finito un esercizio, durante il recupero un tocco su \"Ancora una serie\" ti riporta lì",
-        "Termina funziona anche per un allenamento di meno di un minuto: prima diceva che l'ora di fine era «prima dell'inizio»"
+        "Termina funziona anche per un allenamento di meno di un minuto: prima diceva che l'ora di fine era «prima dell'inizio»",
+        "Termina ha anche \"Non salvarlo\": per le prove, elimina l'allenamento invece di salvarlo, e non resta nello Storico né nelle statistiche"
       ],
       "modificheEn": [
         "During the workout you can add or remove sets of the exercise you are doing, with − and + next to \"Set 2 / 3\": it is just for that day, the plan stays as it is. After finishing an exercise, during the rest a tap on \"One more set\" takes you back to it",
-        "Finish also works for a workout shorter than a minute: it used to say the end time was \"before the start\""
+        "Finish also works for a workout shorter than a minute: it used to say the end time was \"before the start\"",
+        "Finish also has \"Don't save it\": for tries, it deletes the workout instead of saving it, and it stays out of History and the statistics"
       ]
     },
     {

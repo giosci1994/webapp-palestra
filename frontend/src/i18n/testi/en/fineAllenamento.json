@@ -9,6 +9,7 @@
   "durataBreve": "Duration: less than a minute",
   "continua": "Keep training",
   "termina": "Finish",
+  "nonSalvare": "Don't save it: delete the workout",
   "errori": {
     "nonValida": "Pick the time you finished.",
     "prima": "That is before the workout started ({ora}).",

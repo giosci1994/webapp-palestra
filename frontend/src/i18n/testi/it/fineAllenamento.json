@@ -9,6 +9,7 @@
   "durataBreve": "Durata: meno di un minuto",
   "continua": "Continua l'allenamento",
   "termina": "Termina",
+  "nonSalvare": "Non salvarlo: elimina l'allenamento",
   "errori": {
     "nonValida": "Scegli l'ora in cui hai finito.",
     "prima": "È prima dell'inizio dell'allenamento ({ora}).",

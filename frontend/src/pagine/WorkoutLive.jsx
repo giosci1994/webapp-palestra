@@ -10,7 +10,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useLingua } from '../hooks/useLingua.js';
 import Testo from '../i18n/Testo.jsx';
 import { localeCorrente } from '../i18n/index.js';
-import { accoda, inviaOra, togliDallaCoda } from '../utils/codaSerie.js';
+import { accoda, inviaOra, togliDallaCoda, togliSessioneDallaCoda, rimettiInCoda } from '../utils/codaSerie.js';
 import { useCodaSerie, useVoceInCoda } from '../hooks/useCodaSerie.js';
 import { entro, chiudiNotificheRecupero } from '../utils/push.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
@@ -95,6 +95,7 @@ export default function WorkoutLive() {
   const [chiudendo, setChiudendo] = useState(false);
   // "Termina" first asks what time you finished (componenti/specifici/FineAllenamento.jsx)
   const [chiediFine, setChiediFine] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
   const [fineScelta, setFineScelta] = useState(null);
   // "Termina" queued: while it is there the workout is closed only on the
   // phone; once sent, the server's response brings the records and the end
@@ -650,6 +651,31 @@ export default function WorkoutLive() {
     setChiudendo(false);
     pulisciProgressi(); // Clear localStorage on completion
     wakeLock.disattiva();
+  };
+
+  // "Non salvarlo" (don't save it): a try, thrown away. Its sets still on the
+  // phone are taken out first: sent after the delete they would find no
+  // workout and become a past one, bringing back what was thrown away.
+  const eliminaAllenamento = async () => {
+    if (eliminando || !confirm(t('workoutLive.elimina.conferma'))) return;
+    setEliminando(true);
+    const voci = togliSessioneDallaCoda(utenteId, sessione.id);
+    try {
+      await api.delete(`/sessioni/${sessione.id}`);
+    } catch (err) {
+      // Already gone from the server: nothing left to delete
+      if (err?.stato !== 404) {
+        rimettiInCoda(utenteId, voci);
+        setEliminando(false);
+        alert(err instanceof TypeError ? t('workoutLive.elimina.senzaRete') : err.message);
+        return;
+      }
+    }
+    fermaRecupero();
+    chiudiNotificheRecupero();
+    pulisciProgressi();
+    wakeLock.disattiva();
+    naviga('/dashboard', { replace: true });
   };
 
   const tornaAllAllenamento = () => {
@@ -1461,7 +1487,9 @@ export default function WorkoutLive() {
             inizio={sessione?.dataInizio ? new Date(sessione.dataInizio).getTime() : tempoInizio}
             serie={serieCompletate}
             inviando={chiudendo}
+            eliminando={eliminando}
             onTermina={completaAllenamento}
+            onElimina={eliminaAllenamento}
             onAnnulla={() => setChiediFine(false)}
           />
         )}

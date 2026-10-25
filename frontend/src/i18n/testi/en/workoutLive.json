@@ -26,6 +26,10 @@
     "riprendi": "↩️ Resume the workout",
     "riprendiFino": "You can still resume it until {ora}."
   },
+  "elimina": {
+    "conferma": "Delete this workout? The sets logged will not be saved and will not show in History.",
+    "senzaRete": "Without a connection I can't delete it: try again when you're back online."
+  },
   "serieCorrente": "Set {numero} / {totale}",
   "serieOggi": {
     "aggiungi": "Add a set, just for today",
