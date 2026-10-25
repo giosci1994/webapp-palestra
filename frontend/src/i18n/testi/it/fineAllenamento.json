@@ -6,8 +6,10 @@
   "ultimaSerie": "Ultima serie · {ora}",
   "dopoPausa": "La tua ultima serie è delle {ora}, più di {minuti} minuti fa: se hai finito allora, lascia quest'ora.",
   "durata": "Durata: {durata}",
+  "durataBreve": "Durata: meno di un minuto",
   "continua": "Continua l'allenamento",
   "termina": "Termina",
+  "nonSalvare": "Non salvarlo: elimina l'allenamento",
   "errori": {
     "nonValida": "Scegli l'ora in cui hai finito.",
     "prima": "È prima dell'inizio dell'allenamento ({ora}).",

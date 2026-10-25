@@ -88,6 +88,18 @@ describe('the end-of-rest notification of a finished workout', () => {
     assert.equal(invii.mock.callCount(), 0);
   });
 
+  it('a workout thrown away during its rest does not notify either', async () => {
+    const sessione = await creaSessione(utente, scheda, {
+      inizio: minutiFa(5), conclusa: false,
+      serie: [{ esercizio: panca, peso: 80, rep: 8, registrataIl: minutiFa(1) }]
+    });
+    await chiama('POST', '/notifiche/push/recupero', { secondi: 1, prossimo: 'Panca piana · serie 2', sessioneId: sessione.id });
+    assert.equal((await chiama('DELETE', `/sessioni/${sessione.id}`)).stato, 200);
+    assert.equal(await prisma.sessioneAllenamento.count({ where: { id: sessione.id } }), 0);
+    await attendi(1300);
+    assert.equal(invii.mock.callCount(), 0);
+  });
+
   it('a workout that ends cancels its own rest, not one of another workout', () => {
     programmaFineRecupero(utente.id, 60, null, 7);
     assert.equal(annullaFineRecupero(utente.id, 8), false);

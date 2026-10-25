@@ -14,6 +14,7 @@ import {
 import { titoloAllenamento } from '../utils/titoloAllenamento.js';
 import { avvisaSeDiUnAltro } from '../services/allenamentiDaControllare.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
+import { annullaFineRecupero } from '../services/push.service.js';
 
 /** List of the user's workouts */
 export async function listaSessioni(req, res, next) {
@@ -744,6 +745,8 @@ export async function eliminaSessione(req, res, next) {
       prisma.logSerie.deleteMany({ where: { sessioneId: id } }),
       prisma.sessioneAllenamento.delete({ where: { id } })
     ]);
+    // Thrown away during its rest ("Termina" without saving): no "rest is over" later
+    annullaFineRecupero(sessione.utenteId, id);
     await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaEliminato');
 
     res.json({ successo: true, messaggio: t('sessioniController.sessioneEliminata') });

@@ -16,6 +16,9 @@ export const PAUSA_DOPO_ULTIMA_SERIE_MINUTI = 30;
 /** The longest workout, as on the server (sessioni.controller.js) */
 export const DURATA_MAX_MINUTI = 600;
 
+/** The start of the minute of an instant: the time field has no seconds */
+const alMinuto = ms => Math.floor(ms / MINUTO) * MINUTO;
+
 /**
  * When the last set was logged, in milliseconds; null if none has a time
  * (sets logged before they had one).
@@ -59,18 +62,28 @@ export function fineDaOra(ora, inizio, adesso) {
   if (oggi.getTime() <= adesso) return oggi.getTime();
   const ieri = new Date(oggi);
   ieri.setDate(ieri.getDate() - 1);
-  return ieri.getTime() >= inizio ? ieri.getTime() : oggi.getTime();
+  return ieri.getTime() >= alMinuto(inizio) ? ieri.getTime() : oggi.getTime();
 }
 
 /**
  * What is wrong with an end, or null if it is fine: 'nonValida' (missing),
- * 'prima' (before the start, or less than a minute after), 'futuro' (not
- * reached yet), 'troppoLunga' (more than DURATA_MAX_MINUTI minutes).
+ * 'prima' (before the minute the workout started in), 'futuro' (not reached
+ * yet), 'troppoLunga' (more than DURATA_MAX_MINUTI minutes). A workout of
+ * less than a minute is fine: a try, closed right away.
  */
 export function erroreFine(fine, inizio, adesso) {
   if (fine == null) return 'nonValida';
   if (fine > adesso) return 'futuro';
-  if (fine - inizio < MINUTO) return 'prima';
+  if (fine < alMinuto(inizio)) return 'prima';
   if (fine - inizio > DURATA_MAX_MINUTI * MINUTO) return 'troppoLunga';
   return null;
 }
+
+/**
+ * The end to send: the one picked, never before the start (the start minute
+ * typed in the field is the start itself).
+ */
+export const fineDaInviare = (fine, inizio) => Math.max(fine, inizio);
+
+/** Whole minutes of a workout from `inizio` to `fine`, never below zero */
+export const minutiDiAllenamento = (fine, inizio) => Math.max(0, Math.round((fine - inizio) / MINUTO));

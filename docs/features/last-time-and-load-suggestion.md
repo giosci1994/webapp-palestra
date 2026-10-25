@@ -58,3 +58,15 @@ The set with the same number as the current one (set 2 → set 2 of last time), 
 
 - **Warm-up ramp**: 40% × 10, 60% × 5, 80% × 3 of the work weight, rounded to the equipment's step, never below the empty bar, without repeated steps. Tapping a step logs it as a warm-up set. Warm-ups are shown but left out of volume, set counts, records and progression.
 - **Drop set**: added to a work set before logging it, proposed one fifth lighter (at least one step less). It counts in the volume, not as a set of its own.
+
+## Sets of today
+
+The **−** and **+** around "Serie 2 / 3" change how many sets of the exercise are planned today (`serieOggi` on the workout's exercise, `serieDiOggi` and `limitaSerieOggi` in `frontend/src/utils/ripresa.js`): one more because today there is strength to spare, one less. Only this workout changes; the plan keeps its sets.
+
+- Never fewer than the sets already done (those are removed from the history), never fewer than one, at most 20.
+- Unlike a drop set, an added set is a work set of its own: with its rest, and it counts in sets, volume, records and statistics.
+- After the last set the app moves on to the next exercise; during the rest the bar at the top offers **"Ancora una serie di …"** (one more set of the exercise just finished), which goes back to it. A finished exercise opened again offers **"Una serie in più"**.
+- Opening an exercise again starts from the set after those done today, with today's weight: it used to start again from set 1.
+- The load suggestion keeps reading the plan's sets, so adding one today does not change it; next time, only as many sets as the plan has count towards it.
+- The choice is kept with the workout's progress on the phone; rebuilt from the server, an exercise with more sets than the plan takes them as today's sets.
+
