@@ -24,7 +24,7 @@ export default defineConfig([
     rules: {
       // The provider and its hook in the same file (useAuth, useSocket, ...) are
       // the usual context pattern: hot reloading handles them anyway
-      'react-refresh/only-export-components': ['error', { allowExportNames: ['useAuth', 'useSocket', 'useAllenamentoInCorso'] }],
+      'react-refresh/only-export-components': ['error', { allowExportNames: ['useAuth', 'useSocket', 'useAllenamentoInCorso', 'useNotifiche'] }],
     },
   },
 ])

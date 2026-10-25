@@ -6,6 +6,14 @@ Real-time messaging over **Socket.io**, between members and with their personal 
 
 Code: `backend/src/routes/chat.routes.js`, `controllers/chat.controller.js`, `socket/gestori/chat.gestore.js`; in the frontend `pagine/Chat.jsx`.
 
+## Notifications on the chat page
+
+The chat page has three tabs: Chat, Notifiche (notifications) and Richieste (requests). The tab is in the address (`/chat?tab=notifiche`), so going back from where a notification led returns to the list. On the phone this is the notification centre: the bell is only in the desktop sidebar.
+
+- `contesti/NotificheContesto.jsx` is the one source for the bell, the Notifiche tab and the badge of the bottom bar. It keeps the latest 50 notifications (`GET /notifiche`), adds the ones arriving on `notifica:nuova`, and marks them read (`PATCH /notifiche/:id/letta`, `POST /notifiche/segna-tutte-lette`), so a notification read in one place is read everywhere.
+- The badge on the chat tab of the bottom bar counts unread notifications plus unread messages (`GET /chat/non-letti`, read again at every page and when the app comes back: a message reaches the socket only while its conversation is open).
+- A notification opens only a path inside the app (`utils/notifiche.js`, `percorsoInterno`).
+
 ## Privacy
 
 - **Request first**: nobody can send a message until the recipient has accepted the contact request.
