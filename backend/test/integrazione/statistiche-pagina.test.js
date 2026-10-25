@@ -5,7 +5,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
-import { creaUtente, creaEsercizio, creaScheda, creaSessione, creaRecord, tokenPer, giorniFa, GIORNO } from '../supporto/dati.js';
+import { creaUtente, creaEsercizio, creaScheda, creaSessione, creaRecord, tokenPer, giorniFa as giorniFaNelFuso, GIORNO } from '../supporto/dati.js';
 
 let server;
 let utente;
@@ -20,6 +20,8 @@ beforeEach(async () => {
 });
 
 const leggi = (percorso, chi = utente) => server.richiesta('GET', percorso, { token: tokenPer(chi), fuso: 'UTC' });
+// These requests count days in UTC, and so do the days ago here
+const giorniFa = n => giorniFaNelFuso(n, 'UTC');
 const giorno = istante => istante.toISOString().slice(0, 10);
 
 /** A finished workout with its totals, as the end of a workout saves them */
@@ -38,7 +40,7 @@ describe('summary', () => {
     await creaScheda(utente);
     const esercizio = await creaEsercizio();
     await allenamento(new Date(), { minuti: 60, volume: 1000 });
-    await allenamento(new Date(Date.now() - GIORNO), { minuti: 30, volume: 500.6 });
+    await allenamento(giorniFa(1), { minuti: 30, volume: 500.6 });
     await allenamento(giorniFa(7), { minuti: 45 });
     // Not counted: still open, and from before the reset
     await allenamento(new Date(), { conclusa: false });
@@ -234,7 +236,7 @@ describe('yearly activity', () => {
   it('per day: the workouts and their completed working sets, for the last 53 weeks', async () => {
     const esercizio = await creaEsercizio();
     // Midday: the second workout, a second later, is on the same day
-    const ieri = new Date(`${giorno(new Date(Date.now() - GIORNO))}T12:00:00Z`);
+    const ieri = new Date(`${giorno(giorniFa(1))}T12:00:00Z`);
     await creaSessione(utente, scheda, { inizio: ieri, serie: [
       { esercizio, peso: 50, rep: 10 }, { esercizio, peso: 50, rep: 10 },
       { esercizio, peso: 20, rep: 10, tipo: 'RISCALDAMENTO' }, { esercizio, peso: 50, rep: 10, completato: false }

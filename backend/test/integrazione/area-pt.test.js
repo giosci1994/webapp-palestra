@@ -96,7 +96,7 @@ describe('clients', () => {
     await prisma.utente.update({ where: { id: cliente.id }, data: { fusoOrario: 'America/New_York', dataResetStatistiche: giorniFa(30) } });
     const [panca, curl] = [await creaEsercizio({ gruppoMuscoloPrimario: 'Petto' }), await creaEsercizio({ gruppoMuscoloPrimario: 'Bicipiti' })];
     const scheda = await creaScheda(cliente);
-    const sera = new Date(`${giorniFa(3).toISOString().slice(0, 10)}T02:00:00Z`);
+    const sera = new Date(`${giorniFa(3, 'UTC').toISOString().slice(0, 10)}T02:00:00Z`);
     await creaSessione(cliente, scheda, { inizio: sera, durataMinuti: 50, serie: [
       { esercizio: panca, peso: 80, rep: 8 }, { esercizio: panca, peso: 80, rep: 8 }, { esercizio: curl, peso: 20, rep: 10 },
       { esercizio: panca, peso: 40, rep: 10, tipo: 'RISCALDAMENTO' }
@@ -120,7 +120,7 @@ describe('clients', () => {
     assert.deepEqual(d.statistiche, {
       // The five old workouts are from before the reset
       totaleSessioni: 1, totaleDurata: 50, totaleVolume: 1480, totaleRecord: 1,
-      sessioni: [{ data: giorniFa(4).toISOString().slice(0, 10), sessioni: 1, durata: 50, volume: 1480 }],
+      sessioni: [{ data: giorniFa(4, 'UTC').toISOString().slice(0, 10), sessioni: 1, durata: 50, volume: 1480 }],
       gruppiMuscolari: [{ nome: 'Petto', serie: 2 }, { nome: 'Bicipiti', serie: 1 }]
     });
   });
