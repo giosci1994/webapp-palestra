@@ -4,6 +4,7 @@
 // ============================================
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { secondiAllaFine, statoRecupero } from '../utils/recupero.js';
 
 /**
  * The end-of-rest signal: three beeps generated with the Web Audio API. It
@@ -28,26 +29,64 @@ function suonaFine(contesto) {
   } catch { /* audio not available: the vibration remains */ }
 }
 
+/** How often the countdown is updated: a few times a second, so a new second shows on time */
+const AGGIORNAMENTO_MS = 250;
+
 /**
  * Hook for the rest timer between sets.
- * Supports countdown, pause and an audio alert at the end.
  *
+ * The seconds left come from the moment the rest ends (utils/recupero.js):
+ * with the app in the background or the screen locked the phone slows down
+ * or freezes timers, and back in the app the countdown is right at once,
+ * instead of going on from where it had stopped. A beep and a vibration
+ * right at the end; back in the app later, the rest is simply over.
+ *
+ * @param {number | null} [fineIniziale] - the end of a rest that was already
+ *   running (kept on the phone while the app was closed), in milliseconds
  * @returns {{ secondiRimasti, inCorso, avvia, pausa, resetta, percentuale }}
  */
-export function useTimer() {
-  const [secondiRimasti, setSecondiRimasti] = useState(0);
-  const [inCorso, setInCorso] = useState(false);
-  const intervalloRef = useRef(null);
+export function useTimer(fineIniziale = null) {
+  const [fineRecupero, setFineRecupero] = useState(fineIniziale);
+  const [secondiRimasti, setSecondiRimasti] = useState(() => (fineIniziale ? secondiAllaFine(fineIniziale, Date.now()) : 0));
+  const inCorso = fineRecupero != null;
   const audioRef = useRef(null);
 
   useEffect(() => () => {
-    if (intervalloRef.current) clearInterval(intervalloRef.current);
     audioRef.current?.close().catch(() => {});
   }, []);
 
-  const avvia = useCallback((secondi) => {
-    if (intervalloRef.current) clearInterval(intervalloRef.current);
+  // While a rest runs: the seconds from the real time, a few times a second
+  // and right away when coming back to the app (the phone may have frozen the timer)
+  useEffect(() => {
+    if (fineRecupero == null) return;
+    const aggiorna = () => {
+      const { secondi, finito, segnale } = statoRecupero(fineRecupero, Date.now());
+      setSecondiRimasti(secondi);
+      if (!finito) return;
+      setFineRecupero(null);
+      if (segnale) {
+        suonaFine(audioRef.current);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+      }
+    };
+    const intervallo = setInterval(aggiorna, AGGIORNAMENTO_MS);
+    const tornato = () => { if (document.visibilityState === 'visible') aggiorna(); };
+    document.addEventListener('visibilitychange', tornato);
+    window.addEventListener('pageshow', aggiorna);
+    window.addEventListener('focus', aggiorna);
+    return () => {
+      clearInterval(intervallo);
+      document.removeEventListener('visibilitychange', tornato);
+      window.removeEventListener('pageshow', aggiorna);
+      window.removeEventListener('focus', aggiorna);
+    };
+  }, [fineRecupero]);
 
+  /**
+   * @param {number} secondi
+   * @param {{ fine?: number }} [opzioni] - fine: the end in milliseconds, if already known
+   */
+  const avvia = useCallback((secondi, { fine } = {}) => {
     // The audio is prepared here, at start, which always comes from a tap
     // ("Serie completata"): without a user gesture browsers do not let it
     // start, and at the end of the rest there is no gesture
@@ -56,41 +95,17 @@ export function useTimer() {
       if (audioRef.current.state === 'suspended') audioRef.current.resume().catch(() => {});
     } catch { /* audio not available */ }
 
-    setSecondiRimasti(secondi);
-    setInCorso(true);
-
-    intervalloRef.current = setInterval(() => {
-      setSecondiRimasti(prev => {
-        if (prev <= 1) {
-          clearInterval(intervalloRef.current);
-          intervalloRef.current = null;
-          setInCorso(false);
-          // Audio alert
-          suonaFine(audioRef.current);
-          // Vibration (if supported)
-          if (navigator.vibrate) {
-            navigator.vibrate([200, 100, 200]);
-          }
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const quando = fine ?? Date.now() + secondi * 1000;
+    setSecondiRimasti(secondiAllaFine(quando, Date.now()));
+    setFineRecupero(quando);
   }, []);
 
-  const pausa = useCallback(() => {
-    if (intervalloRef.current) {
-      clearInterval(intervalloRef.current);
-      intervalloRef.current = null;
-      setInCorso(false);
-    }
-  }, []);
+  /** Stops the countdown where it is */
+  const pausa = useCallback(() => setFineRecupero(null), []);
 
   const resetta = useCallback(() => {
-    if (intervalloRef.current) clearInterval(intervalloRef.current);
-    intervalloRef.current = null;
+    setFineRecupero(null);
     setSecondiRimasti(0);
-    setInCorso(false);
   }, []);
 
   const percentuale = secondiRimasti > 0
