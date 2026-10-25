@@ -51,7 +51,7 @@ describe('statoRecupero', () => {
 });
 
 describe('the rest kept on the phone', () => {
-  const recupero = { fine: dopo(90), durata: 90, inCima: true, avvisato: true };
+  const recupero = { fine: dopo(90), durata: 90, inCima: true, avvisato: true, esercizio: 2 };
 
   it('comes back after the app is closed and reopened, while it is still running', () => {
     const archivio = archivioFinto();
@@ -59,6 +59,13 @@ describe('the rest kept on the phone', () => {
     expect(leggiRecupero(7, dopo(30), archivio)).toEqual(recupero);
     // Each workout its own
     expect(leggiRecupero(8, dopo(30), archivio)).toBeNull();
+  });
+
+  it('kept before it knew its exercise: no exercise, the rest is the same', () => {
+    const archivio = archivioFinto();
+    const vecchio = { fine: recupero.fine, durata: 90, inCima: true, avvisato: true };
+    salvaRecupero(7, vecchio, archivio);
+    expect(leggiRecupero(7, dopo(30), archivio)).toEqual({ ...vecchio, esercizio: null });
   });
 
   it('once over it is forgotten', () => {

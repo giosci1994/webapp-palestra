@@ -27,6 +27,14 @@
     "riprendiFino": "You can still resume it until {ora}."
   },
   "serieCorrente": "Set {numero} / {totale}",
+  "serieOggi": {
+    "aggiungi": "Add a set, just for today",
+    "togli": "Remove a set, just for today",
+    "soloOggi_one": "Just for today: the plan has {count} set",
+    "soloOggi_other": "Just for today: the plan has {count} sets",
+    "unaInPiu": "＋ One more set",
+    "ancoraUna": "＋ One more set of {nome}"
+  },
   "nessunEsercizio": "No exercises in this plan",
   "tornaAlleSchede": "Back to plans",
   "barra": {

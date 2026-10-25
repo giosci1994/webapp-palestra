@@ -16,7 +16,7 @@ import { entro, chiudiNotificheRecupero } from '../utils/push.js';
 import { indicizzaEsercizi, cerca, preferitiPrima } from '../utils/ricerca.js';
 import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
-import { statoDaSessione, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
+import { statoDaSessione, serieDiOggi, limitaSerieOggi, SERIE_MAX_OGGI, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
 import { propostaCarico, incrementoPer } from '../utils/progressione.js';
 import { diLavoro, volumeDi, ordinaSerie, rampaRiscaldamento, pesoDrop } from '../utils/tipiSerie.js';
 import { usePushNotifiche } from '../hooks/usePushNotifiche.js';
@@ -119,6 +119,9 @@ export default function WorkoutLive() {
   // last set the next exercise is already shown, so during the rest you see
   // what is coming and can move to the machine.
   const [recuperoInCima, setRecuperoInCima] = useState(recuperoSalvato?.inCima ?? false);
+  // The exercise whose set started the rest: once finished, "one more set" of it
+  // from the bar at the top, without going through the exercise picker
+  const [recuperoDi, setRecuperoDi] = useState(recuperoSalvato?.esercizio ?? null);
   const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
   const nuoviRecord = chiusura.risposta?.recordPersonali || [];
   // Closed hours after the last set: the server makes it end there (and it cannot be resumed)
@@ -296,8 +299,8 @@ export default function WorkoutLive() {
   const { visibili: eserciziVisibili, restanti, mostraAltri } = useAPezzi(eserciziFiltrati);
 
   // --- Tracking of completed exercises ---
-  // An exercise is "completed" when it has >= serieTarget recorded working
-  // sets: warm-up and drop sets do not count (utils/tipiSerie.js)
+  // An exercise is "completed" when it has as many recorded working sets as
+  // planned today (serieDiOggi): warm-up and drop sets do not count (utils/tipiSerie.js)
   const contaSeriePerEsercizio = useCallback((idxEsercizio) => {
     const es = esercizi[idxEsercizio];
     if (!es) return 0;
@@ -307,7 +310,7 @@ export default function WorkoutLive() {
   const esercizioCompletato = useCallback((idxEsercizio) => {
     const es = esercizi[idxEsercizio];
     if (!es) return false;
-    return contaSeriePerEsercizio(idxEsercizio) >= es.serieTarget;
+    return contaSeriePerEsercizio(idxEsercizio) >= serieDiOggi(es);
   }, [esercizi, contaSeriePerEsercizio]);
 
   // Find the next NOT completed exercise (starting from the given index)
@@ -463,10 +466,10 @@ export default function WorkoutLive() {
     // Once the exercise is finished we move straight to the next not completed one.
     // prossimoIdx already excludes the current exercise, and this set does not
     // change the state of the others: the value computed in render is the right one.
-    const passaAvanti = serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1;
+    const passaAvanti = serieCorrente >= serieDiOggi(esercizioAttuale) && prossimoIdx !== -1;
     if (passaAvanti) {
-      const nuovoForm = formPerNuovoEsercizio(form);
-      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: prossimoIdx, serieCorrente: 1, form: nuovoForm });
+      const verso = statoEsercizio(prossimoIdx, form);
+      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: prossimoIdx, ...verso });
       setSerieCompletate(nuoveCompletate);
       apriEsercizio(prossimoIdx);
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -483,7 +486,7 @@ export default function WorkoutLive() {
     const prossimo = passaAvanti
       ? t('workoutLive.recupero.notifica', { nome: nomeEsercizio(esercizi[prossimoIdx].esercizio), numero: 1 })
       : t('workoutLive.recupero.notifica', { nome: nomeEsercizio(esercizioAttuale.esercizio), numero: serieCorrente + 1 });
-    if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo);
+    if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo, esercizioIdx);
     else fermaRecupero();
   };
 
@@ -498,8 +501,8 @@ export default function WorkoutLive() {
       completato: false,
       motivoSaltoEsercizio: 'Saltata'
     });
-    if (serieCorrente >= esercizioAttuale.serieTarget && prossimoIdx !== -1) {
-      salvaProgressi({ ...statoAttuale(), esercizioIdx: prossimoIdx, serieCorrente: 1, form: formPerNuovoEsercizio(form) });
+    if (serieCorrente >= serieDiOggi(esercizioAttuale) && prossimoIdx !== -1) {
+      salvaProgressi({ ...statoAttuale(), esercizioIdx: prossimoIdx, ...statoEsercizio(prossimoIdx, form) });
       cambiaEsercizio(prossimoIdx);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
@@ -523,26 +526,67 @@ export default function WorkoutLive() {
    */
   const formPerNuovoEsercizio = (f) => ({ ...f, peso: '', rep: '', minuti: '', drop: [] });
 
+  /**
+   * Where an exercise starts again: the set after those already done today
+   * (it used to start again from set 1, logging the same numbers twice), and
+   * the fields for a new exercise with today's weight of this one, if any.
+   */
+  const statoEsercizio = (indice, f) => {
+    const es = esercizi[indice];
+    const fatte = es ? serieCompletate.filter(s => s.esercizioId === es.esercizioId && diLavoro(s)) : [];
+    const ultima = fatte[fatte.length - 1];
+    const nuovo = formPerNuovoEsercizio(f);
+    return {
+      serieCorrente: fatte.length + 1,
+      form: ultima && ultima.pesoEffettivo > 0 ? { ...nuovo, peso: String(ultima.pesoEffettivo) } : nuovo
+    };
+  };
+
   /** Show another exercise without touching the rest. */
   const apriEsercizio = (nuovoIndice) => {
+    const stato = statoEsercizio(nuovoIndice, form);
     setEsercizioIdx(nuovoIndice);
-    setSerieCorrente(1);
-    setForm(formPerNuovoEsercizio);
+    setSerieCorrente(stato.serieCorrente);
+    setForm(stato.form);
     setMostraSelettoreEsercizi(false);
     setMostraVideo(false);
+  };
+
+  // --- Sets of today (utils/ripresa.js, serieDiOggi) ---
+  // One more because today there is strength to spare, one less: only this
+  // workout changes, the plan stays as it is. Never fewer than those already done.
+  const minimoSerieOggi = indice => limitaSerieOggi(1, contaSeriePerEsercizio(indice));
+  const cambiaSerieOggi = (indice, quante) => setEserciziLive(prev => prev.map((es, i) =>
+    (i === indice ? { ...es, serieOggi: limitaSerieOggi(quante, contaSeriePerEsercizio(indice)) } : es)));
+  const aggiungiSerieOggi = indice => cambiaSerieOggi(indice, (serieDiOggi(esercizi[indice]) ?? 0) + 1);
+  const togliSerieOggi = indice => cambiaSerieOggi(indice, (serieDiOggi(esercizi[indice]) ?? 1) - 1);
+
+  // From the bar at the top: back to the exercise just finished, for one more
+  // set. The rest goes on, now between two sets of the same exercise
+  const ancoraUnaSerie = () => {
+    if (recuperoDi == null) return;
+    aggiungiSerieOggi(recuperoDi);
+    apriEsercizio(recuperoDi);
+    setRecuperoInCima(false);
+    if (recuperoRef.current) {
+      recuperoRef.current = { ...recuperoRef.current, inCima: false };
+      salvaRecupero(id, recuperoRef.current);
+    }
   };
 
   /**
    * @param {number} secondi
    * @param {boolean} inCima - rest at the top, above the next exercise
    * @param {string} prossimo - what comes next, for the notification: "Panca piana · serie 2"
+   * @param {number} esercizio - index of the exercise whose set starts it
    */
-  const avviaRecupero = (secondi, inCima, prossimo) => {
+  const avviaRecupero = (secondi, inCima, prossimo, esercizio) => {
     const fine = adesso() + secondi * 1000;
     timer.avvia(secondi, { fine });
     setDurataRecupero(secondi);
     setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
+    setRecuperoDi(esercizio);
     // The app's timer stops with the screen locked: tell the server, with
     // this workout, where the tap on the notification comes back to
     if (push.iscritto) {
@@ -550,7 +594,7 @@ export default function WorkoutLive() {
       api.post('/notifiche/push/recupero', { secondi, prossimo, sessioneId: Number(id) }).catch(() => {});
     }
     // Kept on the phone: closed and reopened, the app finds the rest where the clock says
-    recuperoRef.current = { fine, durata: secondi, inCima, avvisato: avvisoRecuperoRef.current };
+    recuperoRef.current = { fine, durata: secondi, inCima, avvisato: avvisoRecuperoRef.current, esercizio };
     salvaRecupero(id, recuperoRef.current);
   };
 
@@ -902,6 +946,13 @@ export default function WorkoutLive() {
                 {t('workoutLive.recupero.salta')}
               </button>
             </div>
+            {recuperoDi != null && recuperoDi !== esercizioIdx && esercizi[recuperoDi] && esercizioCompletato(recuperoDi)
+              && serieDiOggi(esercizi[recuperoDi]) < SERIE_MAX_OGGI && (
+              <button onClick={ancoraUnaSerie}
+                      className="w-full text-left px-4 pb-2.5 -mt-1 text-xs font-semibold text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors truncate">
+                {t('workoutLive.serieOggi.ancoraUna', { nome: nomeEsercizio(esercizi[recuperoDi].esercizio) })}
+              </button>
+            )}
             <div className="h-1 bg-[var(--bg-terziario)]">
               <div className="h-full bg-[var(--accent)] transition-[width] duration-1000 ease-linear"
                    style={{ width: `${(timer.secondiRimasti / (durataRecupero || 1)) * 100}%` }} />
@@ -942,7 +993,7 @@ export default function WorkoutLive() {
                   if (esercizioAttuale.livelloResistenza != null) p.push(t('workoutLive.esercizio.livello', { valore: esercizioAttuale.livelloResistenza }));
                   return p.length ? ' · ' + p.join(' · ') : '';
                 })()
-              : ` · ${t('workoutLive.esercizio.riepilogoSerie', { serie: esercizioAttuale.serieTarget, rep: esercizioAttuale.repTarget, secondi: esercizioAttuale.recuperoSecondi })}`}
+              : ` · ${t('workoutLive.esercizio.riepilogoSerie', { serie: serieDiOggi(esercizioAttuale), rep: esercizioAttuale.repTarget, secondi: esercizioAttuale.recuperoSecondi })}`}
           </p>
         </motion.div>
 
@@ -1075,8 +1126,8 @@ export default function WorkoutLive() {
               )}
               <div className="mt-4 pt-3 border-t border-[var(--bordo)]">
                 <p className="text-xs text-[var(--testo-secondario)] font-semibold uppercase tracking-wider">
-                  {serieCorrente <= esercizioAttuale.serieTarget 
-                    ? t('workoutLive.recupero.prossimaSerie', { numero: serieCorrente, totale: esercizioAttuale.serieTarget })
+                  {serieCorrente <= serieDiOggi(esercizioAttuale)
+                    ? t('workoutLive.recupero.prossimaSerie', { numero: serieCorrente, totale: serieDiOggi(esercizioAttuale) })
                     : (prossimoIdx !== -1
                         ? t('workoutLive.recupero.prossimoEsercizio', { nome: nomeEsercizio(esercizi[prossimoIdx].esercizio) })
                         : t('workoutLive.recupero.fineAllenamento'))}
@@ -1087,11 +1138,32 @@ export default function WorkoutLive() {
         </AnimatePresence>
 
         {/* Set input: when the rest timer is off, finished or moved to the top */}
-        {(!timerAttivo || timer.secondiRimasti === 0 || recuperoInCima) && serieCorrente <= esercizioAttuale.serieTarget && (
+        {(!timerAttivo || timer.secondiRimasti === 0 || recuperoInCima) && serieCorrente <= serieDiOggi(esercizioAttuale) && (
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold text-center text-[var(--testo-secondario)]">
-              {t('workoutLive.serieCorrente', { numero: serieCorrente, totale: esercizioAttuale.serieTarget })}
-            </p>
+            {/* Today's sets: one more or one less, only for this workout */}
+            <div className="flex items-center justify-center gap-3">
+              <button type="button" onClick={() => togliSerieOggi(esercizioIdx)}
+                      disabled={serieDiOggi(esercizioAttuale) <= minimoSerieOggi(esercizioIdx)}
+                      aria-label={t('workoutLive.serieOggi.togli')}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-30 disabled:hover:border-[var(--bordo)] disabled:hover:text-[var(--testo-secondario)] transition-colors">
+                −
+              </button>
+              <p className="text-sm font-semibold text-center text-[var(--testo-secondario)] tabular-nums">
+                {t('workoutLive.serieCorrente', { numero: serieCorrente, totale: serieDiOggi(esercizioAttuale) })}
+              </p>
+              <button type="button" onClick={() => aggiungiSerieOggi(esercizioIdx)}
+                      disabled={serieDiOggi(esercizioAttuale) >= SERIE_MAX_OGGI}
+                      aria-label={t('workoutLive.serieOggi.aggiungi')}
+                      className="w-8 h-8 flex items-center justify-center rounded-full border border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)] hover:text-[var(--accent)] disabled:opacity-30 transition-colors">
+                +
+              </button>
+            </div>
+            {/* Only for the plan's exercises: one added during the workout has no plan to compare with */}
+            {esercizioAttuale.schedaId != null && esercizioAttuale.serieTarget != null && serieDiOggi(esercizioAttuale) !== esercizioAttuale.serieTarget && (
+              <p className="text-[11px] text-center text-[var(--testo-terziario)] -mt-2">
+                {t('workoutLive.serieOggi.soloOggi', { count: esercizioAttuale.serieTarget })}
+              </p>
+            )}
 
             {/* Today's proposal: up, same or deload, and why */}
             {proposta && (
@@ -1249,8 +1321,14 @@ export default function WorkoutLive() {
         )}
 
         {/* Next exercise / Complete */}
-        {serieCorrente > esercizioAttuale.serieTarget && (
+        {serieCorrente > serieDiOggi(esercizioAttuale) && (
           <div className="flex flex-col gap-3 mt-4">
+            {/* Exercise done, and strength to spare: one more set, only today */}
+            {serieDiOggi(esercizioAttuale) < SERIE_MAX_OGGI && (
+              <button onClick={() => aggiungiSerieOggi(esercizioIdx)} className="btn-secondario w-full">
+                {t('workoutLive.serieOggi.unaInPiu')}
+              </button>
+            )}
             {prossimoIdx !== -1 ? (
               <>
                 <button onClick={prossimoEsercizio} className="btn-enorme">
@@ -1350,10 +1428,10 @@ export default function WorkoutLive() {
                         </p>
                         <p className="text-xs text-[var(--testo-terziario)] mt-0.5">
                           {tutteSeriFatte
-                            ? (cardioItem ? t('workoutLive.selettore.completato') : t('workoutLive.selettore.serieComplete', { fatte: seriFatte, count: es.serieTarget ?? 0 }))
+                            ? (cardioItem ? t('workoutLive.selettore.completato') : t('workoutLive.selettore.serieComplete', { fatte: seriFatte, count: serieDiOggi(es) ?? 0 }))
                             : seriFatte > 0
-                              ? (cardioItem ? t('workoutLive.selettore.inCorso') : t('workoutLive.selettore.serieFatte', { fatte: seriFatte, count: es.serieTarget ?? 0 }))
-                              : (cardioItem ? (es.durataMinuti ? `${es.durataMinuti} min` : t('workoutLive.selettore.cardio')) : `${es.serieTarget}x${es.repTarget}`)
+                              ? (cardioItem ? t('workoutLive.selettore.inCorso') : t('workoutLive.selettore.serieFatte', { fatte: seriFatte, count: serieDiOggi(es) ?? 0 }))
+                              : (cardioItem ? (es.durataMinuti ? `${es.durataMinuti} min` : t('workoutLive.selettore.cardio')) : `${serieDiOggi(es)}x${es.repTarget}`)
                           }
                         </p>
                       </div>
