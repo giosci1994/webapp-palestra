@@ -9,6 +9,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa, aStringaData, lunediDi, titoloAllenamento } from '../utils/formattatori.js';
+import { marcatoriCalendario, COLORI_CALENDARIO } from '../utils/marcatoriCalendario.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageCircle, ChevronRight, ClipboardList, History, 
@@ -193,28 +194,8 @@ export default function Dashboard() {
     }
   };
 
-  // Calendar dots: green for completed workouts, violet for scheduled ones
-  const marcatoriCalendario = (() => {
-    const per = {};
-    const aggiungi = (giorno, colore) => {
-      if (!per[giorno]) per[giorno] = [];
-      if (!per[giorno].some(x => x.colore === colore)) per[giorno].push({ colore });
-    };
-    // Completed workouts (both planned and unplanned)
-    const giorniCompletati = new Set();
-    for (const s of sessioniRecenti) giorniCompletati.add(s.dataInizio.split('T')[0]);
-    for (const p of pianificati) {
-      if (p.stato === 'COMPLETATO') giorniCompletati.add(p.data);
-    }
-    for (const giorno of giorniCompletati) aggiungi(giorno, 'var(--successo, #22c55e)');
-
-    // Scheduled workouts (in progress, skipped)
-    for (const p of pianificati) {
-      if (p.stato === 'SALTATO') aggiungi(p.data, 'var(--testo-terziario)');
-      else if (p.stato === 'IN_PROGRAMMA') aggiungi(p.data, 'var(--accent)');
-    }
-    return per;
-  })();
+  // Calendar dots: green done, violet scheduled, grey skipped (utils/marcatoriCalendario.js)
+  const marcatori = marcatoriCalendario(sessioniRecenti, pianificati);
 
 
   const ora = new Date().getHours();
@@ -482,12 +463,13 @@ export default function Dashboard() {
                     ancora={dataCalendario}
                     onCambiaAncora={setDataCalendario}
                     onCambiaModo={setModoCalendarioScelto}
-                    marcatori={marcatoriCalendario}
+                    marcatori={marcatori}
                   />
 
                   <div className="flex items-center gap-3 mt-5 pt-4 border-t border-[var(--bordo-light)] text-xs text-[var(--testo-terziario)] flex-wrap">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--successo, #22c55e)' }} /> {t('dashboard.calendario.completato')}</span>
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: 'var(--accent)' }} /> {t('dashboard.calendario.inProgramma')}</span>
+                    {['completato', 'inProgramma', 'saltato'].map(tipo => (
+                      <span key={tipo} className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full" style={{ background: COLORI_CALENDARIO[tipo] }} /> {t(`dashboard.calendario.${tipo}`)}</span>
+                    ))}
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-[var(--bordo-light)] flex items-center justify-between gap-3 text-sm">

@@ -57,6 +57,7 @@
     "svolto": "Done",
     "inProgramma": "Scheduled",
     "completato": "Completed",
+    "saltato": "Skipped",
     "pianifica": "Schedule",
     "storico": "History →"
   },

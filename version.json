@@ -1,7 +1,17 @@
 {
-  "versione": "1.5.9",
+  "versione": "1.5.10",
   "build": "2026-10-25",
   "changelog": [
+    {
+      "versione": "1.5.10",
+      "data": "2026-10-25",
+      "modifiche": [
+        "Il calendario della dashboard mostra di nuovo gli allenamenti in programma (pallino viola): si vedevano solo quelli fatti e quelli saltati. Nella legenda c'è anche il grigio, per i saltati"
+      ],
+      "modificheEn": [
+        "The dashboard calendar shows the scheduled workouts again (violet dot): only the ones done and the skipped ones were showing. The legend also has grey, for skipped ones"
+      ]
+    },
     {
       "versione": "1.5.9",
       "data": "2026-10-25",
