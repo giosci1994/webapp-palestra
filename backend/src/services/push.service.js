@@ -129,6 +129,7 @@ export async function inviaPush(utenteId, { titolo, messaggio = '', percorso = '
 /** The longest rest that gets scheduled, in seconds */
 export const RECUPERO_MASSIMO = 15 * 60;
 
+/** utenteId → { timer, sessioneId } of the push waiting to be sent */
 const recuperi = new Map();
 
 /**
@@ -152,14 +153,19 @@ export function programmaFineRecupero(utenteId, secondi, prossimo, sessioneId) {
     });
   }, secondi * 1000);
   timer.unref?.();
-  recuperi.set(utenteId, timer);
+  recuperi.set(utenteId, { timer, sessioneId: sessioneId ?? null });
 }
 
-/** Cancels the waiting end-of-rest push, if any. true if there was one */
-export function annullaFineRecupero(utenteId) {
-  const timer = recuperi.get(utenteId);
-  if (!timer) return false;
-  clearTimeout(timer);
+/**
+ * Cancels the waiting end-of-rest push, if any. With `sessioneId`, only if it
+ * belongs to that workout: a finished workout cancels its own rest, not one
+ * of another workout. true if one was cancelled.
+ */
+export function annullaFineRecupero(utenteId, sessioneId) {
+  const inAttesa = recuperi.get(utenteId);
+  if (!inAttesa) return false;
+  if (sessioneId != null && inAttesa.sessioneId != null && inAttesa.sessioneId !== sessioneId) return false;
+  clearTimeout(inAttesa.timer);
   recuperi.delete(utenteId);
   return true;
 }

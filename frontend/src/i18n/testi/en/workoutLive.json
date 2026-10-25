@@ -17,6 +17,14 @@
     "riprendi": "↩️ I closed it by mistake, resume",
     "riprendiEntro": "You can resume the workout within {minuti} minutes, also from History."
   },
+  "conclusa": {
+    "titolo": "Workout already finished",
+    "testo": "You finished it on {giorno} at {ora}: you'll find it in History.",
+    "durata": "Duration: {durata}",
+    "storico": "Go to History",
+    "riprendi": "↩️ Resume the workout",
+    "riprendiFino": "You can still resume it until {ora}."
+  },
   "serieCorrente": "Set {numero} / {totale}",
   "nessunEsercizio": "No exercises in this plan",
   "tornaAlleSchede": "Back to plans",

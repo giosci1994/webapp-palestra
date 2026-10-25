@@ -15,6 +15,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { fusoCorrente, fusoDi, giornoLocale, inizioGiorno } from '../utils/date.js';
 import { creaNotifica } from './notifiche.service.js';
+import { annullaFineRecupero } from './push.service.js';
 import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
 import { localeDi } from '../i18n/index.js';
@@ -99,6 +100,10 @@ export function riapribileFinoA(sessione, fuso = fusoCorrente()) {
  *   automatica: closed by the server, not by the user (chiudiSessioniDimenticate)
  */
 export async function concludiSessione(sessione, { noteFinali, adesso = new Date(), fuso = fusoCorrente(), automatica = false } = {}) {
+  // A rest still running when the workout ends would send its "rest is over"
+  // push later: tapped hours afterwards, it opened the finished workout
+  annullaFineRecupero(sessione.utenteId, sessione.id);
+
   const serie = await prisma.logSerie.findMany({ where: { sessioneId: sessione.id } });
   const completate = serie.filter(s => s.completato);
   // Warm-up is not volume (utils/tipiSerie.js)

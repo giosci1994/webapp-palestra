@@ -1,7 +1,19 @@
 {
-  "versione": "1.5.8",
-  "build": "2026-10-22",
+  "versione": "1.5.9",
+  "build": "2026-10-25",
   "changelog": [
+    {
+      "versione": "1.5.9",
+      "data": "2026-10-25",
+      "modifiche": [
+        "Una vecchia notifica di fine recupero non riapre più un allenamento già terminato con il cronometro che corre: l'app ti dice che è concluso e, se sei ancora in tempo, puoi riprenderlo",
+        "Quando termini l'allenamento, o torni nell'app, la notifica di fine recupero sparisce da sola"
+      ],
+      "modificheEn": [
+        "An old end-of-rest notification no longer reopens a finished workout with the stopwatch running: the app tells you it is over and, if there is still time, lets you resume it",
+        "When you finish the workout, or come back to the app, the end-of-rest notification goes away by itself"
+      ]
+    },
     {
       "versione": "1.5.8",
       "data": "2026-10-22",

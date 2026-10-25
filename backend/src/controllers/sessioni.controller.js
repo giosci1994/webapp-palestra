@@ -421,16 +421,13 @@ export async function dettaglioSessione(req, res, next) {
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiAccedere'));
     }
-    res.json({ successo: true, dati: sessione });
+    // A finished workout opened from the workout screen (an old notification):
+    // the app offers to resume it only while it still can be
+    const fino = sessione.dataFine ? riapribileFinoA(sessione, await fusoDelProprietario(sessione, req)) : null;
+    res.json({ successo: true, dati: { ...sessione, riapribileFinoA: fino } });
   } catch (errore) { next(errore); }
 }
 
-/**
- * PATCH /sessioni/:id/completa — "Termina" (finish): volume, calendar and
- * records in services/conclusioneSessione.service.js. If the workout had been
- * left open for hours, it ends at the last set and the response says so
- * (dimenticata).
- */
 /**
  * The time zone of a workout's owner, for its calendar day: the request's,
  * unless a superadmin is acting on someone else's workout
@@ -439,6 +436,17 @@ function fusoDelProprietario(sessione, req) {
   return sessione.utenteId === req.utente.id ? fusoCorrente() : fusoDiUtenteId(sessione.utenteId);
 }
 
+/**
+ * PATCH /sessioni/:id/completa — "Termina" (finish): volume, calendar and
+ * records in services/conclusioneSessione.service.js. If the workout had been
+ * left open for hours, it ends at the last set and the response says so
+ * (dimenticata).
+ *
+ * A workout the user already finished stays as it is (giaConclusa): "Termina"
+ * tapped again on an old screen (a notification opened hours later, another
+ * device) took the end to now. One the server closed because it was
+ * forgotten open is still closed again: the user's own "Termina" knows better.
+ */
 export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
@@ -448,6 +456,9 @@ export async function completaSessione(req, res, next) {
     if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
+    }
+    if (sessione.dataFine && !sessione.chiusaAutomaticamente) {
+      return res.json({ successo: true, dati: sessione, recordPersonali: [], dimenticata: false, giaConclusa: true });
     }
 
     // "Termina" tapped without a network arrives when the connection is back:
