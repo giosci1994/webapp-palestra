@@ -4,14 +4,16 @@
 //
 // Before closing the workout the app asks when it ended (utils/fineAllenamento.js):
 // now, or the last set if it was long ago, as when the app was closed
-// without "Termina" and the workout is finished hours later.
+// without "Termina" and the workout is finished hours later. A try can also
+// be thrown away instead ("Non salvarlo").
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLingua } from '../../hooks/useLingua.js';
 import { aStringaOra, formattaDurata } from '../../utils/formattatori.js';
 import {
-  ultimaSerieIl, fineProposta, fineDaOra, erroreFine, PAUSA_DOPO_ULTIMA_SERIE_MINUTI, DURATA_MAX_MINUTI
+  ultimaSerieIl, fineProposta, fineDaOra, erroreFine, fineDaInviare, minutiDiAllenamento,
+  PAUSA_DOPO_ULTIMA_SERIE_MINUTI, DURATA_MAX_MINUTI
 } from '../../utils/fineAllenamento.js';
 
 /** Now, read when "Termina" is confirmed, not while rendering */
@@ -27,11 +29,14 @@ const ERRORI = {
 };
 
 /**
- * @param {{ inizio: number, serie: object[], inviando?: boolean, onTermina: (fine: number) => void, onAnnulla: () => void }} props
- *   inizio: start of the workout in milliseconds; serie: the sets done (with registrataIl)
+ * @param {{ inizio: number, serie: object[], inviando?: boolean, eliminando?: boolean,
+ *   onTermina: (fine: number) => void, onElimina?: () => void, onAnnulla: () => void }} props
+ *   inizio: start of the workout in milliseconds; serie: the sets done (with registrataIl);
+ *   onElimina: throws the workout away instead of saving it
  */
-export default function FineAllenamento({ inizio, serie, inviando = false, onTermina, onAnnulla }) {
+export default function FineAllenamento({ inizio, serie, inviando = false, eliminando = false, onTermina, onElimina, onAnnulla }) {
   const { t } = useLingua();
+  const occupato = inviando || eliminando;
   // Everything is measured from the moment the question opens
   const [apertoIl] = useState(adesso);
   const [ultimaSerie] = useState(() => ultimaSerieIl(serie));
@@ -68,7 +73,7 @@ export default function FineAllenamento({ inizio, serie, inviando = false, onTer
       setErrore(testoErrore(codice));
       return;
     }
-    onTermina(scelta);
+    onTermina(fineDaInviare(scelta, inizio));
   };
 
   // A quick choice for the last set only when it is not now
@@ -83,7 +88,7 @@ export default function FineAllenamento({ inizio, serie, inviando = false, onTer
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && !inviando && onAnnulla()}
+      onClick={(e) => e.target === e.currentTarget && !occupato && onAnnulla()}
     >
       <motion.div
         initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
@@ -125,17 +130,26 @@ export default function FineAllenamento({ inizio, serie, inviando = false, onTer
         <p className={`text-sm ${problema ? 'text-[var(--pericolo)]' : 'text-[var(--testo-secondario)]'}`} role={problema ? 'alert' : undefined}>
           {errore || (problema
             ? testoErrore(problema)
-            : t('fineAllenamento.durata', { durata: formattaDurata(Math.round((fine - inizio) / MINUTO)) }))}
+            : minutiDiAllenamento(fine, inizio) > 0
+              ? t('fineAllenamento.durata', { durata: formattaDurata(minutiDiAllenamento(fine, inizio)) })
+              : t('fineAllenamento.durataBreve'))}
         </p>
 
         <div className="flex gap-3">
-          <button onClick={onAnnulla} disabled={inviando} className="flex-1 py-3 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium disabled:opacity-60">
+          <button onClick={onAnnulla} disabled={occupato} className="flex-1 py-3 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium disabled:opacity-60">
             {t('fineAllenamento.continua')}
           </button>
-          <button onClick={conferma} disabled={inviando || Boolean(problema)} className="flex-1 py-3 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
+          <button onClick={conferma} disabled={occupato || Boolean(problema)} className="flex-1 py-3 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
             {inviando ? t('workoutLive.unAttimo') : t('fineAllenamento.termina')}
           </button>
         </div>
+
+        {onElimina && (
+          <button type="button" onClick={onElimina} disabled={occupato}
+            className="text-sm font-medium text-[var(--pericolo)] py-1 self-center disabled:opacity-50">
+            {eliminando ? t('workoutLive.unAttimo') : t('fineAllenamento.nonSalvare')}
+          </button>
+        )}
       </motion.div>
     </motion.div>
   );

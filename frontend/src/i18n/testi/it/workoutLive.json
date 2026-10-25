@@ -26,7 +26,19 @@
     "riprendi": "↩️ Riprendi l'allenamento",
     "riprendiFino": "Puoi ancora riprenderlo fino alle {ora}."
   },
+  "elimina": {
+    "conferma": "Eliminare questo allenamento? Le serie registrate non verranno salvate e non compariranno nello Storico.",
+    "senzaRete": "Senza connessione non posso eliminarlo: riprova quando torna la rete."
+  },
   "serieCorrente": "Serie {numero} / {totale}",
+  "serieOggi": {
+    "aggiungi": "Aggiungi una serie, solo per oggi",
+    "togli": "Togli una serie, solo per oggi",
+    "soloOggi_one": "Solo per oggi: nella scheda c'è {count} serie",
+    "soloOggi_other": "Solo per oggi: nella scheda ci sono {count} serie",
+    "unaInPiu": "＋ Una serie in più",
+    "ancoraUna": "＋ Ancora una serie di {nome}"
+  },
   "nessunEsercizio": "Nessun esercizio nella scheda",
   "tornaAlleSchede": "Torna alle schede",
   "barra": {
