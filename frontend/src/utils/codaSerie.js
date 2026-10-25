@@ -81,7 +81,7 @@ export function ascoltaCoda(avvisa) {
  * Queues an entry and returns it with its key and time.
  * @param {number} utenteId
  * @param {{ tipo: 'serie'|'completa', sessione: { id: number, schedaId: number, dataInizio: string }, dati: object }} voce
- *   serie: the fields of POST /sessioni/:id/serie; completa: { noteFinali }
+ *   serie: the fields of POST /sessioni/:id/serie; completa: { noteFinali, fine }
  */
 export function accoda(utenteId, voce, archivio = globalThis.localStorage, adesso = new Date()) {
   const completa = { id: nuovoId(), il: adesso.toISOString(), ...voce };
@@ -125,7 +125,10 @@ export function sessionePassataDa(voci) {
   const { schedaId, dataInizio } = serie[0].sessione;
   const chiusura = voci.find(v => v.tipo === 'completa');
   const inizio = Date.parse(dataInizio);
-  const fine = chiusura ? Date.parse(chiusura.il) : Math.max(...serie.map(v => Date.parse(v.il)));
+  // The end picked when "Termina" was tapped, otherwise the tap itself, otherwise the last set
+  const fine = chiusura
+    ? Date.parse(chiusura.dati?.fine ?? chiusura.il)
+    : Math.max(...serie.map(v => Date.parse(v.il)));
   return {
     schedaId,
     dataInizio,

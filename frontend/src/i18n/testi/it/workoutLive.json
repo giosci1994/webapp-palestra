@@ -14,8 +14,17 @@
     "nuoviRecord": "🏆 Nuovi Record!",
     "tornaDashboard": "Torna alla Dashboard",
     "rimastoAperto": "Era rimasto aperto: l'ho fatto finire all'ultima serie, alle {ora}.",
+    "terminatoAlle": "Terminato alle {ora}: per cambiare qualcosa, aprilo dallo Storico.",
     "riprendi": "↩️ Ho chiuso per sbaglio, riprendi",
     "riprendiEntro": "Puoi riprendere l'allenamento entro {minuti} minuti, anche dallo Storico."
+  },
+  "conclusa": {
+    "titolo": "Allenamento già concluso",
+    "testo": "L'hai terminato il {giorno} alle {ora}: lo trovi nello Storico.",
+    "durata": "Durata: {durata}",
+    "storico": "Vai allo Storico",
+    "riprendi": "↩️ Riprendi l'allenamento",
+    "riprendiFino": "Puoi ancora riprenderlo fino alle {ora}."
   },
   "serieCorrente": "Serie {numero} / {totale}",
   "nessunEsercizio": "Nessun esercizio nella scheda",

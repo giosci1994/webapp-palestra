@@ -13,6 +13,10 @@ On a phone the browser often unloads the app from memory while the user switches
 
 `WorkoutLive.jsx` saves its progress in `localStorage` (`gymmaster_workout_{sessionId}`): current exercise and set, the fields, the sets done, exercises added on the fly, start time. Writes are debounced (500 ms). The progress is restored when the page opens again, and cleared when the workout ends.
 
+- **"Termina" asks the end time** (`componenti/specifici/FineAllenamento.jsx`, logic in `utils/fineAllenamento.js`): it proposes now, or the time of the last set when it was more than 30 minutes ago (the app closed after the last set, the workout finished hours later). "Adesso" (now) and "Ultima serie" (last set) are exact instants; a time typed by hand is read as the latest at or before now, yesterday for a workout across midnight. It cannot be before the start, in the future, or make the workout longer than 10 hours. The end picked travels with "Termina" (`fine`).
+- **A workout already finished** (an end-of-rest notification tapped hours later, another device): the screen says so, with a link to History and "Riprendi" (resume) while the server allows it (`riapribileFinoA`). No stopwatch, and progress left in the browser is cleared.
+- **End-of-rest notifications**: the app closes those still showing when the workout ends and when the user comes back to the workout screen.
+
 ## Sets without network
 
 `frontend/src/utils/codaSerie.js`: sets, skipped sets and "Termina" (finish) are written on the phone right away, and sent to the server in order as soon as possible.
@@ -28,6 +32,7 @@ On a phone the browser often unloads the app from memory while the user switches
 ## Backend
 
 - **`POST /sessioni/:id/serie`** accepts `idClient` (unique within the workout: a set that already arrived returns the saved one, with 200) and `registrataIl` (kept between the start of the workout and now). A set that arrives when the workout is already finished finishes it again, counting the set: duration, volume and records include it.
-- **`PATCH /sessioni/:id/completa`** accepts `conclusaIl`, the time "Termina" was tapped.
+- **`PATCH /sessioni/:id/completa`** accepts `conclusaIl`, the time "Termina" was tapped, and `fine`, the end the user picked: it counts instead of the server's estimate, kept between the start and `conclusaIl` (or now). A workout the user already finished is left as it is (`giaConclusa: true`); one the server closed as forgotten is closed again. Closing a workout cancels its pending end-of-rest push.
+- **`GET /sessioni/:id`** includes `riapribileFinoA`: until when a finished workout can be resumed (null while it is open).
 - **Periodic check** (`conclusioneSessione.service.js`): a workout with no new sets for 2 hours was forgotten open, and is closed at its last set. An open workout with no sets at all is deleted after a day (`ORE_SESSIONE_VUOTA`): its sets may still be queued on a phone without network. Records are dated to the end of the workout, not to the moment it is closed.
 - **Schema**: `LogSerie.idClient` (unique with `sessioneId`) and `LogSerie.registrataIl`; `RefreshToken.durataGiorni`.

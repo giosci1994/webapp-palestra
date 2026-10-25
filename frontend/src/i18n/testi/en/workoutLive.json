@@ -14,8 +14,17 @@
     "nuoviRecord": "🏆 New records!",
     "tornaDashboard": "Back to Dashboard",
     "rimastoAperto": "It had been left open: I ended it at your last set, at {ora}.",
+    "terminatoAlle": "Finished at {ora}: to change anything, open it from History.",
     "riprendi": "↩️ I closed it by mistake, resume",
     "riprendiEntro": "You can resume the workout within {minuti} minutes, also from History."
+  },
+  "conclusa": {
+    "titolo": "Workout already finished",
+    "testo": "You finished it on {giorno} at {ora}: you'll find it in History.",
+    "durata": "Duration: {durata}",
+    "storico": "Go to History",
+    "riprendi": "↩️ Resume the workout",
+    "riprendiFino": "You can still resume it until {ora}."
   },
   "serieCorrente": "Set {numero} / {totale}",
   "nessunEsercizio": "No exercises in this plan",

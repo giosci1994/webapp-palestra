@@ -421,16 +421,13 @@ export async function dettaglioSessione(req, res, next) {
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiAccedere'));
     }
-    res.json({ successo: true, dati: sessione });
+    // A finished workout opened from the workout screen (an old notification):
+    // the app offers to resume it only while it still can be
+    const fino = sessione.dataFine ? riapribileFinoA(sessione, await fusoDelProprietario(sessione, req)) : null;
+    res.json({ successo: true, dati: { ...sessione, riapribileFinoA: fino } });
   } catch (errore) { next(errore); }
 }
 
-/**
- * PATCH /sessioni/:id/completa — "Termina" (finish): volume, calendar and
- * records in services/conclusioneSessione.service.js. If the workout had been
- * left open for hours, it ends at the last set and the response says so
- * (dimenticata).
- */
 /**
  * The time zone of a workout's owner, for its calendar day: the request's,
  * unless a superadmin is acting on someone else's workout
@@ -439,22 +436,45 @@ function fusoDelProprietario(sessione, req) {
   return sessione.utenteId === req.utente.id ? fusoCorrente() : fusoDiUtenteId(sessione.utenteId);
 }
 
+/**
+ * PATCH /sessioni/:id/completa — "Termina" (finish): volume, calendar and
+ * records in services/conclusioneSessione.service.js. If the workout had been
+ * left open for hours, it ends at the last set and the response says so
+ * (dimenticata).
+ *
+ * `fine`: the end the user picked ("Termina" asks what time you finished,
+ * proposing the last set when it was long ago). It counts instead of the
+ * server's estimate, kept between the start and the moment "Termina" was
+ * tapped.
+ *
+ * A workout the user already finished stays as it is (giaConclusa): "Termina"
+ * tapped again on an old screen (a notification opened hours later, another
+ * device) took the end to now. One the server closed because it was
+ * forgotten open is still closed again: the user's own "Termina" knows better.
+ */
 export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    const { noteFinali, conclusaIl } = req.body;
+    const { noteFinali, conclusaIl, fine } = req.body;
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
     if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
     }
+    if (sessione.dataFine && !sessione.chiusaAutomaticamente) {
+      return res.json({ successo: true, dati: sessione, recordPersonali: [], dimenticata: false, giaConclusa: true });
+    }
 
     // "Termina" tapped without a network arrives when the connection is back:
     // what counts is the time it was tapped, not the time it arrived
     const adesso = conclusaIl != null ? orarioDalTelefono(conclusaIl, sessione.dataInizio) : undefined;
+    // Not after the tap: a time picked later than that would be in the future
+    const fineDichiarata = fine != null ? orarioDalTelefono(fine, sessione.dataInizio, adesso) : undefined;
     const fuso = await fusoDelProprietario(sessione, req);
-    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, { noteFinali, adesso, fuso });
+    const { sessione: aggiornata, recordPersonali, dimenticata } = await concludiSessione(sessione, {
+      noteFinali, adesso, fine: fineDichiarata, fuso
+    });
     // Closed by an admin: the owner is told
     await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaChiuso');
 

@@ -119,6 +119,13 @@ describe('sessionePassataDa', () => {
     expect(sessionePassataDa([serie('08:00')]).durataMinuti).toBe(1);
   });
 
+  it('the end picked at "Termina" counts more than the moment it was tapped', () => {
+    const chiusura = accoda(utente, {
+      tipo: 'completa', sessione: SESSIONE, dati: { noteFinali: '', fine: alle('08:45').toISOString() }
+    }, archivio, alle('11:30'));
+    expect(sessionePassataDa([serie('08:10'), serie('08:40'), chiusura]).durataMinuti).toBe(45);
+  });
+
   it('senza serie non c\'e\' niente da salvare', () => {
     expect(sessionePassataDa([termina('09:00')])).toBeNull();
   });

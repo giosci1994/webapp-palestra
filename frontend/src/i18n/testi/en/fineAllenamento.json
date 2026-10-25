@@ -1,0 +1,17 @@
+{
+  "titolo": "Finish workout",
+  "iniziato": "Started at {ora}",
+  "domanda": "What time did you finish?",
+  "adesso": "Now · {ora}",
+  "ultimaSerie": "Last set · {ora}",
+  "dopoPausa": "Your last set was at {ora}, more than {minuti} minutes ago: if you finished then, keep this time.",
+  "durata": "Duration: {durata}",
+  "continua": "Keep training",
+  "termina": "Finish",
+  "errori": {
+    "nonValida": "Pick the time you finished.",
+    "prima": "That is before the workout started ({ora}).",
+    "futuro": "That time hasn't come yet.",
+    "troppoLunga": "That would make the workout longer than {ore} hours: check the end time."
+  }
+}

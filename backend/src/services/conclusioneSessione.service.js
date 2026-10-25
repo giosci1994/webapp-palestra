@@ -15,6 +15,7 @@ import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
 import { fusoCorrente, fusoDi, giornoLocale, inizioGiorno } from '../utils/date.js';
 import { creaNotifica } from './notifiche.service.js';
+import { annullaFineRecupero } from './push.service.js';
 import { diLavoro, volumeDi } from '../utils/tipiSerie.js';
 import { linguaDiUtenteId } from '../i18n/destinatario.js';
 import { localeDi } from '../i18n/index.js';
@@ -93,17 +94,25 @@ export function riapribileFinoA(sessione, fuso = fusoCorrente()) {
  * completed sets, the day's calendar entry marked as done, personal records
  * of whoever trained.
  * @param {object} sessione - the sessioni_allenamento row
- * @param {{ noteFinali?: string, adesso?: Date, fuso?: string, automatica?: boolean }} [opzioni]
+ * @param {{ noteFinali?: string, adesso?: Date, fine?: Date, fuso?: string, automatica?: boolean }} [opzioni]
+ *   fine: the end the user stated ("Termina" asks what time you finished):
+ *   it takes the place of fineEffettiva
  *   fuso: the user's time zone, for the day of the calendar entry (the
  *   request's by default; the timer passes the owner's)
  *   automatica: closed by the server, not by the user (chiudiSessioniDimenticate)
  */
-export async function concludiSessione(sessione, { noteFinali, adesso = new Date(), fuso = fusoCorrente(), automatica = false } = {}) {
+export async function concludiSessione(sessione, { noteFinali, adesso = new Date(), fine: fineDichiarata, fuso = fusoCorrente(), automatica = false } = {}) {
+  // A rest still running when the workout ends would send its "rest is over"
+  // push later: tapped hours afterwards, it opened the finished workout
+  annullaFineRecupero(sessione.utenteId, sessione.id);
+
   const serie = await prisma.logSerie.findMany({ where: { sessioneId: sessione.id } });
   const completate = serie.filter(s => s.completato);
   // Warm-up is not volume (utils/tipiSerie.js)
   const volumeTotale = volumeDi(completate);
-  const { fine, dimenticata } = fineEffettiva(sessione.dataInizio, serie, adesso, sessione.riapertaIl);
+  const { fine, dimenticata } = fineDichiarata
+    ? { fine: fineDichiarata, dimenticata: false }
+    : fineEffettiva(sessione.dataInizio, serie, adesso, sessione.riapertaIl);
 
   const aggiornata = await prisma.sessioneAllenamento.update({
     where: { id: sessione.id },

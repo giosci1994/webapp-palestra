@@ -54,3 +54,20 @@ export function entro(promessa, ms, messaggio) {
   const scaduta = new Promise((_, rifiuta) => { timer = setTimeout(() => rifiuta(new Error(messaggio)), ms); });
   return Promise.race([promessa, scaduta]).finally(() => clearTimeout(timer));
 }
+
+/**
+ * Closes the end-of-rest notifications still showing on this phone (tag
+ * "recupero", public/sw-push.js). Once you are back in the workout, or it is
+ * over, they only lead to it again: tapped hours later, one reopened a
+ * workout finished long before. getRegistration, not ready: without a service
+ * worker it answers right away.
+ */
+export async function chiudiNotificheRecupero(ambiente = globalThis) {
+  try {
+    const registrazione = await ambiente.navigator?.serviceWorker?.getRegistration?.();
+    const notifiche = await registrazione?.getNotifications?.({ tag: 'recupero' });
+    notifiche?.forEach(notifica => notifica.close());
+  } catch {
+    // Notifications not available: there is nothing to close
+  }
+}
