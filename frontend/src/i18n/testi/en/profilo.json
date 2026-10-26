@@ -171,9 +171,13 @@
     "fatto": "Stats reset!"
   },
   "fatturazione": {
-    "titolo": "Billing",
-    "inLavorazione": "Work in progress",
-    "descrizione": "This section is under development. It will be available soon with billing and subscription management."
+    "piano": "Your plan",
+    "gratuito": "Free",
+    "pianoDescrizione": "GymMaster is free and open source: every feature is included, with no subscription.",
+    "sostieni": "Support GymMaster",
+    "sostieniDescrizione": "GymMaster is built in my spare time. If you find it useful, you can buy me a coffee: it helps cover the costs and keep the project going.",
+    "offrimiUnCaffe": "Buy me a coffee",
+    "notaDonazione": "Opens Buy Me a Coffee: donating is optional, any amount you like."
   },
   "legale": {
     "documentiTitolo": "Legal documents",

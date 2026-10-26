@@ -11,7 +11,7 @@ The Profile page (`frontend/src/pagine/Profilo.jsx`) holds the user's data and s
 | Privacy | What other members can see, gamification on/off, how long the chat messages you send are kept, data export |
 | Personal Trainer | Your trainer, or finding and joining one |
 | Sicurezza | Password, passkeys, linked devices |
-| Fatturazione | Placeholder: not built yet |
+| Fatturazione (billing) | The plan (free, every feature included) and a Buy Me a Coffee button to support the project (`LINK_DONAZIONI` in `utils/costanti.js`) |
 | Legal & Compliance | Terms, privacy and cookie policies, app info |
 | Elimina Account | Deletes the account and its data |
 

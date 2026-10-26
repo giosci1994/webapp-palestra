@@ -171,9 +171,13 @@
     "fatto": "Statistiche azzerate!"
   },
   "fatturazione": {
-    "titolo": "Fatturazione",
-    "inLavorazione": "In Lavorazione",
-    "descrizione": "Questa sezione è attualmente in fase di sviluppo. Sarà disponibile a breve con funzionalità di fatturazione e gestione abbonamenti."
+    "piano": "Il tuo piano",
+    "gratuito": "Gratuito",
+    "pianoDescrizione": "GymMaster è gratuito e open source: tutte le funzioni sono incluse, senza abbonamento.",
+    "sostieni": "Sostieni GymMaster",
+    "sostieniDescrizione": "GymMaster è sviluppato nel tempo libero. Se ti è utile, puoi offrirmi un caffè: aiuta a coprire i costi e a portare avanti il progetto.",
+    "offrimiUnCaffe": "Offrimi un caffè",
+    "notaDonazione": "Si apre Buy Me a Coffee: la donazione è libera e facoltativa."
   },
   "legale": {
     "documentiTitolo": "Documenti Legali",

@@ -7,7 +7,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useLingua } from '../hooks/useLingua.js';
 import Testo from '../i18n/Testo.jsx';
 import { api, scaricaFile } from '../config/api.js';
-import { RUOLI } from '../utils/costanti.js';
+import { RUOLI, LINK_DONAZIONI } from '../utils/costanti.js';
 import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
 import { scelteDurataChat, etichettaDurataChat } from '../utils/durataChat.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,7 +18,7 @@ import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil, Download, Smartphone, Monitor, KeyRound, Bell, MessageCircle
+  Pencil, Download, Smartphone, Monitor, KeyRound, Bell, MessageCircle, Heart
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
 import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
@@ -893,14 +893,32 @@ export default function Profilo() {
           {/* TAB 6: BILLING */}
           {tabAttivo === 'fatturazione' && (
             <motion.div key="fatturazione" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
+              {/* The plan: everything is free for now */}
+              <div className="glass-card overflow-hidden mb-6">
+                <div className="p-card-inner border-b border-[var(--bordo-light)]">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} className="text-[var(--accent)]" /> {t('profilo.fatturazione.piano')}</h3>
+                </div>
+                <div className="p-card-inner">
+                  <div className="flex items-center justify-between gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
+                    <span className="text-sm font-semibold">GymMaster</span>
+                    <span className="text-xs font-bold px-3 py-1 rounded-full bg-[var(--accent-dim)] text-[var(--accent)]">{t('profilo.fatturazione.gratuito')}</span>
+                  </div>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-3 px-1">{t('profilo.fatturazione.pianoDescrizione')}</p>
+                </div>
+              </div>
+              {/* Donations */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><CreditCard size={20} className="text-[var(--accent)]" /> {t('profilo.fatturazione.titolo')}</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Heart size={20} className="text-[var(--accent)]" /> {t('profilo.fatturazione.sostieni')}</h3>
                 </div>
-                <div className="p-12 text-center">
-                  <div className="w-16 h-16 rounded-2xl bg-[var(--accent-dim)] flex items-center justify-center text-3xl mx-auto mb-4">🚧</div>
-                  <h4 className="font-bold text-lg mb-2">{t('profilo.fatturazione.inLavorazione')}</h4>
-                  <p className="text-sm text-[var(--testo-terziario)] max-w-xs mx-auto">{t('profilo.fatturazione.descrizione')}</p>
+                <div className="p-card-inner">
+                  <p className="text-sm text-[var(--testo-secondario)] mb-4">{t('profilo.fatturazione.sostieniDescrizione')}</p>
+                  {/* Drawn here, not the image from their site: no request to it until it is tapped */}
+                  <a href={LINK_DONAZIONI} target="_blank" rel="noopener noreferrer"
+                     className="flex items-center justify-center gap-2 w-full py-3 rounded-[var(--raggio-md)] bg-[#FFDD00] !text-black hover:!text-black font-bold hover:brightness-95 transition-all">
+                    <span className="text-xl" aria-hidden="true">☕</span> {t('profilo.fatturazione.offrimiUnCaffe')}
+                  </a>
+                  <p className="text-[10px] text-[var(--testo-terziario)] mt-2 text-center">{t('profilo.fatturazione.notaDonazione')}</p>
                 </div>
               </div>
             </motion.div>

@@ -106,3 +106,6 @@ export const DURATA_SOSPETTA_MINUTI = 240;
 
 /** How long after the end a workout closed by mistake can be resumed (same as in the backend) */
 export const RIAPERTURA_MAX_MINUTI = 30;
+
+/** The project's Buy Me a Coffee page, for those who want to support it (Profile → Billing) */
+export const LINK_DONAZIONI = 'https://buymeacoffee.com/giosci1994u';
