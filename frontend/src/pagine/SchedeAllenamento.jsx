@@ -351,7 +351,7 @@ export default function SchedeAllenamento() {
                   <div className="flex gap-2">
                     {!modalitaSelezione && scheda.creatoreId === utente.id && (
                       <button onClick={() => eliminaScheda(scheda.id)}
-                        className="text-xs text-[var(--pericolo)] opacity-0 group-hover:opacity-100 transition-opacity">
+                        className="text-xs text-[var(--pericolo)] hover:underline">
                         {t('comune.elimina')}
                       </button>
                     )}

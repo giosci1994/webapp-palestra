@@ -12,6 +12,7 @@ import { formattaPeso } from '../utils/formattatori.js';
 import { diLavoro } from '../utils/tipiSerie.js';
 import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Trash2 } from 'lucide-react';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
 
@@ -202,12 +203,16 @@ export default function StoricoAllenamenti() {
                       {formattaData(sessione.dataInizio, true)}
                     </p>
                   </div>
+                  {/* Always visible: shown only on hover, it never appeared on a phone */}
                   <button
+                    type="button"
                     onClick={(e) => { e.stopPropagation(); eliminaSessione(sessione.id); }}
                     disabled={eliminando === sessione.id}
-                    className="text-xs text-[var(--pericolo)] opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded hover:bg-[var(--pericolo-dim)]"
+                    aria-label={t('storicoAllenamenti.eliminaAllenamento')}
+                    title={t('storicoAllenamenti.eliminaAllenamento')}
+                    className="shrink-0 w-11 h-11 -mt-2 -mr-2 flex items-center justify-center rounded-full text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)] transition-colors disabled:opacity-50"
                   >
-                    {eliminando === sessione.id ? '...' : '🗑️'}
+                    <Trash2 size={18} />
                   </button>
                 </div>
 
