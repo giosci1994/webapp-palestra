@@ -1,23 +1,31 @@
 {
-  "versione": "1.7.0",
+  "versione": "1.6.1",
   "build": "2026-10-26",
   "changelog": [
     {
-      "versione": "1.7.0",
+      "versione": "1.6.1",
       "data": "2026-10-26",
       "modifiche": [
         "In Profilo → Privacy scegli per quanto tempo restano in chat i messaggi che invii: 7, 30 o 90 giorni, un anno o per sempre",
         "Subito dopo l'accesso, la Privacy del Profilo mostrava le impostazioni predefinite invece delle tue, e toccando un interruttore le salvava: ora carica sempre le tue",
         "Le macchine cardio hanno il nome inglese per chi usa l'app in inglese (Treadmill, Exercise Bike…) e quello italiano per chi la usa in italiano",
         "Bot Telegram: \"air bike\" aggiunge l'Air Bike, non più la cyclette",
-        "Email più sicure: il nome dell'account compare sempre come semplice testo"
+        "Email più sicure: il nome dell'account compare sempre come semplice testo",
+        "Quando un dato non va bene, l'app ti dice cosa correggere (per esempio un peso oltre 1000 kg o una data nel futuro) invece di un errore generico",
+        "Allenamento senza rete: una serie con un dato sbagliato non blocca più l'invio delle altre",
+        "Admin: un esercizio usato in schede, allenamenti o record non si può eliminare, e l'app dice dove è usato",
+        "Più affidabilità: dati sbagliati non mandano più in errore il server"
       ],
       "modificheEn": [
         "In Profile → Privacy you choose how long the messages you send stay in the chat: 7, 30 or 90 days, a year or forever",
         "Right after signing in, Profile → Privacy showed the default settings instead of yours, and a toggle saved them: it now always loads yours",
         "Cardio machines have their English name in the English app (Treadmill, Exercise Bike…) and their Italian name in the Italian one",
         "Telegram bot: \"air bike\" adds the Air Bike, no longer the exercise bike",
-        "Safer emails: the account name always shows as plain text"
+        "Safer emails: the account name always shows as plain text",
+        "When something you entered isn't right, the app tells you what to fix (for example a weight over 1000 kg or a date in the future) instead of a generic error",
+        "Offline workouts: a set with wrong data no longer stops the other sets from being sent",
+        "Admin: an exercise used in plans, workouts or records can't be deleted, and the app says where it is used",
+        "More reliable: wrong data no longer makes the server fail"
       ]
     },
     {
