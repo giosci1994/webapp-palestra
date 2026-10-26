@@ -33,12 +33,7 @@ const ANCORA_500 = new Set([
   'POST /admin/attrezzature',
   'GET /admin/suggerimenti',
   'POST /admin/novita',
-  'PUT /admin/novita/:id',
-  'GET /pt/appuntamenti',
-  'POST /pt/appuntamenti',
-  'PATCH /pt/appuntamenti/:id',
-  'POST /pt/schede',
-  'POST /pt/annunci'
+  'PUT /admin/novita/:id'
 ]);
 
 // The fields the routes read from the body
