@@ -15,7 +15,8 @@
   "tab": {
     "tutte": "All",
     "mie": "Mine",
-    "globali": "Global"
+    "globali": "Global",
+    "preferite": "Favorites"
   },
   "cercaPerNome": "Search by name...",
   "tuttiMuscoli": "All muscles",
@@ -31,5 +32,8 @@
   "sessioni_one": "{count} session",
   "sessioni_other": "{count} sessions",
   "creatoDa": "by {nome} · {data}",
-  "dettagli": "Details →"
+  "dettagli": "Details →",
+  "aggiungiPreferite": "Add to favorites",
+  "togliPreferite": "Remove from favorites",
+  "nessunaPreferita": "No favorite plans yet: tap the star on a plan"
 }

@@ -776,9 +776,14 @@ input:-webkit-autofill:focus {
     width: 100%;
   }
 
+  /* Four tabs side by side: the icon goes above the name, so they fit
+     the width of a phone */
   .schede-tab {
-    padding: 10px 12px;
-    font-size: 0.85rem;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 4px;
+    font-size: 0.8rem;
+    min-width: 0;
   }
 }
 

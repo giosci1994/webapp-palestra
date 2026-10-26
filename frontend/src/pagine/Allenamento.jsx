@@ -14,13 +14,15 @@ import { nomeGruppo } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Plus } from 'lucide-react';
 import InProgramma from '../componenti/specifici/InProgramma.jsx';
+import StellaPreferita from '../componenti/comuni/StellaPreferita.jsx';
+import { usePreferiti } from '../hooks/usePreferiti.js';
 
 // The two plan views live outside Allenamento: declared inside it, they would
 // be new components on every render of the page, recreated from scratch
 // (with the entrance animation starting over).
 
 // ─── MOBILE: grid of big squares with a large play button in the middle ───
-function GrigliaSchede({ lista, onApri }) {
+function GrigliaSchede({ lista, onApri, preferite, onPreferita }) {
   const { t } = useLingua();
   return (
     <div className="grid grid-cols-2 gap-4 md:hidden">
@@ -39,8 +41,10 @@ function GrigliaSchede({ lista, onApri }) {
           <div className="absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500" style={{ background: 'var(--accent)' }}></div>
           <div className="absolute -bottom-10 -left-10 w-20 h-20 rounded-full blur-2xl opacity-10 group-hover:opacity-20 transition-opacity duration-500" style={{ background: 'var(--accent-alt)' }}></div>
 
+          <StellaPreferita attiva={preferite.has(scheda.id)} onCambia={() => onPreferita(scheda.id)} className="absolute top-1 right-1 z-20" />
+
           {/* Title at the top */}
-          <h3 className="font-bold text-sm leading-tight line-clamp-2 text-center text-[var(--testo-primario)] z-10 font-sans">
+          <h3 className="font-bold text-sm leading-tight line-clamp-2 text-center text-[var(--testo-primario)] z-10 font-sans px-5">
             {scheda.titolo}
           </h3>
 
@@ -74,7 +78,7 @@ function GrigliaSchede({ lista, onApri }) {
 }
 
 // ─── DESKTOP: premium horizontal list view ───
-function ListaSchede({ lista, onApri }) {
+function ListaSchede({ lista, onApri, preferite, onPreferita }) {
   const { t } = useLingua();
   return (
     <div className="hidden md:flex flex-col gap-3">
@@ -126,6 +130,8 @@ function ListaSchede({ lista, onApri }) {
               </div>
             </div>
 
+            <StellaPreferita attiva={preferite.has(scheda.id)} onCambia={() => onPreferita(scheda.id)} className="relative z-10" />
+
             {/* Start button */}
             <div className="shrink-0 relative z-10">
               <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg transition-all group-hover:scale-110 group-hover:shadow-lg"
@@ -153,6 +159,7 @@ export default function Allenamento() {
   const [caricamento, setCaricamento] = useState(true);
   const [schedaSelezionata, setSchedaSelezionata] = useState(null);
   const [avviando, setAvviando] = useState(false);
+  const { preferiti: preferite, alternaPreferito: alternaPreferita } = usePreferiti('schede');
 
   // /allenamento?scheda=ID comes from the reminder, the calendar and the
   // suggestion on the dashboard: the plan opens ready to start.
@@ -208,8 +215,12 @@ export default function Allenamento() {
     }
   };
 
-  const mieSchede = schede.filter(s => s.creatoreId === utente.id);
-  const schedeGlobali = schede.filter(s => s.visibilita === 'GLOBALE' && s.creatoreId !== utente.id);
+  // The favorites in a section of their own, first, and not again below
+  const schedePreferite = schede.filter(s => preferite.has(s.id));
+  const altre = schede.filter(s => !preferite.has(s.id));
+  const mieSchede = altre.filter(s => s.creatoreId === utente.id);
+  const schedeGlobali = altre.filter(s => s.visibilita === 'GLOBALE' && s.creatoreId !== utente.id);
+  const stelle = { preferite, onPreferita: alternaPreferita };
 
   return (
     <div className="py-2 pb-8">
@@ -253,13 +264,23 @@ export default function Allenamento() {
         </div>
       ) : (
         <div className="flex flex-col gap-8">
+          {schedePreferite.length > 0 && (
+            <section>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <span>⭐</span> {t('allenamento.preferite')}
+              </h2>
+              <GrigliaSchede lista={schedePreferite} onApri={setSchedaSelezionata} {...stelle} />
+              <ListaSchede lista={schedePreferite} onApri={setSchedaSelezionata} {...stelle} />
+            </section>
+          )}
+
           {mieSchede.length > 0 && (
             <section>
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <span>👤</span> {t('allenamento.tueSchede')}
               </h2>
-              <GrigliaSchede lista={mieSchede} onApri={setSchedaSelezionata} />
-              <ListaSchede lista={mieSchede} onApri={setSchedaSelezionata} />
+              <GrigliaSchede lista={mieSchede} onApri={setSchedaSelezionata} {...stelle} />
+              <ListaSchede lista={mieSchede} onApri={setSchedaSelezionata} {...stelle} />
             </section>
           )}
 
@@ -268,8 +289,8 @@ export default function Allenamento() {
               <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <span>🌍</span> {t('allenamento.schedeGlobali')}
               </h2>
-              <GrigliaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} />
-              <ListaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} />
+              <GrigliaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} {...stelle} />
+              <ListaSchede lista={schedeGlobali} onApri={setSchedaSelezionata} {...stelle} />
             </section>
           )}
         </div>

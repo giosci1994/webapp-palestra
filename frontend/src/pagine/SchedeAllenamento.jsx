@@ -12,6 +12,9 @@ import { formattaData, nomeGruppo } from '../utils/formattatori.js';
 import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
+import StellaPreferita from '../componenti/comuni/StellaPreferita.jsx';
+import { usePreferiti } from '../hooks/usePreferiti.js';
+import { primaLePreferite } from '../utils/schedePreferite.js';
 
 
 export default function SchedeAllenamento() {
@@ -21,6 +24,8 @@ export default function SchedeAllenamento() {
   const [caricamento, setCaricamento] = useState(true);
   const [mostraCrea, setMostraCrea] = useState(false);
   const [filtro, setFiltro] = useState('mie'); // Default: "Le mie" (mine)
+  // The plans with the star, first in every tab
+  const { preferiti: preferite, alternaPreferito: alternaPreferita } = usePreferiti('schede');
 
   // Multiple selection for the Word export: a weekly program is several plans
   // in a single document, one per session.
@@ -92,10 +97,11 @@ export default function SchedeAllenamento() {
   }, [schede]);
 
   const schedeFiltrate = useMemo(() => {
-    return schede.filter(s => {
+    return primaLePreferite(schede.filter(s => {
       // Tab filter
       if (filtro === 'mie' && s.creatoreId !== utente.id) return false;
       if (filtro === 'globali' && s.visibilita !== 'GLOBALE') return false;
+      if (filtro === 'preferite' && !preferite.has(s.id)) return false;
 
       // Name filter
       if (ricercaNome && !s.titolo.toLowerCase().includes(ricercaNome.toLowerCase())) return false;
@@ -110,8 +116,8 @@ export default function SchedeAllenamento() {
       if (filtroDifficolta && s.livello !== filtroDifficolta) return false;
 
       return true;
-    });
-  }, [schede, filtro, utente.id, ricercaNome, filtroGruppo, filtroDifficolta]);
+    }), preferite);
+  }, [schede, filtro, utente.id, preferite, ricercaNome, filtroGruppo, filtroDifficolta]);
 
   const filtriAttivi = ricercaNome || filtroGruppo || filtroDifficolta;
 
@@ -185,7 +191,8 @@ export default function SchedeAllenamento() {
         {[
           { id: 'tutte', label: t('schedeAllenamento.tab.tutte'), icona: '📋' },
           { id: 'mie', label: t('schedeAllenamento.tab.mie'), icona: '👤' },
-          { id: 'globali', label: t('schedeAllenamento.tab.globali'), icona: '🌍' }
+          { id: 'globali', label: t('schedeAllenamento.tab.globali'), icona: '🌍' },
+          { id: 'preferite', label: t('schedeAllenamento.tab.preferite'), icona: '⭐' }
         ].map(f => (
           <button key={f.id}
             onClick={() => setFiltro(f.id)}
@@ -253,9 +260,10 @@ export default function SchedeAllenamento() {
           <p className="text-[var(--testo-secondario)]">
             {filtriAttivi
               ? t('schedeAllenamento.nessunaCorrispondenza')
+              : filtro === 'preferite' ? t('schedeAllenamento.nessunaPreferita')
               : (filtro === 'mie' ? t('schedeAllenamento.nessunaSchedaCreata') : t('schedeAllenamento.nessunaScheda'))}
           </p>
-          {!filtriAttivi && (
+          {!filtriAttivi && filtro !== 'preferite' && (
             <button onClick={() => setMostraCrea(true)} className="btn-primario mt-4">
               {t('schedeAllenamento.creaPrimaScheda')}
             </button>
@@ -301,6 +309,13 @@ export default function SchedeAllenamento() {
                   </div>
                   {scheda.visibilita === 'GLOBALE' && (
                     <span className="badge accent ml-2 shrink-0">{t('schedeAllenamento.globale')}</span>
+                  )}
+                  {!modalitaSelezione && (
+                    <StellaPreferita
+                      attiva={preferite.has(scheda.id)}
+                      onCambia={() => alternaPreferita(scheda.id)}
+                      className="-mt-2 -mr-2 ml-1"
+                    />
                   )}
                 </div>
 

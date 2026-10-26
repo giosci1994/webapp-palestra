@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CreaScheda from '../componenti/specifici/CreaScheda.jsx';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
+import StellaPreferita from '../componenti/comuni/StellaPreferita.jsx';
+import { usePreferiti } from '../hooks/usePreferiti.js';
 
 export default function DettaglioScheda() {
   const { t } = useLingua();
@@ -25,6 +27,7 @@ export default function DettaglioScheda() {
   const [mostraModifica, setMostraModifica] = useState(false);
   const [scaricando, setScaricando] = useState(false);
   const [erroreDownload, setErroreDownload] = useState('');
+  const { preferiti: preferite, alternaPreferito: alternaPreferita } = usePreferiti('schede');
 
   // Download the plan as .docx to read it at the gym, even offline
   const scaricaDocx = async () => {
@@ -95,6 +98,7 @@ export default function DettaglioScheda() {
             <h1 className="text-2xl font-bold min-w-0">{scheda.titolo}</h1>
 
             <div className="flex gap-2 items-center flex-wrap sm:shrink-0">
+              <StellaPreferita attiva={preferite.has(scheda.id)} onCambia={() => alternaPreferita(scheda.id)} className="-ml-2 sm:ml-0" />
               <span className={`badge ${LIVELLI[scheda.livello]?.colore || 'accent'}`}>
                 {LIVELLI[scheda.livello] && t(LIVELLI[scheda.livello].label)}
               </span>

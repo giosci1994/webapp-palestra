@@ -15,7 +15,8 @@
   "tab": {
     "tutte": "Tutte",
     "mie": "Le mie",
-    "globali": "Globali"
+    "globali": "Globali",
+    "preferite": "Preferite"
   },
   "cercaPerNome": "Cerca per nome...",
   "tuttiMuscoli": "Tutti i muscoli",
@@ -31,5 +32,8 @@
   "sessioni_one": "{count} sessione",
   "sessioni_other": "{count} sessioni",
   "creatoDa": "di {nome} · {data}",
-  "dettagli": "Dettagli →"
+  "dettagli": "Dettagli →",
+  "aggiungiPreferite": "Aggiungi alle preferite",
+  "togliPreferite": "Togli dalle preferite",
+  "nessunaPreferita": "Non hai ancora schede preferite: tocca la stella su una scheda"
 }

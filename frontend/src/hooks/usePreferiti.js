@@ -1,16 +1,25 @@
 // ============================================
-// GymMaster — Favorite exercises hook
+// GymMaster — Favorite exercises and plans hook
 // ============================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { api } from '../config/api.js';
 
+// Where each kind of favorite lives on the server: the list of ids, and the
+// star of one of them
+const PERCORSI = {
+  esercizi: { elenco: '/esercizi/preferiti', stella: id => `/esercizi/${id}/preferito` },
+  schede: { elenco: '/schede/preferite', stella: id => `/schede/${id}/preferita` }
+};
+
 /**
- * The user's favorite exercises (a Set of ids) and the function to add or
- * remove the star. The star changes right away; if the server does not answer
- * it goes back to how it was.
+ * The user's favorite exercises, or plans (a Set of ids), and the function to
+ * add or remove the star. The star changes right away; if the server does not
+ * answer it goes back to how it was.
+ * @param {'esercizi' | 'schede'} tipo
  */
-export function usePreferiti() {
+export function usePreferiti(tipo = 'esercizi') {
+  const { elenco, stella } = PERCORSI[tipo];
   const [preferiti, setPreferiti] = useState(() => new Set());
   // The up-to-date value, even between two quick taps, before the render
   const attuali = useRef(preferiti);
@@ -22,11 +31,11 @@ export function usePreferiti() {
 
   useEffect(() => {
     let attivo = true;
-    api.get('/esercizi/preferiti')
+    api.get(elenco)
       .then(r => { if (attivo) imposta(new Set(r.dati || [])); })
       .catch(() => { /* the pages work without favorites anyway */ });
     return () => { attivo = false; };
-  }, [imposta]);
+  }, [elenco, imposta]);
 
   const alternaPreferito = useCallback(async id => {
     const aggiungi = !attuali.current.has(id);
@@ -37,13 +46,13 @@ export function usePreferiti() {
     };
     imposta(cambia(attuali.current, aggiungi));
     try {
-      if (aggiungi) await api.put(`/esercizi/${id}/preferito`);
-      else await api.delete(`/esercizi/${id}/preferito`);
+      if (aggiungi) await api.put(stella(id));
+      else await api.delete(stella(id));
     } catch (err) {
       console.error('Errore preferiti:', err);
       imposta(cambia(attuali.current, !aggiungi));
     }
-  }, [imposta]);
+  }, [stella, imposta]);
 
   return { preferiti, alternaPreferito };
 }

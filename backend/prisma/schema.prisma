@@ -193,6 +193,7 @@ model Utente {
   notifiche AllenamentoNotifica[]
   passkey   Passkey[]
   eserciziPreferiti EsercizioPreferito[]
+  schedePreferite   SchedaPreferita[]
   iscrizioniPush    IscrizionePush[]
 
   @@map("utenti")
@@ -210,6 +211,21 @@ model EsercizioPreferito {
 
   @@id([utenteId, esercizioId])
   @@map("esercizi_preferiti")
+}
+
+// Plans marked with the star: each user has their own, and they come first in
+// the lists of plans
+model SchedaPreferita {
+  utenteId Int      @map("utente_id")
+  schedaId Int      @map("scheda_id")
+  creatoIl DateTime @default(now()) @map("creato_il")
+
+  utente Utente            @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  scheda SchedaAllenamento @relation(fields: [schedaId], references: [id], onDelete: Cascade)
+
+  @@id([utenteId, schedaId])
+  @@index([schedaId])
+  @@map("schede_preferite")
 }
 
 // Passkey (WebAuthn): signing in with the device's fingerprint, face or PIN
@@ -402,6 +418,7 @@ model SchedaAllenamento {
   esercizi      EsercizioScheda[]
   sessioni      SessioneAllenamento[]
   pianificazioni AllenamentoPianificato[]
+  preferitaDa    SchedaPreferita[]
 
   @@map("schede_allenamento")
 }

@@ -23,12 +23,18 @@ router.use(verificaToken);
 router.get('/', controller.listaSchede);
 // Before '/:id': otherwise Express would treat "docx" as an id
 router.get('/docx', controller.esportaSchedeDocxMultiplo);
+// The ids of your favourite plans, most recent first (before '/:id' too)
+router.get('/preferite', controller.listaPreferite);
 router.get('/:id/docx', controller.esportaSchedaDocx);
 router.get('/:id', controller.dettaglioScheda);
 router.post('/', valida({ body: schemaCreaScheda }), controller.creaScheda);
 router.post('/:id/clona', controller.clonaScheda);
 router.put('/:id', valida({ body: schemaAggiornaScheda }), controller.aggiornaScheda);
 router.delete('/:id', controller.eliminaScheda);
+
+// --- Favourite plans: the star, for each user ---
+router.put('/:id/preferita', controller.aggiungiPreferita);
+router.delete('/:id/preferita', controller.togliPreferita);
 
 // --- Exercises inside a plan ---
 router.post('/:id/esercizi', valida({ body: schemaAggiungiEsercizio }), controller.aggiungiEsercizio);

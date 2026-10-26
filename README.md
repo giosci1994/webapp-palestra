@@ -35,7 +35,7 @@ Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.i
 - Resume a workout closed by mistake, fix a finished one, log one done without the app, save one as a plan. Workouts left open close themselves at their last set. [More](docs/features/workout-history.md)
 
 **Plans and schedule**
-- Personal and shared plans, with technique notes per exercise; clone them or download them as Word (.docx).
+- Personal and shared plans, with technique notes per exercise; clone them, star your favourites or download them as Word (.docx).
 - A calendar of planned workouts, shown on top of the start page, with a reminder when you open the app and notifications.
 - A catalogue of more than 3,200 exercises with English and Italian names, typo-tolerant search and favourites. [More](docs/exercise-catalogue.md)
 
