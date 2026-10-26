@@ -1,0 +1,21 @@
+{
+  "corpoNonValido": "The request data is not valid",
+  "titoloNonValido": "The title must be text",
+  "descrizioneNonValida": "The description must be text",
+  "livelloNonValido": "The level is not valid",
+  "visibilitaNonValida": "The visibility is not valid",
+  "eserciziNonValidi": "The exercises must be a list",
+  "esercizioNonValido": "Each exercise in the list must be an object",
+  "esercizioIdObbligatorio": "The exercise is required",
+  "esercizioIdNonValido": "The exercise is not valid",
+  "serieTargetNonValido": "The number of sets is not valid",
+  "repTargetNonValido": "The reps must be text (for example 8-12)",
+  "recuperoSecondiNonValido": "The rest time is not valid",
+  "ordineEsecuzioneNonValido": "The exercise order is not valid",
+  "noteNonValide": "The notes must be text",
+  "durataMinutiNonValida": "The duration is not valid",
+  "velocitaKmhNonValida": "The speed is not valid",
+  "inclinazioneNonValida": "The incline is not valid",
+  "livelloResistenzaNonValido": "The resistance level is not valid",
+  "distanzaKmNonValida": "The distance is not valid"
+}

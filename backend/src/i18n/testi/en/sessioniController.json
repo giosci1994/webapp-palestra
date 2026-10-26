@@ -21,6 +21,8 @@
   "riaperturaScaduta_other": "A workout can only be resumed within {count} minutes of finishing",
   "orarioNonValido": "Invalid time",
   "esercizioESerieObbligatori": "esercizioId and serieNumero are required",
+  "campoNonValido": "\"{campo}\" is not valid",
+  "esercizioNonTrovato": "The exercise doesn't exist",
   "idClientNonValido": "idClient is not valid",
   "dataNonValida": "Invalid date",
   "inizioNelFuturo": "A workout can't start in the future",
@@ -43,7 +45,9 @@
     "ripetizioniNonValide": "Set {n}: invalid reps",
     "rpeNonValido": "Set {n}: invalid RPE (1 to 10)",
     "durataNonValida": "Set {n}: invalid duration",
-    "livelloNonValido": "Set {n}: invalid level"
+    "livelloNonValido": "Set {n}: invalid level",
+    "campoNonValido": "Set {n}: \"{campo}\" is not valid",
+    "esercizioNonTrovato": "Set {n}: the exercise doesn't exist"
   },
   "allenamentoInCorso": "You already have a workout in progress",
   "riaperturaScadutaGiorno": "A workout closed automatically can only be resumed on the same day",

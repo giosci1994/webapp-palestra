@@ -5,9 +5,9 @@
 // 503, a service that is not set up like the AI assistant without its key, is
 // fine.)
 //
-// ANCORA_500 lists the routes that still answer 500. It can only shrink:
-// the test fails when another route answers 500, and also when a route in the
-// list stops doing it, so that it is taken off.
+// ANCORA_500 lists the routes that still answer 500. It is empty and must
+// stay so: the test fails when a route answers 500, and also when a route in
+// the list stops doing it, so that it is taken off.
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -18,15 +18,7 @@ import { prisma, svuotaDatabase } from '../supporto/database.js';
 import { creaUtente, creaEsercizio, creaScheda, creaSessione, creaRecord, tokenPer } from '../supporto/dati.js';
 import router from '../../src/routes/indice.js';
 
-const ANCORA_500 = new Set([
-  'POST /schede',
-  'PUT /schede/:id',
-  'POST /schede/:id/esercizi',
-  'GET /sessioni',
-  'POST /sessioni',
-  'GET /sessioni/storico',
-  'GET /statistiche/sessioni'
-]);
+const ANCORA_500 = new Set([]);
 
 // The fields the routes read from the body
 const CAMPI = [

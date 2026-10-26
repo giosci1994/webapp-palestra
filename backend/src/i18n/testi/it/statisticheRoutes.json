@@ -1,5 +1,6 @@
 {
   "recordNonTrovato": "Record non trovato",
   "nonAutorizzato": "Non autorizzato",
-  "recordEliminato": "Record eliminato"
+  "recordEliminato": "Record eliminato",
+  "giorniNonValidi": "Il numero di giorni non è valido"
 }

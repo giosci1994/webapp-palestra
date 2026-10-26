@@ -15,6 +15,7 @@ import { titoloAllenamento } from '../utils/titoloAllenamento.js';
 import { avvisaSeDiUnAltro } from '../services/allenamentiDaControllare.service.js';
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 import { annullaFineRecupero } from '../services/push.service.js';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 
 /** List of the user's workouts */
 export async function listaSessioni(req, res, next) {
@@ -235,7 +236,8 @@ export async function ultimiCarichi(req, res, next) {
     const ids = String(req.query.esercizi || '')
       .split(',')
       .map(n => parseInt(n))
-      .filter(Number.isInteger)
+      // Ids the database can hold: a larger number matches nothing, and made the query fail
+      .filter(n => Number.isInteger(n) && Math.abs(n) <= ID_MASSIMO)
       .slice(0, 50);
     if (ids.length === 0) return res.json({ successo: true, dati: {} });
     const escludi = parseInt(req.query.escludi);
@@ -248,7 +250,7 @@ export async function ultimiCarichi(req, res, next) {
         ...SOLO_LAVORO,
         sessione: {
           utenteId: req.utente.id,
-          ...(Number.isInteger(escludi) ? { id: { not: escludi } } : {})
+          ...(Number.isInteger(escludi) && Math.abs(escludi) <= ID_MASSIMO ? { id: { not: escludi } } : {})
         }
       },
       select: {
@@ -457,6 +459,7 @@ export async function completaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
     const { noteFinali, conclusaIl, fine } = req.body;
+    if (noteFinali != null && typeof noteFinali !== 'string') throw erroreCampo('noteFinali');
 
     const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
     if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
@@ -628,6 +631,33 @@ export async function riapriSessione(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+/**
+ * A number from the body of a set or a workout, read with parseInt/parseFloat:
+ * null if it is not a number (empty, text). A value the database cannot hold,
+ * which used to end in a 500, is a 400: infinite, or a whole number beyond 32
+ * bits. `n` is the set's position when a list of sets is being read.
+ */
+function leggiNumero(grezzo, campo, { intero = false, n } = {}) {
+  const v = intero ? parseInt(grezzo) : parseFloat(grezzo);
+  if (Number.isNaN(v)) return null;
+  if (!Number.isFinite(v) || (intero && Math.abs(v) > ID_MASSIMO)) throw erroreCampo(campo, n);
+  return v;
+}
+
+/** The text of a set or a workout (notes, why it was skipped): empty means none; something else than text is a 400 */
+function leggiTesto(grezzo, campo, n) {
+  if (!grezzo) return null;
+  if (typeof grezzo !== 'string') throw erroreCampo(campo, n);
+  return grezzo;
+}
+
+/** 400 for a field that is not valid; with `n`, the message says which set */
+function erroreCampo(campo, n) {
+  return new ErroreValidazione(n === undefined
+    ? t('sessioniController.campoNonValido', { campo })
+    : t('sessioniController.serie.campoNonValido', { campo, n }));
+}
+
 /** The key the phone gives to a set (a UUID, or something similar) */
 const ID_CLIENT = /^[A-Za-z0-9-]{8,64}$/;
 
@@ -663,6 +693,23 @@ export async function logSerie(req, res, next) {
     if (!esercizioId || !serieNumero) {
       throw new ErroreValidazione(t('sessioniController.esercizioESerieObbligatori'));
     }
+    const idEsercizio = leggiNumero(esercizioId, 'esercizioId', { intero: true });
+    const numeroSerie = leggiNumero(serieNumero, 'serieNumero', { intero: true });
+    if (!(idEsercizio >= 1)) throw erroreCampo('esercizioId');
+    if (!(numeroSerie >= 1)) throw erroreCampo('serieNumero');
+    // What the database stores, read before anything is written
+    const valori = {
+      pesoEffettivo: leggiNumero(pesoEffettivo, 'pesoEffettivo') ?? 0,
+      repEffettive: leggiNumero(repEffettive, 'repEffettive', { intero: true }) ?? 0,
+      rpe: rpe ? leggiNumero(rpe, 'rpe', { intero: true }) : null,
+      motivoSaltoEsercizio: leggiTesto(motivoSaltoEsercizio, 'motivoSaltoEsercizio'),
+      noteSerie: leggiTesto(noteSerie, 'noteSerie'),
+      distanzaKm: distanzaKm ? leggiNumero(distanzaKm, 'distanzaKm') : null,
+      durataMinuti: durataMinuti ? leggiNumero(durataMinuti, 'durataMinuti', { intero: true }) : null,
+      livelloResistenza: livelloResistenza ? leggiNumero(livelloResistenza, 'livelloResistenza', { intero: true }) : null,
+      velocitaKmh: velocitaKmh ? leggiNumero(velocitaKmh, 'velocitaKmh') : null,
+      inclinazione: inclinazione ? leggiNumero(inclinazione, 'inclinazione') : null
+    };
     const tipoSerie = leggiTipo(tipo);
     if (idClient != null && (typeof idClient !== 'string' || !ID_CLIENT.test(idClient))) {
       throw new ErroreValidazione(t('sessioniController.idClientNonValido'));
@@ -690,26 +737,20 @@ export async function logSerie(req, res, next) {
       log = await prisma.logSerie.create({
         data: {
           sessioneId,
-          esercizioId: parseInt(esercizioId),
-          serieNumero: parseInt(serieNumero),
+          esercizioId: idEsercizio,
+          serieNumero: numeroSerie,
           tipo: tipoSerie,
-          pesoEffettivo: parseFloat(pesoEffettivo) || 0,
-          repEffettive: parseInt(repEffettive) || 0,
-          rpe: rpe ? parseInt(rpe) : null,
+          ...valori,
           completato: completato !== false,
-          motivoSaltoEsercizio: motivoSaltoEsercizio || null,
-          noteSerie: noteSerie || null,
-          distanzaKm: distanzaKm ? parseFloat(distanzaKm) : null,
-          durataMinuti: durataMinuti ? parseInt(durataMinuti) : null,
-          livelloResistenza: livelloResistenza ? parseInt(livelloResistenza) : null,
-          velocitaKmh: velocitaKmh ? parseFloat(velocitaKmh) : null,
-          inclinazione: inclinazione ? parseFloat(inclinazione) : null,
           idClient: idClient || null,
           ...(registrataIl != null && { registrataIl: orarioDalTelefono(registrataIl, sessione.dataInizio) })
         },
         include: includi
       });
     } catch (errore) {
+      // An exercise that does not exist: a 400 and not a 404, which the
+      // phone's queue would read as "the workout is gone" (esitoErrore)
+      if (errore.code === 'P2003') throw new ErroreValidazione(t('sessioniController.esercizioNonTrovato'));
       // Two sends of the same set at the same instant: one gets through
       if (errore.code !== 'P2002' || !idClient) throw errore;
       return res.json({ successo: true, dati: await giaArrivata() });
@@ -807,10 +848,14 @@ export async function registraSessionePassata(req, res, next) {
     // Without a plan it is a free workout (a free workout done without a
     // network, recreated by the phone's queue)
     const idScheda = schedaId == null ? null : parseInt(schedaId);
-    if (Number.isNaN(idScheda)) throw new ErroreValidazione(t('sessioniController.schedaIdNonValido'));
+    if (idScheda !== null && !(idScheda >= 1 && idScheda <= ID_MASSIMO)) {
+      throw new ErroreValidazione(t('sessioniController.schedaIdNonValido'));
+    }
 
     const inizio = leggiInizio(dataInizio);
     const durata = leggiDurata(durataMinuti);
+    const riscaldamento = minutiRiscaldamento != null ? leggiNumero(minutiRiscaldamento, 'minutiRiscaldamento', { intero: true }) : null;
+    const note = leggiTesto(noteFinali, 'noteFinali');
 
     if (idScheda != null) {
       const scheda = await prisma.schedaAllenamento.findUnique({
@@ -827,30 +872,49 @@ export async function registraSessionePassata(req, res, next) {
     // and duration, whoever wrote down the loads adds them.
     const righe = Array.isArray(serie) ? serie : [];
     const preparate = righe.map((r, i) => {
+      const n = i + 1;
+      if (!r || typeof r !== 'object') throw new ErroreValidazione(t('sessioniController.serie.nonValida', { n }));
       const esercizioId = parseInt(r.esercizioId);
       const serieNumero = parseInt(r.serieNumero);
       if (Number.isNaN(esercizioId) || Number.isNaN(serieNumero)) {
-        throw new ErroreValidazione(t('sessioniController.serie.obbligatori', { n: i + 1 }));
+        throw new ErroreValidazione(t('sessioniController.serie.obbligatori', { n }));
       }
+      if (!(esercizioId >= 1 && esercizioId <= ID_MASSIMO)) throw erroreCampo('esercizioId', n);
+      if (!(serieNumero >= 0 && serieNumero <= ID_MASSIMO)) throw erroreCampo('serieNumero', n);
+      // Weight and reps cannot be empty in the database: missing means 0
       const peso = r.pesoEffettivo != null ? parseFloat(r.pesoEffettivo) : 0;
       const rep = r.repEffettive != null ? parseInt(r.repEffettive) : 0;
-      if (peso < 0 || rep < 0) throw new ErroreValidazione(t('sessioniController.serie.negativi', { n: i + 1 }));
+      if (!Number.isFinite(peso)) throw new ErroreValidazione(t('sessioniController.serie.pesoNonValido', { n }));
+      if (Number.isNaN(rep) || Math.abs(rep) > ID_MASSIMO) throw new ErroreValidazione(t('sessioniController.serie.ripetizioniNonValide', { n }));
+      if (peso < 0 || rep < 0) throw new ErroreValidazione(t('sessioniController.serie.negativi', { n }));
+      // The optional numbers: empty or not a number means none
+      const opzionale = (campo, intero) => (r[campo] != null ? leggiNumero(r[campo], campo, { intero, n }) : null);
       return {
         esercizioId,
         serieNumero,
-        tipo: leggiTipo(r.tipo, prefissoSerie(i + 1)),
+        tipo: leggiTipo(r.tipo, prefissoSerie(n)),
         pesoEffettivo: peso,
         repEffettive: rep,
-        rpe: r.rpe != null ? parseInt(r.rpe) : null,
+        rpe: opzionale('rpe', true),
         completato: r.completato !== false,
-        noteSerie: r.noteSerie || null,
-        distanzaKm: r.distanzaKm != null ? parseFloat(r.distanzaKm) : null,
-        durataMinuti: r.durataMinuti != null ? parseInt(r.durataMinuti) : null,
-        livelloResistenza: r.livelloResistenza != null ? parseInt(r.livelloResistenza) : null,
-        velocitaKmh: r.velocitaKmh != null ? parseFloat(r.velocitaKmh) : null,
-        inclinazione: r.inclinazione != null ? parseFloat(r.inclinazione) : null
+        noteSerie: leggiTesto(r.noteSerie, 'noteSerie', n),
+        distanzaKm: opzionale('distanzaKm', false),
+        durataMinuti: opzionale('durataMinuti', true),
+        livelloResistenza: opzionale('livelloResistenza', true),
+        velocitaKmh: opzionale('velocitaKmh', false),
+        inclinazione: opzionale('inclinazione', false)
       };
     });
+
+    // An exercise that does not exist would make the database refuse the sets: a 400, saying which
+    if (preparate.length > 0) {
+      const esistenti = new Set((await prisma.esercizio.findMany({
+        where: { id: { in: [...new Set(preparate.map(r => r.esercizioId))] } },
+        select: { id: true }
+      })).map(e => e.id));
+      const mancante = preparate.findIndex(r => !esistenti.has(r.esercizioId));
+      if (mancante !== -1) throw new ErroreValidazione(t('sessioniController.serie.esercizioNonTrovato', { n: mancante + 1 }));
+    }
 
     const volume = volumeDi(preparate);
 
@@ -865,9 +929,9 @@ export async function registraSessionePassata(req, res, next) {
           dataInizio: inizio,
           dataFine: fine,
           durataMinuti: durata,
-          minutiRiscaldamento: minutiRiscaldamento != null ? parseInt(minutiRiscaldamento) : null,
+          minutiRiscaldamento: riscaldamento,
           volumeTotaleKg: Math.round(volume * 10) / 10,
-          noteFinali: noteFinali || null
+          noteFinali: note
         }
       });
 

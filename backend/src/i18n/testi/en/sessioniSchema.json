@@ -1,0 +1,7 @@
+{
+  "corpoNonValido": "The request data is not valid",
+  "schedaIdNonValido": "schedaId is not valid",
+  "minutiRiscaldamentoNonValidi": "The warm-up minutes are not valid",
+  "paginaNonValida": "The page is not valid",
+  "limiteNonValido": "The limit is not valid"
+}

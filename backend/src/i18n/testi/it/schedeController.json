@@ -11,6 +11,7 @@
   "nonPuoiEliminare": "Non puoi eliminare questa scheda",
   "schedaEliminata": "Scheda eliminata",
   "esercizioSchedaNonTrovato": "Esercizio scheda non trovato",
+  "esercizioNonTrovato": "Esercizio {id} non trovato",
   "esercizioRimosso": "Esercizio rimosso dalla scheda",
   "idNonValido": "ID non valido",
   "indicareAlmenoUnaScheda": "Indicare almeno una scheda in \"ids\"",

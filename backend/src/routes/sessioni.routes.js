@@ -6,7 +6,8 @@
 import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import * as controller from '../controllers/sessioni.controller.js';
-import { idNumerico } from '../middleware/validazione.js';
+import { idNumerico, valida } from '../middleware/validazione.js';
+import { schemaAvviaSessione, schemaListaSessioni, schemaStoricoSessioni } from '../validators/sessioni.schema.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -15,15 +16,15 @@ router.param('schedaId', idNumerico);
 router.use(verificaToken);
 
 // --- Sessions ---
-router.get('/', controller.listaSessioni);
-router.post('/', controller.avviaSessione);
+router.get('/', valida({ query: schemaListaSessioni }), controller.listaSessioni);
+router.post('/', valida({ body: schemaAvviaSessione }), controller.avviaSessione);
 
 // POST /api/v1/sessioni/passata — Log a workout already done
 // Declared before the routes with a parameter, so "passata" is not read as an id
 router.post('/passata', controller.registraSessionePassata);
 
 // Specific routes BEFORE /:id (otherwise Express reads them as the parameter)
-router.get('/storico', controller.storicoSessioniCompleto);
+router.get('/storico', valida({ query: schemaStoricoSessioni }), controller.storicoSessioniCompleto);
 router.get('/precedente/:schedaId', controller.ultimaSessioneScheda);
 router.get('/ultimi-carichi', controller.ultimiCarichi);
 // GET /api/v1/sessioni/in-corso — The open workout to resume, if any
