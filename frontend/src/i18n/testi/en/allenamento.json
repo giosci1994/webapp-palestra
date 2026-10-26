@@ -21,5 +21,12 @@
   "libero": {
     "titolo": "Free workout",
     "testo": "No plan: choose the exercises as you train"
+  },
+  "inProgramma": {
+    "titolo": "Scheduled",
+    "oggi": "Today",
+    "domani": "Tomorrow",
+    "prossimi": "Next days",
+    "calendario": "Calendar"
   }
 }

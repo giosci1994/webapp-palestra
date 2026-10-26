@@ -13,6 +13,7 @@ import { LIVELLI } from '../utils/costanti.js';
 import { nomeGruppo } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Plus } from 'lucide-react';
+import InProgramma from '../componenti/specifici/InProgramma.jsx';
 
 // The two plan views live outside Allenamento: declared inside it, they would
 // be new components on every render of the page, recreated from scratch
@@ -176,6 +177,10 @@ export default function Allenamento() {
     ?? richiestaInLista
     ?? (richiestaFuoriLista?.id === richiesta ? richiestaFuoriLista : null);
 
+  // A planned workout opens its plan the way the reminder does, through the
+  // parameter: a plan assigned by the trainer is read from the server
+  const apriPianificata = schedaId => setParametri({ scheda: String(schedaId) }, { replace: true });
+
   const chiudiRiquadro = () => {
     setSchedaSelezionata(null);
     if (richiesta) setParametri({}, { replace: true });
@@ -212,6 +217,8 @@ export default function Allenamento() {
         <h1 className="text-3xl font-extrabold mb-1">{t('allenamento.titolo')}</h1>
         <p className="text-[var(--testo-secondario)]">{t('allenamento.sottotitolo')}</p>
       </div>
+
+      <InProgramma onApri={apriPianificata} />
 
       {/* Without a plan: the exercises are chosen during the workout */}
       <button
