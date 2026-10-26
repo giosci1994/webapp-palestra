@@ -11,7 +11,7 @@ Thank you for your interest! GymMaster is free software, released under the **GN
 
 - Run the tests first: `cd backend && npm test` (needs Docker) and `cd frontend && npm test && npm run lint`. GitHub Actions runs them on every pull request; ESLint errors and warnings both block it.
 - If you change a piece of logic (records, volume, dates, permissions, authentication), add or update its test.
-- If users can see your change, update `version.json`: the version and a changelog entry written for users.
+- Do not change `version.json`: the version and its changelog are written when a release is prepared. If users can see your change, say in the pull request what changes for them.
 - Every change to `backend/prisma/schema.prisma` needs its migration (`npx prisma migrate dev --name ...`): the tests check that the migrations build exactly the schema.
 - Every text users see goes through the translations, in English and Italian: see [docs/translations.md](docs/translations.md). New languages are welcome.
 - Write comments, docs, commit messages and pull requests in English. Code names (variables, files, routes, database tables) are in Italian: keep them consistent with the code around them.
