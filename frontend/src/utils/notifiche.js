@@ -19,6 +19,11 @@ export function conLetta(notifiche, id) {
   return notifiche.map(n => (n.id === id && !n.letta ? { ...n, letta: true } : n));
 }
 
+/** The list without notification `id` (deleted) */
+export function senza(notifiche, id) {
+  return notifiche.filter(n => n.id !== id);
+}
+
 /** The list with every notification read */
 export function tutteLette(notifiche) {
   return notifiche.map(n => (n.letta ? n : { ...n, letta: true }));

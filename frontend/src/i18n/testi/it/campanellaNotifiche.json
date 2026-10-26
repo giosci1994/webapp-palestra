@@ -2,5 +2,8 @@
   "notifiche": "Notifiche",
   "notificheNonLette": "Notifiche: {numero} non lette",
   "segnaTutteLette": "Segna tutte lette",
-  "nessunaNotifica": "Nessuna notifica."
+  "nessunaNotifica": "Nessuna notifica.",
+  "elimina": "Elimina notifica",
+  "eliminaTutte": "Elimina tutte",
+  "confermaEliminaTutte": "Eliminare tutte le notifiche?"
 }

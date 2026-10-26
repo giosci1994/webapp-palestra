@@ -5,7 +5,7 @@
 
 import { Router } from 'express';
 import {
-  lista, segnaLetta, segnaTutteLette,
+  lista, segnaLetta, segnaTutteLette, elimina, eliminaTutte,
   statoPush, iscriviPush, disiscriviPush, provaPush, programmaRecupero, annullaRecupero
 } from '../controllers/notifiche.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
@@ -25,6 +25,12 @@ router.post('/segna-tutte-lette', segnaTutteLette);
 
 // PATCH /api/v1/notifiche/:id/letta — Mark one notification as read
 router.patch('/:id/letta', segnaLetta);
+
+// DELETE /api/v1/notifiche — Delete all of your notifications
+router.delete('/', eliminaTutte);
+
+// DELETE /api/v1/notifiche/:id — Delete one of your notifications
+router.delete('/:id', elimina);
 
 // Push notifications on the phone (services/push.service.js)
 router.get('/push', statoPush);

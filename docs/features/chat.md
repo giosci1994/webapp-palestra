@@ -13,6 +13,7 @@ The chat page has three tabs: Chat, Notifiche (notifications) and Richieste (req
 - `contesti/NotificheContesto.jsx` is the one source for the bell, the Notifiche tab and the badge of the bottom bar. It keeps the latest 50 notifications (`GET /notifiche`), adds the ones arriving on `notifica:nuova`, and marks them read (`PATCH /notifiche/:id/letta`, `POST /notifiche/segna-tutte-lette`), so a notification read in one place is read everywhere.
 - The badge on the chat tab of the bottom bar counts unread notifications plus unread messages (`GET /chat/non-letti`, read again at every page and when the app comes back: a message reaches the socket only while its conversation is open).
 - A notification opens only a path inside the app (`utils/notifiche.js`, `percorsoInterno`).
+- The ✕ on a row deletes that notification (`DELETE /notifiche/:id`), and "Delete all", after a confirmation, deletes all of them (`DELETE /notifiche`), from the bell and from the Notifiche tab (`componenti/comuni/AzioniNotifiche.jsx`). Either way, the server keeps at most the latest 100 notifications per user (`MAX_PER_UTENTE` in `notifiche.service.js`).
 
 ## Privacy
 

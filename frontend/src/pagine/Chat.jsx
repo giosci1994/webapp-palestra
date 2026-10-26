@@ -6,7 +6,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CheckCheck } from 'lucide-react';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
@@ -15,6 +14,7 @@ import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNotifiche } from '../contesti/NotificheContesto.jsx';
 import ListaNotifiche from '../componenti/comuni/ListaNotifiche.jsx';
+import AzioniNotifiche from '../componenti/comuni/AzioniNotifiche.jsx';
 import { testoContatore } from '../utils/notifiche.js';
 
 const TABS = ['chat', 'notifiche', 'richieste'];
@@ -28,7 +28,7 @@ export default function Chat() {
   const [mostraCerca, setMostraCerca] = useState(false);
   const [ricerca, setRicerca] = useState('');
   const [risultatiRicerca, setRisultatiRicerca] = useState([]);
-  const { nonLette, caricate: notificheCaricate, segnaTutteLette } = useNotifiche();
+  const { nonLette, caricate: notificheCaricate } = useNotifiche();
   // The tab is in the address (?tab=notifiche): back from where a
   // notification led, the notifications are still there
   const [parametri, setParametri] = useSearchParams();
@@ -183,11 +183,9 @@ export default function Chat() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {nonLette > 0 && (
-              <button type="button" onClick={segnaTutteLette} className="self-end text-xs text-[var(--accent)] hover:underline flex items-center gap-1">
-                <CheckCheck size={14} /> {t('campanellaNotifiche.segnaTutteLette')}
-              </button>
-            )}
+            <div className="self-end">
+              <AzioniNotifiche />
+            </div>
             <div className="glass-card overflow-hidden">
               <ListaNotifiche />
             </div>

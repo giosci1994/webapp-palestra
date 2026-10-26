@@ -2,5 +2,8 @@
   "notifiche": "Notifications",
   "notificheNonLette": "Notifications: {numero} unread",
   "segnaTutteLette": "Mark all as read",
-  "nessunaNotifica": "No notifications."
+  "nessunaNotifica": "No notifications.",
+  "elimina": "Delete notification",
+  "eliminaTutte": "Delete all",
+  "confermaEliminaTutte": "Delete all your notifications?"
 }

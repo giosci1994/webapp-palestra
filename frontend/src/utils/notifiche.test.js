@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { conNuova, conLetta, tutteLette, percorsoInterno, testoContatore, NOTIFICHE_MAX } from './notifiche.js';
+import { conNuova, conLetta, tutteLette, senza, percorsoInterno, testoContatore, NOTIFICHE_MAX } from './notifiche.js';
 
 const notifica = (id, letta = false) => ({ id, titolo: `N${id}`, letta });
 
@@ -21,6 +21,13 @@ describe('the list of notifications', () => {
     expect(conLetta(lista, 2)[1]).toBe(lista[1]);
     expect(tutteLette(lista).every(n => n.letta)).toBe(true);
     expect(lista.map(n => n.letta)).toEqual([false, true, false]);
+  });
+
+  it('a deleted one leaves the list; the others stay, in their order', () => {
+    const lista = [notifica(3), notifica(2, true), notifica(1)];
+    expect(senza(lista, 2).map(n => n.id)).toEqual([3, 1]);
+    expect(senza(lista, 9).map(n => n.id)).toEqual([3, 2, 1]);
+    expect(lista).toHaveLength(3);
   });
 });
 
