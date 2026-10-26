@@ -102,7 +102,7 @@ If the day changes, the planned workout this session closed is open again, and t
    - cardio exercises (duration, level).
 3. **Filter by plan**.
 4. **Pagination**.
-5. **Delete** a workout (after a confirmation).
+5. **Delete** a workout: with the bin on its card, always in sight (shown only on hover, it never appeared on a phone), or with the button at the bottom of the drawer; both ask for a confirmation.
 6. **Edit** (`ModificaAllenamento.jsx`, from the drawer's "✏️ Modifica" button):
    - day, start time, end time and duration: end time and duration are linked, fill in the one you remember (an end before the start falls on the next day);
    - warm-up and notes;

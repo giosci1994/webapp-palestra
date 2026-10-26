@@ -7,6 +7,7 @@
     "vai": "Vai a Gestione Schede"
   },
   "tueSchede": "Le Tue Schede",
+  "preferite": "Preferite",
   "schedeGlobali": "Schede Globali",
   "globale": "Globale",
   "eserciziBreve": "{count} Es.",
@@ -21,5 +22,12 @@
   "libero": {
     "titolo": "Allenamento libero",
     "testo": "Senza scheda: scegli gli esercizi mentre ti alleni"
+  },
+  "inProgramma": {
+    "titolo": "In programma",
+    "oggi": "Oggi",
+    "domani": "Domani",
+    "prossimi": "Prossimi giorni",
+    "calendario": "Calendario"
   }
 }

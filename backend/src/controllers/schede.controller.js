@@ -241,6 +241,50 @@ export async function eliminaScheda(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+// --- Favourite plans: the star, for each user ---
+
+/** The plans a user sees in the lists: their own and the global ones */
+const visibilePer = utenteId => ({ OR: [{ creatoreId: utenteId }, { visibilita: 'GLOBALE' }] });
+
+/** GET /api/v1/schede/preferite — The ids of the favourite plans, most recent first */
+export async function listaPreferite(req, res, next) {
+  try {
+    // A global plan that went back to personal is no longer the user's to see
+    const preferite = await prisma.schedaPreferita.findMany({
+      where: { utenteId: req.utente.id, scheda: visibilePer(req.utente.id) },
+      orderBy: { creatoIl: 'desc' },
+      select: { schedaId: true }
+    });
+    res.json({ successo: true, dati: preferite.map(p => p.schedaId) });
+  } catch (errore) { next(errore); }
+}
+
+/** PUT /api/v1/schede/:id/preferita — Adds the star (repeating it changes nothing) */
+export async function aggiungiPreferita(req, res, next) {
+  try {
+    const schedaId = parseInt(req.params.id, 10);
+    const scheda = await prisma.schedaAllenamento.findUnique({ where: { id: schedaId }, select: { creatoreId: true, visibilita: true } });
+    if (!scheda) throw new ErroreNonTrovato(t('schedeController.schedaNonTrovata'));
+    if (scheda.creatoreId !== req.utente.id && scheda.visibilita !== 'GLOBALE') {
+      throw new ErroreNonAutorizzato(t('schedeController.schedaNonAccessibile'));
+    }
+    await prisma.schedaPreferita.upsert({
+      where: { utenteId_schedaId: { utenteId: req.utente.id, schedaId } },
+      create: { utenteId: req.utente.id, schedaId },
+      update: {}
+    });
+    res.json({ successo: true });
+  } catch (errore) { next(errore); }
+}
+
+/** DELETE /api/v1/schede/:id/preferita — Removes the star (even if it was not there, or the plan is gone) */
+export async function togliPreferita(req, res, next) {
+  try {
+    await prisma.schedaPreferita.deleteMany({ where: { utenteId: req.utente.id, schedaId: parseInt(req.params.id, 10) } });
+    res.json({ successo: true });
+  } catch (errore) { next(errore); }
+}
+
 /** Adds an exercise to a plan */
 export async function aggiungiEsercizio(req, res, next) {
   try {

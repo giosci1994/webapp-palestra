@@ -69,7 +69,7 @@ export async function esportaDatiUtente(utenteId) {
     utente, schede, sessioni, recordPersonali, misurazioni, pianificazione, notifiche,
     partecipazioni, conversazioniAI, suggerimenti, richiesteInviate, richiesteRicevute,
     iscrizioni, appuntamentiCliente, annunciRicevuti,
-    clienti, appuntamentiTrainer, annunciPubblicati, schedeAssegnate, dispositivi, passkey, preferiti, notifichePush
+    clienti, appuntamentiTrainer, annunciPubblicati, schedeAssegnate, dispositivi, passkey, preferiti, schedePreferite, notifichePush
   ] = await Promise.all([
     prisma.utente.findUnique({
       where: { id: utenteId },
@@ -151,6 +151,11 @@ export async function esportaDatiUtente(utenteId) {
       orderBy: { creatoIl: 'asc' },
       select: { creatoIl: true, esercizio: ESERCIZIO }
     }),
+    prisma.schedaPreferita.findMany({
+      where: { utenteId },
+      orderBy: { creatoIl: 'asc' },
+      select: { creatoIl: true, scheda: { select: { id: true, titolo: true } } }
+    }),
     // The devices that receive push notifications, without the subscription (endpoint and keys)
     prisma.iscrizionePush.findMany({
       where: { utenteId },
@@ -204,6 +209,7 @@ export async function esportaDatiUtente(utenteId) {
     assistente: conversazioniAI,
     suggerimentiEsercizi: suggerimenti,
     eserciziPreferiti: preferiti.map(({ esercizio, creatoIl }) => ({ ...esercizio, aggiuntoIl: creatoIl })),
+    schedePreferite: schedePreferite.map(({ scheda, creatoIl }) => ({ ...scheda, aggiuntaIl: creatoIl })),
     dispositivi: dispositivi.map(({ creato, ...d }) => ({ ...d, ultimoUso: creato })),
     passkey,
     notifichePush,

@@ -170,5 +170,48 @@
       ],
       "ctaTesto": "Start a workout"
     }
+  },
+  {
+    "versione": "1.6.2",
+    "titolo": "Un allenamento salvato per sbaglio?",
+    "sottotitolo": "Ora lo cancelli in un tocco",
+    "icona": "🗑️",
+    "punti": [
+      {
+        "icona": "🗑️",
+        "testo": "Nello Storico ogni allenamento ha il suo cestino, sempre in vista anche sul telefono"
+      },
+      {
+        "icona": "👆",
+        "testo": "Toccalo e conferma: l'allenamento sparisce dallo Storico"
+      },
+      {
+        "icona": "✏️",
+        "testo": "Se va solo corretto, aprilo e tocca \"Modifica\": orari, note e serie si sistemano senza cancellarlo"
+      }
+    ],
+    "ctaTesto": "Apri lo Storico",
+    "ctaRotta": "/storico",
+    "coloreInizio": "#ef4444",
+    "coloreFine": "#8b5cf6",
+    "en": {
+      "titolo": "Saved a workout by mistake?",
+      "sottotitolo": "Now you delete it with one tap",
+      "punti": [
+        {
+          "icona": "🗑️",
+          "testo": "In History every workout has its own bin, always in sight, on the phone too"
+        },
+        {
+          "icona": "👆",
+          "testo": "Tap it and confirm: the workout is gone from History"
+        },
+        {
+          "icona": "✏️",
+          "testo": "If it just needs fixing, open it and tap \"Edit\": times, notes and sets can be corrected without deleting it"
+        }
+      ],
+      "ctaTesto": "Open History"
+    }
   }
 ]
