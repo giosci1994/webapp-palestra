@@ -46,4 +46,13 @@ describe('emails in the language of the request', () => {
     assert.match(inviata.html, /your password will stay the same/);
     assert.doesNotMatch(inviata.html, /Ciao|Reimposta/);
   });
+
+  it("the user's name is text, not HTML", async () => {
+    const furbo = { email: 'furbo@test.local', nome: '<a href="https://x.test">Mario</a> & co' };
+    for (const invia of [inviaEmailVerifica, inviaEmailReset]) {
+      await conLingua('en', () => invia(furbo, 'tok789'));
+      assert.match(inviata.html, /Hi &lt;a href=&quot;https:\/\/x\.test&quot;&gt;Mario&lt;\/a&gt; &amp; co,/);
+      assert.doesNotMatch(inviata.html, /<a href="https:\/\/x\.test">/);
+    }
+  });
 });

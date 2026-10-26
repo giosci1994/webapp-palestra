@@ -9,6 +9,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { datiEsercizioCatalogo } from '../src/utils/catalogoEsercizi.js';
+import { garantisciEserciziCardio } from '../src/utils/macchineCardio.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,26 +22,11 @@ function caricaJSON(nomeFile) {
   return JSON.parse(readFileSync(percorso, 'utf-8'));
 }
 
-// Basic cardio exercises, linked to the CARDIO equipment.
+// Basic cardio exercises, linked to the CARDIO equipment (src/utils/macchineCardio.js).
 // Guaranteed at every startup (even when the guard skips the full seed),
 // so the Telegram bot can add them to plans.
-async function garantisciEserciziCardio() {
-  const cardio = ['Tapis Roulant', 'Cyclette', 'Ellittica', 'Vogatore (Rower)', 'Stepper', 'Air Bike'];
-  let creati = 0;
-  for (const nome of cardio) {
-    const esiste = await prisma.esercizio.findFirst({ where: { nome } });
-    if (esiste) continue;
-    const attr = await prisma.attrezzatura.findFirst({ where: { nome } });
-    await prisma.esercizio.create({
-      data: {
-        nome,
-        gruppoMuscoloPrimario: 'Cardio',
-        attrezzaturaRichiestaId: attr?.id || null,
-        descrizione: `Macchina cardio: ${nome}`
-      }
-    });
-    creati++;
-  }
+async function garantisciCardio() {
+  const creati = await garantisciEserciziCardio(prisma);
   if (creati > 0) console.log(`✅ Esercizi cardio garantiti: ${creati} creati`);
 }
 
@@ -92,7 +78,7 @@ async function main() {
   const eserciziJSON = caricaJSON('esercizi.json');
 
   // Always guarantee the cardio exercises and the first story (even if the guard skips the rest)
-  await garantisciEserciziCardio();
+  await garantisciCardio();
   await garantisciNovitaIniziale();
 
   // --- Idempotency guard ---

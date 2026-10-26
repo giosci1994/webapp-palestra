@@ -10,6 +10,11 @@ const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const EMAIL_MITTENTE = process.env.EMAIL_MITTENTE || 'GymMaster <onboarding@resend.dev>';
 const APP_URL = (process.env.APP_URL || `https://gymmaster.${process.env.DOMINIO || 'casadm.uk'}`).replace(/\/$/, '');
 
+/** A text the user wrote (their name), as text inside the email's HTML: never markup */
+const testoHtml = (testo = '') => String(testo).replace(/[&<>"']/g, carattere => ({
+  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+})[carattere]);
+
 /** True if email sending is configured (Resend key present). */
 export function emailConfigurata() {
   return RESEND_API_KEY.trim().length > 0;
@@ -47,7 +52,7 @@ export async function inviaEmailVerifica(utente, token) {
       <div style="padding:28px 28px 0;text-align:center">
         <div style="font-size:40px">🏋️</div>
         <h1 style="margin:8px 0 4px;font-size:22px;color:#fff">${t('emailService.verifica.titolo')}</h1>
-        <p style="margin:0;color:#A0A0B8;font-size:14px">${t('emailService.verifica.saluto', { nome: utente.nome || '' })}</p>
+        <p style="margin:0;color:#A0A0B8;font-size:14px">${t('emailService.verifica.saluto', { nome: testoHtml(utente.nome || '') })}</p>
       </div>
       <div style="padding:28px;text-align:center">
         <a href="${link}" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;font-size:15px">${t('emailService.verifica.pulsante')}</a>
@@ -68,7 +73,7 @@ export async function inviaEmailReset(utente, token) {
       <div style="padding:28px 28px 0;text-align:center">
         <div style="font-size:40px">🔑</div>
         <h1 style="margin:8px 0 4px;font-size:22px;color:#fff">${t('emailService.reset.titolo')}</h1>
-        <p style="margin:0;color:#A0A0B8;font-size:14px">${t('emailService.reset.saluto', { nome: utente.nome || '' })}</p>
+        <p style="margin:0;color:#A0A0B8;font-size:14px">${t('emailService.reset.saluto', { nome: testoHtml(utente.nome || '') })}</p>
       </div>
       <div style="padding:28px;text-align:center">
         <a href="${link}" style="display:inline-block;background:#7C5CFF;color:#fff;text-decoration:none;font-weight:700;padding:14px 28px;border-radius:12px;font-size:15px">${t('emailService.reset.pulsante')}</a>
