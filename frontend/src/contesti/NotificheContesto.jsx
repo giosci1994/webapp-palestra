@@ -11,13 +11,13 @@
 // - messaggiNonLetti: unread chat messages, read again at every page and
 //   when the app comes back (a message reaches the socket only while its
 //   conversation is open)
-// - apri(n): marks it read; segnaTutteLette()
+// - apri(n): marks it read; segnaTutteLette(); elimina(n); eliminaTutte()
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { useSocket } from './SocketContesto.jsx';
-import { conNuova, conLetta, tutteLette, NOTIFICHE_MAX } from '../utils/notifiche.js';
+import { conNuova, conLetta, tutteLette, senza, NOTIFICHE_MAX } from '../utils/notifiche.js';
 
 const Contesto = createContext(null);
 
@@ -77,8 +77,23 @@ export function NotificheProvider({ children }) {
     api.post('/notifiche/segna-tutte-lette').catch(() => {});
   }, []);
 
+  // Gone from the list at once; the server's count of unread ones then wins
+  const elimina = useCallback((notifica) => {
+    setNotifiche(prec => senza(prec, notifica.id));
+    if (!notifica.letta) setNonLette(n => Math.max(0, n - 1));
+    api.delete(`/notifiche/${notifica.id}`)
+      .then(risposta => setNonLette(risposta.dati?.nonLette ?? 0))
+      .catch(() => {});
+  }, []);
+
+  const eliminaTutte = useCallback(() => {
+    setNotifiche([]);
+    setNonLette(0);
+    api.delete('/notifiche').catch(() => {});
+  }, []);
+
   return (
-    <Contesto.Provider value={{ notifiche, nonLette, caricate, messaggiNonLetti, apri, segnaTutteLette }}>
+    <Contesto.Provider value={{ notifiche, nonLette, caricate, messaggiNonLetti, apri, segnaTutteLette, elimina, eliminaTutte }}>
       {children}
     </Contesto.Provider>
   );

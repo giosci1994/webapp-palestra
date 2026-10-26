@@ -49,6 +49,27 @@ export async function segnaTutteLette(req, res, next) {
   }
 }
 
+/** DELETE /api/v1/notifiche/:id — Deletes one of your notifications */
+export async function elimina(req, res, next) {
+  try {
+    const fatto = await notificheService.elimina(req.utente.id, parseInt(req.params.id, 10));
+    if (!fatto) throw new ErroreNonTrovato(t('notificheController.notificaNonTrovata'));
+    res.json({ successo: true, dati: { nonLette: await notificheService.contaNonLette(req.utente.id) } });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
+/** DELETE /api/v1/notifiche — Deletes all of your notifications */
+export async function eliminaTutte(req, res, next) {
+  try {
+    const eliminate = await notificheService.eliminaTutte(req.utente.id);
+    res.json({ successo: true, dati: { eliminate, nonLette: 0 } });
+  } catch (errore) {
+    next(errore);
+  }
+}
+
 // --- Push notifications (services/push.service.js) ---
 
 /** GET /api/v1/notifiche/push — The public key and how many devices receive push notifications */

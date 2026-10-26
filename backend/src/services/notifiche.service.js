@@ -134,6 +134,18 @@ export async function notificaAdmin(io, dati) {
   return admin.length;
 }
 
+/** Deletes one of the user's notifications. The filter on utenteId keeps other users' ones untouched. */
+export async function elimina(utenteId, notificaId) {
+  const esito = await prisma.allenamentoNotifica.deleteMany({ where: { id: notificaId, utenteId } });
+  return esito.count > 0;
+}
+
+/** Deletes all of the user's notifications. */
+export async function eliminaTutte(utenteId) {
+  const esito = await prisma.allenamentoNotifica.deleteMany({ where: { utenteId } });
+  return esito.count;
+}
+
 /** Marks all of the user's notifications as read. */
 export async function segnaTutteLette(utenteId) {
   const esito = await prisma.allenamentoNotifica.updateMany({
