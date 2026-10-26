@@ -25,15 +25,7 @@ const ANCORA_500 = new Set([
   'GET /sessioni',
   'POST /sessioni',
   'GET /sessioni/storico',
-  'GET /statistiche/sessioni',
-  'POST /admin/palestre',
-  'PUT /admin/palestre/:id',
-  // An exercise used in a plan cannot be deleted: it should say so
-  'DELETE /admin/esercizi/:id',
-  'POST /admin/attrezzature',
-  'GET /admin/suggerimenti',
-  'POST /admin/novita',
-  'PUT /admin/novita/:id'
+  'GET /statistiche/sessioni'
 ]);
 
 // The fields the routes read from the body

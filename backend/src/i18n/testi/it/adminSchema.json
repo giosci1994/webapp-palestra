@@ -1,0 +1,12 @@
+{
+  "corpoNonValido": "I dati della richiesta devono essere un oggetto",
+  "campoObbligatorio": "Campo obbligatorio",
+  "testoNonValido": "Questo campo deve essere un testo",
+  "testoTroppoLungo": "Questo testo è troppo lungo",
+  "siNoNonValido": "Questo campo deve essere vero o falso",
+  "idNonValido": "ID non valido",
+  "categoriaNonValida": "La categoria è obbligatoria e deve essere una tra: CARDIO, PESI_LIBERI, MACCHINE, CAVI, FUNZIONALE",
+  "statoNonValido": "Lo stato deve essere uno tra: IN_ATTESA, APPROVATO, RIFIUTATO",
+  "puntiNonValidi": "I punti devono essere un elenco di voci con un'icona e un testo",
+  "ordineNonValido": "L'ordine deve essere un numero intero"
+}

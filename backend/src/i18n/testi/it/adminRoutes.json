@@ -13,5 +13,13 @@
   "suggerimentoRifiutatoSenzaMotivo": "\"{nome}\" non è stato approvato.",
   "suggerimentoRifiutato": "Suggerimento rifiutato",
   "titoloObbligatorio": "Titolo obbligatorio",
-  "novitaEliminata": "Novità eliminata"
+  "novitaEliminata": "Novità eliminata",
+  "attrezzaturaNonTrovata": "Attrezzatura non trovata",
+  "usoInSchede_one": "{count} scheda",
+  "usoInSchede_other": "{count} schede",
+  "usoInSerie_one": "{count} serie registrata",
+  "usoInSerie_other": "{count} serie registrate",
+  "usoInRecord_one": "{count} record personale",
+  "usoInRecord_other": "{count} record personali",
+  "esercizioInUso": "Questo esercizio è in uso e non può essere eliminato: è presente in {dove}."
 }

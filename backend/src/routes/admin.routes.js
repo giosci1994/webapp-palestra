@@ -13,8 +13,13 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
-import { idNumerico } from '../middleware/validazione.js';
-import { t } from '../i18n/index.js';
+import { idNumerico, valida } from '../middleware/validazione.js';
+import { ErroreConflitto, ErroreValidazione } from '../utils/errori.js';
+import { t, localeDi } from '../i18n/index.js';
+import {
+  schemaCreaPalestra, schemaAggiornaPalestra, schemaCreaAttrezzatura, schemaElencoSuggerimenti,
+  schemaApprovaSuggerimento, schemaRifiutaSuggerimento, schemaBanner, schemaCreaNovita, schemaAggiornaNovita
+} from '../validators/admin.schema.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { aggiornaEsercizio, creaEsercizio } from '../services/esercizi.service.js';
 import { elencoDaControllare, segnaControllato, unisciAllenamenti } from '../services/allenamentiDaControllare.service.js';
@@ -47,7 +52,7 @@ router.put('/utenti/:id/reset-password', async (req, res, next) => {
 // ============================
 
 // POST /api/v1/admin/palestre — Create a gym
-router.post('/palestre', async (req, res, next) => {
+router.post('/palestre', valida({ body: schemaCreaPalestra }), async (req, res, next) => {
   try {
     const { nomeCatena, citta, indirizzo, nazione, googlePlaceId } = req.body;
     const palestra = await prisma.palestra.create({
@@ -58,7 +63,7 @@ router.post('/palestre', async (req, res, next) => {
 });
 
 // PUT /api/v1/admin/palestre/:id — Update a gym
-router.put('/palestre/:id', async (req, res, next) => {
+router.put('/palestre/:id', valida({ body: schemaAggiornaPalestra }), async (req, res, next) => {
   try {
     const { nomeCatena, citta, indirizzo, nazione, googlePlaceId } = req.body;
     const palestra = await prisma.palestra.update({
@@ -95,10 +100,40 @@ router.put('/esercizi/:id', async (req, res, next) => {
   } catch (errore) { next(errore); }
 });
 
+/**
+ * An exercise that is in a plan, in a logged workout or in a personal record
+ * cannot be deleted (the database refuses): 409 saying where it is used.
+ * (Favourites go with it, a suggestion only loses its link.)
+ */
+async function verificaEsercizioNonInUso(id) {
+  const esercizio = await prisma.esercizio.findUnique({
+    where: { id },
+    select: { _count: { select: { eserciziScheda: true, logSerie: true, recordPersonali: true } } }
+  });
+  if (!esercizio) return; // the delete answers 404
+  const { eserciziScheda, logSerie, recordPersonali } = esercizio._count;
+  const dove = [
+    eserciziScheda && t('adminRoutes.usoInSchede', { count: eserciziScheda }),
+    logSerie && t('adminRoutes.usoInSerie', { count: logSerie }),
+    recordPersonali && t('adminRoutes.usoInRecord', { count: recordPersonali })
+  ].filter(Boolean);
+  if (dove.length === 0) return;
+  const elenco = new Intl.ListFormat(localeDi(), { style: 'long', type: 'conjunction' }).format(dove);
+  throw new ErroreConflitto(t('adminRoutes.esercizioInUso', { dove: elenco }));
+}
+
 // DELETE /api/v1/admin/esercizi/:id — Delete an exercise
 router.delete('/esercizi/:id', async (req, res, next) => {
   try {
-    await prisma.esercizio.delete({ where: { id: parseInt(req.params.id) } });
+    const id = parseInt(req.params.id);
+    await verificaEsercizioNonInUso(id);
+    try {
+      await prisma.esercizio.delete({ where: { id } });
+    } catch (errore) {
+      // Used by someone between the check and the delete: same answer
+      if (errore.code === 'P2003') await verificaEsercizioNonInUso(id);
+      throw errore;
+    }
     res.json({ successo: true, messaggio: t('adminRoutes.esercizioEliminato') });
   } catch (errore) { next(errore); }
 });
@@ -108,7 +143,7 @@ router.delete('/esercizi/:id', async (req, res, next) => {
 // ============================
 
 // POST /api/v1/admin/attrezzature — Create a piece of equipment
-router.post('/attrezzature', async (req, res, next) => {
+router.post('/attrezzature', valida({ body: schemaCreaAttrezzatura }), async (req, res, next) => {
   try {
     const { nome, categoria, muscoliBersaglio } = req.body;
     const attrezzatura = await prisma.attrezzatura.create({
@@ -123,7 +158,7 @@ router.post('/attrezzature', async (req, res, next) => {
 // ============================
 
 // GET /api/v1/admin/suggerimenti — List every suggestion
-router.get('/suggerimenti', async (req, res, next) => {
+router.get('/suggerimenti', valida({ query: schemaElencoSuggerimenti }), async (req, res, next) => {
   try {
     const { stato } = req.query;
     const filtri = {};
@@ -153,7 +188,7 @@ router.get('/suggerimenti/conteggio', async (req, res, next) => {
 });
 
 // PATCH /api/v1/admin/suggerimenti/:id/approva — Approve and create the exercise
-router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
+router.patch('/suggerimenti/:id/approva', valida({ body: schemaApprovaSuggerimento }), async (req, res, next) => {
   try {
     const suggerimentoId = parseInt(req.params.id);
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaRichiestaId, descrizione, linkVideo } = req.body;
@@ -172,13 +207,19 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
       return res.status(400).json({ successo: false, messaggio: t('adminRoutes.suggerimentoGiaGestito') });
     }
 
+    // The equipment must exist (the database would refuse a wrong id)
+    const attrezzaturaId = attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null;
+    if (attrezzaturaId && !await prisma.attrezzatura.findUnique({ where: { id: attrezzaturaId }, select: { id: true } })) {
+      throw new ErroreValidazione(t('adminRoutes.attrezzaturaNonTrovata'));
+    }
+
     // Create the real exercise (uses the fields edited by the admin or the original ones)
     const esercizio = await prisma.esercizio.create({
       data: {
         nome: nome || suggerimento.nome,
         gruppoMuscoloPrimario: gruppoMuscoloPrimario || suggerimento.gruppoMuscoloPrimario,
         gruppoMuscoloSecondario: (gruppoMuscoloSecondario !== undefined ? gruppoMuscoloSecondario : suggerimento.gruppoMuscoloSecondario) || null,
-        attrezzaturaRichiestaId: attrezzaturaRichiestaId ? parseInt(attrezzaturaRichiestaId) : null,
+        attrezzaturaRichiestaId: attrezzaturaId,
         descrizione: (descrizione !== undefined ? descrizione : suggerimento.descrizione) || null,
         linkVideo: linkVideo || null
       },
@@ -212,7 +253,7 @@ router.patch('/suggerimenti/:id/approva', async (req, res, next) => {
 });
 
 // PATCH /api/v1/admin/suggerimenti/:id/rifiuta — Reject a suggestion
-router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
+router.patch('/suggerimenti/:id/rifiuta', valida({ body: schemaRifiutaSuggerimento }), async (req, res, next) => {
   try {
     const suggerimentoId = parseInt(req.params.id);
     const { motivoRifiuto } = req.body;
@@ -256,7 +297,7 @@ router.patch('/suggerimenti/:id/rifiuta', async (req, res, next) => {
 // ============================
 
 // PUT /api/v1/admin/banner — Edit the banner
-router.put('/banner', async (req, res, next) => {
+router.put('/banner', valida({ body: schemaBanner }), async (req, res, next) => {
   try {
     const { visibile, testo } = req.body;
     const bannerPath = path.resolve('prisma/dati/banner.json');
@@ -319,10 +360,10 @@ router.get('/novita', async (req, res, next) => {
 });
 
 // POST /api/v1/admin/novita — create
-router.post('/novita', async (req, res, next) => {
+router.post('/novita', valida({ body: schemaCreaNovita }), async (req, res, next) => {
   try {
     const { titolo, sottotitolo, punti, icona, immagine, ctaTesto, ctaRotta, coloreInizio, coloreFine, attiva, ordine } = req.body;
-    if (!titolo) return res.status(400).json({ successo: false, messaggio: t('adminRoutes.titoloObbligatorio') });
+    if (!titolo?.trim()) return res.status(400).json({ successo: false, messaggio: t('adminRoutes.titoloObbligatorio') });
     const nuova = await prisma.novita.create({
       data: {
         titolo,
@@ -343,7 +384,7 @@ router.post('/novita', async (req, res, next) => {
 });
 
 // PUT /api/v1/admin/novita/:id — update
-router.put('/novita/:id', async (req, res, next) => {
+router.put('/novita/:id', valida({ body: schemaAggiornaNovita }), async (req, res, next) => {
   try {
     const { titolo, sottotitolo, punti, icona, immagine, ctaTesto, ctaRotta, coloreInizio, coloreFine, attiva, ordine } = req.body;
     const puntiNorm = normalizzaPunti(punti);
