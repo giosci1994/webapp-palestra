@@ -1,7 +1,25 @@
 {
-  "versione": "1.6.1",
+  "versione": "1.6.2",
   "build": "2026-10-26",
   "changelog": [
+    {
+      "versione": "1.6.2",
+      "data": "2026-10-26",
+      "modifiche": [
+        "Allenati Ora mostra in cima gli allenamenti in programma: quello di oggi pronto da iniziare (o da riprendere, se l'hai già cominciato) e i prossimi della settimana",
+        "Schede preferite: tocca la stella su una scheda e la ritrovi per prima, in Allenati Ora e in Gestione Schede, dove c'è anche la scheda Preferite",
+        "Nello Storico il cestino per eliminare un allenamento si vede sempre, anche sul telefono: prima compariva solo passandoci sopra con il mouse. Lo stesso vale per \"Elimina\" in Gestione Schede",
+        "Le notifiche si possono cancellare: una alla volta con la ✕ o tutte insieme con \"Elimina tutte\", dalla campanella e dalla scheda Notifiche della Chat",
+        "Profilo → Fatturazione non dice più \"in lavorazione\": l'app è gratuita, e se vuoi sostenerla c'è il pulsante Buy Me a Coffee"
+      ],
+      "modificheEn": [
+        "Train now shows your scheduled workouts on top: today's ready to start (or to resume, if you already started it) and the next ones of the week",
+        "Favorite plans: tap the star on a plan and it comes first, on Train now and in Manage plans, which also has a Favorites tab",
+        "In History the bin to delete a workout is always in sight, on the phone too: it used to appear only when hovering with the mouse. The same goes for \"Delete\" in Manage plans",
+        "Notifications can be deleted: one at a time with the ✕ or all at once with \"Delete all\", from the bell and from the Notifications tab in Chat",
+        "Profile → Billing no longer says \"Work in progress\": the app is free, and if you want to support it there is a Buy Me a Coffee button"
+      ]
+    },
     {
       "versione": "1.6.1",
       "data": "2026-10-26",
