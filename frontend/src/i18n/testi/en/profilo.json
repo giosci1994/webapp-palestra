@@ -73,7 +73,17 @@
     "gamification": "Gamification",
     "gamificationPartecipa": "✨ Take part in leaderboards and badges",
     "gamificationAttiva": "Experience points, levels and leaderboards are on.",
-    "gamificationDisattivata": "Gamification is off — you won't appear on the leaderboards. You can turn it back on any time."
+    "gamificationDisattivata": "Gamification is off — you won't appear on the leaderboards. You can turn it back on any time.",
+    "chat": {
+      "titolo": "Chat messages",
+      "descrizione": "The messages you send are deleted automatically after this time, for the people who received them too.",
+      "etichetta": "Keep the messages I send for",
+      "perSempre": "Forever",
+      "anni_one": "{count} year",
+      "anni_other": "{count} years",
+      "giorni_one": "{count} day",
+      "giorni_other": "{count} days"
+    }
   },
   "esportazione": {
     "titolo": "Your data",

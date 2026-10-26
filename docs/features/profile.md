@@ -8,7 +8,7 @@ The Profile page (`frontend/src/pagine/Profilo.jsx`) holds the user's data and s
 |-----|---------------|
 | Profilo | Photo, name, birth date, weight, height, gender, bio, fitness goal, gym, request to become a trainer |
 | Notifiche | Push notifications on this device and which ones to get |
-| Privacy | What other members can see, gamification on/off, data export |
+| Privacy | What other members can see, gamification on/off, how long the chat messages you send are kept, data export |
 | Personal Trainer | Your trainer, or finding and joining one |
 | Sicurezza | Password, passkeys, linked devices |
 | Fatturazione | Placeholder: not built yet |

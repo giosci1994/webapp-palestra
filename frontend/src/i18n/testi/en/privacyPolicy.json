@@ -28,7 +28,7 @@
     "intro": "Personal data is retained for as long as necessary for the purposes for which it was collected:",
     "account": "Account data: until the account is deleted",
     "allenamento": "Workout data: until the account is deleted or upon request",
-    "chat": "Chat messages: according to the retention settings configured by the user (default: 7 days)",
+    "chat": "Chat messages: for the time each user chooses in Profile → Privacy for the messages they send (default: 7 days)",
     "log": "Technical logs: 90 days at most"
   },
   "diritti": {

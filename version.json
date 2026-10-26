@@ -1,7 +1,19 @@
 {
-  "versione": "1.6.0",
+  "versione": "1.7.0",
   "build": "2026-10-26",
   "changelog": [
+    {
+      "versione": "1.7.0",
+      "data": "2026-10-26",
+      "modifiche": [
+        "In Profilo → Privacy scegli per quanto tempo restano in chat i messaggi che invii: 7, 30 o 90 giorni, un anno o per sempre",
+        "Subito dopo l'accesso, la Privacy del Profilo mostrava le impostazioni predefinite invece delle tue, e toccando un interruttore le salvava: ora carica sempre le tue"
+      ],
+      "modificheEn": [
+        "In Profile → Privacy you choose how long the messages you send stay in the chat: 7, 30 or 90 days, a year or forever",
+        "Right after signing in, Profile → Privacy showed the default settings instead of yours, and a toggle saved them: it now always loads yours"
+      ]
+    },
     {
       "versione": "1.6.0",
       "data": "2026-10-25",

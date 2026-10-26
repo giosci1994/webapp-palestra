@@ -18,8 +18,8 @@ The chat page has three tabs: Chat, Notifiche (notifications) and Richieste (req
 
 - **Request first**: nobody can send a message until the recipient has accepted the contact request.
 - **Blocking**: a request can be answered by blocking the sender (state `BLOCCATA`).
-- **Retention**: messages are kept for `chatRetentionGiorni` days, a field of each user (default 7, 0 = forever). The app has no setting for it yet.
-- **Cleanup**: every 6 hours the server deletes the expired messages.
+- **Retention**: the messages a user sends are kept for `chatRetentionGiorni` days (default 7, 0 = forever), then deleted for everyone in the conversation. Each user chooses it in Profile → Privacy: 7, 30 or 90 days, 1 year or forever (`utils/durataChat.js`); the server accepts whole days from 0 to 365.
+- **Cleanup**: every 6 hours the server deletes the expired messages (`pulisciMessaggiScaduti` in `chat.service.js`).
 
 ## Flow
 

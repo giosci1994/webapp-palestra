@@ -28,7 +28,7 @@
     "intro": "I dati personali vengono conservati per la durata necessaria alle finalità per cui sono stati raccolti:",
     "account": "Dati account: fino alla cancellazione dell'account",
     "allenamento": "Dati di allenamento: fino alla cancellazione dell'account o su richiesta",
-    "chat": "Messaggi chat: secondo le impostazioni di retention configurate dall'utente (default: 7 giorni)",
+    "chat": "Messaggi chat: per il tempo che ogni utente sceglie in Profilo → Privacy per i messaggi che invia (default: 7 giorni)",
     "log": "Log tecnici: massimo 90 giorni"
   },
   "diritti": {
