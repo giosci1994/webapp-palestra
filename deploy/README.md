@@ -4,8 +4,8 @@ The production server updates itself when a new release comes out on GitHub. `de
 
 ## Publishing a version
 
-1. The pull request bumps `version.json` to the new version (see CLAUDE.md) and, if there are any, adds the stories to `backend/prisma/novita.json`.
-2. Merge into `master`. More pull requests can go into the same version: they add their lines to its changelog entry.
+1. When the version is ready, one pull request sets `version.json` to its number, with a changelog entry for everything merged since the last release (see CLAUDE.md), and, if there are any, adds the stories to `backend/prisma/novita.json`. The other pull requests do not touch `version.json`.
+2. Merge it into `master`.
 3. When the version is ready: on GitHub, **Actions → Rilascia → Run workflow** (branch `master`). It creates the tag `v` + the version and the release on the tip of `master`, with the changelog entry as notes, after checking that the version is new, has its changelog entry and that the tests of that commit finished green (`deploy/pubblica-release.sh`). Tick **Solo prova** to run the checks without publishing.
 
    By hand it still works: **Releases → Draft a new release**, tag `v` + the version in `version.json`, target `master`, published after the version commit is on `master`.
