@@ -13,6 +13,8 @@
   "chiaveNonConfigurata": "API Key di Google Gemini non configurata. Visita https://aistudio.google.com/apikey per ottenerne una gratuita.",
   "messaggioVuoto": "Il messaggio non può essere vuoto",
   "messaggioTroppoLungo": "Il messaggio non può superare 1000 caratteri",
+  "messaggioNonValido": "Il messaggio deve essere un testo",
+  "conversazioneNonValida": "La conversazione non è valida",
   "conversazioneNonTrovata": "Conversazione AI non trovata",
   "limiteRichieste": "Limite di richieste AI raggiunto, riprova tra qualche minuto.",
   "erroreComunicazione": "Errore nella comunicazione con l'assistente AI. Riprova più tardi."

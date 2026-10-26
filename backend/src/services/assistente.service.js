@@ -9,6 +9,7 @@ import { ErroreApp, ErroreValidazione } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { fusoCorrente } from '../utils/date.js';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 import { titoloAllenamento } from '../utils/titoloAllenamento.js';
 
 // Initializes the Gemini client (lazily)
@@ -37,12 +38,24 @@ function ottieniClientAI() {
  * Sends a message to the AI assistant along with the user's context.
  */
 export async function chiediAssistente(utenteId, messaggio, conversazioneAiId = null) {
+  // Checked before the AI client is created: wrong data is a 400 even when
+  // the assistant is not set up. A NUL character cannot be stored by the database.
+  if (messaggio !== undefined && messaggio !== null && (typeof messaggio !== 'string' || messaggio.includes('\u0000'))) {
+    throw new ErroreValidazione(t('assistenteService.messaggioNonValido'));
+  }
+
   if (!messaggio || messaggio.trim().length === 0) {
     throw new ErroreValidazione(t('assistenteService.messaggioVuoto'));
   }
 
   if (messaggio.length > 1000) {
     throw new ErroreValidazione(t('assistenteService.messaggioTroppoLungo'));
+  }
+
+  // An id of a conversation is a positive integer (null starts a new one)
+  if (conversazioneAiId !== null && conversazioneAiId !== undefined &&
+      !(Number.isInteger(conversazioneAiId) && conversazioneAiId > 0 && conversazioneAiId <= ID_MASSIMO)) {
+    throw new ErroreValidazione(t('assistenteService.conversazioneNonValida'));
   }
 
   const ai = ottieniClientAI();

@@ -1,5 +1,8 @@
 {
   "nomeEGruppoObbligatori": "Nome e gruppo muscolare primario sono obbligatori",
+  "campiNonTesto": "Nome, gruppi muscolari, attrezzatura e descrizione devono essere testi",
+  "campiTroppoLunghi": "Nome, gruppi muscolari e attrezzatura non possono superare {max} caratteri",
+  "descrizioneTroppoLunga": "La descrizione non può superare {max} caratteri",
   "nuovoSuggerimentoTitolo": "Nuovo suggerimento esercizio",
   "nuovoSuggerimentoMessaggio": "{utente} ha suggerito: \"{esercizio}\"",
   "suggerimentoInviato": "Suggerimento inviato con successo! L'amministratore lo esaminerà."

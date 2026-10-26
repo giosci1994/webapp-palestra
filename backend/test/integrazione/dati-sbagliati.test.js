@@ -23,7 +23,6 @@ const ANCORA_500 = new Set([
   'PATCH /utenti/completa-profilo',
   'GET /utenti',
   'PATCH /utenti/:id/ruolo',
-  'POST /assistente/chiedi',
   'POST /schede',
   'PUT /schede/:id',
   'POST /schede/:id/esercizi',
@@ -39,13 +38,11 @@ const ANCORA_500 = new Set([
   'GET /admin/suggerimenti',
   'POST /admin/novita',
   'PUT /admin/novita/:id',
-  'POST /suggerimenti-esercizi',
   'GET /pt/appuntamenti',
   'POST /pt/appuntamenti',
   'PATCH /pt/appuntamenti/:id',
   'POST /pt/schede',
-  'POST /pt/annunci',
-  'POST /misurazioni'
+  'POST /pt/annunci'
 ]);
 
 // The fields the routes read from the body
