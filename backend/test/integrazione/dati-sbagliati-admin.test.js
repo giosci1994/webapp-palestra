@@ -29,11 +29,11 @@ beforeEach(async () => {
 
 const comeAdmin = (metodo, percorso, corpo, lingua) => server.richiesta(metodo, percorso, { token: tokenPer(admin), corpo, lingua });
 
-/** The answer is a 400 about the given field, in Italian */
+/** The answer is a 400 about the given field; the main message is the first reason, the one the app shows */
 function assertCampoNonValido(risposta, campo, nota = campo) {
   assert.equal(risposta.stato, 400, nota);
-  assert.equal(risposta.corpo.messaggio, 'Dati della richiesta non validi', nota);
   assert.ok(risposta.corpo.dettagli.some(d => d.campo === campo), `${nota}: ${JSON.stringify(risposta.corpo.dettagli)}`);
+  assert.equal(risposta.corpo.messaggio, risposta.corpo.dettagli[0].messaggio, nota);
 }
 
 describe('gyms', () => {
@@ -52,7 +52,7 @@ describe('gyms', () => {
 
     const inglese = await comeAdmin('POST', '/admin/palestre', { ...valida, nomeCatena: { x: 1 } }, 'en');
     assert.equal(inglese.stato, 400);
-    assert.equal(inglese.corpo.messaggio, 'Invalid request data');
+    assert.equal(inglese.corpo.messaggio, 'This field must be a text');
     assert.equal(inglese.corpo.dettagli[0].messaggio, 'This field must be a text');
 
     assert.equal((await comeAdmin('POST', '/admin/palestre', [])).stato, 400);
@@ -351,7 +351,7 @@ describe('"what\'s new" stories', () => {
         ['Notifiche', 'Sotto', true, 3, corpoValido.punti]
       );
       const inglese = await comeAdmin('PUT', `/admin/novita/${novita.id}`, { titolo: { x: 1 } }, 'en');
-      assert.equal(inglese.corpo.messaggio, 'Invalid request data');
+      assert.equal(inglese.corpo.messaggio, 'This field must be a text');
       assert.equal(inglese.corpo.dettagli[0].messaggio, 'This field must be a text');
     });
 

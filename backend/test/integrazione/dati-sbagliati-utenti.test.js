@@ -49,11 +49,11 @@ describe('changing the password', () => {
     const corpo = { vecchiaPassword: { x: 1 }, nuovaPassword: 'NuovaPassword1' };
 
     const italiano = await chiedi('POST', '/utenti/cambia-password', corpo);
-    assert.equal(italiano.corpo.messaggio, 'Dati della richiesta non validi');
+    assert.equal(italiano.corpo.messaggio, 'Le password devono essere un testo');
     assert.deepEqual(dettagli(italiano), [{ campo: 'vecchiaPassword', messaggio: 'Le password devono essere un testo' }]);
 
     const inglese = await chiedi('POST', '/utenti/cambia-password', corpo, { lingua: 'en' });
-    assert.equal(inglese.corpo.messaggio, 'Invalid request data');
+    assert.equal(inglese.corpo.messaggio, 'The passwords must be text');
     assert.deepEqual(dettagli(inglese), [{ campo: 'vecchiaPassword', messaggio: 'The passwords must be text' }]);
   });
 

@@ -82,7 +82,10 @@ describe('suggesting an exercise, with wrong data', () => {
       for (const campo of ['nome', 'gruppoMuscoloPrimario', 'gruppoMuscoloSecondario', 'attrezzaturaSuggerita', 'descrizione']) {
         const risposta = await suggerisci({ ...base, [campo]: valore });
         assert.equal(risposta.stato, 400, `${campo} ${JSON.stringify(valore)}`);
-        assert.equal(risposta.corpo.messaggio, 'Nome, gruppi muscolari, attrezzatura e descrizione devono essere testi');
+        // A NUL character is refused before the routes (app.js), with its own message
+        assert.equal(risposta.corpo.messaggio, typeof valore === 'string'
+          ? 'La richiesta contiene un carattere non ammesso'
+          : 'Nome, gruppi muscolari, attrezzatura e descrizione devono essere testi');
       }
     }
     const inglese = await suggerisci({ nome: { x: 1 }, gruppoMuscoloPrimario: 'Glutei' }, 'en');
@@ -181,7 +184,10 @@ describe('body measurements, with wrong data', () => {
     for (const note of [{ x: 1 }, -5, 99999, ['a'], true, 'a\u0000b']) {
       const risposta = await misura({ peso: 80, note });
       assert.equal(risposta.stato, 400, JSON.stringify(note));
-      assert.equal(risposta.corpo.messaggio, 'Le note devono essere un testo');
+      // A NUL character is refused before the routes (app.js), with its own message
+      assert.equal(risposta.corpo.messaggio, typeof note === 'string'
+        ? 'La richiesta contiene un carattere non ammesso'
+        : 'Le note devono essere un testo');
     }
     const lunghe = await misura({ peso: 80, note: 'a'.repeat(2001) }, { lingua: 'en' });
     assert.equal(lunghe.stato, 400);

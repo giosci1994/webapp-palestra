@@ -1,6 +1,7 @@
 // Every API route, sent wrong data: a text, an object, a negative number, a
-// huge number and a list in every field the routes read, and nonsense in the
-// query string. The answer must be a client error (400, 403, 404…), never a
+// huge number, a list, a text with a NUL character and a number too big for
+// the database in every field the routes read, and nonsense in the query
+// string. The answer must be a client error (400, 403, 404…), never a
 // 500: a 500 means the data reached the database or the code unchecked. (A
 // 503, a service that is not set up like the AI assistant without its key, is
 // fine.)
@@ -17,6 +18,8 @@ import { avviaServer } from '../supporto/server.js';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
 import { creaUtente, creaEsercizio, creaScheda, creaSessione, creaRecord, tokenPer } from '../supporto/dati.js';
 import router from '../../src/routes/indice.js';
+import { limitatoreGlobale, limitatoreAuth, limitatoreAI } from '../../src/middleware/limitatore.js';
+import { azzeraTentativi } from '../../src/utils/tentativiAccesso.js';
 
 const ANCORA_500 = new Set([]);
 
@@ -34,9 +37,17 @@ const CAMPI = [
   'conferma', 'vecchiaPassword', 'nuovaPassword', 'notePT', 'pesoEffettivo', 'repEffettive', 'serieNumero',
   'visibilita', 'ids', 'subscription', 'endpoint', 'domanda', 'conversazioneId'
 ];
-const VALORI = ['abc', { x: 1 }, -5, 99999, ['a']];
+const VALORI = ['abc', { x: 1 }, -5, 99999, ['a'], 'a\u0000b', 99999999999];
 const QUERY = '?giorni=abc&da=abc&a=abc&clienteId=abc&stato=abc&ruolo=abc&pagina=abc&limite=abc' +
   '&attrezzaturaId=abc&q=ab&ricerca=x&ids=abc&esercizi=abc&dal=abc&al=abc';
+
+// Over a thousand requests from the same user: the rate limits, and the lock
+// after too many wrong passwords, would answer 429 long before the last
+// routes, which would never be tried. Each request starts with them at zero.
+function azzeraLimiti(utente) {
+  for (const limitatore of [limitatoreGlobale, limitatoreAuth, limitatoreAI]) limitatore.resetKey(`user:${utente.id}`);
+  azzeraTentativi(utente.email);
+}
 
 /** "/sessioni" from the pattern Express 4 uses to mount a sub-router */
 const prefissoDi = strato => strato.regexp.source
@@ -122,10 +133,16 @@ describe('wrong data', () => {
 
       let errore = null;
       for (const { corpo, query = '', come } of tentativi) {
+        azzeraLimiti(dati.admin);
         const risposta = await server.richiesta(metodo, indirizzo + query, { token: tokenPer(dati.admin), corpo });
         if (metodo !== 'GET' && (risposta.stato < 400 || risposta.stato >= 500)) cambiati = true;
         if (risposta.stato === 500) {
           errore = `500 with ${come}: ${risposta.corpo?.messaggio?.split('\n').filter(Boolean).pop()}`;
+          break;
+        }
+        // A rate limit means the route was not tried at all
+        if (risposta.stato === 429) {
+          errore = `429 with ${come}: not tried`;
           break;
         }
       }
@@ -136,5 +153,18 @@ describe('wrong data', () => {
 
     assert.deepEqual(nuove, [], 'Routes answering 500 to wrong data');
     assert.deepEqual([...guarite], [], 'They no longer answer 500: take them off ANCORA_500');
+  });
+
+  it('a NUL character, which the database cannot store, is refused before any route, in the language of the request', async () => {
+    const { admin } = await preparaDati();
+    azzeraLimiti(admin);
+    const corpo = { titolo: 'Forza\u0000', esercizi: [] };
+    const italiano = await server.richiesta('POST', '/schede', { token: tokenPer(admin), corpo });
+    const inglese = await server.richiesta('POST', '/schede', { token: tokenPer(admin), corpo, lingua: 'en' });
+    assert.deepEqual([italiano.stato, italiano.corpo.messaggio], [400, 'La richiesta contiene un carattere non ammesso']);
+    assert.deepEqual([inglese.stato, inglese.corpo.messaggio], [400, 'The request contains a character that is not allowed']);
+    const nellaQuery = await server.richiesta('GET', '/esercizi?ricerca=a%00b', { token: tokenPer(admin) });
+    assert.equal(nellaQuery.stato, 400);
+    assert.equal(await prisma.schedaAllenamento.count({ where: { titolo: { startsWith: 'Forza' } } }), 0);
   });
 });

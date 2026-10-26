@@ -27,12 +27,22 @@ const notifiche = () => prisma.allenamentoNotifica.count();
 const NUL = 'a\u0000b';
 const FUORI_INTERVALLO = '+275760-09-13T00:00:00.000Z';
 
-/** Every body is refused with a 400 whose first detail is about `campo`; returns the responses */
+/**
+ * Every body is refused with a 400 whose first detail is about `campo`; returns
+ * the responses. A NUL character is refused before the routes (app.js), with
+ * its own message.
+ */
 async function rifiutati(metodo, percorso, corpi, campo) {
   const risposte = [];
   for (const corpo of corpi) {
     const risposta = await comePT(metodo, percorso, corpo);
     assert.equal(risposta.stato, 400, `${JSON.stringify(corpo)} → ${risposta.stato} ${risposta.corpo?.messaggio}`);
+    // JSON writes the NUL character as the six characters \u0000
+    if (JSON.stringify(corpo).includes('\\u0000')) {
+      assert.equal(risposta.corpo.messaggio, 'La richiesta contiene un carattere non ammesso');
+      risposte.push(risposta);
+      continue;
+    }
     assert.equal(risposta.corpo.codice, 'VALIDAZIONE_FALLITA');
     assert.equal(risposta.corpo.dettagli[0].campo, campo, JSON.stringify(corpo));
     risposte.push(risposta);
@@ -50,7 +60,7 @@ describe('GET /pt/appuntamenti', () => {
     }
 
     const italiano = await comePT('GET', '/pt/appuntamenti?da=abc');
-    assert.equal(italiano.corpo.messaggio, 'Dati della richiesta non validi');
+    assert.equal(italiano.corpo.messaggio, 'La data di inizio non è valida');
     assert.deepEqual(italiano.corpo.dettagli.map(d => [d.campo, d.messaggio]), [['da', 'La data di inizio non è valida']]);
     const inglese = await comePT('GET', '/pt/appuntamenti?a=abc', undefined, 'en');
     assert.deepEqual(inglese.corpo.dettagli.map(d => [d.campo, d.messaggio]), [['a', 'The end date is not valid']]);
@@ -104,7 +114,7 @@ describe('POST /pt/appuntamenti', () => {
     assert.equal(italiano.corpo.dettagli[0].messaggio, 'Serve un ID cliente valido');
     const inglese = await comePT('POST', '/pt/appuntamenti', corpo({ dataOra: 'abc' }), 'en');
     assert.equal(inglese.stato, 400);
-    assert.equal(inglese.corpo.messaggio, 'Invalid request data');
+    assert.equal(inglese.corpo.messaggio, 'A valid date and time are required');
     assert.equal(inglese.corpo.dettagli[0].messaggio, 'A valid date and time are required');
   });
 

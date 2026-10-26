@@ -7,6 +7,7 @@
 // them into the request's language when it builds the response.
 
 import { z } from 'zod';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 
 /** Schema for sending a contact request */
 export const schemaRichiestaContatto = z.object({
@@ -14,6 +15,7 @@ export const schemaRichiestaContatto = z.object({
     .number({ required_error: 'chatSchema.destinatarioIdObbligatorio' })
     .int()
     .positive('chatSchema.destinatarioIdNonValido')
+    .max(ID_MASSIMO, 'chatSchema.destinatarioIdNonValido')
 });
 
 /** Schema for the answer to a contact request */

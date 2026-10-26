@@ -48,6 +48,8 @@ describe('exercises created by the admin and by a trainer', () => {
       [{ nome: 'x'.repeat(201), gruppoMuscoloPrimario: 'Petto' }, /200/],
       [{ nome: 'Squat', gruppoMuscoloPrimario: 'Gambe', linkVideo: 'javascript:alert(1)' }, /link/i],
       [{ nome: 'Squat', gruppoMuscoloPrimario: 'Gambe', attrezzaturaRichiestaId: 99999 }, /Attrezzatura/],
+      // Too big for the database to even look it up
+      [{ nome: 'Squat', gruppoMuscoloPrimario: 'Gambe', attrezzaturaRichiestaId: 99999999999 }, /Attrezzatura/],
       [{ nome: 'Squat', gruppoMuscoloPrimario: 'Gambe', difficulty: { livello: 3 } }, /difficulty/]
     ];
     for (const [corpo, messaggio] of casi) {

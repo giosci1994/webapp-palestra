@@ -7,6 +7,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreValidazione } from '../utils/errori.js';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 import { t } from '../i18n/index.js';
 import { traduciNomeEsercizio } from '../utils/traduzioneEsercizi.js';
 
@@ -51,7 +52,9 @@ async function leggiEsercizio(corpo = {}) {
   const attrezzatura = corpo.attrezzaturaRichiestaId;
   if (attrezzatura != null && attrezzatura !== '') {
     const id = Number(attrezzatura);
-    const esiste = Number.isInteger(id) && id > 0 && await prisma.attrezzatura.findUnique({ where: { id }, select: { id: true } });
+    // Beyond ID_MASSIMO the database cannot even look it up
+    const esiste = Number.isInteger(id) && id > 0 && id <= ID_MASSIMO
+      && await prisma.attrezzatura.findUnique({ where: { id }, select: { id: true } });
     if (!esiste) throw new ErroreValidazione(t('eserciziService.attrezzaturaNonTrovata'));
     dati.attrezzaturaRichiestaId = id;
   }
