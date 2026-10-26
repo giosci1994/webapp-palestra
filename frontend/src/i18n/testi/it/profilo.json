@@ -73,7 +73,17 @@
     "gamification": "Gamification",
     "gamificationPartecipa": "✨ Partecipa a classifiche e badge",
     "gamificationAttiva": "Punti esperienza, livelli e classifiche sono attivi.",
-    "gamificationDisattivata": "Gamification disattivata — non apparirai nelle classifiche. Puoi riattivare in qualsiasi momento."
+    "gamificationDisattivata": "Gamification disattivata — non apparirai nelle classifiche. Puoi riattivare in qualsiasi momento.",
+    "chat": {
+      "titolo": "Messaggi in chat",
+      "descrizione": "I messaggi che invii si cancellano da soli dopo questo tempo, anche per chi li ha ricevuti.",
+      "etichetta": "Conserva i messaggi che invio per",
+      "perSempre": "Per sempre",
+      "anni_one": "{count} anno",
+      "anni_other": "{count} anni",
+      "giorni_one": "{count} giorno",
+      "giorni_other": "{count} giorni"
+    }
   },
   "esportazione": {
     "titolo": "I tuoi dati",

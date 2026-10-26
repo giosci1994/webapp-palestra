@@ -7,5 +7,6 @@
   "passwordObbligatorie": "Vecchia password e nuova password sono obbligatorie",
   "nuovaPasswordCorta": "La nuova password deve avere almeno 8 caratteri",
   "passwordAttualeErrata": "La password attuale non è corretta",
-  "impossibileEliminareSuperAdmin": "Impossibile eliminare un SuperAdmin. Declassalo prima a UTENTE."
+  "impossibileEliminareSuperAdmin": "Impossibile eliminare un SuperAdmin. Declassalo prima a UTENTE.",
+  "durataChatNonValida": "La durata dei messaggi deve essere un numero intero di giorni da 0 (per sempre) a {max}"
 }

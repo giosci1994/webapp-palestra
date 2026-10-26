@@ -156,6 +156,21 @@ export async function ottieniProfilo(utenteId) {
   return utente;
 }
 
+/** Longest chat retention that can be chosen, in days */
+const DURATA_CHAT_MASSIMA = 365;
+
+/**
+ * How long the messages the user sends stay in the chat (Profile → Privacy):
+ * whole days from 1 to DURATA_CHAT_MASSIMA, or 0 to keep them forever. The
+ * cleanup job (chat.service.js) deletes the user's older messages.
+ */
+function leggiDurataChat(valore) {
+  if (!Number.isInteger(valore) || valore < 0 || valore > DURATA_CHAT_MASSIMA) {
+    throw new ErroreValidazione(t('utentiService.durataChatNonValida', { max: DURATA_CHAT_MASSIMA }));
+  }
+  return valore;
+}
+
 /**
  * Updates the user's profile data.
  */
@@ -164,7 +179,7 @@ export async function aggiornaProfilo(utenteId, dati) {
   const campiConsentiti = [
     'nome', 'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm',
     'genere', 'bio', 'obiettivoFitness', 'preferenzeVisibilita',
-    'gamificationAttiva', 'palestraId', 'lingua'
+    'gamificationAttiva', 'palestraId', 'lingua', 'chatRetentionGiorni'
   ];
 
   const datiAggiornamento = {};
@@ -181,6 +196,8 @@ export async function aggiornaProfilo(utenteId, dati) {
         datiAggiornamento[campo] = dati[campo] ? parseInt(dati[campo]) : null;
       } else if (campo === 'lingua') {
         datiAggiornamento[campo] = leggiLingua(dati[campo]);
+      } else if (campo === 'chatRetentionGiorni') {
+        datiAggiornamento[campo] = leggiDurataChat(dati[campo]);
       } else {
         datiAggiornamento[campo] = dati[campo];
       }

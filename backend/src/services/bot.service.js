@@ -13,6 +13,7 @@ import redis from '../config/redis.js';
 import { ErroreApp, ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
+import { macchinaCardio, dovEsercizioCardio } from '../utils/macchineCardio.js';
 import { fusoCorrente } from '../utils/date.js';
 
 // --- Gemini client (lazy) ---
@@ -186,25 +187,11 @@ async function cercaEserciziPerDescrizione(descrizione, limite = 5) {
   }));
 }
 
-// Cardio machines: keywords -> canonical exercise name (created in the seed).
-const MACCHINE_CARDIO = [
-  { nome: 'Tapis Roulant', chiavi: ['tapis', 'roulant', 'tappeto', 'treadmill', 'corsa', 'camminata', 'corro', 'cammino', 'corri'] },
-  { nome: 'Cyclette', chiavi: ['cyclette', 'ciclette', 'cyclet', 'bici', 'bike', 'spinning', 'pedala', 'pedalo'] },
-  { nome: 'Ellittica', chiavi: ['ellittica', 'elittica', 'elliptical', 'crosstrainer', 'cross trainer'] },
-  { nome: 'Vogatore (Rower)', chiavi: ['vogatore', 'rower', 'remo', 'rowing', 'voga'] },
-  { nome: 'Stepper', chiavi: ['stepper', 'step', 'scale', 'climber'] },
-  { nome: 'Air Bike', chiavi: ['air bike', 'airbike', 'assault', 'air-bike'] }
-];
-
-/** Resolves the requested cardio machine to the matching catalog exercise. */
-async function risolviMacchinaCardio(macchina) {
-  const m = String(macchina || '').toLowerCase().trim();
-  if (!m) return null;
-  const scelta = MACCHINE_CARDIO.find(
-    (c) => c.chiavi.some((k) => m.includes(k)) || m.includes(c.nome.toLowerCase())
-  );
-  if (!scelta) return null;
-  const es = await prisma.esercizio.findFirst({ where: { nome: scelta.nome } });
+/** Resolves the requested cardio machine to its exercise (created by the seed, utils/macchineCardio.js). */
+async function risolviMacchinaCardio(testo) {
+  const macchina = macchinaCardio(testo);
+  if (!macchina) return null;
+  const es = await prisma.esercizio.findFirst({ where: dovEsercizioCardio(macchina), orderBy: { id: 'asc' } });
   return es ? { id: es.id, nome: es.nome, nomeIt: es.nomeIt } : null;
 }
 

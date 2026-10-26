@@ -18,6 +18,7 @@ Names in the source are English. Each exercise also gets an Italian name (`nomeI
 | `backend/prisma/import-esercizi.js` | Adds and updates the catalogue in an existing database |
 | `backend/src/utils/catalogoEsercizi.js` | One catalogue entry as database data, shared by the seed and the import |
 | `backend/src/utils/traduzioneEsercizi.js` | The English → Italian dictionary for the names |
+| `backend/src/utils/macchineCardio.js` | The six cardio machines (treadmill, exercise bike…) every installation has, English and Italian names, and the words the Telegram bot recognises them by |
 
 ## Exercise fields
 
@@ -40,6 +41,8 @@ Added by the app:
 There are only about 480 distinct words in the 3,300 names, so the translation is a dictionary, not natural language: same name in, same name out, and fixing one dictionary entry fixes every name that uses it. Each word has a role (movement, body part, variant, position, equipment), so the Italian name follows Italian word order: "Double Dumbbell Romanian Deadlift" → "Stacco Rumeno con Due Manubri". Many gym words stay English in Italian too (squat, plank, curl, hip thrust).
 
 The seed fills `nomeIt` for every exercise. The import only fills it where it is empty, so names fixed by hand in the admin page stay.
+
+The cardio machines are not in the spreadsheet: the seed creates the missing ones at every start, with `nome` in English and `nomeIt` in Italian ("Treadmill" / "Tapis Roulant").
 
 ## Muscle groups
 

@@ -7,5 +7,6 @@
   "passwordObbligatorie": "The old password and the new password are required",
   "nuovaPasswordCorta": "The new password must be at least 8 characters long",
   "passwordAttualeErrata": "The current password is incorrect",
-  "impossibileEliminareSuperAdmin": "Can't delete a SuperAdmin. Demote them to a regular user first."
+  "impossibileEliminareSuperAdmin": "Can't delete a SuperAdmin. Demote them to a regular user first.",
+  "durataChatNonValida": "The chat retention must be a whole number of days from 0 (forever) to {max}"
 }

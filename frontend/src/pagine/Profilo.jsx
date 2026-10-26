@@ -9,6 +9,7 @@ import Testo from '../i18n/Testo.jsx';
 import { api, scaricaFile } from '../config/api.js';
 import { RUOLI } from '../utils/costanti.js';
 import { formattaData, formattaDataRelativa } from '../utils/formattatori.js';
+import { scelteDurataChat, etichettaDurataChat } from '../utils/durataChat.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { startRegistration, browserSupportsWebAuthn } from '@simplewebauthn/browser';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -17,7 +18,7 @@ import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil, Download, Smartphone, Monitor, KeyRound, Bell
+  Pencil, Download, Smartphone, Monitor, KeyRound, Bell, MessageCircle
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
 import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
@@ -84,6 +85,8 @@ export default function Profilo() {
   });
   const [visibilita, setVisibilita] = useState(VIS_DEFAULT);
   const [gamificationAttiva, setGamificationAttiva] = useState(true);
+  const [durataChat, setDurataChat] = useState(7);
+  const [erroreDurataChat, setErroreDurataChat] = useState('');
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [salvando, setSalvando] = useState(false);
   const [msgSalvataggio, setMsgSalvataggio] = useState('');
@@ -165,9 +168,16 @@ export default function Profilo() {
     });
     setAvatarPreview(utente.immagineProfilo || null);
     setGamificationAttiva(utente.gamificationAttiva !== false);
+    setDurataChat(utente.chatRetentionGiorni ?? 7);
     try { setVisibilita({ ...VIS_DEFAULT, ...JSON.parse(utente.preferenzeVisibilita || '{}') }); }
     catch { setVisibilita(VIS_DEFAULT); }
   }
+
+  // Signing in brings only part of the profile: without the rest, the privacy
+  // settings would show (and, on the first toggle, save) the defaults
+  useEffect(() => {
+    api.get('/utenti/profilo').then(r => aggiornaUtente(r.dati)).catch(() => {});
+  }, [aggiornaUtente]);
 
   useEffect(() => {
     api.get('/utenti/mio-pt').then(r => setMioPT(r.dati)).catch(() => setMioPT(null));
@@ -596,6 +606,29 @@ export default function Profilo() {
                   <p className="text-[10px] text-[var(--testo-terziario)] mt-2 px-1">
                     {gamificationAttiva ? t('profilo.privacy.gamificationAttiva') : t('profilo.privacy.gamificationDisattivata')}
                   </p>
+                </div>
+              </div>
+              {/* How long the messages sent in the chat are kept */}
+              <div className="glass-card overflow-hidden mt-6">
+                <div className="p-card-inner border-b border-[var(--bordo-light)]">
+                  <h3 className="font-bold text-lg flex items-center gap-2"><MessageCircle size={20} className="text-[var(--accent)]" /> {t('profilo.privacy.chat.titolo')}</h3>
+                  <p className="text-xs text-[var(--testo-terziario)] mt-1">{t('profilo.privacy.chat.descrizione')}</p>
+                </div>
+                <div className="p-card-inner">
+                  <label htmlFor="durata-chat" className="text-sm block mb-2">{t('profilo.privacy.chat.etichetta')}</label>
+                  <select id="durata-chat" value={durataChat} className="campo-input" onChange={async e => {
+                    const prima = durataChat;
+                    const nuova = Number(e.target.value);
+                    setDurataChat(nuova); setErroreDurataChat('');
+                    try { const r = await api.patch('/utenti/profilo', { chatRetentionGiorni: nuova }); aggiornaUtente(r.dati); }
+                    catch (err) { setDurataChat(prima); setErroreDurataChat(err.message); }
+                  }}>
+                    {scelteDurataChat(durataChat).map(giorni => {
+                      const [chiave, valori] = etichettaDurataChat(giorni);
+                      return <option key={giorni} value={giorni}>{t(chiave, valori)}</option>;
+                    })}
+                  </select>
+                  {erroreDurataChat && <p className="text-xs text-[var(--pericolo)] mt-2">{erroreDurataChat}</p>}
                 </div>
               </div>
               {/* Your data */}
