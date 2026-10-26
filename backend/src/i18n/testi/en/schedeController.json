@@ -11,6 +11,7 @@
   "nonPuoiEliminare": "You can't delete this plan",
   "schedaEliminata": "Plan deleted",
   "esercizioSchedaNonTrovato": "Plan exercise not found",
+  "esercizioNonTrovato": "Exercise {id} not found",
   "esercizioRimosso": "Exercise removed from the plan",
   "idNonValido": "Invalid ID",
   "indicareAlmenoUnaScheda": "Specify at least one plan in \"ids\"",

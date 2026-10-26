@@ -12,15 +12,42 @@ import { notificaAdmin } from '../services/notifiche.service.js';
 const router = Router();
 router.use(verificaToken);
 
+// Longest texts a suggestion can carry (name, groups and equipment / description)
+const TESTO_BREVE_MAX = 150;
+const DESCRIZIONE_MAX = 2000;
+
 // POST /api/v1/suggerimenti-esercizi — Send a proposal
 router.post('/', async (req, res, next) => {
   try {
     const { nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaSuggerita, descrizione } = req.body;
 
+    // Every field is text (or missing): numbers, objects and lists are refused,
+    // and so is a NUL character, which the database cannot store
+    const campi = [nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaSuggerita, descrizione];
+    if (campi.some(campo => campo != null && (typeof campo !== 'string' || campo.includes('\u0000')))) {
+      return res.status(400).json({
+        successo: false,
+        messaggio: t('suggerimentiRoutes.campiNonTesto')
+      });
+    }
+
     if (!nome?.trim() || !gruppoMuscoloPrimario?.trim()) {
       return res.status(400).json({
         successo: false,
         messaggio: t('suggerimentiRoutes.nomeEGruppoObbligatori')
+      });
+    }
+
+    if ([nome, gruppoMuscoloPrimario, gruppoMuscoloSecondario, attrezzaturaSuggerita].some(campo => campo?.trim().length > TESTO_BREVE_MAX)) {
+      return res.status(400).json({
+        successo: false,
+        messaggio: t('suggerimentiRoutes.campiTroppoLunghi', { max: TESTO_BREVE_MAX })
+      });
+    }
+    if (descrizione?.trim().length > DESCRIZIONE_MAX) {
+      return res.status(400).json({
+        successo: false,
+        messaggio: t('suggerimentiRoutes.descrizioneTroppoLunga', { max: DESCRIZIONE_MAX })
       });
     }
 

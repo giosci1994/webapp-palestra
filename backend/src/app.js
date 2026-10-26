@@ -16,6 +16,7 @@ import router from './routes/indice.js';
 import logger from './utils/logger.js';
 import { ErroreApp } from './utils/errori.js';
 import { linguaRichiesta, linguaDaIntestazione, t } from './i18n/index.js';
+import { senzaCaratteriNulli } from './middleware/validazione.js';
 
 const AMBIENTE = process.env.AMBIENTE || 'sviluppo';
 
@@ -52,6 +53,9 @@ export function creaServer() {
   // --- Language of the request (Accept-Language), kept for the whole request.
   // After the body parsers: their callbacks would lose it ---
   app.use(linguaRichiesta);
+
+  // --- A NUL character in a text, which the database cannot store: a 400 ---
+  app.use(senzaCaratteriNulli);
 
   // --- Mount the API routes ---
   app.use('/api/v1', router);

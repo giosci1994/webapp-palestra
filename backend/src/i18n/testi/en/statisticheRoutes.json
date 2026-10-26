@@ -1,5 +1,6 @@
 {
   "recordNonTrovato": "Record not found",
   "nonAutorizzato": "Not authorized",
-  "recordEliminato": "Record deleted"
+  "recordEliminato": "Record deleted",
+  "giorniNonValidi": "The number of days is not valid"
 }

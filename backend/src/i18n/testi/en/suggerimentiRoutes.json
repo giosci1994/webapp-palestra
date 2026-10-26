@@ -1,5 +1,8 @@
 {
   "nomeEGruppoObbligatori": "Name and primary muscle group are required",
+  "campiNonTesto": "Name, muscle groups, equipment and description must be text",
+  "campiTroppoLunghi": "Name, muscle groups and equipment can't be longer than {max} characters",
+  "descrizioneTroppoLunga": "The description can't be longer than {max} characters",
   "nuovoSuggerimentoTitolo": "New exercise suggestion",
   "nuovoSuggerimentoMessaggio": "{utente} suggested: \"{esercizio}\"",
   "suggerimentoInviato": "Suggestion sent! The administrator will review it."

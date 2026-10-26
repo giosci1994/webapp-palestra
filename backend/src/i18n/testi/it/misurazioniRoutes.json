@@ -2,5 +2,26 @@
   "misurazioneNonTrovata": "Misurazione non trovata",
   "nonAutorizzato": "Non autorizzato",
   "misurazioneEliminata": "Misurazione eliminata",
-  "nonSeiIlPtDelCliente": "Non sei il Personal Trainer di questo cliente"
+  "nonSeiIlPtDelCliente": "Non sei il Personal Trainer di questo cliente",
+  "campi": {
+    "peso": "Peso",
+    "bmi": "BMI",
+    "grassoCorporeoPct": "Grasso corporeo",
+    "muscoloScheletricoPct": "Muscolo scheletrico",
+    "massaMagraKg": "Massa magra (senza grasso)",
+    "grassoSottocutaneoPct": "Grasso sottocutaneo",
+    "grassoViscerale": "Grasso viscerale",
+    "acquaPct": "Acqua corporea",
+    "massaMuscolareKg": "Massa muscolare",
+    "massaOsseaKg": "Massa ossea",
+    "proteinePct": "Proteine",
+    "bmr": "Metabolismo basale (BMR)",
+    "etaMetabolica": "Età metabolica"
+  },
+  "numeroNonValido": "{campo} deve essere un numero",
+  "numeroFuoriIntervallo": "{campo} deve essere compreso tra 0 e {max}",
+  "dataNonValida": "La data non è valida",
+  "dataNelFuturo": "La data non può essere nel futuro",
+  "noteNonValide": "Le note devono essere un testo",
+  "noteTroppoLunghe": "Le note non possono superare {max} caratteri"
 }

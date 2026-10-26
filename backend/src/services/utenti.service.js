@@ -204,6 +204,12 @@ export async function aggiornaProfilo(utenteId, dati) {
     }
   }
 
+  // The gym must exist: an id that does not would fail on the foreign key
+  if (datiAggiornamento.palestraId) {
+    const palestra = await prisma.palestra.findUnique({ where: { id: datiAggiornamento.palestraId }, select: { id: true } });
+    if (!palestra) throw new ErroreNonTrovato(t('utentiService.palestraNonTrovata'));
+  }
+
   // Bio validation (max 200 characters)
   if (datiAggiornamento.bio && datiAggiornamento.bio.length > 200) {
     throw new ErroreValidazione(t('utentiService.bioTroppoLunga'));

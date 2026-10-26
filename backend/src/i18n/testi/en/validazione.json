@@ -1,3 +1,4 @@
 {
-  "parametroNonValido": "Invalid \"{nome}\" parameter"
+  "parametroNonValido": "Invalid \"{nome}\" parameter",
+  "carattereNullo": "The request contains a character that is not allowed"
 }

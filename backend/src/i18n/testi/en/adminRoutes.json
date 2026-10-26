@@ -13,5 +13,13 @@
   "suggerimentoRifiutatoSenzaMotivo": "\"{nome}\" was not approved.",
   "suggerimentoRifiutato": "Suggestion rejected",
   "titoloObbligatorio": "Title is required",
-  "novitaEliminata": "What's new item deleted"
+  "novitaEliminata": "What's new item deleted",
+  "attrezzaturaNonTrovata": "Equipment not found",
+  "usoInSchede_one": "{count} workout plan",
+  "usoInSchede_other": "{count} workout plans",
+  "usoInSerie_one": "{count} logged set",
+  "usoInSerie_other": "{count} logged sets",
+  "usoInRecord_one": "{count} personal record",
+  "usoInRecord_other": "{count} personal records",
+  "esercizioInUso": "This exercise is in use and cannot be deleted: it appears in {dove}."
 }

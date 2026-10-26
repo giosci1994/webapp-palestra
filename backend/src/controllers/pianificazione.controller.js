@@ -5,6 +5,7 @@
 
 import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { gruppiDellaScheda } from '../services/consiglio.service.js';
 import { FUSO_ORARIO, giornoLocale, orarioLocale } from '../utils/date.js';
@@ -38,6 +39,9 @@ function giornoSettimanaUTC(d) {
   return (d.getUTCDay() + 6) % 7;
 }
 
+/** A table id from the request: a whole number the database can hold */
+const idValido = id => Number.isInteger(id) && id >= 1 && id <= ID_MASSIMO;
+
 /**
  * Works out which calendar is being changed and whether the requester may do it.
  *
@@ -47,7 +51,7 @@ function giornoSettimanaUTC(d) {
  */
 async function risolviAgenda(richiedente, utenteIdRichiesto) {
   const bersaglioId = utenteIdRichiesto ? parseInt(utenteIdRichiesto, 10) : richiedente.id;
-  if (Number.isNaN(bersaglioId)) throw new ErroreValidazione(t('pianificazioneController.campoNonValido', { campo: 'utenteId' }));
+  if (!idValido(bersaglioId)) throw new ErroreValidazione(t('pianificazioneController.campoNonValido', { campo: 'utenteId' }));
 
   if (bersaglioId === richiedente.id) return bersaglioId;
   if (richiedente.ruolo === 'SUPERADMIN') return bersaglioId;
@@ -66,7 +70,7 @@ async function risolviAgenda(richiedente, utenteIdRichiesto) {
 /** The plan must be usable by the user it is scheduled for. */
 async function verificaScheda(schedaId, utenteBersaglioId) {
   const id = parseInt(schedaId, 10);
-  if (Number.isNaN(id)) throw new ErroreValidazione(t('pianificazioneController.campoNonValido', { campo: 'schedaId' }));
+  if (!idValido(id)) throw new ErroreValidazione(t('pianificazioneController.campoNonValido', { campo: 'schedaId' }));
 
   const scheda = await prisma.schedaAllenamento.findUnique({
     where: { id },

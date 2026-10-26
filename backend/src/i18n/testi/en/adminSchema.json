@@ -1,0 +1,12 @@
+{
+  "corpoNonValido": "The request data must be an object",
+  "campoObbligatorio": "This field is required",
+  "testoNonValido": "This field must be a text",
+  "testoTroppoLungo": "This text is too long",
+  "siNoNonValido": "This field must be true or false",
+  "idNonValido": "Invalid ID",
+  "categoriaNonValida": "Category is required and must be one of: CARDIO, PESI_LIBERI, MACCHINE, CAVI, FUNZIONALE",
+  "statoNonValido": "Status must be one of: IN_ATTESA, APPROVATO, RIFIUTATO",
+  "puntiNonValidi": "Points must be a list of items with an icon and a text",
+  "ordineNonValido": "Order must be a whole number"
+}

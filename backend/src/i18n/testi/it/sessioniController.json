@@ -21,6 +21,8 @@
   "riaperturaScaduta_other": "Un allenamento si può riprendere solo entro {count} minuti dalla fine",
   "orarioNonValido": "Orario non valido",
   "esercizioESerieObbligatori": "esercizioId e serieNumero sono obbligatori",
+  "campoNonValido": "\"{campo}\" non è valido",
+  "esercizioNonTrovato": "L'esercizio non esiste",
   "idClientNonValido": "idClient non valido",
   "dataNonValida": "Data non valida",
   "inizioNelFuturo": "Un allenamento non può iniziare nel futuro",
@@ -43,7 +45,9 @@
     "ripetizioniNonValide": "Serie {n}: ripetizioni non valide",
     "rpeNonValido": "Serie {n}: RPE non valido (da 1 a 10)",
     "durataNonValida": "Serie {n}: durata non valida",
-    "livelloNonValido": "Serie {n}: livello non valido"
+    "livelloNonValido": "Serie {n}: livello non valido",
+    "campoNonValido": "Serie {n}: \"{campo}\" non è valido",
+    "esercizioNonTrovato": "Serie {n}: l'esercizio non esiste"
   },
   "allenamentoInCorso": "Hai già un allenamento in corso",
   "riaperturaScadutaGiorno": "Un allenamento chiuso in automatico si può riprendere solo entro la giornata",

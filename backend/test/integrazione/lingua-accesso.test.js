@@ -57,10 +57,10 @@ describe('sign-in', () => {
 });
 
 describe('validation', () => {
-  it('the summary and the message of each field (schemas write keys, the middleware translates them)', async () => {
+  it('the message of each field (schemas write keys, the middleware translates them), the first one as the main message', async () => {
     const [it, en] = await inDueLingue('POST', '/auth/login', { corpo: { email: 'non-una-email', password: 'x' } });
-    assert.equal(it.corpo.messaggio, 'Dati della richiesta non validi');
-    assert.equal(en.corpo.messaggio, 'Invalid request data');
+    assert.equal(it.corpo.messaggio, 'Formato email non valido');
+    assert.equal(en.corpo.messaggio, 'Invalid email format');
     assert.deepEqual(it.corpo.dettagli.map(d => [d.campo, d.messaggio]), [['email', 'Formato email non valido']]);
     assert.deepEqual(en.corpo.dettagli.map(d => [d.campo, d.messaggio]), [['email', 'Invalid email format']]);
   });

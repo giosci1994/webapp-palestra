@@ -1,0 +1,21 @@
+{
+  "corpoNonValido": "I dati della richiesta non sono validi",
+  "titoloNonValido": "Il titolo deve essere un testo",
+  "descrizioneNonValida": "La descrizione deve essere un testo",
+  "livelloNonValido": "Il livello non è valido",
+  "visibilitaNonValida": "La visibilità non è valida",
+  "eserciziNonValidi": "Gli esercizi devono essere un elenco",
+  "esercizioNonValido": "Ogni esercizio dell'elenco deve essere un oggetto",
+  "esercizioIdObbligatorio": "L'esercizio è obbligatorio",
+  "esercizioIdNonValido": "L'esercizio non è valido",
+  "serieTargetNonValido": "Il numero di serie non è valido",
+  "repTargetNonValido": "Le ripetizioni devono essere un testo (ad esempio 8-12)",
+  "recuperoSecondiNonValido": "Il tempo di recupero non è valido",
+  "ordineEsecuzioneNonValido": "L'ordine dell'esercizio non è valido",
+  "noteNonValide": "Le note devono essere un testo",
+  "durataMinutiNonValida": "La durata non è valida",
+  "velocitaKmhNonValida": "La velocità non è valida",
+  "inclinazioneNonValida": "L'inclinazione non è valida",
+  "livelloResistenzaNonValido": "Il livello di resistenza non è valido",
+  "distanzaKmNonValida": "La distanza non è valida"
+}

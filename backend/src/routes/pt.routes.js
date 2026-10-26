@@ -8,7 +8,12 @@ import { Router } from 'express';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
 import prisma from '../config/database.js';
-import { idNumerico } from '../middleware/validazione.js';
+import { idNumerico, valida } from '../middleware/validazione.js';
+import { ErroreNonTrovato } from '../utils/errori.js';
+import {
+  schemaListaAppuntamenti, schemaNuovoAppuntamento, schemaModificaAppuntamento,
+  schemaNuovaScheda, schemaAssegnaScheda, schemaAccettaRichiesta, schemaNuovoAnnuncio
+} from '../validators/pt.schema.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
 import { t, localeDi } from '../i18n/index.js';
 import { fusoDiUtenteId, linguaDiUtenteId } from '../i18n/destinatario.js';
@@ -267,7 +272,7 @@ router.get('/richieste', async (req, res, next) => {
 });
 
 // PATCH /api/v1/pt/richieste/:id/accetta — Accept a request
-router.patch('/richieste/:id/accetta', async (req, res, next) => {
+router.patch('/richieste/:id/accetta', valida({ body: schemaAccettaRichiesta }), async (req, res, next) => {
   try {
     const richiestaId = parseInt(req.params.id);
     const { notePT } = req.body;
@@ -334,7 +339,7 @@ router.patch('/richieste/:id/rifiuta', async (req, res, next) => {
 // ============================
 
 // GET /api/v1/pt/appuntamenti — List of appointments (optional date filter)
-router.get('/appuntamenti', async (req, res, next) => {
+router.get('/appuntamenti', valida({ query: schemaListaAppuntamenti }), async (req, res, next) => {
   try {
     const { da, a, clienteId } = req.query;
     const filtri = { trainerId: req.utente.id };
@@ -361,7 +366,7 @@ router.get('/appuntamenti', async (req, res, next) => {
 });
 
 // POST /api/v1/pt/appuntamenti — Create an appointment
-router.post('/appuntamenti', async (req, res, next) => {
+router.post('/appuntamenti', valida({ body: schemaNuovoAppuntamento }), async (req, res, next) => {
   try {
     const { clienteId, titolo, descrizione, dataOra, durataMinuti, note } = req.body;
     const trainerId = req.utente.id;
@@ -404,7 +409,7 @@ router.post('/appuntamenti', async (req, res, next) => {
 });
 
 // PATCH /api/v1/pt/appuntamenti/:id — Edit an appointment
-router.patch('/appuntamenti/:id', async (req, res, next) => {
+router.patch('/appuntamenti/:id', valida({ body: schemaModificaAppuntamento }), async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
     const { titolo, descrizione, dataOra, durataMinuti, completato, note } = req.body;
@@ -494,12 +499,17 @@ router.get('/schede', async (req, res, next) => {
 });
 
 // POST /api/v1/pt/schede — Create a plan from scratch
-router.post('/schede', async (req, res, next) => {
+router.post('/schede', valida({ body: schemaNuovaScheda }), async (req, res, next) => {
   try {
     const { titolo, descrizione, livello, esercizi } = req.body;
     if (!titolo || !esercizi?.length) {
       return res.status(400).json({ successo: false, messaggio: t('ptRoutes.titoloEEserciziObbligatori') });
     }
+
+    // An exercise that does not exist would break the foreign key
+    const idEsercizi = [...new Set(esercizi.map(e => parseInt(e.esercizioId)))];
+    const trovati = await prisma.esercizio.count({ where: { id: { in: idEsercizi } } });
+    if (trovati !== idEsercizi.length) throw new ErroreNonTrovato(t('ptRoutes.esercizioNonTrovato'));
 
     const scheda = await prisma.schedaAllenamento.create({
       data: {
@@ -530,7 +540,7 @@ router.post('/schede', async (req, res, next) => {
 
 // POST /api/v1/pt/clienti/:id/assegna-scheda — Assign a plan to a client
 // (creates a copy of the plan with the client as creatoreId)
-router.post('/clienti/:id/assegna-scheda', async (req, res, next) => {
+router.post('/clienti/:id/assegna-scheda', valida({ body: schemaAssegnaScheda }), async (req, res, next) => {
   try {
     const clienteId = parseInt(req.params.id);
     const { schedaId } = req.body;
@@ -612,7 +622,7 @@ router.get('/annunci', async (req, res, next) => {
 });
 
 // POST /api/v1/pt/annunci — Create a new announcement
-router.post('/annunci', async (req, res, next) => {
+router.post('/annunci', valida({ body: schemaNuovoAnnuncio }), async (req, res, next) => {
   try {
     const { titolo, contenuto, priorita, destinatarioId } = req.body;
     if (!titolo || !contenuto) {

@@ -11,6 +11,7 @@ import { consiglioAllenamento } from '../services/consiglio.service.js';
 import { chiaveGiorno, giorniDiFila, lunediDelGiorno, lunediLocale } from '../utils/date.js';
 import { idNumerico } from '../middleware/validazione.js';
 import { SOLO_LAVORO } from '../utils/tipiSerie.js';
+import { ErroreValidazione } from '../utils/errori.js';
 import { t } from '../i18n/index.js';
 
 const router = Router();
@@ -20,6 +21,18 @@ router.param('esercizioId', idNumerico);
 router.use(verificaToken);
 
 const SETTIMANA = 7 * 86400000;
+
+// How far back the timeline can look (as /muscoli)
+const GIORNI_MAX = 3650;
+
+/** The `giorni` of the query string: a whole number of days, 30 if missing or empty */
+function leggiGiorni(valore) {
+  if (valore === undefined || valore === '') return 30;
+  if (typeof valore !== 'string' || !/^\d+$/.test(valore) || Number(valore) > GIORNI_MAX) {
+    throw new ErroreValidazione(t('statisticheRoutes.giorniNonValidi'));
+  }
+  return Number(valore);
+}
 
 // Days and weeks are those of the user's time zone (utils/date.js): the
 // request runs in it, so chiaveGiorno and lunediLocale need no argument
@@ -85,9 +98,9 @@ router.get('/riepilogo', async (req, res, next) => {
 // GET /api/v1/statistiche/sessioni — Session history for the timeline chart
 router.get('/sessioni', async (req, res, next) => {
   try {
-    const { giorni = 30 } = req.query;
+    const giorni = leggiGiorni(req.query.giorni);
     const da = new Date();
-    da.setDate(da.getDate() - parseInt(giorni));
+    da.setDate(da.getDate() - giorni);
 
     const sessioni = await prisma.sessioneAllenamento.findMany({
       where: {

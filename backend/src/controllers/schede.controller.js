@@ -6,7 +6,24 @@ import prisma from '../config/database.js';
 import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.service.js';
 import { t } from '../i18n/index.js';
+import { ID_MASSIMO } from '../middleware/validazione.js';
 import { eliminaScheda as eliminaSchedaTenendoAllenamenti } from '../services/schede.service.js';
+
+/**
+ * Throws a 404 if one of the exercises does not exist: without the check the
+ * foreign key of the exercises in a plan made the database answer with an
+ * error, and the client a 500.
+ */
+async function verificaEserciziEsistenti(ids) {
+  const richiesti = [...new Set(ids)];
+  if (richiesti.length === 0) return;
+  const esistenti = new Set((await prisma.esercizio.findMany({
+    where: { id: { in: richiesti } },
+    select: { id: true }
+  })).map(e => e.id));
+  const mancante = richiesti.find(id => !esistenti.has(id));
+  if (mancante !== undefined) throw new ErroreNonTrovato(t('schedeController.esercizioNonTrovato', { id: mancante }));
+}
 
 // Maps an exercise entry (from the client) to EsercizioScheda data, keeping
 // the cardio fields (duration/speed/incline/resistance/distance + warm-up).
@@ -97,6 +114,7 @@ export async function creaScheda(req, res, next) {
     if (vis === 'GLOBALE' && !['SUPERADMIN', 'PERSONAL_TRAINER'].includes(req.utente.ruolo)) {
       throw new ErroreNonAutorizzato(t('schedeController.soloAdminPtGlobali'));
     }
+    await verificaEserciziEsistenti((esercizi || []).map(e => e.esercizioId));
 
     const scheda = await prisma.schedaAllenamento.create({
       data: {
@@ -170,6 +188,7 @@ export async function aggiornaScheda(req, res, next) {
     }
 
     const { titolo, descrizione, livello, visibilita, esercizi } = req.body;
+    await verificaEserciziEsistenti((esercizi || []).map(e => e.esercizioId));
 
     const scheda = await prisma.$transaction(async (tx) => {
       // 1. Update the base data
@@ -234,6 +253,7 @@ export async function aggiungiEsercizio(req, res, next) {
     if (scheda.creatoreId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato(t('schedeController.nonPuoiModificare'));
     }
+    await verificaEserciziEsistenti([esercizioId]);
 
     // Find the current highest order
     const ultimo = await prisma.esercizioScheda.findFirst({
@@ -374,7 +394,7 @@ export async function esportaSchedeDocxMultiplo(req, res, next) {
     const ids = grezzi.map(v => parseInt(v, 10));
 
     if (ids.length === 0) throw new ErroreValidazione(t('schedeController.indicareAlmenoUnaScheda'));
-    if (ids.some(Number.isNaN)) throw new ErroreValidazione(t('schedeController.idsNonValido'));
+    if (ids.some(id => !(id >= 1 && id <= ID_MASSIMO))) throw new ErroreValidazione(t('schedeController.idsNonValido'));
     if (ids.length > 10) throw new ErroreValidazione(t('schedeController.massimoSchedePerDocumento'));
     if (new Set(ids).size !== ids.length) throw new ErroreValidazione(t('schedeController.stessaSchedaPiuVolte'));
 

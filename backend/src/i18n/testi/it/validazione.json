@@ -1,3 +1,4 @@
 {
-  "parametroNonValido": "Parametro \"{nome}\" non valido"
+  "parametroNonValido": "Parametro \"{nome}\" non valido",
+  "carattereNullo": "La richiesta contiene un carattere non ammesso"
 }
