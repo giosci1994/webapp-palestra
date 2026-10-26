@@ -7,7 +7,10 @@ import { Router } from 'express';
 import { listaUtenti, profilo, approva, banna, cambiaRuolo, elimina, aggiornaProfilo, cambiaPassword, infoApp, esportaDati } from '../controllers/utenti.controller.js';
 import { verificaToken } from '../middleware/autenticazione.js';
 import { autorizza } from '../middleware/autorizzazione.js';
-import { idNumerico } from '../middleware/validazione.js';
+import { idNumerico, valida } from '../middleware/validazione.js';
+import {
+  schemaAggiornaProfilo, schemaCambiaPassword, schemaCompletaProfilo, schemaCambiaRuolo, schemaListaUtenti, schemaCercaUtenti
+} from '../validators/utenti.schema.js';
 import { t } from '../i18n/index.js';
 import { creaNotifica, notificaAdmin } from '../services/notifiche.service.js';
 
@@ -36,16 +39,16 @@ router.get('/profilo', profilo);
 router.get('/esportazione', esportaDati);
 
 // PATCH /api/v1/utenti/profilo — Update the profile
-router.patch('/profilo', aggiornaProfilo);
+router.patch('/profilo', valida({ body: schemaAggiornaProfilo }), aggiornaProfilo);
 
 // POST /api/v1/utenti/cambia-password — Change the password
-router.post('/cambia-password', cambiaPassword);
+router.post('/cambia-password', valida({ body: schemaCambiaPassword }), cambiaPassword);
 
 // GET /api/v1/utenti/info-app — Technical info about the application
 router.get('/info-app', infoApp);
 
 // GET /api/v1/utenti/cerca?q=nome — Search users by name
-router.get('/cerca', async (req, res, next) => {
+router.get('/cerca', valida({ query: schemaCercaUtenti }), async (req, res, next) => {
   try {
     const { q } = req.query;
     if (!q || q.length < 2) {
@@ -141,7 +144,7 @@ router.post('/reset-gamification', async (req, res, next) => {
 });
 
 // PATCH /api/v1/utenti/completa-profilo — Onboarding wizard
-router.patch('/completa-profilo', async (req, res, next) => {
+router.patch('/completa-profilo', valida({ body: schemaCompletaProfilo }), async (req, res, next) => {
   try {
     const { default: prisma } = await import('../config/database.js');
     const {
@@ -543,7 +546,7 @@ const vietaSuSeStesso = (req, res, next) => {
 };
 
 // GET /api/v1/utenti — List every user
-router.get('/', autorizza('SUPERADMIN'), listaUtenti);
+router.get('/', autorizza('SUPERADMIN'), valida({ query: schemaListaUtenti }), listaUtenti);
 
 // PATCH /api/v1/utenti/:id/approva — Approve a user
 router.patch('/:id/approva', autorizza('SUPERADMIN'), approva);
@@ -552,7 +555,7 @@ router.patch('/:id/approva', autorizza('SUPERADMIN'), approva);
 router.patch('/:id/banna', autorizza('SUPERADMIN'), vietaSuSeStesso, banna);
 
 // PATCH /api/v1/utenti/:id/ruolo — Change the role
-router.patch('/:id/ruolo', autorizza('SUPERADMIN'), vietaSuSeStesso, cambiaRuolo);
+router.patch('/:id/ruolo', autorizza('SUPERADMIN'), vietaSuSeStesso, valida({ body: schemaCambiaRuolo }), cambiaRuolo);
 
 // DELETE /api/v1/utenti/:id — Delete a user
 router.delete('/:id', autorizza('SUPERADMIN'), vietaSuSeStesso, elimina);

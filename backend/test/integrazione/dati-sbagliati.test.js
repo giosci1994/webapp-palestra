@@ -19,10 +19,6 @@ import { creaUtente, creaEsercizio, creaScheda, creaSessione, creaRecord, tokenP
 import router from '../../src/routes/indice.js';
 
 const ANCORA_500 = new Set([
-  'POST /utenti/cambia-password',
-  'PATCH /utenti/completa-profilo',
-  'GET /utenti',
-  'PATCH /utenti/:id/ruolo',
   'POST /schede',
   'PUT /schede/:id',
   'POST /schede/:id/esercizi',
