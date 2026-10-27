@@ -11,7 +11,7 @@ GymMaster is a gym web app you host on your own server with Docker. Members log 
 
 It is a PWA: it goes on the home screen like an app, sends notifications even when closed and updates itself when a new version comes out.
 
-> **Languages:** English and Italian. The app follows the phone's language and can be switched in Profile. Adding a language takes a folder of JSON files: see [docs/translations.md](docs/translations.md).
+> **Languages and time zones:** English and Italian. The app follows the phone's language and can be switched in Profile. Adding a language takes a folder of JSON files: see [docs/translations.md](docs/translations.md). Days, weeks and reminders follow each user's own time zone.
 
 Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.io/webapp-palestra/).
 
@@ -31,8 +31,9 @@ Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.i
 - **Load suggestion**: from your last sessions the app suggests today's weight and says why (double progression, with a deload after three sessions in a row below the rep range). [More](docs/features/last-time-and-load-suggestion.md)
 - **Warm-up and drop sets**: the warm-up ramp to today's weight, one tap per step; drops are added to the set. Warm-ups stay out of volume, set counts and records.
 - **Offline**: sets and the end of the workout stay on the phone and leave on their own when the network comes back, once, with the right time. [More](docs/offline-and-sessions.md)
-- "Last time" for every set, plates per side, exercises added on the fly.
-- Resume a workout closed by mistake, fix a finished one, log one done without the app, save one as a plan. Workouts left open close themselves at their last set. [More](docs/features/workout-history.md)
+- Train with a plan or freely, without one: exercises are added on the fly, and today's sets added or removed without touching the plan.
+- "Last time" for every set, plates per side.
+- Resume a workout closed by mistake, fix or delete a finished one, log one done without the app, save one as a plan. Workouts left open close themselves at their last set. [More](docs/features/workout-history.md)
 
 **Plans and schedule**
 - Personal and shared plans, with technique notes per exercise; clone them, star your favourites or download them as Word (.docx).
@@ -46,7 +47,8 @@ Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.i
 
 **The gym**
 - **Personal trainers**: clients and requests, appointments, assigned plans, announcements, measurements.
-- **Real-time chat** between members and with your trainer. [More](docs/features/chat.md)
+- **Real-time chat** between members and with your trainer; you choose how long the messages you send are kept. [More](docs/features/chat.md)
+- **Notifications** in the app (the bell, or the Notifications tab of Chat on the phone), as push notifications and on Telegram (once linked) when the app is closed; delete them one at a time or all at once.
 - **Crowd levels**: how full the gym is now and the best times to go (Google Maps data).
 - **Telegram bot**: plans, statistics, guided plan creation and message notifications.
 - **AI assistant** (Google Gemini) that knows your workouts. [More](docs/features/ai-assistant.md)
@@ -55,7 +57,7 @@ Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.i
 - Sign in with a password or a **passkey** (fingerprint, face, PIN), and a list of linked devices. [More](docs/features/authentication.md)
 - Email verification and password recovery (with [Resend](https://resend.com)).
 - Export all your data or delete your account; privacy policy, terms and cookies. [More](docs/features/profile.md)
-- Admin panel: users, gyms, exercises, members' suggestions, news and banners.
+- Admin panel: users, gyms, exercises, members' suggestions, workouts to check, news and banners.
 
 ## 🧱 How it is built
 
@@ -91,7 +93,7 @@ webapp-palestra/
 ├── nginx/            Serves the frontend and passes /api and /socket.io to the backend
 ├── deploy/           Automatic releases on the server, with their tests
 ├── docs/             Feature docs, screenshots, project site
-├── .github/          CI (tests, production images) and templates
+├── .github/          CI (tests, production images), the Rilascia button and templates
 ├── docker-compose.yml
 ├── version.json      App version and user-facing changelog
 └── .env.example      Every environment variable, with comments
@@ -162,15 +164,16 @@ cd backend && npm run test:unitari      # unit tests only, no Docker
 # Frontend: tests (Vitest) and ESLint, at zero errors and zero warnings
 cd frontend && npm test && npm run lint
 
-# The release script, with fake docker, curl and npm
+# The release script and the Rilascia button's script, with fake docker, curl, npm and gh
 bash deploy/test/rilascio.test.sh
+bash deploy/test/pubblica-release.test.sh
 ```
 
 Every pull request runs them on GitHub Actions ([`.github/workflows/test.yml`](.github/workflows/test.yml)), together with the production image builds and a backend start on an empty database.
 
 ## 📦 Releases
 
-The app version is in [`version.json`](version.json), with the changes written for users. When a release comes out on GitHub (tag `v` + the version, from `master`), the server installs it on its own with [`deploy/rilascio.sh`](deploy/rilascio.sh): database copy, migrations, frontend, checks and a Telegram message; if something goes wrong it goes back to the previous version. All the details are in [`deploy/README.md`](deploy/README.md).
+The app version is in [`version.json`](version.json), with the changes written for users. A release is published with the **Rilascia** button (Actions → Rilascia → Run workflow, [`deploy/pubblica-release.sh`](deploy/pubblica-release.sh)): it creates the tag `v` + the version on the tip of `master`, only if the version is new, has its changelog entry and the tests of that commit are green. The server then installs it on its own with [`deploy/rilascio.sh`](deploy/rilascio.sh): database copy, migrations, frontend, "what's new" stories, checks and a Telegram message; if something goes wrong it goes back to the previous version. All the details are in [`deploy/README.md`](deploy/README.md).
 
 ## 📚 Documentation
 
