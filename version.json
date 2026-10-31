@@ -1,17 +1,7 @@
 {
-  "versione": "1.6.3",
-  "build": "2026-10-31",
+  "versione": "1.6.2",
+  "build": "2026-10-26",
   "changelog": [
-    {
-      "versione": "1.6.3",
-      "data": "2026-10-31",
-      "modifiche": [
-        "Toccando la notifica di fine recupero torni dritto all'allenamento: prima l'app poteva aprirsi sulla dashboard, o ricaricare la pagina dell'allenamento"
-      ],
-      "modificheEn": [
-        "Tapping the end-of-rest notification takes you straight back to the workout: the app could open on the dashboard, or reload the workout page"
-      ]
-    },
     {
       "versione": "1.6.2",
       "data": "2026-10-26",
