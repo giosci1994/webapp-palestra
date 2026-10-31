@@ -30,28 +30,91 @@ self.addEventListener('push', (evento) => {
   })());
 });
 
-// Tap on the notification: opens the app on the right page, reusing the
-// window if there is one. A window already on that page only comes to the
-// front: navigating would reload it (the end of the rest, in the middle of a
-// workout).
+// Tap on the notification: opens the app on the right page.
+//
+// A window of the app already open comes to the front and is told where to go
+// (gymmaster:apri): the app moves there by itself (hooks/useAperturaDaNotifica.js),
+// without reloading the page, which in the middle of a workout loses what is on
+// screen. Client.url cannot say where the app is: it stays the address the
+// window was opened with ("/" from the home screen), not the page shown now, so
+// a window already in the workout was navigated (reloaded) at every tap, and on
+// some phones it was left elsewhere. Only a window that does not answer (an
+// app from before this version) is navigated.
+//
+// Without a window a new one opens on the page; the destination is also kept
+// for a minute (gymmaster:destinazione), for a phone that opens the app at its
+// start page instead of the notification's.
+
+const CACHE_DESTINAZIONE = 'gymmaster-destinazione';
+const CHIAVE_DESTINAZIONE = '/__destinazione__';
+const DESTINAZIONE_VALIDA_MS = 60 * 1000;
+const ATTESA_RISPOSTA_MS = 1500;
+
+async function ricordaDestinazione(percorso) {
+  try {
+    const cache = await self.caches.open(CACHE_DESTINAZIONE);
+    await cache.put(CHIAVE_DESTINAZIONE, new Response(JSON.stringify({ percorso, il: Date.now() })));
+  } catch {
+    // Without storage the new window still opens on the page
+  }
+}
+
+/** The destination kept by a tap a moment ago, once: then it is forgotten */
+async function prendiDestinazione() {
+  try {
+    const cache = await self.caches.open(CACHE_DESTINAZIONE);
+    const risposta = await cache.match(CHIAVE_DESTINAZIONE);
+    if (!risposta) return null;
+    await cache.delete(CHIAVE_DESTINAZIONE);
+    const { percorso, il } = await risposta.json();
+    return Date.now() - il <= DESTINAZIONE_VALIDA_MS ? percorso : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Tells a window where to go; true if the app answered that it is going */
+function chiediDiAndare(finestra, percorso) {
+  return new Promise((risolvi) => {
+    const canale = new MessageChannel();
+    const fine = (risposta) => {
+      clearTimeout(timer);
+      canale.port1.close();
+      risolvi(risposta);
+    };
+    const timer = setTimeout(() => fine(false), ATTESA_RISPOSTA_MS);
+    canale.port1.onmessage = () => fine(true);
+    try {
+      finestra.postMessage({ tipo: 'gymmaster:apri', percorso }, [canale.port2]);
+    } catch {
+      fine(false);
+    }
+  });
+}
+
+/** Opens the app on `percorso`: the open window if there is one, otherwise a new one */
+async function apriDaNotifica(percorso) {
+  const indirizzo = new URL(percorso, self.location.origin).href;
+  const finestre = (await self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+    .filter(f => new URL(f.url).origin === self.location.origin);
+  const finestra = finestre.find(f => f.focused) || finestre.find(f => f.visibilityState === 'visible') || finestre[0];
+  if (finestra) {
+    await finestra.focus().catch(() => {});
+    if (await chiediDiAndare(finestra, percorso)) return;
+    if ('navigate' in finestra) await finestra.navigate(indirizzo).catch(() => {});
+    return;
+  }
+  await ricordaDestinazione(percorso);
+  await self.clients.openWindow(indirizzo);
+}
+
 self.addEventListener('notificationclick', (evento) => {
   evento.notification.close();
-  const indirizzo = new URL(evento.notification.data?.percorso || '/', self.location.origin).href;
+  evento.waitUntil(apriDaNotifica(evento.notification.data?.percorso || '/'));
+});
 
-  evento.waitUntil((async () => {
-    const finestre = (await self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
-      .filter(f => new URL(f.url).origin === self.location.origin);
-    const giaLi = finestre.find(f => new URL(f.url).href === indirizzo);
-    if (giaLi) {
-      await giaLi.focus();
-      return;
-    }
-    const finestra = finestre[0];
-    if (finestra) {
-      await finestra.focus();
-      if ('navigate' in finestra) await finestra.navigate(indirizzo).catch(() => {});
-      return;
-    }
-    await self.clients.openWindow(indirizzo);
-  })());
+// The app, just opened, asks whether a tap brought it here
+self.addEventListener('message', (evento) => {
+  if (evento.data?.tipo !== 'gymmaster:destinazione') return;
+  evento.waitUntil(prendiDestinazione().then(percorso => evento.ports?.[0]?.postMessage({ percorso })));
 });
