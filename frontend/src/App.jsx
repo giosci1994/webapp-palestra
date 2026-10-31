@@ -8,6 +8,7 @@ import { AuthProvider } from './contesti/AuthContesto.jsx';
 import { SocketProvider } from './contesti/SocketContesto.jsx';
 import LayoutAutenticato from './componenti/layout/LayoutAutenticato.jsx';
 import { useRottaPersistente, ottieniUltimaRotta } from './hooks/useRottaPersistente.js';
+import { useAperturaDaNotifica } from './hooks/useAperturaDaNotifica.js';
 import CookieBanner from './componenti/comuni/CookieBanner.jsx';
 import { useAutoAggiornamento } from './hooks/useAutoAggiornamento.js';
 import { RefreshCw } from 'lucide-react';
@@ -69,6 +70,12 @@ function TrackerRotta() {
   return null;
 }
 
+// --- A tapped notification: the app goes to its page (public/sw-push.js) ---
+function AperturaDaNotifica() {
+  useAperturaDaNotifica();
+  return null;
+}
+
 // --- Update available banner ---
 function BannerAggiornamento() {
   const { aggiornamentoDisponibile, nuovaVersione, forzaAggiornamento } = useAutoAggiornamento();
@@ -95,6 +102,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <TrackerRotta />
+      <AperturaDaNotifica />
       <AuthProvider>
         <SocketProvider>
           {/* The pages inside the layout wait under the sidebar (LayoutAutenticato); here the public ones */}
