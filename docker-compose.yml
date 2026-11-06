@@ -56,6 +56,8 @@ services:
     restart: always
     env_file:
       - .env
+    labels:
+      - "diun.enable=false"
     environment:
       TZ: Europe/Copenhagen
     volumes:
@@ -107,6 +109,8 @@ services:
       dockerfile: scraper/Dockerfile
     container_name: gymmaster-scraper
     restart: unless-stopped
+    labels:
+      - "diun.enable=false"
     environment:
       DATABASE_URL: ${DATABASE_URL}
       PROXY_URL: ${PROXY_URL:-}
@@ -124,6 +128,8 @@ services:
       dockerfile: bot/Dockerfile
     container_name: gymmaster-bot
     restart: unless-stopped
+    labels:
+      - "diun.enable=false"
     env_file:
       - .env
     environment:
