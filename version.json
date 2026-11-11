@@ -1,7 +1,17 @@
 {
-  "versione": "1.6.3",
-  "build": "2026-10-31",
+  "versione": "1.6.4",
+  "build": "2026-11-11",
   "changelog": [
+    {
+      "versione": "1.6.4",
+      "data": "2026-11-11",
+      "modifiche": [
+        "L'affluenza della palestra dice fino a quando sono stati registrati i dati, quando Google non li aggiorna"
+      ],
+      "modificheEn": [
+        "Gym crowd levels say up to when the data was recorded, when Google stops updating it"
+      ]
+    },
     {
       "versione": "1.6.3",
       "data": "2026-10-31",
