@@ -67,7 +67,8 @@
     "tempoReale": "In tempo reale",
     "aggiornato": "Aggiornato: {ora}",
     "nonDisponibile": "Dati affluenza non disponibili",
-    "aggiornamentoBreve": "Saranno aggiornati a breve"
+    "aggiornamentoBreve": "Saranno aggiornati a breve",
+    "datiFermi": "Andamento registrato fino al {data}: al momento non si aggiorna"
   },
   "pt": {
     "titolo": "Il tuo Personal Trainer",

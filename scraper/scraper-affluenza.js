@@ -16,7 +16,7 @@ const CONFIG = {
   TIMEOUT_PAGINA: 30000,
   MAX_TENTATIVI: 2,
   // Upper limit for the whole run. It must stay below the cron interval
-  // (30 min) so two runs can never overlap.
+  // (6 hours, Dockerfile) so two runs can never overlap.
   TIMEOUT_GLOBALE: Number(process.env.TIMEOUT_GLOBALE_MS) || 20 * 60 * 1000,
 };
 
@@ -78,6 +78,16 @@ const SEL_ORARI_PUNTA = [
   '[aria-label^="Populære tidspunkter"]',
 ].join(', ');
 
+// Since October 2026 Google often serves the scraper a reduced Maps, with
+// "Stai visualizzando un insieme limitato di dati di Google Maps" at the bottom
+// of the place page and no Orari di punta section: there is nothing to wait
+// or retry for, for this gym or the next ones.
+const VISTA_LIMITATA = /insieme limitato di dati|limited (set of|view of) Google Maps/i;
+
+async function vistaLimitata(page) {
+  return VISTA_LIMITATA.test(await page.locator('body').innerText().catch(() => ''));
+}
+
 const GIORNI_INDICE = {
   'lunedì': 0, 'lunedi': 0, 'monday': 0, 'mandag': 0,
   'martedì': 1, 'martedi': 1, 'tuesday': 1, 'tirsdag': 1,
@@ -99,6 +109,7 @@ const GIORNI_INDICE = {
  * that case no client-side trick makes it appear (scrolling the panel and
  * reloading were tried): the only sensible answer is to give up and retry on
  * the next round, which is what the caller does.
+ * @returns {Promise<true | false | 'limitata'>} 'limitata': the reduced Maps (VISTA_LIMITATA)
  */
 async function apriSchedaLocale(page) {
   for (let tentativo = 1; tentativo <= 2; tentativo++) {
@@ -114,6 +125,7 @@ async function apriSchedaLocale(page) {
 
     if (await page.waitForSelector(SEL_ORARI_PUNTA, { timeout: 12000 })
           .then(() => true).catch(() => false)) return true;
+    if (await vistaLimitata(page)) return 'limitata';
 
     if (tentativo === 1) {
       await page.reload({ waitUntil: 'domcontentloaded', timeout: CONFIG.TIMEOUT_PAGINA }).catch(() => {});
@@ -138,7 +150,13 @@ async function scrapaAffluenza(page, palestra) {
 
     await superaConsensoGoogle(page);
 
-    if (!await apriSchedaLocale(page)) {
+    const scheda = await apriSchedaLocale(page);
+    if (scheda === 'limitata') {
+      console.log('  ⛔ Google mostra una versione ridotta di Maps, senza "Orari di punta": niente dati in questo giro');
+      risultato.vistaLimitata = true;
+      return risultato;
+    }
+    if (!scheda) {
       console.log('  ⚠️  Sezione "Orari di punta" non trovata sulla scheda');
       return risultato;
     }
@@ -293,7 +311,7 @@ async function main() {
     let tentativo = 0;
     let dati = null;
 
-    while (tentativo < CONFIG.MAX_TENTATIVI && !dati?.storici?.length && !dati?.live) {
+    while (tentativo < CONFIG.MAX_TENTATIVI && !dati?.storici?.length && !dati?.live && !dati?.vistaLimitata) {
       tentativo++;
       if (tentativo > 1) console.log(`  🔄 Tentativo ${tentativo}/${CONFIG.MAX_TENTATIVI}...`);
       dati = await scrapaAffluenza(page, palestra);
@@ -357,6 +375,11 @@ async function main() {
 
       console.log(`  ✅ ${dati.storici.length} storici${dati.live ? ' + live' : ''}`);
       successi++;
+    } else if (dati.vistaLimitata) {
+      // The other gyms would get the same reduced page: the run stops here
+      fallimenti += palestre.length - i;
+      if (i < palestre.length - 1) console.log(`  ⏭️  Le altre ${palestre.length - i - 1} palestre si riprovano al prossimo giro`);
+      break;
     } else {
       console.log(`  ⚠️  Nessun dato trovato`);
       fallimenti++;

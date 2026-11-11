@@ -67,7 +67,8 @@
     "tempoReale": "Live",
     "aggiornato": "Updated: {ora}",
     "nonDisponibile": "Crowd data not available",
-    "aggiornamentoBreve": "It will be updated soon"
+    "aggiornamentoBreve": "It will be updated soon",
+    "datiFermi": "Pattern recorded up to {data}: it is not being updated at the moment"
   },
   "pt": {
     "titolo": "Your personal trainer",

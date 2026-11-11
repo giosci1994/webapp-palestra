@@ -10,7 +10,8 @@ import SezioneCollassabile from '../comuni/SezioneCollassabile.jsx';
 import Testo from '../../i18n/Testo.jsx';
 import { localeCorrente } from '../../i18n/index.js';
 import { useLingua } from '../../hooks/useLingua.js';
-import { lunediDi } from '../../utils/formattatori.js';
+import { formattaData, lunediDi } from '../../utils/formattatori.js';
+import { datiFermi } from '../../utils/affluenza.js';
 
 /** Name of a weekday in the current language, with Monday = 0 */
 function nomeGiorno(indice) {
@@ -99,6 +100,11 @@ export default function MiglioriOrari({ palestraId }) {
         <p className="text-[10px] text-[var(--testo-terziario)] mt-3">
           {t('miglioriOrari.rilevazioni', { count: dati.rilevazioni, da: dati.fascia.da, a: dati.fascia.a })}
         </p>
+        {datiFermi(dati.ultimoAggiornamento) && (
+          <p className="text-[10px] text-[var(--testo-terziario)] mt-1">
+            {t('miglioriOrari.datiFermi', { data: formattaData(dati.ultimoAggiornamento) })}
+          </p>
+        )}
       </div>
     </SezioneCollassabile>
   );
