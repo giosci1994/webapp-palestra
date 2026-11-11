@@ -24,12 +24,15 @@ RUN DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" npx prisma gene
 # Copy the scraper scripts
 COPY scraper/*.js ./
 
-# Cron: run the scraper every 30 minutes + nightly trim of the log (which
+# Cron: run the scraper every 6 hours + nightly trim of the log (which
 # otherwise grows forever: it had reached 4.5 MB). The trim writes to the same
-# inode so the entrypoint's `tail -f` keeps working.
+# inode so the entrypoint's `tail -f` keeps working. Every 6 hours, not 30
+# minutes: Google often serves a reduced Maps without the popular times
+# (scraper-affluenza.js, VISTA_LIMITATA), and a run every 6 hours is enough to
+# notice when the data is back without starting Chromium for nothing.
 RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
 RUN printf '%s\n' \
-      '*/30 * * * * cd /app && /usr/bin/node scraper-affluenza.js >> /var/log/scraper.log 2>&1' \
+      '23 */6 * * * cd /app && /usr/bin/node scraper-affluenza.js >> /var/log/scraper.log 2>&1' \
       '17 4 * * * tail -n 2000 /var/log/scraper.log > /tmp/scraper.trim && cat /tmp/scraper.trim > /var/log/scraper.log && rm -f /tmp/scraper.trim' \
       > /etc/cron.d/scraper
 RUN chmod 0644 /etc/cron.d/scraper && crontab /etc/cron.d/scraper
@@ -38,12 +41,13 @@ RUN touch /var/log/scraper.log
 COPY scraper/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# The container is "healthy" only if cron is alive AND the log is moving. The
-# earlier failure (cron never started, no scraping for weeks) would have been
-# visible right away: without this check the container just showed "Up".
+# The container is "healthy" only if cron is alive AND the log is moving (a
+# run every 6 hours, plus margin). The earlier failure (cron never started, no
+# scraping for weeks) would have been visible right away: without this check
+# the container just showed "Up".
 HEALTHCHECK --interval=5m --timeout=15s --start-period=2m --retries=2 \
   CMD pgrep cron > /dev/null \
-      && [ -n "$(find /var/log/scraper.log -mmin -45 2>/dev/null)" ] \
+      && [ -n "$(find /var/log/scraper.log -mmin -400 2>/dev/null)" ] \
       || exit 1
 
 CMD ["/entrypoint.sh"]

@@ -133,6 +133,14 @@ describe('crowd level now', () => {
     assert.ok([prima, dopo].some(o => o.ora === dati.oraCorrente && o.giornoSettimana === dati.giornoSettimana));
   });
 
+  it('says when the data was last collected', async () => {
+    await settimana(20);
+    const raccolta = new Date('2026-10-12T18:30:00Z');
+    await prisma.afluenzaPalestra.updateMany({ data: { aggiornatoIl: raccolta } });
+    await prisma.afluenzaPalestra.updateMany({ where: { ora: 5 }, data: { aggiornatoIl: new Date('2026-10-12T18:00:00Z') } });
+    assert.equal((await affluenza()).corpo.dati.ultimoAggiornamento, raccolta.toISOString());
+  });
+
   it('without data it says so', async () => {
     const { dati } = (await affluenza()).corpo;
     assert.equal(dati.livelloTesto, 'Nessun dato');
@@ -174,6 +182,8 @@ describe('best times to train', () => {
       giornoSettimana: 2, media: 45, migliori: [{ ora: 7, livello: 5 }, { ora: 20, livello: 12 }, { ora: 6, livello: 50 }]
     });
     assert.equal(dati.giornoPiuTranquillo, 2);
+    // When the data was last collected: the newest of the readings
+    assert.ok(Date.now() - Date.parse(dati.ultimoAggiornamento) < 60 * MINUTO);
   });
 
   it('the window can be chosen, but not upside down', async () => {

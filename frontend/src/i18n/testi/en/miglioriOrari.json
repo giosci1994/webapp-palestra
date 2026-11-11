@@ -6,5 +6,6 @@
   "nessunaRilevazione": "No readings for today.",
   "giornoTranquillo": "The quietest day of the week is <b>{giorno}</b>.",
   "rilevazioni_one": "Based on {count} reading, {da}:00–{a}:00 window.",
-  "rilevazioni_other": "Based on {count} readings, {da}:00–{a}:00 window."
+  "rilevazioni_other": "Based on {count} readings, {da}:00–{a}:00 window.",
+  "datiFermi": "Pattern recorded up to {data}: it is not being updated at the moment"
 }

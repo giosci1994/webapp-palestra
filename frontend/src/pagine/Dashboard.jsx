@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import { api } from '../config/api.js';
-import { formattaDataRelativa, aStringaData, lunediDi, titoloAllenamento } from '../utils/formattatori.js';
+import { formattaData, formattaDataRelativa, aStringaData, lunediDi, titoloAllenamento } from '../utils/formattatori.js';
+import { datiFermi } from '../utils/affluenza.js';
 import { marcatoriCalendario, COLORI_CALENDARIO } from '../utils/marcatoriCalendario.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -580,8 +581,12 @@ export default function Dashboard() {
                             </div>
                           </div>
                         )}
-                        {/* Update timestamp */}
-                        {affluenza.aggiornatoIl && (
+                        {/* Update timestamp; for old data, the day it stopped */}
+                        {datiFermi(affluenza.ultimoAggiornamento) ? (
+                          <p className="text-[10px] text-[var(--testo-terziario)] mt-2">
+                            {t('dashboard.affluenza.datiFermi', { data: formattaData(affluenza.ultimoAggiornamento) })}
+                          </p>
+                        ) : affluenza.aggiornatoIl && (
                           <p className="text-[9px] text-[var(--testo-terziario)] mt-2 text-right">
                             {t('dashboard.affluenza.aggiornato', { ora: new Date(affluenza.aggiornatoIl).toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
                           </p>

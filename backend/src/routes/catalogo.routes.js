@@ -141,6 +141,8 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
       (Date.now() - new Date(dato.aggiornatoIl).getTime()) <= LIMITE_FRESCHEZZA_MS;
 
     const liveCorrente = liveValido(datoOraCorrente) ? datoOraCorrente : null;
+    // Every run of the scraper updates all the hours: the latest is when the data was last collected
+    const ultimoAggiornamento = datiGiornata.reduce((ultimo, d) => (!ultimo || d.aggiornatoIl > ultimo ? d.aggiornatoIl : ultimo), null);
 
     // Level as text
     let livelloTesto = t('catalogoRoutes.livello.nessunDato');
@@ -164,6 +166,7 @@ router.get('/palestre/:id/affluenza', verificaTokenOpzionale, async (req, res, n
         liveDescrizione: liveCorrente?.liveDescrizione ?? null,
         livelloPercentuale: datoOraCorrente?.livelloPercentuale ?? null,
         aggiornatoIl: datoOraCorrente?.aggiornatoIl ?? null,
+        ultimoAggiornamento,
         graficoGiornata: datiGiornata.map(d => ({
           ora: d.ora,
           livello: d.livelloPercentuale,
@@ -190,7 +193,7 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
 
     const righe = await prisma.afluenzaPalestra.findMany({
       where: { palestraId, ora: { gte: da, lte: a } },
-      select: { giornoSettimana: true, ora: true, livelloPercentuale: true },
+      select: { giornoSettimana: true, ora: true, livelloPercentuale: true, aggiornatoIl: true },
       orderBy: [{ giornoSettimana: 'asc' }, { ora: 'asc' }]
     });
 
@@ -234,6 +237,8 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
         mediaGenerale: Math.round(media),
         rilevazioni: righe.length,
         giornoPiuTranquillo: giornoPiuTranquillo?.giornoSettimana ?? null,
+        // When the data was last collected: the app says so when it is old
+        ultimoAggiornamento: new Date(Math.max(...righe.map(r => r.aggiornatoIl.getTime()))),
         perGiorno,
         migliori
       }
