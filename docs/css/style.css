@@ -488,3 +488,6 @@ pre code { background: none; border: none; padding: 0; font-size: inherit; }
   .cta-box { flex-direction: column; align-items: flex-start; padding: 32px 24px; }
   .footer { flex-direction: column; align-items: flex-start; }
 }
+
+/* Language switch (EN/IT), same as the other projects */
+.lang-btn { font-family: var(--font-mono); letter-spacing: 0.04em; min-width: 64px; }

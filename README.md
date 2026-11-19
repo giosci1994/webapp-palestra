@@ -7,6 +7,10 @@
   <a href="https://buymeacoffee.com/giosci1994u"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
 
+<p align="center">
+  <img src="docs/assets/social-preview.png" width="800" alt="GymMaster — self-hosted gym web app" />
+</p>
+
 GymMaster is a gym web app you host on your own server with Docker. Members log their workouts from the phone, even offline, and follow their progress and records. The whole gym fits in it: personal trainers, chat, live crowd levels, a Telegram bot and an AI assistant.
 
 It is a PWA: it goes on the home screen like an app, sends notifications even when closed and updates itself when a new version comes out.

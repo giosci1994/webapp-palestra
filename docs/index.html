@@ -1,12 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+  data-en-title="GymMaster — Web-App Palestra"
+  data-it-title="GymMaster — La web app per la palestra">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#070b0a" />
   <meta name="description"
-    content="GymMaster — A self-hosted gym web app: workouts (even offline), progress, personal trainers, chat, live crowd levels and a Telegram bot." />
+    content="GymMaster — A self-hosted gym web app: workouts (even offline), progress, personal trainers, chat, live crowd levels and a Telegram bot."
+    data-en="GymMaster — A self-hosted gym web app: workouts (even offline), progress, personal trainers, chat, live crowd levels and a Telegram bot."
+    data-it="GymMaster — Una web app per la palestra sul tuo server: allenamenti (anche offline), progressi, personal trainer, chat, affollamento in tempo reale e un bot Telegram." />
   <title>GymMaster — Web-App Palestra</title>
 
   <!-- Open Graph -->
@@ -25,6 +29,7 @@
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="./css/style.css" />
+  <script src="./js/main.js" defer></script>
 </head>
 
 <body>
@@ -41,12 +46,13 @@
       </div>
 
       <nav class="nav-links" aria-label="Primary">
-        <a href="#features">Features</a>
-        <a href="#screenshots">Screenshots</a>
-        <a href="#quickstart">Quick Start</a>
+        <a href="#features" data-en="Features" data-it="Funzioni">Features</a>
+        <a href="#screenshots" data-en="Screenshots" data-it="Schermate">Screenshots</a>
+        <a href="#quickstart" data-en="Quick Start" data-it="Avvio rapido">Quick Start</a>
       </nav>
 
       <div class="nav-cta">
+        <button id="lang-toggle" class="btn ghost small lang-btn" type="button" aria-label="Passa all'italiano">IT</button>
         <a class="btn primary small" href="https://github.com/giosci1994/webapp-palestra" target="_blank"
           rel="noreferrer">GitHub</a>
       </div>
@@ -58,21 +64,21 @@
       <div class="hero-left">
         <div class="kicker">
           <span class="dot"></span>
-          <span>Open source · self-hosted</span>
+          <span data-en="Open source · self-hosted" data-it="Open source · sul tuo server">Open source · self-hosted</span>
         </div>
 
-        <h1>
+        <h1 data-en="Gym management, &lt;span class=&quot;accent-text&quot;&gt;reinvented&lt;/span&gt;." data-it="La palestra, &lt;span class=&quot;accent-text&quot;&gt;ripensata&lt;/span&gt;.">
           Gym management, <span class="accent-text">reinvented</span>.
         </h1>
 
-        <p class="lead">
+        <p class="lead" data-en="A self-hosted web app for your gym. Members log workouts from their phone, even without signal, and follow their progress; trainers manage clients and plans; everyone gets chat, live crowd levels and a Telegram bot." data-it="Una web app per la tua palestra, sul tuo server. Gli iscritti segnano gli allenamenti dal telefono, anche senza campo, e seguono i progressi; i trainer gestiscono clienti e schede; per tutti chat, affollamento in tempo reale e un bot Telegram.">
           A self-hosted web app for your gym. Members log workouts from their phone, even without signal, and follow their progress; trainers manage clients and plans; everyone gets chat, live crowd levels and a Telegram bot.
         </p>
 
         <div class="hero-actions">
-          <a class="btn primary" href="#quickstart">Get started</a>
+          <a class="btn primary" href="#quickstart" data-en="Get started" data-it="Inizia">Get started</a>
           <a class="btn ghost" href="https://github.com/giosci1994/webapp-palestra" target="_blank"
-            rel="noreferrer">View on GitHub</a>
+            rel="noreferrer" data-en="View on GitHub" data-it="Vedi su GitHub">View on GitHub</a>
         </div>
 
         <div class="topics" role="list" aria-label="Topics">
@@ -99,50 +105,50 @@
 
     <section id="features" class="section">
       <div class="section-head reveal">
-        <span class="section-label">// features</span>
-        <h2>Everything your gym needs</h2>
-        <p>A progressive web app that installs on the home screen, sends push notifications and updates itself.</p>
+        <span class="section-label" data-en="// features" data-it="// funzioni">// features</span>
+        <h2 data-en="Everything your gym needs" data-it="Tutto quello che serve alla tua palestra">Everything your gym needs</h2>
+        <p data-en="A progressive web app that installs on the home screen, sends push notifications and updates itself." data-it="Una progressive web app che si installa nella schermata Home, manda notifiche push e si aggiorna da sola.">A progressive web app that installs on the home screen, sends push notifications and updates itself.</p>
       </div>
 
       <div class="cards-grid">
         <article class="card reveal">
           <span class="card-icon">🏋️</span>
-          <h3>Workouts, even offline</h3>
-          <p>A phone-first workout screen with rest timer, load suggestions that explain themselves, warm-up ramps and drop sets. Sets are saved on the phone and sync when the signal comes back.</p>
+          <h3 data-en="Workouts, even offline" data-it="Allenamenti, anche offline">Workouts, even offline</h3>
+          <p data-en="A phone-first workout screen with rest timer, load suggestions that explain themselves, warm-up ramps and drop sets. Sets are saved on the phone and sync when the signal comes back." data-it="Una schermata di allenamento pensata per il telefono: timer di recupero, suggerimenti di carico che si spiegano, serie di riscaldamento e drop set. Le serie restano sul telefono e si sincronizzano quando torna il campo.">A phone-first workout screen with rest timer, load suggestions that explain themselves, warm-up ramps and drop sets. Sets are saved on the phone and sync when the signal comes back.</p>
         </article>
         <article class="card reveal">
           <span class="card-icon">📈</span>
-          <h3>Progress you can trust</h3>
-          <p>Muscles trained and recovering, exercise trends, estimated maxes, personal records, yearly activity and body composition. Warm-ups never inflate your volume.</p>
+          <h3 data-en="Progress you can trust" data-it="Progressi affidabili">Progress you can trust</h3>
+          <p data-en="Muscles trained and recovering, exercise trends, estimated maxes, personal records, yearly activity and body composition. Warm-ups never inflate your volume." data-it="Muscoli allenati e in recupero, andamento degli esercizi, massimali stimati, record personali, attività dell'anno e composizione corporea. Il riscaldamento non gonfia mai il volume.">Muscles trained and recovering, exercise trends, estimated maxes, personal records, yearly activity and body composition. Warm-ups never inflate your volume.</p>
         </article>
         <article class="card reveal">
           <span class="card-icon">🧑‍🏫</span>
-          <h3>Personal trainers</h3>
-          <p>Trainers manage clients, appointments, assigned plans, announcements and measurements. Members chat in real time with each other and with their trainer.</p>
+          <h3 data-en="Personal trainers" data-it="Personal trainer">Personal trainers</h3>
+          <p data-en="Trainers manage clients, appointments, assigned plans, announcements and measurements. Members chat in real time with each other and with their trainer." data-it="I trainer gestiscono clienti, appuntamenti, schede assegnate, avvisi e misure. Gli iscritti chattano in tempo reale tra loro e con il loro trainer.">Trainers manage clients, appointments, assigned plans, announcements and measurements. Members chat in real time with each other and with their trainer.</p>
         </article>
         <article class="card reveal">
           <span class="card-icon">📍</span>
-          <h3>Live gym crowd levels</h3>
-          <p>A Playwright scraper reads Google Maps every 30 minutes, so the app can tell you how busy your gym is and when it is quieter.</p>
+          <h3 data-en="Live gym crowd levels" data-it="Affollamento in tempo reale">Live gym crowd levels</h3>
+          <p data-en="A Playwright scraper reads Google Maps every 30 minutes, so the app can tell you how busy your gym is and when it is quieter." data-it="Uno scraper Playwright legge Google Maps ogni 30 minuti, così l'app ti dice quanto è piena la palestra e quando è più tranquilla.">A Playwright scraper reads Google Maps every 30 minutes, so the app can tell you how busy your gym is and when it is quieter.</p>
         </article>
         <article class="card reveal">
           <span class="card-icon">🤖</span>
-          <h3>Telegram bot and AI assistant</h3>
-          <p>A grammY bot shows plans and stats and builds new plans step by step; a Gemini assistant knows your training history.</p>
+          <h3 data-en="Telegram bot and AI assistant" data-it="Bot Telegram e assistente IA">Telegram bot and AI assistant</h3>
+          <p data-en="A grammY bot shows plans and stats and builds new plans step by step; a Gemini assistant knows your training history." data-it="Un bot grammY mostra schede e statistiche e crea schede nuove passo per passo; un assistente Gemini conosce la tua storia di allenamento.">A grammY bot shows plans and stats and builds new plans step by step; a Gemini assistant knows your training history.</p>
         </article>
         <article class="card reveal">
           <span class="card-icon">🔐</span>
-          <h3>Secure and self-hosted</h3>
-          <p>Passkeys or Argon2id passwords, rotating JWT refresh tokens, data export and account deletion. Runs on your own server with Docker Compose, and installs itself on every GitHub release.</p>
+          <h3 data-en="Secure and self-hosted" data-it="Sicura e sul tuo server">Secure and self-hosted</h3>
+          <p data-en="Passkeys or Argon2id passwords, rotating JWT refresh tokens, data export and account deletion. Runs on your own server with Docker Compose, and installs itself on every GitHub release." data-it="Passkey o password Argon2id, token JWT che ruotano, esportazione dei dati e cancellazione dell'account. Gira sul tuo server con Docker Compose e si installa da sola a ogni release su GitHub.">Passkeys or Argon2id passwords, rotating JWT refresh tokens, data export and account deletion. Runs on your own server with Docker Compose, and installs itself on every GitHub release.</p>
         </article>
       </div>
     </section>
 
     <section id="screenshots" class="section">
       <div class="section-head reveal">
-        <span class="section-label">// screenshots</span>
-        <h2>Take a look around</h2>
-        <p>A clean, unified UI for both web dashboard and mobile integrations.</p>
+        <span class="section-label" data-en="// screenshots" data-it="// schermate">// screenshots</span>
+        <h2 data-en="Take a look around" data-it="Dai un'occhiata">Take a look around</h2>
+        <p data-en="A clean, unified UI for both web dashboard and mobile integrations." data-it="Un'interfaccia pulita e unica, per il web e per il telefono.">A clean, unified UI for both web dashboard and mobile integrations.</p>
       </div>
 
       <div class="shots-grid">
@@ -154,7 +160,7 @@
             </div>
             <img src="./pics/Login.jpg" alt="Login page" loading="lazy" />
           </div>
-          <figcaption>Authentication & Login</figcaption>
+          <figcaption data-en="Authentication &amp; Login" data-it="Registrazione e accesso">Authentication & Login</figcaption>
         </figure>
 
         <figure class="shot reveal">
@@ -165,7 +171,7 @@
             </div>
             <img src="./pics/Home-BotAI.jpg" alt="Dashboard with AI bot" loading="lazy" />
           </div>
-          <figcaption>Dashboard with AI Assistant integration</figcaption>
+          <figcaption data-en="Dashboard with AI Assistant integration" data-it="Dashboard con l'assistente IA">Dashboard with AI Assistant integration</figcaption>
         </figure>
 
         <figure class="shot reveal">
@@ -176,7 +182,7 @@
             </div>
             <img src="./pics/Allenamento_con_video.jpg" alt="Training Session" loading="lazy" />
           </div>
-          <figcaption>Active training session with video guides</figcaption>
+          <figcaption data-en="Active training session with video guides" data-it="Allenamento in corso con i video degli esercizi">Active training session with video guides</figcaption>
         </figure>
 
         <figure class="shot reveal">
@@ -187,16 +193,16 @@
             </div>
             <img src="./pics/Bot_telegram.jpg" alt="Telegram Bot" loading="lazy" />
           </div>
-          <figcaption>Integrated Telegram Bot for quick actions</figcaption>
+          <figcaption data-en="Integrated Telegram Bot for quick actions" data-it="Il bot Telegram per le azioni veloci">Integrated Telegram Bot for quick actions</figcaption>
         </figure>
       </div>
     </section>
 
     <section id="quickstart" class="section">
       <div class="section-head reveal">
-        <span class="section-label">// quick-start</span>
-        <h2>Up and running locally</h2>
-        <p>You need Docker with Compose and Node.js 22 to build the frontend.</p>
+        <span class="section-label" data-en="// quick-start" data-it="// avvio rapido">// quick-start</span>
+        <h2 data-en="Up and running locally" data-it="In funzione in locale">Up and running locally</h2>
+        <p data-en="You need Docker with Compose and Node.js 22 to build the frontend." data-it="Servono Docker con Compose e Node.js 22 per costruire il frontend.">You need Docker with Compose and Node.js 22 to build the frontend.</p>
       </div>
 
       <div class="quickstart reveal">
@@ -212,52 +218,32 @@ cp .env.example .env
 
 <span class="code-comment"># Start database, backend and nginx (bot and scraper are optional)</span>
 docker compose up -d --build db redis backend nginx</code></pre>
-        <p class="hint">
+        <p class="hint" data-en="Then open &lt;a href=&quot;http://localhost:6969&quot;&gt;&lt;code&gt;http://localhost:6969&lt;/code&gt;&lt;/a&gt; and sign in with the admin account from &lt;code&gt;.env&lt;/code&gt;. Full guide in the &lt;a href=&quot;https://github.com/giosci1994/webapp-palestra#readme&quot;&gt;README&lt;/a&gt;." data-it="Poi apri &lt;a href=&quot;http://localhost:6969&quot;&gt;&lt;code&gt;http://localhost:6969&lt;/code&gt;&lt;/a&gt; ed entra con l'account admin di &lt;code&gt;.env&lt;/code&gt;. La guida completa è nel &lt;a href=&quot;https://github.com/giosci1994/webapp-palestra#readme&quot;&gt;README&lt;/a&gt;.">
           Then open <a href="http://localhost:6969"><code>http://localhost:6969</code></a> and sign in with the admin account from <code>.env</code>. Full guide in the <a href="https://github.com/giosci1994/webapp-palestra#readme">README</a>.
         </p>
       </div>
 
       <div class="cta-box reveal">
         <div>
-          <h3>Want to contribute?</h3>
-          <p>Check out our issues page or submit a PR on GitHub.</p>
+          <h3 data-en="Want to contribute?" data-it="Vuoi contribuire?">Want to contribute?</h3>
+          <p data-en="Check out our issues page or submit a PR on GitHub." data-it="Guarda le issue o proponi una PR su GitHub.">Check out our issues page or submit a PR on GitHub.</p>
         </div>
         <a class="btn primary" href="https://github.com/giosci1994/webapp-palestra/issues" target="_blank"
-          rel="noreferrer">Open an issue</a>
+          rel="noreferrer" data-en="Open an issue" data-it="Apri una issue">Open an issue</a>
       </div>
     </section>
 
     <footer class="footer">
       <div class="footer-left">
-        <span>© <span id="year">2026</span> GymMaster · A project by <a href="https://giosci1994.github.io/" target="_blank"
+        <span>© <span id="year">2026</span> GymMaster · <span data-en="A project by" data-it="Un progetto di">A project by</span> <a href="https://giosci1994.github.io/" target="_blank"
             rel="noreferrer">giosci1994</a></span>
       </div>
       <div class="footer-right">
-        <a href="https://github.com/giosci1994/webapp-palestra" target="_blank" rel="noreferrer">GitHub Repo</a>
+        <a href="https://github.com/giosci1994/webapp-palestra" target="_blank" rel="noreferrer" data-en="GitHub Repo" data-it="Repository GitHub">GitHub Repo</a>
       </div>
     </footer>
   </main>
 
-  <script>
-    document.getElementById('year').textContent = new Date().getFullYear();
-
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const reveals = document.querySelectorAll('.reveal');
-
-    if (reduceMotion || !('IntersectionObserver' in window)) {
-      reveals.forEach(el => el.classList.add('visible'));
-    } else {
-      const io = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-            io.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.12 });
-      reveals.forEach(el => io.observe(el));
-    }
-  </script>
 </body>
 
 </html>
