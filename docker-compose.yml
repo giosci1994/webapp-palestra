@@ -111,6 +111,12 @@ services:
     restart: unless-stopped
     labels:
       - "diun.enable=false"
+    # init: reaps Chromium's zombie processes (PID 1 is `tail -f`).
+    # tmpfs /tmp: Chromium (--disable-dev-shm-usage) writes its shared memory
+    # to /tmp; in RAM it no longer wears the SSD (~300 MB per run).
+    init: true
+    tmpfs:
+      - /tmp:size=1g
     environment:
       DATABASE_URL: ${DATABASE_URL}
       PROXY_URL: ${PROXY_URL:-}
