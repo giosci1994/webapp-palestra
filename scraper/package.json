@@ -1,6 +1,7 @@
 {
   "name": "gymmaster-scraper",
   "version": "1.0.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "scripts": {
     "scrape": "node scraper-affluenza.js",

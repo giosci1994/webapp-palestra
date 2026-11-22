@@ -1,6 +1,7 @@
 {
   "name": "gymmaster-backend",
   "version": "1.0.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "description": "GymMaster PWA — Backend API REST con Express, Prisma e Socket.io",
   "main": "src/server.js",
   "type": "module",

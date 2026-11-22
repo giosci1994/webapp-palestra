@@ -1,6 +1,7 @@
 {
   "name": "gymmaster-bot",
   "version": "1.0.0",
+  "license": "PolyForm-Noncommercial-1.0.0",
   "description": "GymMaster — Bot Telegram (grammY) per creazione schede conversazionale e lettura schede",
   "type": "module",
   "main": "bot.js",

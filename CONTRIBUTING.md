@@ -1,6 +1,6 @@
 # Contributing to GymMaster
 
-Thank you for your interest! GymMaster is free software, released under the **GNU General Public License v3.0** (see [LICENSE](LICENSE)). Issues and pull requests are welcome.
+Thank you for your interest! GymMaster is source-available, released under the **PolyForm Noncommercial License 1.0.0** (see [LICENSE](LICENSE)). Issues and pull requests are welcome.
 
 ## Reporting bugs
 
@@ -15,4 +15,4 @@ Thank you for your interest! GymMaster is free software, released under the **GN
 - Every change to `backend/prisma/schema.prisma` needs its migration (`npx prisma migrate dev --name ...`): the tests check that the migrations build exactly the schema.
 - Every text users see goes through the translations, in English and Italian: see [docs/translations.md](docs/translations.md). New languages are welcome.
 - Write comments, docs, commit messages and pull requests in English. Code names (variables, files, routes, database tables) are in Italian: keep them consistent with the code around them.
-- By contributing you agree that your contribution is released under the GPLv3, like the rest of the project.
+- By contributing you agree that your contribution is released under the PolyForm Noncommercial License 1.0.0, like the rest of the project.

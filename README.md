@@ -3,7 +3,7 @@
 <p align="center">
   <a href="https://github.com/giosci1994/webapp-palestra/actions/workflows/test.yml"><img src="https://github.com/giosci1994/webapp-palestra/actions/workflows/test.yml/badge.svg" alt="Tests" /></a>
   <a href="https://github.com/giosci1994/webapp-palestra/releases/latest"><img src="https://img.shields.io/github/v/release/giosci1994/webapp-palestra" alt="Latest release" /></a>
-  <img src="https://img.shields.io/badge/license-GPLv3-blue.svg" alt="License GPLv3" />
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-orange.svg" alt="License: PolyForm Noncommercial 1.0.0" /></a>
   <a href="https://buymeacoffee.com/giosci1994u"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee" /></a>
 </p>
 
@@ -200,4 +200,6 @@ If GymMaster is useful to you, you can buy me a coffee.
 
 ## 📄 License
 
-Free software under the [GNU General Public License v3.0](LICENSE).
+Source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE) — free for personal, educational, and noncommercial use. Commercial use requires a separate license from the author.
+
+Required Notice: Copyright 2026 giosci1994 (https://github.com/giosci1994/webapp-palestra)
