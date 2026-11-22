@@ -32,7 +32,7 @@
   },
   "proprietaIntellettuale": {
     "titolo": "5. Intellectual Property",
-    "testo": "GymMaster is an open-source project. The source code is available on <link>GitHub</link>. Content created by users (plans, custom exercises) remains the property of its respective authors."
+    "testo": "GymMaster is a source-available project licensed under PolyForm Noncommercial 1.0.0 (personal and noncommercial use). The source code is available on <link>GitHub</link>. Content created by users (plans, custom exercises) remains the property of its respective authors."
   },
   "disclaimerMedico": {
     "titolo": "6. Medical Disclaimer",

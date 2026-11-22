@@ -173,7 +173,7 @@
   "fatturazione": {
     "piano": "Il tuo piano",
     "gratuito": "Gratuito",
-    "pianoDescrizione": "GymMaster è gratuito e open source: tutte le funzioni sono incluse, senza abbonamento.",
+    "pianoDescrizione": "GymMaster è gratuito e source-available (licenza PolyForm Noncommercial 1.0.0): tutte le funzioni sono incluse, senza abbonamento.",
     "sostieni": "Sostieni GymMaster",
     "sostieniDescrizione": "GymMaster è sviluppato nel tempo libero. Se ti è utile, puoi offrirmi un caffè: aiuta a coprire i costi e a portare avanti il progetto.",
     "offrimiUnCaffe": "Offrimi un caffè",
