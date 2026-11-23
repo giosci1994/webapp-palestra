@@ -103,7 +103,12 @@ services:
       - gymmaster-rete
 
   # --- Crowd level scraper (Playwright + Cron) ---
+  # Off since 23/11/2026: Google Maps shows a limited view without "Popular
+  # times" to sessions without an account, so the scraper saves nothing (the
+  # data stop at 12/10/2026). The profile keeps it out of `docker compose up -d`;
+  # to turn it back on: `docker compose --profile scraper up -d scraper`.
   scraper:
+    profiles: ["scraper"]
     build:
       context: .
       dockerfile: scraper/Dockerfile

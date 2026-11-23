@@ -205,13 +205,16 @@ prepara() {
 
 # The switch: from here on the site changes. The backend applies the migrations at startup
 passa() {
-  local cambiati="$1" servizio
+  local cambiati="$1"
   TOCCATO=1
   passo "avvio del backend" docker compose up -d --no-deps --force-recreate backend || return 1
   aspetta_sano gymmaster-backend 240 || return 1
-  for servizio in bot scraper; do
-    if cambiato "$cambiati" "^$servizio/"; then passo "avvio di $servizio" docker compose up -d --no-deps --force-recreate "$servizio" || return 1; fi
-  done
+  # The scraper is only rebuilt, never started: it is off since 23/11/2026
+  # (Google Maps no longer shows "Popular times" without an account) and its
+  # compose profile keeps it off. To turn it back on, restore the loop
+  # `for servizio in bot scraper` and start it once with
+  # `docker compose --profile scraper up -d scraper`.
+  if cambiato "$cambiati" '^bot/'; then passo "avvio di bot" docker compose up -d --no-deps --force-recreate bot || return 1; fi
   passo "pubblicazione del frontend" rsync -a --delete --checksum "$STATO/dist/" frontend/dist/ || return 1
   if cambiato "$cambiati" "$NGINX"; then
     passo "avvio di nginx" docker compose up -d --no-deps --force-recreate nginx || return 1

@@ -24,7 +24,7 @@ Then it:
 
 1. copies the database to `~/backup/gymmaster/` (keeping the last 10);
 2. prepares without touching the site: backend image, bot and scraper only if they changed, frontend build in a separate folder, nginx configuration test if it changed;
-3. switches to the new version: recreates the backend, which applies the migrations, and bot, scraper and nginx if needed; publishes the frontend;
+3. switches to the new version: recreates the backend, which applies the migrations, and bot and nginx if needed (the scraper is rebuilt but not started: it is off since 23/11/2026, see `docker-compose.yml`); publishes the frontend;
 4. checks that site and server answer with the new version;
 5. adds the version's stories (`backend/prisma/novita.json`).
 
