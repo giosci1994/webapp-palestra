@@ -1,7 +1,19 @@
 {
-  "versione": "1.6.4",
-  "build": "2026-11-11",
+  "versione": "1.6.5",
+  "build": "2026-11-23",
   "changelog": [
+    {
+      "versione": "1.6.5",
+      "data": "2026-11-23",
+      "modifiche": [
+        "L'affluenza della palestra non si aggiorna più: Google non mostra più gli «Orari di punta». Affluenza e orari migliori restano quelli registrati fino al 12/10/2026",
+        "Profilo, termini di servizio e privacy indicano la nuova licenza del progetto, PolyForm Noncommercial 1.0.0"
+      ],
+      "modificheEn": [
+        "Gym crowd levels are no longer updated: Google no longer shows \"Popular times\". Crowd levels and best times stay the ones recorded up to 12/10/2026",
+        "Profile, terms of service and privacy policy show the project's new license, PolyForm Noncommercial 1.0.0"
+      ]
+    },
     {
       "versione": "1.6.4",
       "data": "2026-11-11",
