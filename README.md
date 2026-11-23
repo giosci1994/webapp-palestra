@@ -125,11 +125,11 @@ docker compose up -d --build db redis backend nginx
 
 At the first start the backend applies the migrations and fills the database: the administrator (`SUPERADMIN_EMAIL` and `SUPERADMIN_PASSWORD` from `.env`), the equipment, the exercise catalogue, a few gyms and the sample plans. The app answers on **http://localhost:6969**.
 
-The bot and the scraper are optional. The bot needs `TELEGRAM_BOT_TOKEN` and `BOT_SECRET`. The scraper reads the crowd levels of the gyms that have a Google Place ID; `scraper/trova-place-ids.js` looks them up once for the gyms that have none. When they are configured:
+The bot and the scraper are optional. The scraper is off since 23/11/2026: Google Maps shows a limited view without "Popular times" to sessions without an account, so the crowd levels stay those saved until 12/10/2026. Its compose profile keeps it out of `docker compose up -d`; the code stays, and `docker compose --profile scraper up -d --build scraper` starts it. The bot needs `TELEGRAM_BOT_TOKEN` and `BOT_SECRET`. The scraper reads the crowd levels of the gyms that have a Google Place ID; `scraper/trova-place-ids.js` looks them up once for the gyms that have none. When they are configured:
 
 ```bash
-docker compose up -d --build bot scraper
-docker compose run --rm --entrypoint node scraper trova-place-ids.js   # once, for the Place IDs
+docker compose up -d --build bot
+docker compose --profile scraper run --rm --entrypoint node scraper trova-place-ids.js   # once, for the Place IDs
 ```
 
 To use it away from home you need HTTPS on a domain, for example with a Cloudflare tunnel or a reverse proxy in front of nginx. Passkeys only work on the domain of `APP_URL`.

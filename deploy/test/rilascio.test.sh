@@ -73,12 +73,13 @@ chmod +x "$TMP/bin/"*
 git init -q --bare -b master "$TMP/origine.git"
 git clone -q "$TMP/origine.git" "$TMP/sviluppo" 2>/dev/null
 cd "$TMP/sviluppo" || exit 1
-mkdir -p deploy frontend/src bot nginx
+mkdir -p deploy frontend/src bot nginx scraper
 cp "$QUI/../rilascio.sh" deploy/rilascio.sh
 printf '.env\nfrontend/dist/\nfrontend/node_modules/\n' >.gitignore
 echo 'codice' >frontend/src/app.js
 echo 'bot' >bot/bot.js
 echo 'nginx' >nginx/nginx.conf
+echo 'scraper' >scraper/scraper-affluenza.js
 
 # A new version on master, with its tag. $1 the version, then the files to change
 nuova_versione() {
@@ -204,6 +205,11 @@ export FALLISCI="nginx -t"
 rilascia
 unset FALLISCI
 prova "una configurazione di nginx sbagliata ferma tutto prima di toccare il sito" eval '[ "$(installata)" = 1.2.6 ] && ! chiamato "up -d" && messaggio "controllo della configurazione di nginx. Il sito non è stato toccato, resta la 1.2.6"'
+
+nuova_versione 1.2.8 scraper/scraper-affluenza.js
+pubblica v1.2.8
+rilascia
+prova "se cambia lo scraper, si ricostruisce ma non si avvia (e' spento)" eval '[ "$(installata)" = 1.2.8 ] && chiamato "compose build scraper" && ! chiamato "force-recreate scraper"'
 
 echo
 echo "Prove dello script di rilascio: $riusciti riuscite, $falliti fallite"
