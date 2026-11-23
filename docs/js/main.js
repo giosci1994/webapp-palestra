@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const langBtn = document.getElementById('lang-toggle');
   const texts = document.querySelectorAll('[data-en]');
   const metaDesc = document.querySelector('meta[name="description"]');
+  const menuBtn = document.querySelector('.menu-btn');
+  const menu = document.getElementById('site-menu');
   const KEY = 'gymmaster-lang';
 
   function saved() {
@@ -29,6 +31,9 @@ document.addEventListener('DOMContentLoaded', () => {
       langBtn.setAttribute('aria-label', lang === 'it' ? 'Switch to English' : "Passa all'italiano");
       langBtn.title = langBtn.getAttribute('aria-label');
     }
+    if (menuBtn && menuBtn.dataset['label' + (lang === 'it' ? 'It' : 'En')]) {
+      menuBtn.setAttribute('aria-label', menuBtn.dataset['label' + (lang === 'it' ? 'It' : 'En')]);
+    }
   }
 
   // ?lang=it / ?lang=en wins, then the saved choice, then the browser language.
@@ -48,20 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const year = document.getElementById('year');
   if (year) year.textContent = new Date().getFullYear();
 
-  // Scroll reveal (Arborae standard)
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const reveals = document.querySelectorAll('.reveal');
-  if (reduceMotion || !('IntersectionObserver' in window)) {
-    reveals.forEach((el) => el.classList.add('visible'));
-  } else {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    reveals.forEach((el) => io.observe(el));
+  // Phone menu: the button shows the links under the bar; Esc, a tapped link or a wider screen closes it.
+  // The entrance of the sections is done by Motion, in index.html.
+  if (menuBtn && menu) {
+    const setOpen = (open) => {
+      menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      menu.classList.toggle('open', open);
+    };
+    menuBtn.addEventListener('click', () => setOpen(menuBtn.getAttribute('aria-expanded') !== 'true'));
+    menu.addEventListener('click', (e) => { if (e.target.closest('a')) setOpen(false); });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && menuBtn.getAttribute('aria-expanded') === 'true') { setOpen(false); menuBtn.focus(); }
+    });
+    window.matchMedia('(min-width: 641px)').addEventListener('change', (e) => { if (e.matches) setOpen(false); });
   }
 });
