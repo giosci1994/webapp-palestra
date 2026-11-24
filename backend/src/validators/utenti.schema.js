@@ -94,15 +94,12 @@ const idPalestra = valore => valore === null || valore === ''
  */
 const campo = (chiave, verifica) => z.any()
   .superRefine((valore, ctx) => {
-    if (!verifica(valore)) ctx.addIssue({ code: z.ZodIssueCode.custom, message: chiave });
+    if (!verifica(valore)) ctx.addIssue({ code: 'custom', message: chiave });
   })
   .optional();
 
 /** A body that is not an object (a list, a text) gets a translated message, not zod's */
-const SE_NON_E_UN_OGGETTO = {
-  invalid_type_error: 'utentiSchema.corpoNonValido',
-  required_error: 'utentiSchema.corpoNonValido'
-};
+const SE_NON_E_UN_OGGETTO = { error: 'utentiSchema.corpoNonValido' };
 
 // --- Change the password ---
 
@@ -164,7 +161,7 @@ export const schemaAggiornaProfilo = z.object({
 // --- Change a user's role (PATCH /utenti/:id/ruolo) ---
 
 export const schemaCambiaRuolo = z.object({
-  ruolo: z.enum(Object.values(Ruolo), { errorMap: () => ({ message: 'utentiSchema.ruoloNonValido' }) })
+  ruolo: z.enum(Object.values(Ruolo), { error: 'utentiSchema.ruoloNonValido' })
 }, SE_NON_E_UN_OGGETTO);
 
 // --- The admin's list of users (GET /utenti) ---

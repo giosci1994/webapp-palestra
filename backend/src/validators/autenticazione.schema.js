@@ -8,16 +8,19 @@
 
 import { z } from 'zod';
 
+/** The message when the field is missing; a wrong type keeps zod's own */
+const seManca = chiave => problema => (problema.input === undefined ? chiave : undefined);
+
 /** Schema for registering a new user */
 export const schemaRegistrazione = z.object({
   email: z
-    .string({ required_error: 'autenticazioneSchema.emailObbligatoria' })
+    .string({ error: seManca('autenticazioneSchema.emailObbligatoria') })
     .email('autenticazioneSchema.emailNonValida')
     .max(255, 'autenticazioneSchema.emailTroppoLunga')
     .toLowerCase()
     .trim(),
   password: z
-    .string({ required_error: 'autenticazioneSchema.passwordObbligatoria' })
+    .string({ error: seManca('autenticazioneSchema.passwordObbligatoria') })
     .min(8, 'autenticazioneSchema.passwordCorta')
     .max(128, 'autenticazioneSchema.passwordLunga')
     .regex(
@@ -25,7 +28,7 @@ export const schemaRegistrazione = z.object({
       'autenticazioneSchema.passwordDebole'
     ),
   nome: z
-    .string({ required_error: 'autenticazioneSchema.nomeObbligatorio' })
+    .string({ error: seManca('autenticazioneSchema.nomeObbligatorio') })
     .min(2, 'autenticazioneSchema.nomeCorto')
     .max(100, 'autenticazioneSchema.nomeLungo')
     .trim(),
@@ -40,12 +43,12 @@ export const schemaRegistrazione = z.object({
 /** Schema for the login */
 export const schemaLogin = z.object({
   email: z
-    .string({ required_error: 'autenticazioneSchema.emailObbligatoria' })
+    .string({ error: seManca('autenticazioneSchema.emailObbligatoria') })
     .email('autenticazioneSchema.emailNonValida')
     .toLowerCase()
     .trim(),
   password: z
-    .string({ required_error: 'autenticazioneSchema.passwordObbligatoria' })
+    .string({ error: seManca('autenticazioneSchema.passwordObbligatoria') })
     .min(1, 'autenticazioneSchema.passwordObbligatoria'),
   // It must be listed: valida() replaces the body with the validated one, and
   // zod drops the fields the schema does not know

@@ -96,7 +96,7 @@ export const schemaModificaAppuntamento = z.object({
   descrizione: testo('ptSchema.descrizioneNonValida').nullish(),
   dataOra: istante('ptSchema.dataOraNonValida').optional(),
   durataMinuti: durata().optional(),
-  completato: z.boolean({ invalid_type_error: 'ptSchema.completatoNonValido' }).optional(),
+  completato: z.boolean({ error: 'ptSchema.completatoNonValido' }).optional(),
   note: testo('ptSchema.noteNonValide').nullish()
 });
 
@@ -108,7 +108,7 @@ const schemaEsercizioScheda = z.object({
   serieTarget: z.custom(valore => eIntero(valore, 1, SERIE_MASSIME), 'ptSchema.serieTargetNonValido').nullish(),
   repTarget: testo('ptSchema.repTargetNonValido').nullish(),
   recuperoSecondi: z.custom(valore => eIntero(valore, 1, RECUPERO_MASSIMO_SECONDI), 'ptSchema.recuperoNonValido').nullish()
-}, { invalid_type_error: 'ptSchema.esercizioNonValido' });
+}, { error: 'ptSchema.esercizioNonValido' });
 
 /**
  * Body of POST /pt/schede. The title and the exercises are required, but the
@@ -118,7 +118,7 @@ export const schemaNuovaScheda = z.object({
   titolo: testo('ptSchema.titoloNonValido').nullish(),
   descrizione: testo('ptSchema.descrizioneNonValida').nullish(),
   livello: unoDi(LIVELLI, 'ptSchema.livelloNonValido').nullish(),
-  esercizi: z.array(schemaEsercizioScheda, { invalid_type_error: 'ptSchema.eserciziNonValidi' })
+  esercizi: z.array(schemaEsercizioScheda, { error: 'ptSchema.eserciziNonValidi' })
     .max(ESERCIZI_MASSIMI, 'ptSchema.eserciziTroppi').nullish()
 });
 

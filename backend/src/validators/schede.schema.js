@@ -31,14 +31,14 @@ import { ID_MASSIMO } from '../middleware/validazione.js';
 export function numero(messaggio, { min = 0, max = ID_MASSIMO, intero = true, obbligatorio, vuoto = 'errore' } = {}) {
   return z.unknown().transform((valore, ctx) => {
     if (obbligatorio && (valore === undefined || valore === null || (valore === '' && vuoto === 'errore'))) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: obbligatorio });
+      ctx.addIssue({ code: 'custom', message: obbligatorio });
       return z.NEVER;
     }
     if (valore === '' && vuoto !== 'errore') return vuoto === 'nullo' ? null : undefined;
 
     const n = typeof valore === 'string' && /^-?\d+(\.\d+)?$/.test(valore) ? Number(valore) : valore;
     if (typeof n !== 'number' || !Number.isFinite(n) || (intero && !Number.isInteger(n)) || n < min || n > max) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: messaggio });
+      ctx.addIssue({ code: 'custom', message: messaggio });
       return z.NEVER;
     }
     return n;
@@ -49,17 +49,17 @@ export function numero(messaggio, { min = 0, max = ID_MASSIMO, intero = true, ob
 const numeroFacoltativo = (messaggio, opzioni) => numero(messaggio, { ...opzioni, vuoto: 'nullo' }).nullable().optional();
 
 /** Optional text, null allowed */
-const testoFacoltativo = messaggio => z.string({ invalid_type_error: messaggio }).nullable().optional();
+const testoFacoltativo = messaggio => z.string({ error: messaggio }).nullable().optional();
 
 /** The body itself is not an object (a list, for example) */
-const CORPO_NON_VALIDO = { invalid_type_error: 'schedeSchema.corpoNonValido', required_error: 'schedeSchema.corpoNonValido' };
+const CORPO_NON_VALIDO = { error: 'schedeSchema.corpoNonValido' };
 
 const LIVELLI = ['BASE', 'INTERMEDIO', 'AVANZATO'];
 const VISIBILITA = ['PERSONALE', 'GLOBALE'];
 
 /** One of the allowed values; on creation null and '' mean "not sent" (the default applies) */
 const unoDi = (valori, messaggio, { vuotoAmmesso }) => {
-  const scelta = z.enum(valori, { errorMap: () => ({ message: messaggio }) }).optional();
+  const scelta = z.enum(valori, { error: messaggio }).optional();
   return vuotoAmmesso ? z.preprocess(v => (v === null || v === '' ? undefined : v), scelta) : scelta;
 };
 
@@ -71,16 +71,16 @@ const schemaEsercizioInScheda = z.object({
   recuperoSecondi: numeroFacoltativo('schedeSchema.recuperoSecondiNonValido', { max: 86400 }),
   note: testoFacoltativo('schedeSchema.noteNonValide'),
   // Any value: the handler only asks whether it is truthy
-  riscaldamento: z.unknown(),
+  riscaldamento: z.unknown().optional(),
   durataMinuti: numeroFacoltativo('schedeSchema.durataMinutiNonValida', { max: 1440 }),
   velocitaKmh: numeroFacoltativo('schedeSchema.velocitaKmhNonValida', { max: 200, intero: false }),
   inclinazione: numeroFacoltativo('schedeSchema.inclinazioneNonValida', { min: -100, max: 100, intero: false }),
   livelloResistenza: numeroFacoltativo('schedeSchema.livelloResistenzaNonValido', { max: 1000 }),
   distanzaKm: numeroFacoltativo('schedeSchema.distanzaKmNonValida', { max: 10000, intero: false })
-}, { invalid_type_error: 'schedeSchema.esercizioNonValido', required_error: 'schedeSchema.esercizioNonValido' });
+}, { error: 'schedeSchema.esercizioNonValido' });
 
 const elencoEsercizi = z
-  .array(schemaEsercizioInScheda, { invalid_type_error: 'schedeSchema.eserciziNonValidi' })
+  .array(schemaEsercizioInScheda, { error: 'schedeSchema.eserciziNonValidi' })
   .nullable()
   .optional();
 
@@ -98,7 +98,7 @@ export const schemaCreaScheda = z.object({
 
 /** Schema for PUT /schede/:id: what is not sent stays as it is */
 export const schemaAggiornaScheda = z.object({
-  titolo: z.string({ invalid_type_error: 'schedeSchema.titoloNonValido' }).optional(),
+  titolo: z.string({ error: 'schedeSchema.titoloNonValido' }).optional(),
   descrizione: testoFacoltativo('schedeSchema.descrizioneNonValida'),
   livello: unoDi(LIVELLI, 'schedeSchema.livelloNonValido', { vuotoAmmesso: false }),
   visibilita: unoDi(VISIBILITA, 'schedeSchema.visibilitaNonValida', { vuotoAmmesso: false }),

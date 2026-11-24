@@ -18,17 +18,17 @@ import { ID_MASSIMO } from '../middleware/validazione.js';
 const INTERO_MASSIMO = ID_MASSIMO;
 
 /** The body of a request must be an object (not a list or a text) */
-const corpo = { required_error: 'adminSchema.corpoNonValido', invalid_type_error: 'adminSchema.corpoNonValido' };
+const corpo = { error: 'adminSchema.corpoNonValido' };
 
 /** A required text: present, a text and not blank */
 const testoObbligatorio = massimo => z
-  .string({ required_error: 'adminSchema.campoObbligatorio', invalid_type_error: 'adminSchema.testoNonValido' })
+  .string({ error: problema => (problema.input === undefined ? 'adminSchema.campoObbligatorio' : 'adminSchema.testoNonValido') })
   .max(massimo, 'adminSchema.testoTroppoLungo')
   .refine(valore => valore.trim() !== '', 'adminSchema.campoObbligatorio');
 
 /** An optional text; null and an empty text are allowed (the routes turn them into null) */
 const testoFacoltativo = massimo => z
-  .string({ invalid_type_error: 'adminSchema.testoNonValido' })
+  .string({ error: 'adminSchema.testoNonValido' })
   .max(massimo, 'adminSchema.testoTroppoLungo')
   .nullish();
 
@@ -50,7 +50,7 @@ export const schemaAggiornaPalestra = z.object({
   nomeCatena: testoObbligatorio(200).optional(),
   citta: testoObbligatorio(200).optional(),
   indirizzo: testoObbligatorio(300).optional(),
-  nazione: z.string({ invalid_type_error: 'adminSchema.testoNonValido' }).max(100, 'adminSchema.testoTroppoLungo').optional(),
+  nazione: z.string({ error: 'adminSchema.testoNonValido' }).max(100, 'adminSchema.testoTroppoLungo').optional(),
   googlePlaceId: testoFacoltativo(300)
 }, corpo);
 
@@ -58,7 +58,7 @@ export const schemaAggiornaPalestra = z.object({
 
 export const schemaCreaAttrezzatura = z.object({
   nome: testoObbligatorio(200),
-  categoria: z.nativeEnum(CategoriaAttrezzatura, { message: 'adminSchema.categoriaNonValida' }),
+  categoria: z.enum(CategoriaAttrezzatura, { error: 'adminSchema.categoriaNonValida' }),
   muscoliBersaglio: testoFacoltativo(500)
 }, corpo);
 
@@ -68,7 +68,7 @@ export const schemaCreaAttrezzatura = z.object({
 export const schemaElencoSuggerimenti = z.object({
   stato: z.preprocess(
     valore => (valore === '' ? undefined : valore),
-    z.nativeEnum(StatoSuggerimento, { message: 'adminSchema.statoNonValido' }).optional()
+    z.enum(StatoSuggerimento, { error: 'adminSchema.statoNonValido' }).optional()
   )
 });
 
@@ -106,7 +106,7 @@ export const schemaBanner = z.object({
 const punto = z.object({
   icona: testoFacoltativo(50),
   testo: testoFacoltativo(500)
-}).passthrough();
+}).loose();
 const elencoPunti = z.array(punto).max(50);
 
 /**
@@ -125,7 +125,7 @@ const campiNovita = {
   sottotitolo: testoFacoltativo(500),
   punti,
   icona: testoFacoltativo(50),
-  immagine: z.string({ invalid_type_error: 'adminSchema.testoNonValido' }).nullish(),
+  immagine: z.string({ error: 'adminSchema.testoNonValido' }).nullish(),
   ctaTesto: testoFacoltativo(100),
   ctaRotta: testoFacoltativo(200),
   coloreInizio: testoFacoltativo(30),

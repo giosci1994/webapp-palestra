@@ -9,10 +9,22 @@ import { t } from '../i18n/index.js';
 /**
  * The text of a zod issue. The schemas write translation keys as messages
  * ('autenticazioneSchema.passwordCorta'): they become text in the request's
- * language. Zod's own default messages ("Required") are not keys and stay.
+ * language. Zod's own default messages ("Invalid input: ...") are not keys and stay.
  */
 const eUnaChiave = messaggio => /^\w+\.[\w.]+$/.test(messaggio);
 const testoDelProblema = problema => (eUnaChiave(problema.message) ? t(problema.message) : problema.message);
+
+/**
+ * The issues of a failed parse, as zod 3 gave them. Zod 4 still runs the
+ * length checks of a text (.min, .max) when the value has the wrong type but a
+ * length (a list): a list sent as password got "too short" as well as "not a
+ * text", and the first of our messages became the answer. A wrong type is the
+ * only issue of its field.
+ */
+function problemiDi(errore) {
+  const tipoSbagliato = new Set(errore.issues.filter(p => p.code === 'invalid_type').map(p => p.path.join('.')));
+  return errore.issues.filter(p => p.code === 'invalid_type' || !tipoSbagliato.has(p.path.join('.')));
+}
 
 /**
  * Creates a validation middleware based on a Zod schema.
@@ -37,7 +49,7 @@ export function valida(schemi) {
       const risultato = schemi.body.safeParse(req.body);
       if (!risultato.success) {
         errori.push(
-          ...risultato.error.errors.map(e => ({
+          ...problemiDi(risultato.error).map(e => ({
             campo: e.path.join('.'),
             messaggio: testoDelProblema(e),
             origine: 'body',
@@ -55,7 +67,7 @@ export function valida(schemi) {
       const risultato = schemi.query.safeParse(req.query);
       if (!risultato.success) {
         errori.push(
-          ...risultato.error.errors.map(e => ({
+          ...problemiDi(risultato.error).map(e => ({
             campo: e.path.join('.'),
             messaggio: testoDelProblema(e),
             origine: 'query',
@@ -72,7 +84,7 @@ export function valida(schemi) {
       const risultato = schemi.params.safeParse(req.params);
       if (!risultato.success) {
         errori.push(
-          ...risultato.error.errors.map(e => ({
+          ...problemiDi(risultato.error).map(e => ({
             campo: e.path.join('.'),
             messaggio: testoDelProblema(e),
             origine: 'params',
