@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
+import { formattaRisposta } from '../utils/rispostaAssistente.js';
 import { useLingua } from '../hooks/useLingua.js';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -124,14 +125,6 @@ export default function Assistente() {
       e.preventDefault();
       inviaMessaggio();
     }
-  };
-
-  // Format the simple markdown of the AI reply
-  const formattaRisposta = (testo) => {
-    return testo
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/\n/g, '<br/>');
   };
 
   return (

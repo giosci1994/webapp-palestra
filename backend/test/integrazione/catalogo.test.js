@@ -190,6 +190,11 @@ describe('best times to train', () => {
     assert.deepEqual((await migliori('?da=1&a=5')).corpo.dati.migliori[0], { giornoSettimana: 0, ora: 3, livello: 0 });
     assert.deepEqual((await migliori('?da=20&a=23')).corpo.dati.migliori[0], { giornoSettimana: 6, ora: 23, livello: 1 });
 
+    // Midnight is an hour like the others, not a missing value
+    const daMezzanotte = (await migliori('?da=0&a=3')).corpo.dati;
+    assert.deepEqual(daMezzanotte.fascia, { da: 0, a: 3 });
+    assert.deepEqual((await migliori('?da=0&a=0')).corpo.dati.fascia, { da: 0, a: 0 });
+
     const rovesciata = await migliori('?da=20&a=8');
     assert.equal(rovesciata.stato, 400);
     assert.equal(rovesciata.corpo.errore, 'Fascia oraria rovesciata');

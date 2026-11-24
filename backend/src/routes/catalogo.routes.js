@@ -187,8 +187,14 @@ router.get('/palestre/:id/affluenza/migliori-orari', verificaTokenOpzionale, asy
 
     // Time window considered: at night the gym is almost always empty, but
     // suggesting 4 a.m. would not help anyone.
-    const da = Math.min(Math.max(parseInt(req.query.da) || 6, 0), 23);
-    const a = Math.min(Math.max(parseInt(req.query.a) || 22, 0), 23);
+    // NaN and not ||: 0 (midnight) is a valid hour, only a missing or
+    // unreadable value takes the default
+    const ora = (valore, predefinita) => {
+      const n = parseInt(valore, 10);
+      return Math.min(Math.max(Number.isNaN(n) ? predefinita : n, 0), 23);
+    };
+    const da = ora(req.query.da, 6);
+    const a = ora(req.query.a, 22);
     if (da > a) return res.status(400).json({ successo: false, errore: t('catalogoRoutes.fasciaOrariaRovesciata') });
 
     const righe = await prisma.afluenzaPalestra.findMany({

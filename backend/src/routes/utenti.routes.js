@@ -59,10 +59,9 @@ router.get('/cerca', valida({ query: schemaCercaUtenti }), async (req, res, next
       where: {
         stato: 'ATTIVO',
         id: { not: req.utente.id },
-        OR: [
-          { nome: { contains: q, mode: 'insensitive' } },
-          { email: { contains: q, mode: 'insensitive' } }
-        ]
+        // By name only: searching inside the email would let anyone find out
+        // who has an account with a given address
+        nome: { contains: q, mode: 'insensitive' }
       },
       select: { id: true, nome: true, ruolo: true },
       take: 10

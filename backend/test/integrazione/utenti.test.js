@@ -21,7 +21,7 @@ const chiedi = (metodo, percorso, corpo, chi = utente) => server.richiesta(metod
 const notificheDi = chi => prisma.allenamentoNotifica.findMany({ where: { utenteId: chi.id } });
 
 describe('searching people', () => {
-  it('by name or email, active ones only, never yourself, at most 10', async () => {
+  it('by name only (never inside the email), active ones only, never yourself, at most 10', async () => {
     await creaUtente({ nome: 'Marco Rossi' });
     await creaUtente({ nome: 'Anna', email: 'marco.fan@test.local' });
     await creaUtente({ nome: 'Marco Bannato', stato: 'BANNATO' });
@@ -29,7 +29,7 @@ describe('searching people', () => {
 
     const risposta = await chiedi('GET', '/utenti/cerca?q=MARCO');
     assert.equal(risposta.stato, 200);
-    assert.deepEqual(risposta.corpo.dati.map(u => u.nome).sort(), ['Anna', 'Marco Rossi']);
+    assert.deepEqual(risposta.corpo.dati.map(u => u.nome).sort(), ['Marco Rossi']);
     assert.deepEqual(Object.keys(risposta.corpo.dati[0]).sort(), ['id', 'nome', 'ruolo']);
 
     for (let i = 0; i < 12; i++) await creaUtente({ nome: `Marco ${i}` });

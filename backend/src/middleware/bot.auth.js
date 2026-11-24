@@ -4,15 +4,27 @@
 // (internal bot <-> backend network) and resolves the user from the chatId.
 // ============================================
 
+import crypto from 'node:crypto';
 import prisma from '../config/database.js';
 import { ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { t, conLingua, linguaSupportata } from '../i18n/index.js';
 import { conFuso, fusoDi } from '../utils/date.js';
 
+/**
+ * Compares two secrets in constant time: the time of the answer says nothing
+ * about how much of the secret was right. Different lengths compare digests
+ * of the same length, so they too take the same time (and are never equal).
+ */
+export function segretiUguali(ricevuto, atteso) {
+  if (typeof ricevuto !== 'string' || typeof atteso !== 'string' || !atteso) return false;
+  const a = crypto.createHash('sha256').update(ricevuto).digest();
+  const b = crypto.createHash('sha256').update(atteso).digest();
+  return crypto.timingSafeEqual(a, b) && ricevuto.length === atteso.length;
+}
+
 /** Checks the X-Bot-Secret header. The bot routes are never exposed publicly. */
 export function verificaSegretoBot(req, res, next) {
-  const segreto = req.headers['x-bot-secret'];
-  if (!process.env.BOT_SECRET || segreto !== process.env.BOT_SECRET) {
+  if (!segretiUguali(req.headers['x-bot-secret'], process.env.BOT_SECRET)) {
     return next(new ErroreNonAutorizzato(t('botAuth.accessoNonAutorizzato')));
   }
   next();

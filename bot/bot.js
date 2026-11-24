@@ -18,6 +18,8 @@ if (!BOT_SECRET) { console.error('❌ BOT_SECRET mancante'); process.exit(1); }
 const bot = new Bot(TOKEN);
 
 // --- Helper: calls the backend ---
+const TIMEOUT_BACKEND = 30000;
+
 // The Telegram user's language goes in Accept-Language: the backend answers in
 // it (for a linked user, the language of their account wins there).
 async function api(ctx, percorso, body) {
@@ -28,7 +30,10 @@ async function api(ctx, percorso, body) {
     const resp = await fetch(`${BACKEND_URL}/api/v1/bot/${percorso}`, {
       method: 'POST',
       headers: intestazioni,
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
+      // A backend that does not answer must not leave the user waiting
+      // forever: 30s covers an answer of the AI assistant
+      signal: AbortSignal.timeout(TIMEOUT_BACKEND)
     });
     ricordaLingua(ctx, resp.headers.get('content-language'));
     const corpo = await resp.json().catch(() => ({}));

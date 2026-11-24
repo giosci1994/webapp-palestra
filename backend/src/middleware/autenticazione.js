@@ -7,8 +7,57 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/database.js';
 import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
-import { linguaSupportata, t } from '../i18n/index.js';
+import { linguaSupportata, linguaCorrente, t } from '../i18n/index.js';
 import { conFuso, fusoDi, fusoValido } from '../utils/date.js';
+
+/**
+ * Checks that the user of a verified access token still exists and is active,
+ * and that their session (the login's refresh token family) is still open: if
+ * it was closed from another device, by a logout or because of a theft, the
+ * access token stops working right away instead of staying valid until it
+ * expires. Used by the REST API (verificaToken) and by the WebSocket.
+ * @returns the user's data; throws ErroreNonAutenticato otherwise
+ */
+export async function controllaSessione(payload, lingua = linguaCorrente()) {
+  const utente = await prisma.utente.findUnique({
+    where: { id: payload.utenteId },
+    select: {
+      id: true,
+      email: true,
+      nome: true,
+      ruolo: true,
+      stato: true,
+      palestraId: true,
+      chatRetentionGiorni: true,
+      lingua: true,
+      linguaApp: true,
+      fusoOrario: true,
+      ...(payload.famiglia && {
+        refreshTokens: { where: { famiglia: payload.famiglia, revocato: false }, select: { id: true }, take: 1 }
+      })
+    }
+  });
+
+  if (!utente) {
+    throw new ErroreNonAutenticato(t('autenticazione.utenteNonTrovato', {}, lingua));
+  }
+
+  // Access tokens from before families existed have none: they expire on their own
+  const { refreshTokens, ...datiUtente } = utente;
+  if (payload.famiglia && refreshTokens.length === 0) {
+    throw new ErroreNonAutenticato(t('autenticazione.sessioneChiusa', {}, lingua));
+  }
+
+  if (utente.stato !== 'ATTIVO') {
+    throw new ErroreNonAutenticato(
+      utente.stato === 'BANNATO'
+        ? t('autenticazione.accountSospeso', {}, lingua)
+        : t('autenticazione.accountInAttesa', {}, lingua)
+    );
+  }
+
+  return datiUtente;
+}
 
 /**
  * JWT authentication middleware.
@@ -28,52 +77,13 @@ export async function verificaToken(req, res, next) {
     // Verify and decode the token
     const payload = jwt.verify(token, process.env.JWT_SEGRETO_ACCESS);
 
-    // Check that the user still exists and is active, and that their session
-    // (the login's refresh token family) is still open: if it was closed from
-    // another device, by a logout or because of a theft, the access token stops
-    // working right away instead of staying valid until it expires
-    const utente = await prisma.utente.findUnique({
-      where: { id: payload.utenteId },
-      select: {
-        id: true,
-        email: true,
-        nome: true,
-        ruolo: true,
-        stato: true,
-        palestraId: true,
-        chatRetentionGiorni: true,
-        lingua: true,
-        linguaApp: true,
-        fusoOrario: true,
-        ...(payload.famiglia && {
-          refreshTokens: { where: { famiglia: payload.famiglia, revocato: false }, select: { id: true }, take: 1 }
-        })
-      }
-    });
-
-    if (!utente) {
-      throw new ErroreNonAutenticato(t('autenticazione.utenteNonTrovato'));
-    }
-
-    // Access tokens from before families existed have none: they expire on their own
-    const { refreshTokens, ...datiUtente } = utente;
-    if (payload.famiglia && refreshTokens.length === 0) {
-      throw new ErroreNonAutenticato(t('autenticazione.sessioneChiusa'));
-    }
-
-    if (utente.stato !== 'ATTIVO') {
-      throw new ErroreNonAutenticato(
-        utente.stato === 'BANNATO'
-          ? t('autenticazione.accountSospeso')
-          : t('autenticazione.accountInAttesa')
-      );
-    }
+    const datiUtente = await controllaSessione(payload);
 
     // The app's language, remembered for the messages sent outside a request
     // (push, reminders). It changes rarely: a write only when it does
     if (req.lingua && linguaSupportata(req.headers['accept-language']) && datiUtente.linguaApp !== req.lingua) {
-      prisma.utente.update({ where: { id: utente.id }, data: { linguaApp: req.lingua } })
-        .catch(err => logger.warn({ utenteId: utente.id, err: err.message }, 'Lingua dell\'app non salvata'));
+      prisma.utente.update({ where: { id: datiUtente.id }, data: { linguaApp: req.lingua } })
+        .catch(err => logger.warn({ utenteId: datiUtente.id, err: err.message }, 'Lingua dell\'app non salvata'));
       datiUtente.linguaApp = req.lingua;
     }
 
@@ -81,8 +91,8 @@ export async function verificaToken(req, res, next) {
     // (utils/date.js). Saved like the language: a write only when it changes
     const fuso = fusoValido(req.headers['x-fuso-orario']);
     if (fuso && datiUtente.fusoOrario !== fuso) {
-      prisma.utente.update({ where: { id: utente.id }, data: { fusoOrario: fuso } })
-        .catch(err => logger.warn({ utenteId: utente.id, err: err.message }, 'Fuso orario dell\'app non salvato'));
+      prisma.utente.update({ where: { id: datiUtente.id }, data: { fusoOrario: fuso } })
+        .catch(err => logger.warn({ utenteId: datiUtente.id, err: err.message }, 'Fuso orario dell\'app non salvato'));
       datiUtente.fusoOrario = fuso;
     }
 
