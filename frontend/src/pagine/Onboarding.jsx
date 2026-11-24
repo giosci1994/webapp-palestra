@@ -7,6 +7,7 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contesti/AuthContesto.jsx';
 import { api } from '../config/api.js';
+import { aStringaData } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Camera, Calendar, Ruler, Target, Shield,
@@ -230,7 +231,7 @@ export default function Onboarding() {
             <div>
               <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('onboarding.dati.dataNascita')}</label>
               <input type="date" value={form.dataNascita} onChange={e => aggiorna('dataNascita', e.target.value)}
-                className="campo-input" max={new Date().toISOString().split('T')[0]} />
+                className="campo-input" max={aStringaData(new Date())} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-3 text-[var(--testo-secondario)]">{t('onboarding.dati.genere')}</label>

@@ -26,6 +26,17 @@ export function aStringaData(d) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/**
+ * The instant (ISO, UTC) of a <input type="datetime-local"> value
+ * ("YYYY-MM-DDTHH:MM"), read in the phone's time zone with the offset of
+ * that day, not of today's (summer and winter time differ). '' stays ''.
+ */
+export function istanteDaCampoLocale(valore) {
+  if (!valore) return valore;
+  const data = new Date(valore);
+  return Number.isNaN(data.getTime()) ? valore : data.toISOString();
+}
+
 /** Monday of the week the date falls in, at local midnight. */
 export function lunediDi(d) {
   const x = new Date(d);

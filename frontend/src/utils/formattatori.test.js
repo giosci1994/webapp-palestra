@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import {
-  formattaData, aStringaData, aStringaOra, lunediDi, formattaDataRelativa, formattaNumero,
+  formattaData, aStringaData, aStringaOra, istanteDaCampoLocale, lunediDi, formattaDataRelativa, formattaNumero,
   formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale,
   nomeGruppo, nomeAttrezzatura, titoloAllenamento
 } from './formattatori.js';
@@ -177,5 +177,22 @@ describe('eCardioNelloStorico', () => {
 
   it('non lo e\' un esercizio con pesi e ripetizioni', () => {
     expect(eCardioNelloStorico({ esercizio: { gruppoMuscoloPrimario: 'Petto' }, serie: serieConPesi })).toBe(false);
+  });
+});
+
+describe('istanteDaCampoLocale', () => {
+  // The tests run in Europe/Rome: +02:00 in summer, +01:00 in winter
+  it('uses the offset of the chosen day, not of today', () => {
+    expect(istanteDaCampoLocale('2026-07-10T10:00')).toBe('2026-07-10T08:00:00.000Z');
+    expect(istanteDaCampoLocale('2026-12-10T10:00')).toBe('2026-12-10T09:00:00.000Z');
+  });
+
+  it('across the change to summer time', () => {
+    expect(istanteDaCampoLocale('2027-03-27T12:00')).toBe('2027-03-27T11:00:00.000Z');
+    expect(istanteDaCampoLocale('2027-03-28T12:00')).toBe('2027-03-28T10:00:00.000Z');
+  });
+
+  it('leaves an empty field empty', () => {
+    expect(istanteDaCampoLocale('')).toBe('');
   });
 });
