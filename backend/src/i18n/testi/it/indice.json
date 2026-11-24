@@ -1,5 +1,6 @@
 {
   "salute": "GymMaster API funzionante 💪",
+  "databaseNonRaggiungibile": "Database non raggiungibile",
   "bannerErrore": "Errore lettura banner",
   "rottaNonTrovata": "La rotta {metodo} {percorso} non esiste"
 }

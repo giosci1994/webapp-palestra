@@ -8,6 +8,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { t } from '../i18n/index.js';
+import prisma from '../config/database.js';
+import logger from '../utils/logger.js';
 import autenticazioneRoutes from './autenticazione.routes.js';
 import utentiRoutes from './utenti.routes.js';
 import chatRoutes from './chat.routes.js';
@@ -40,11 +42,35 @@ const VERSIONE_APP = (() => {
 })();
 
 // --- Health Check ---
-router.get('/salute', (req, res) => {
-  res.json({
-    successo: true,
-    messaggio: t('indice.salute'),
+// The server is healthy only if it can reach the database: a light query with
+// a short timeout. The container healthcheck (every 60s, 3 retries) and the
+// release check (deploy/rilascio.sh) read it, so a single slow answer does
+// not make the container unhealthy, a database that stays down does.
+const TIMEOUT_SALUTE_DATABASE = 3000;
+
+async function databaseRaggiungibile() {
+  let timer;
+  const scadenza = new Promise((_, rifiuta) => {
+    timer = setTimeout(() => rifiuta(new Error('timeout')), TIMEOUT_SALUTE_DATABASE);
+  });
+  try {
+    await Promise.race([prisma.$queryRaw`SELECT 1`, scadenza]);
+    return true;
+  } catch (errore) {
+    logger.warn({ errore: errore.message }, 'Salute: database non raggiungibile');
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+router.get('/salute', async (req, res) => {
+  const database = await databaseRaggiungibile();
+  res.status(database ? 200 : 503).json({
+    successo: database,
+    messaggio: t(database ? 'indice.salute' : 'indice.databaseNonRaggiungibile'),
     versione: VERSIONE_APP,
+    database,
     timestamp: new Date().toISOString()
   });
 });
