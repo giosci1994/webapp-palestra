@@ -5,5 +5,6 @@
   "erroreServerCodice": "Errore del server ({codice}). Riprova più tardi.",
   "rispostaNonValida": "Risposta dal server non valida (formato non supportato).",
   "erroreServer": "Errore del server",
-  "downloadFallito": "Download non riuscito (errore {codice})"
+  "downloadFallito": "Download non riuscito (errore {codice})",
+  "senzaRete": "Sei senza rete o il server non è raggiungibile. Riprova quando torna la connessione."
 }

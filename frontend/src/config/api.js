@@ -50,6 +50,33 @@ export async function refreshSessione() {
 }
 
 /**
+ * fetch() with the network failure translated: a TypeError ("Failed to
+ * fetch") becomes a TypeError with the app's message, so callers that tell
+ * "no network" by `instanceof TypeError` keep working, and the user reads a
+ * sentence instead of the browser's English. Aborts and timeouts pass as they are.
+ */
+async function richiestaRete(url, config) {
+  try {
+    return await fetch(url, config);
+  } catch (errore) {
+    if (errore instanceof TypeError) {
+      const senzaRete = new TypeError(traduci('api.senzaRete'), { cause: errore });
+      senzaRete.codice = 'SENZA_RETE';
+      throw senzaRete;
+    }
+    throw errore;
+  }
+}
+
+/** The error for a renewal that failed without saying the session is over */
+function erroreRinnovo(esito) {
+  if (esito.senzaRete) return esito.senzaRete;
+  const errore = new Error(traduci('api.erroreServerCodice', { codice: esito.stato }));
+  errore.stato = esito.stato;
+  return errore;
+}
+
+/**
  * Fetch wrapper with:
  * - Automatic Authorization header
  * - Automatic token refresh on 401
@@ -76,7 +103,7 @@ export async function apiChiamata(percorso, opzioni = {}) {
   // If we have no token and this is not a skipAuth call,
   // try an automatic refresh (covers a race condition on page reload)
   if (!accessToken && !skipAuth) {
-    const tokenRefreshato = await tentaRefresh();
+    const { token: tokenRefreshato } = await rinnovaSessione();
     if (tokenRefreshato) {
       accessToken = tokenRefreshato;
     }
@@ -91,16 +118,16 @@ export async function apiChiamata(percorso, opzioni = {}) {
     config.body = JSON.stringify(body);
   }
 
-  let risposta = await fetch(`${BASE_URL}${percorso}`, config);
+  let risposta = await richiestaRete(`${BASE_URL}${percorso}`, config);
 
   // On 401 (token expired/missing), try a refresh and retry
   if (risposta.status === 401 && !skipAuth) {
-    const nuovoToken = await tentaRefresh();
-    if (nuovoToken) {
-      config.headers['Authorization'] = `Bearer ${nuovoToken}`;
-      risposta = await fetch(`${BASE_URL}${percorso}`, config);
-    } else {
-      // Refresh failed on a protected route: the session really expired.
+    const esito = await rinnovaSessione();
+    if (esito.token) {
+      config.headers['Authorization'] = `Bearer ${esito.token}`;
+      risposta = await richiestaRete(`${BASE_URL}${percorso}`, config);
+    } else if (esito.scaduta) {
+      // The server refused the renewal (401/403): the session really expired.
       // We don't let a cryptic error through ("Token di accesso mancante"):
       // we notify the app (redirect to login) and stop with a clear error.
       if (onSessioneScaduta) onSessioneScaduta();
@@ -108,6 +135,10 @@ export async function apiChiamata(percorso, opzioni = {}) {
       err.codice = 'SESSIONE_SCADUTA';
       err.stato = 401;
       throw err;
+    } else {
+      // No network, or the server is down or busy: the session may well be
+      // fine, so the user stays signed in (docs/offline-and-sessions.md)
+      throw erroreRinnovo(esito);
     }
   }
 
@@ -145,30 +176,37 @@ export async function apiChiamata(percorso, opzioni = {}) {
   return dati;
 }
 
-/** Refreshes the access token */
-async function tentaRefresh() {
+/**
+ * Renews the access token through the refresh cookie. Only a 401 or 403 from
+ * the server means the session is over (`scaduta`); no network, a 5xx or a
+ * 429 say nothing about it and leave it as it is.
+ * @returns {Promise<{ token?: string, scaduta?: boolean, stato?: number, senzaRete?: Error }>}
+ */
+function rinnovaSessione() {
   // Avoid multiple parallel refreshes
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     try {
-      const risposta = await fetch(`${BASE_URL}/auth/refresh`, {
+      const risposta = await richiestaRete(`${BASE_URL}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' }
       });
 
-      if (!risposta.ok) {
+      if (risposta.status === 401 || risposta.status === 403) {
         cancellaToken();
-        return null;
+        return { scaduta: true };
       }
+      if (!risposta.ok) return { stato: risposta.status };
 
       const dati = await risposta.json();
       accessToken = dati.dati.accessToken;
-      return accessToken;
-    } catch {
-      cancellaToken();
-      return null;
+      return { token: accessToken };
+    } catch (errore) {
+      if (errore?.codice === 'SENZA_RETE') return { senzaRete: errore };
+      // A 200 that is not the expected JSON: a proxy page, not an answer
+      return { stato: 502 };
     } finally {
       refreshPromise = null;
     }
@@ -177,7 +215,15 @@ async function tentaRefresh() {
   return refreshPromise;
 }
 
+/** Refreshes the access token: the token, or null if it could not */
+async function tentaRefresh() {
+  return (await rinnovaSessione()).token ?? null;
+}
+
 // --- Helper shortcuts ---
+
+// How long the downloaded file's object URL is kept after the click
+const RITARDO_REVOCA_DOWNLOAD = 10000;
 
 /**
  * Downloads a binary file protected by authentication.
@@ -192,7 +238,7 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
     if (iniziale) accessToken = iniziale;
   }
 
-  const esegui = () => fetch(`${BASE_URL}${percorso}`, {
+  const esegui = () => richiestaRete(`${BASE_URL}${percorso}`, {
     method: 'GET',
     headers: {
       'Accept-Language': linguaCorrente(),
@@ -205,12 +251,13 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
   let risposta = await esegui();
 
   if (risposta.status === 401) {
-    const nuovoToken = await tentaRefresh();
-    if (!nuovoToken) {
+    const esito = await rinnovaSessione();
+    if (esito.scaduta) {
       if (onSessioneScaduta) onSessioneScaduta();
       throw new Error(traduci('api.sessioneScaduta'));
     }
-    accessToken = nuovoToken;
+    if (!esito.token) throw erroreRinnovo(esito);
+    accessToken = esito.token;
     risposta = await esegui();
   }
 
@@ -232,8 +279,10 @@ export async function scaricaFile(percorso, nomePredefinito = 'documento') {
     link.click();
     link.remove();
   } finally {
-    // Without revoke the blob would stay in memory for the whole session
-    URL.revokeObjectURL(url);
+    // Without revoke the blob would stay in memory for the whole session.
+    // Not right away: some browsers (Safari, Firefox) start reading the
+    // download after click() returns, and an URL revoked too early fails it
+    setTimeout(() => URL.revokeObjectURL(url), RITARDO_REVOCA_DOWNLOAD);
   }
   return nome;
 }

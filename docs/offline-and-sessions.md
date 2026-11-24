@@ -6,6 +6,7 @@ On a phone the browser often unloads the app from memory while the user switches
 
 - **"Ricorda questo dispositivo"** (Remember this device) on the sign-in page: the refresh token and its cookie last 30 days instead of 7 (`JWT_SCADENZA_REFRESH`). The choice is remembered in `localStorage` (`gymmaster_ricorda_dispositivo`), and every renewal keeps the original duration (`durataGiorni` on the token).
 - **Back to the app** (`AuthContesto.jsx`, `visibilitychange`): the app renews the access token through the `httpOnly` cookie, which survives an unloaded tab, and reloads the profile if the page had lost it. If the renewal fails it does not sign out there: the next protected request decides, so a weak signal never interrupts a workout.
+- **Only the server ends a session** (`config/api.js`): a protected request that gets a 401 renews the token, and only a 401 or 403 to the renewal signs the user out. No network, a 5xx or a 429 leave the session as it is and the request fails with a plain error ("no network" is `api.senzaRete`, still a `TypeError` for the callers that check it).
 - **Rotation tolerance**: the refresh token rotates at most once every 5 minutes, and a device one rotation behind gets the replacement again. Details in [features/authentication.md](features/authentication.md).
 - **Last page**: `hooks/useRottaPersistente.js` keeps the current route in `localStorage`, which survives the tab being killed, unlike `sessionStorage`.
 
