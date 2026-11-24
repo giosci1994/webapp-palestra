@@ -491,7 +491,8 @@ export default function Dashboard() {
                         {utente?.palestra?.nomeCatena || t('dashboard.affluenza.latuaPalestra')}
                       </p>
                     </div>
-                    {affluenza?.livelloColore && affluenza.livelloColore !== 'grigio' && (
+                    {/* Hidden when the data is stale: it would look like the level right now */}
+                    {affluenza?.livelloColore && affluenza.livelloColore !== 'grigio' && !datiFermi(affluenza.ultimoAggiornamento) && (
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         affluenza.livelloColore === 'verde' ? 'bg-green-500/20 text-green-400' :
                         affluenza.livelloColore === 'giallo' ? 'bg-amber-500/20 text-amber-400' :
