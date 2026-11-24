@@ -7,6 +7,9 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { gestoreChatMessaggi } from './gestori/chat.gestore.js';
 import { gestoreNotifiche } from './gestori/notifiche.gestore.js';
+import { proteggiGestori } from './protezione.js';
+import { controllaSessione } from '../middleware/autenticazione.js';
+import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import prisma from '../config/database.js';
 import { t, linguaDaIntestazione } from '../i18n/index.js';
@@ -18,6 +21,41 @@ const utentiConnessi = new Map();
 function aggiornaUltimoAccesso(utenteId) {
   prisma.utente.update({ where: { id: utenteId }, data: { ultimoAccesso: new Date() } })
     .catch(() => { /* non-blocking */ });
+}
+
+/**
+ * WebSocket authentication: the same checks as verificaToken for the REST
+ * API. A valid signature is not enough: the user must still exist and be
+ * active, and their session must not have been closed (logout, another
+ * device, a theft).
+ */
+export async function autenticaSocket(socket, next) {
+  const token = socket.handshake.auth?.token;
+  // Nobody is signed in yet, so there is no user language: the browser's
+  // (Accept-Language of the handshake)
+  const lingua = linguaDaIntestazione(socket.handshake.headers?.['accept-language']);
+
+  if (!token) {
+    return next(new Error(t('socketIndice.autenticazioneRichiesta', {}, lingua)));
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SEGRETO_ACCESS);
+  } catch {
+    return next(new Error(t('socketIndice.tokenNonValido', {}, lingua)));
+  }
+
+  try {
+    await controllaSessione(payload, lingua);
+  } catch (errore) {
+    if (errore instanceof ErroreNonAutenticato) return next(new Error(errore.message));
+    logger.error({ errore: errore.message }, 'Errore imprevisto nella verifica del token WebSocket');
+    return next(new Error(t('socketIndice.tokenNonValido', {}, lingua)));
+  }
+
+  socket.utente = payload;
+  next();
 }
 
 /**
@@ -40,27 +78,12 @@ export function inizializzaSocket(serverHttp) {
   });
 
   // --- WebSocket authentication middleware ---
-  io.use((socket, next) => {
-    const token = socket.handshake.auth?.token;
-    // Nobody is signed in yet, so there is no user language: the browser's
-    // (Accept-Language of the handshake)
-    const lingua = linguaDaIntestazione(socket.handshake.headers['accept-language']);
-
-    if (!token) {
-      return next(new Error(t('socketIndice.autenticazioneRichiesta', {}, lingua)));
-    }
-
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SEGRETO_ACCESS);
-      socket.utente = payload;
-      next();
-    } catch (errore) {
-      return next(new Error(t('socketIndice.tokenNonValido', {}, lingua)));
-    }
-  });
+  io.use(autenticaSocket);
 
   // --- Connection handling ---
   io.on('connection', (socket) => {
+    // A handler that throws logs the error instead of stopping the server
+    proteggiGestori(socket);
     const utenteId = socket.utente.utenteId;
 
     // Register the user as connected (detects the offline -> online transition)

@@ -60,7 +60,7 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
       // that go back to the sender (also those of the service) are in theirs
       const lingua = await linguaDiUtenteId(utenteId);
       await conLingua(lingua, async () => {
-        const { conversazioneId, contenuto } = dati;
+        const { conversazioneId, contenuto } = dati || {};
 
         if (!conversazioneId || !contenuto || contenuto.trim().length === 0) {
           return callback?.({ errore: t('chatGestore.datiNonValidi') });
@@ -107,30 +107,23 @@ export function gestoreChatMessaggi(io, socket, utentiConnessi) {
 
   // --- Leave a conversation (room) ---
   socket.on('chat:esci_conversazione', (dati) => {
-    const { conversazioneId } = dati;
+    const conversazioneId = dati?.conversazioneId;
     if (conversazioneId) {
       socket.leave(`conversazione:${conversazioneId}`);
     }
   });
 
   // --- "sta scrivendo..." (typing) indicator ---
-  socket.on('chat:sta_scrivendo', (dati) => {
-    const { conversazioneId } = dati;
-    if (conversazioneId) {
-      socket.to(`conversazione:${conversazioneId}`).emit('chat:sta_scrivendo', {
-        utenteId,
-        conversazioneId
-      });
-    }
-  });
+  // Only to a conversation the socket has joined: chat:entra_conversazione
+  // lets it into the room only after checking that the user takes part
+  const inoltraScrittura = (evento) => (dati) => {
+    const conversazioneId = dati?.conversazioneId;
+    if (!conversazioneId) return;
+    const stanza = `conversazione:${conversazioneId}`;
+    if (!socket.rooms.has(stanza)) return;
+    socket.to(stanza).emit(evento, { utenteId, conversazioneId });
+  };
 
-  socket.on('chat:smesso_scrivere', (dati) => {
-    const { conversazioneId } = dati;
-    if (conversazioneId) {
-      socket.to(`conversazione:${conversazioneId}`).emit('chat:smesso_scrivere', {
-        utenteId,
-        conversazioneId
-      });
-    }
-  });
+  socket.on('chat:sta_scrivendo', inoltraScrittura('chat:sta_scrivendo'));
+  socket.on('chat:smesso_scrivere', inoltraScrittura('chat:smesso_scrivere'));
 }
