@@ -1,7 +1,27 @@
 {
-  "versione": "1.6.5",
-  "build": "2026-11-23",
+  "versione": "1.6.6",
+  "build": "2026-11-24",
   "changelog": [
+    {
+      "versione": "1.6.6",
+      "data": "2026-11-24",
+      "modifiche": [
+        "Più sicurezza: le risposte del coach IA non possono più far girare codice nell'app, e chi esce dall'account o viene bloccato viene scollegato subito anche dalla chat",
+        "In chat lo stato online e l'ultimo accesso li vede solo chi ha una conversazione con te, e i messaggi compaiono solo nella conversazione giusta",
+        "Con un segnale debole o durante un aggiornamento del server l'app non ti fa più uscire dall'account, e senza rete il messaggio di errore è nella tua lingua",
+        "Gli appuntamenti del personal trainer restano all'ora giusta anche a cavallo del cambio dell'ora, e quelli di sera tardi cadono nel giorno giusto",
+        "Affluenza: con i dati fermi non compaiono più il livello e il riquadro «In tempo reale», che sembravano quelli di adesso",
+        "Server più solido e librerie aggiornate, senza falle note"
+      ],
+      "modificheEn": [
+        "Better security: the AI coach's replies can no longer run code in the app, and anyone who signs out or is blocked is disconnected from chat straight away",
+        "In chat, online status and last seen are visible only to people who have a conversation with you, and messages show up only in the right conversation",
+        "With a weak signal or during a server update the app no longer signs you out, and with no connection the error message is in your language",
+        "Personal trainer appointments keep the right time across the clock change, and late-evening ones land on the right day",
+        "Crowd levels: when the data is frozen, the level badge and the \"Live\" box no longer show up as if they were current",
+        "Sturdier server and updated libraries, with no known vulnerabilities"
+      ]
+    },
     {
       "versione": "1.6.5",
       "data": "2026-11-23",
