@@ -12,7 +12,7 @@ import Testo from '../i18n/Testo.jsx';
 import { localeCorrente } from '../i18n/index.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento } from '../utils/formattatori.js';
+import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento, istanteDaCampoLocale } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area,
@@ -88,15 +88,8 @@ export default function DashboardPT() {
 
   const creaAppuntamento = async () => {
     try {
-      let dataOraConTZ = formApp.dataOra;
-      if (dataOraConTZ && !dataOraConTZ.includes('+') && !dataOraConTZ.includes('Z')) {
-        const offset = -new Date().getTimezoneOffset();
-        const segno = offset >= 0 ? '+' : '-';
-        const ore = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
-        const minuti = String(Math.abs(offset) % 60).padStart(2, '0');
-        dataOraConTZ = `${dataOraConTZ}:00${segno}${ore}:${minuti}`;
-      }
-      await api.post('/pt/appuntamenti', { ...formApp, dataOra: dataOraConTZ });
+      // The field's local time, with the offset of the chosen day
+      await api.post('/pt/appuntamenti', { ...formApp, dataOra: istanteDaCampoLocale(formApp.dataOra) });
       setMostraNuovoApp(false); setFormApp({ clienteId: '', titolo: '', descrizione: '', dataOra: '', durataMinuti: 60 });
       const a = await api.get('/pt/appuntamenti'); setAppuntamenti(a.dati || []);
     } catch (err) { alert(err.message); }
