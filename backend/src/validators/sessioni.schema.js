@@ -14,7 +14,7 @@ import { ID_MASSIMO } from '../middleware/validazione.js';
 import { numero } from './schede.schema.js';
 
 /** The body itself is not an object (a list, for example) */
-const CORPO_NON_VALIDO = { invalid_type_error: 'sessioniSchema.corpoNonValido', required_error: 'sessioniSchema.corpoNonValido' };
+const CORPO_NON_VALIDO = { error: 'sessioniSchema.corpoNonValido' };
 
 /**
  * Schema for POST /sessioni. Without `schedaId` (and without `libero: true`)
@@ -27,8 +27,8 @@ export const schemaAvviaSessione = z.object({
   minutiRiscaldamento: numero('sessioniSchema.minutiRiscaldamentoNonValidi', { max: 600, vuoto: 'nullo' }).nullable().optional(),
   // Only a real `true` counts for these two (anything else is read as false):
   // any other value is not an error
-  chiudiAperte: z.unknown(),
-  libero: z.unknown()
+  chiudiAperte: z.unknown().optional(),
+  libero: z.unknown().optional()
 }, CORPO_NON_VALIDO);
 
 /** A page and a size of page: a missing one keeps its default, an empty one counts as missing */
