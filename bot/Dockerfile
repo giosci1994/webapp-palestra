@@ -7,9 +7,9 @@ FROM node:22-slim
 
 WORKDIR /app
 
-# Dependencies
+# Dependencies: exactly the versions of package-lock.json
 COPY bot/package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
 # Bot code
 COPY bot/ .
