@@ -7,7 +7,9 @@ import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import { gestoreChatMessaggi } from './gestori/chat.gestore.js';
 import { gestoreNotifiche } from './gestori/notifiche.gestore.js';
+import { gestorePresenza, annunciaPresenza } from './gestori/presenza.gestore.js';
 import { proteggiGestori } from './protezione.js';
+import { registraIo } from './sessioni.js';
 import { controllaSessione } from '../middleware/autenticazione.js';
 import { ErroreNonAutenticato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
@@ -80,6 +82,9 @@ export function inizializzaSocket(serverHttp) {
   // --- WebSocket authentication middleware ---
   io.use(autenticaSocket);
 
+  // The services disconnect the sockets of the sessions they close
+  registraIo(io);
+
   // --- Connection handling ---
   io.on('connection', (socket) => {
     // A handler that throws logs the error instead of stopping the server
@@ -96,10 +101,11 @@ export function inizializzaSocket(serverHttp) {
     // Join the user's personal room
     socket.join(`utente:${utenteId}`);
 
-    // Update the last access; announce presence only on the transition to online
+    // Update the last access; announce presence (to the user's contacts) only
+    // on the transition to online
     aggiornaUltimoAccesso(utenteId);
     if (eraOffline) {
-      io.emit('presenza:cambio', { utenteId, online: true });
+      annunciaPresenza(io, utenteId, utentiConnessi);
     }
 
     logger.debug({ utenteId, socketId: socket.id }, 'Utente connesso via WebSocket');
@@ -107,20 +113,7 @@ export function inizializzaSocket(serverHttp) {
     // Register the event handlers
     gestoreChatMessaggi(io, socket, utentiConnessi);
     gestoreNotifiche(io, socket, utentiConnessi);
-
-    // One-off request for a user's presence status (e.g. opening a conversation)
-    socket.on('presenza:richiedi', async ({ utenteId: targetId } = {}) => {
-      if (!targetId) return;
-      const online = utentiConnessi.has(targetId);
-      let ultimoAccesso = null;
-      if (!online) {
-        try {
-          const u = await prisma.utente.findUnique({ where: { id: targetId }, select: { ultimoAccesso: true } });
-          ultimoAccesso = u?.ultimoAccesso || null;
-        } catch { /* ignore */ }
-      }
-      socket.emit('presenza:cambio', { utenteId: targetId, online, ultimoAccesso });
-    });
+    gestorePresenza(io, socket, utentiConnessi);
 
     // --- Disconnection ---
     socket.on('disconnect', (motivo) => {
@@ -131,7 +124,7 @@ export function inizializzaSocket(serverHttp) {
           utentiConnessi.delete(utenteId);
           // Online -> offline transition
           aggiornaUltimoAccesso(utenteId);
-          io.emit('presenza:cambio', { utenteId, online: false });
+          annunciaPresenza(io, utenteId, utentiConnessi);
         }
       }
 

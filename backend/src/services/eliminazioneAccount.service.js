@@ -5,6 +5,7 @@
 
 import prisma from '../config/database.js';
 import logger from '../utils/logger.js';
+import { scollegaSessioni } from '../socket/sessioni.js';
 
 /**
  * Permanently deletes an account and its related data.
@@ -22,7 +23,7 @@ import logger from '../utils/logger.js';
  * @returns {Promise<object>} counts of what was removed or transferred
  */
 export async function eliminaAccount(utenteId) {
-  return prisma.$transaction(async (tx) => {
+  const esito = await prisma.$transaction(async (tx) => {
     const riepilogo = {};
 
     // 1. Workouts. The logged sets go away by cascade, and the calendar
@@ -106,4 +107,8 @@ export async function eliminaAccount(utenteId) {
     logger.info({ utenteId, ...riepilogo }, 'Account eliminato definitivamente');
     return riepilogo;
   }, { timeout: 30000 });
+
+  // Its sockets go too: the account is no more
+  scollegaSessioni(utenteId);
+  return esito;
 }

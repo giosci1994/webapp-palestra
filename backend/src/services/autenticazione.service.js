@@ -21,6 +21,7 @@ import { t } from '../i18n/index.js';
 import { emailConfigurata, inviaEmailVerifica, inviaEmailReset } from './email.service.js';
 import { nuovoToken, improntaToken, tokenSuccessivo } from '../utils/token.js';
 import { attesaPer, registraErrore, azzeraTentativi } from '../utils/tentativiAccesso.js';
+import { scollegaSessioni } from '../socket/sessioni.js';
 
 // Argon2id configuration
 const ARGON2_CONFIG = {
@@ -188,6 +189,7 @@ export async function reimpostaPasswordConToken(token, nuovaPassword) {
   // Invalidate the existing sessions for safety, and the failed attempts of
   // someone who forgot the password no longer keep them locked out
   await prisma.refreshToken.deleteMany({ where: { utenteId: utente.id } }).catch(() => {});
+  scollegaSessioni(utente.id);
   azzeraTentativi(utente.email);
   logger.info({ utenteId: utente.id }, 'Password reimpostata via email');
 }
@@ -352,6 +354,7 @@ export async function rinnovaToken(tokenRefresh) {
       where: { utenteId: tokenSalvato.utenteId },
       data: { revocato: true }
     });
+    scollegaSessioni(tokenSalvato.utenteId);
     logger.warn({ utenteId: tokenSalvato.utenteId }, 'Tentativo di riutilizzo refresh token revocato — tutti i token revocati');
     throw new ErroreNonAutenticato(t('autenticazioneService.sessioneCompromessa'));
   }
@@ -414,6 +417,7 @@ export async function logoutUtente(tokenRefresh) {
   await prisma.refreshToken.deleteMany({
     where: { utenteId: tokenSalvato.utenteId, famiglia: tokenSalvato.famiglia }
   });
+  scollegaSessioni(tokenSalvato.utenteId, { famiglia: tokenSalvato.famiglia });
 }
 
 /**
@@ -447,6 +451,7 @@ export async function elencaSessioni(utenteId, famigliaCorrente) {
 export async function chiudiSessione(utenteId, famiglia) {
   const { count } = await prisma.refreshToken.deleteMany({ where: { utenteId, famiglia: String(famiglia) } });
   if (count === 0) throw new ErroreNonTrovato(t('autenticazioneService.sessioneNonTrovata'));
+  scollegaSessioni(utenteId, { famiglia: String(famiglia) });
   logger.info({ utenteId }, 'Sessione chiusa da un altro dispositivo');
 }
 
@@ -459,6 +464,7 @@ export async function chiudiAltreSessioni(utenteId, famigliaCorrente) {
   const { count } = await prisma.refreshToken.deleteMany({
     where: { utenteId, ...(famigliaCorrente && { famiglia: { not: famigliaCorrente } }) }
   });
+  scollegaSessioni(utenteId, { tranne: famigliaCorrente || null });
   logger.info({ utenteId, righe: count }, 'Chiuse le sessioni degli altri dispositivi');
   return count;
 }

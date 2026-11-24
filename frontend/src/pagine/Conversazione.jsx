@@ -9,6 +9,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useSocket } from '../contesti/SocketContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaDataRelativa } from '../utils/formattatori.js';
+import { conNuovoMessaggio } from '../utils/messaggiChat.js';
 import { useLingua } from '../hooks/useLingua.js';
 import { localeCorrente } from '../i18n/index.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -116,28 +117,28 @@ export default function Conversazione() {
   useEffect(() => {
     if (!connesso) return;
 
-    const cleanup1 = on('chat:nuovo_messaggio', ({ messaggio }) => {
-      setMessaggi(prev => {
-        // Avoid duplicates
-        if (prev.some(m => m.id === messaggio.id)) return prev;
-        return [...prev, messaggio];
-      });
+    // Only a message of this conversation, once
+    const cleanup1 = on('chat:nuovo_messaggio', (dati) => {
+      setMessaggi(prev => conNuovoMessaggio(prev, dati?.messaggio, conversazioneId));
     });
 
-    const cleanup2 = on('chat:sta_scrivendo', ({ utenteId }) => {
-      if (utenteId !== utente.id) {
+    // Typing: the server sends the conversation too, the same check
+    const cleanup2 = on('chat:sta_scrivendo', (dati) => {
+      if (dati?.conversazioneId !== conversazioneId) return;
+      if (dati.utenteId !== utente.id) {
         setStaScrivendo(true);
         clearTimeout(timeoutScrittura.current);
         timeoutScrittura.current = setTimeout(() => setStaScrivendo(false), 3000);
       }
     });
 
-    const cleanup3 = on('chat:smesso_scrivere', ({ utenteId }) => {
-      if (utenteId !== utente.id) setStaScrivendo(false);
+    const cleanup3 = on('chat:smesso_scrivere', (dati) => {
+      if (dati?.conversazioneId !== conversazioneId) return;
+      if (dati.utenteId !== utente.id) setStaScrivendo(false);
     });
 
     return () => { cleanup1(); cleanup2(); cleanup3(); };
-  }, [connesso, utente.id, on]);
+  }, [connesso, conversazioneId, utente.id, on]);
 
   // Auto-scroll to the bottom
   useEffect(() => {

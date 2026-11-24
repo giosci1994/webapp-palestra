@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import {
-  formattaData, aStringaData, aStringaOra, istanteDaCampoLocale, lunediDi, formattaDataRelativa, formattaNumero,
+  formattaData, aStringaData, aStringaOra, istanteDaCampoLocale, giornoLocaleDi, lunediDi, formattaDataRelativa, formattaNumero,
   formattaPeso, formattaDurata, nomeEsercizio, eCardioNelloStorico, nomeEsercizioOriginale,
   nomeGruppo, nomeAttrezzatura, titoloAllenamento
 } from './formattatori.js';
@@ -177,6 +177,19 @@ describe('eCardioNelloStorico', () => {
 
   it('non lo e\' un esercizio con pesi e ripetizioni', () => {
     expect(eCardioNelloStorico({ esercizio: { gruppoMuscoloPrimario: 'Petto' }, serie: serieConPesi })).toBe(false);
+  });
+});
+
+describe('giornoLocaleDi', () => {
+  // Europe/Rome: an appointment at 00:30 or at 23:30 local time
+  it('the day of the phone, not the UTC one', () => {
+    expect(giornoLocaleDi('2026-07-09T22:30:00.000Z')).toBe('2026-07-10');
+    expect(giornoLocaleDi('2026-12-10T22:30:00.000Z')).toBe('2026-12-10');
+    expect(giornoLocaleDi(new Date(2026, 6, 10, 0, 30))).toBe('2026-07-10');
+  });
+
+  it('back from the instant the appointment form sends', () => {
+    expect(giornoLocaleDi(istanteDaCampoLocale('2026-07-10T00:30'))).toBe('2026-07-10');
   });
 });
 

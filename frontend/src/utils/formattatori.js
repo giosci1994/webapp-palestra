@@ -27,6 +27,15 @@ export function aStringaData(d) {
 }
 
 /**
+ * The local day ("YYYY-MM-DD") of an instant (ISO text or Date), in the
+ * phone's time zone. split('T')[0] on the ISO text gives the UTC day: an
+ * appointment at 00:30 in summer in Italy would fall on the day before.
+ */
+export function giornoLocaleDi(istante) {
+  return aStringaData(new Date(istante));
+}
+
+/**
  * The instant (ISO, UTC) of a <input type="datetime-local"> value
  * ("YYYY-MM-DDTHH:MM"), read in the phone's time zone with the offset of
  * that day, not of today's (summer and winter time differ). '' stays ''.

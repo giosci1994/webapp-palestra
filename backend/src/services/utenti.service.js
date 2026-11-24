@@ -11,6 +11,7 @@ import { t } from '../i18n/index.js';
 import { chiudiAltreSessioni } from './autenticazione.service.js';
 import { leggiLingua } from '../utils/lingue.js';
 import { eliminaAccount } from './eliminazioneAccount.service.js';
+import { scollegaSessioni } from '../socket/sessioni.js';
 
 /**
  * Gets the list of all users (SuperAdmin only).
@@ -100,6 +101,8 @@ export async function bannaUtente(utenteId) {
     data: { revocato: true }
   });
 
+  // A socket already connected would keep getting messages
+  scollegaSessioni(utenteId);
   logger.info({ utenteId }, 'Utente bannato');
   return utenteAggiornato;
 }

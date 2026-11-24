@@ -557,8 +557,9 @@ export default function Dashboard() {
                             </div>
                           );
                         })()}
-                        {/* Live description — prominent */}
-                        {affluenza.liveDescrizione && (
+                        {/* Live description — prominent. Hidden when the data is stale, like
+                            the level badge: "live" and the pulsing dot would say it is now */}
+                        {affluenza.liveDescrizione && !datiFermi(affluenza.ultimoAggiornamento) && (
                           <div className={`mt-3 p-3 rounded-xl flex items-center gap-3 border ${
                             affluenza.livelloColore === 'verde' ? 'bg-green-500/10 border-green-500/30' :
                             affluenza.livelloColore === 'giallo' ? 'bg-amber-500/10 border-amber-500/30' :

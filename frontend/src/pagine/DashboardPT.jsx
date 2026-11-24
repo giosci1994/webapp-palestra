@@ -12,7 +12,7 @@ import Testo from '../i18n/Testo.jsx';
 import { localeCorrente } from '../i18n/index.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
 import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
-import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento, istanteDaCampoLocale } from '../utils/formattatori.js';
+import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento, istanteDaCampoLocale, giornoLocaleDi } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart, Area,
@@ -188,7 +188,7 @@ export default function DashboardPT() {
   const appuntamentiDelGiorno = (giorno) => {
     const { anno, mese } = giorniMeseCalendario();
     const data = `${anno}-${String(mese + 1).padStart(2, '0')}-${String(giorno).padStart(2, '0')}`;
-    return appuntamenti.filter(a => a.dataOra.split('T')[0] === data);
+    return appuntamenti.filter(a => giornoLocaleDi(a.dataOra) === data);
   };
 
   const cambiaMese = (delta) => {
@@ -444,7 +444,7 @@ export default function DashboardPT() {
                 {Array.from({ length: totGiorni }).map((_, i) => {
                   const g = i + 1;
                   const dataStr = `${anno}-${String(mese + 1).padStart(2, '0')}-${String(g).padStart(2, '0')}`;
-                  const appInData = appuntamenti.filter(a => a.dataOra.split('T')[0] === dataStr);
+                  const appInData = appuntamenti.filter(a => giornoLocaleDi(a.dataOra) === dataStr);
                   const isOggi = dataStr === oggiStr;
                   const isSel = giornoSelezionato === g;
 
