@@ -69,5 +69,9 @@ sequenceDiagram
 | `chat:sta_scrivendo` | Both ways | Typing indicator |
 | `chat:smesso_scrivere` | Both ways | Stopped typing |
 | `notifica:nuova` | Server → Client | In-app notification |
+| `presenza:richiedi` | Client → Server | Online / last seen of a user: answered only about someone the user shares a conversation with |
+| `presenza:cambio` | Server → Client | A user went online or offline: sent only to the people who share a conversation with them (`socket/gestori/presenza.gestore.js`) |
+
+The handshake checks the session like the REST API. When a session is closed later (logout, closing another device or all the others, a stolen session, a password reset, a ban, a deleted account), its sockets are disconnected (`socket/sessioni.js`): they stop getting messages and presence at once, not when the page is reloaded.
 
 A new message also goes out as a push notification (if enabled; with the app open, the chat shows it instead) and, to recipients who are not connected, on Telegram (if linked).
