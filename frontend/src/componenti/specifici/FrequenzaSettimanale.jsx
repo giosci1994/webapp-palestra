@@ -80,7 +80,7 @@ export default function FrequenzaSettimanale({ settimane = [] }) {
           {/* Legend: two different marks, not relying on color alone */}
           {conPiano && (
             <div className="flex gap-4 text-[11px] text-[var(--testo-secondario)] mb-1">
-              <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent)]" />{t('frequenzaSettimanale.legendaFatti')}</span>
+              <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[var(--accent-pieno)]" />{t('frequenzaSettimanale.legendaFatti')}</span>
               <span className="inline-flex items-center gap-1.5"><span className="w-3.5 h-0.5 rounded-full bg-[var(--testo-secondario)]" />{t('frequenzaSettimanale.legendaProgrammati')}</span>
             </div>
           )}

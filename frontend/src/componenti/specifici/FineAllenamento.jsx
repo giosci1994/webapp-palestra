@@ -139,7 +139,7 @@ export default function FineAllenamento({ inizio, serie, inviando = false, elimi
           <button onClick={onAnnulla} disabled={occupato} className="flex-1 py-3 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)] font-medium disabled:opacity-60">
             {t('fineAllenamento.continua')}
           </button>
-          <button onClick={conferma} disabled={occupato || Boolean(problema)} className="flex-1 py-3 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
+          <button onClick={conferma} disabled={occupato || Boolean(problema)} className="flex-1 py-3 rounded-lg bg-[var(--pericolo-pieno)] text-white font-bold disabled:opacity-50">
             {inviando ? t('workoutLive.unAttimo') : t('fineAllenamento.termina')}
           </button>
         </div>

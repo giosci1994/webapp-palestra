@@ -150,7 +150,7 @@ export default function Assistente() {
             {t('assistente.storico')}
           </button>
           <button onClick={nuovaConversazione}
-                  className="text-xs px-3 py-1.5 rounded-[var(--raggio-md)] bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-all">
+                  className="text-xs px-3 py-1.5 rounded-[var(--raggio-md)] bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent-pieno)] hover:text-white transition-all">
             {t('assistente.nuova')}
           </button>
         </div>
@@ -237,7 +237,7 @@ export default function Assistente() {
               )}
               <div className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
                 msg.ruolo === 'utente'
-                  ? 'bg-[var(--accent)] text-white rounded-br-md'
+                  ? 'bg-[var(--accent-pieno)] text-white rounded-br-md'
                   : msg.errore
                     ? 'bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded-bl-md'
                     : 'bg-[var(--bg-terziario)] text-[var(--testo-primario)] rounded-bl-md'
@@ -264,9 +264,9 @@ export default function Assistente() {
               <div className="px-4 py-3 rounded-2xl bg-[var(--bg-terziario)] rounded-bl-md">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[var(--accent)] anima-pulsa" style={{ animationDelay: '0s' }} />
-                    <span className="w-2 h-2 rounded-full bg-[var(--accent)] anima-pulsa" style={{ animationDelay: '0.2s' }} />
-                    <span className="w-2 h-2 rounded-full bg-[var(--accent)] anima-pulsa" style={{ animationDelay: '0.4s' }} />
+                    <span className="w-2 h-2 rounded-full bg-[var(--accent-pieno)] anima-pulsa" style={{ animationDelay: '0s' }} />
+                    <span className="w-2 h-2 rounded-full bg-[var(--accent-pieno)] anima-pulsa" style={{ animationDelay: '0.2s' }} />
+                    <span className="w-2 h-2 rounded-full bg-[var(--accent-pieno)] anima-pulsa" style={{ animationDelay: '0.4s' }} />
                   </div>
                   <span className="text-xs text-[var(--testo-terziario)]">{t('assistente.staPensando')}</span>
                 </div>

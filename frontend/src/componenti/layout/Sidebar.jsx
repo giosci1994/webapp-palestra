@@ -151,7 +151,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                         {t(item.chiave)}
                       </motion.span>
                       {item.badgeKey === 'suggerimenti' && badgeSuggerimenti > 0 && (
-                        <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-bold bg-[var(--pericolo)] text-white animate-pulse">
+                        <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-bold bg-[var(--pericolo-pieno)] text-white animate-pulse">
                           {badgeSuggerimenti}
                         </span>
                       )}
@@ -161,7 +161,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                   {isCollapsed && (
                     <>
                       {item.badgeKey === 'suggerimenti' && badgeSuggerimenti > 0 && (
-                        <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[var(--pericolo)]"></span>
+                        <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[var(--pericolo-pieno)]"></span>
                       )}
                     </>
                   )}

@@ -118,7 +118,7 @@ export default function Calendario({
                   aria-pressed={modo === v}
                   className="px-2 py-1 text-[11px] font-bold transition-colors"
                   style={modo === v
-                    ? { background: 'var(--accent)', color: '#fff' }
+                    ? { background: 'var(--accent-pieno)', color: '#fff' }
                     : { color: 'var(--testo-terziario)' }}
                 >
                   {v === 'mese' ? t('calendario.modoMese') : t('calendario.modoSettimana')}

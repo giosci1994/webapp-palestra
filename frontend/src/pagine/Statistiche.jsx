@@ -76,7 +76,7 @@ export default function Statistiche() {
             <button key={p.id} onClick={() => setPeriodo(p.id)}
                     className={`px-4 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
                       periodo === p.id 
-                        ? 'bg-[var(--accent)] text-white shadow-md' 
+                        ? 'bg-[var(--accent-pieno)] text-white shadow-md' 
                         : 'text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--velo)]'
                     }`}>
               {t(p.label)}

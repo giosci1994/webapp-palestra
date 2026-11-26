@@ -331,7 +331,7 @@ export default function Dashboard() {
                         <button onClick={() => salvaBanner(true)} className="p-1.5 bg-[var(--successo-dim)] text-[var(--successo)] rounded hover:bg-[var(--successo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaMostra')} aria-label={t('dashboard.banner.salvaMostra')}>
                           <Check size={16} />
                         </button>
-                        <button onClick={() => salvaBanner(false)} className="p-1.5 bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded hover:bg-[var(--pericolo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaNascondi')} aria-label={t('dashboard.banner.salvaNascondi')}>
+                        <button onClick={() => salvaBanner(false)} className="p-1.5 bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded hover:bg-[var(--pericolo-pieno)] hover:text-white transition-colors" title={t('dashboard.banner.salvaNascondi')} aria-label={t('dashboard.banner.salvaNascondi')}>
                           <X size={16} />
                         </button>
                       </>
@@ -443,7 +443,7 @@ export default function Dashboard() {
                         <p className="font-semibold text-[var(--testo-primario)]">{t('dashboard.ultimeAttivita.vuotoTitolo')}</p>
                         <p className="text-sm text-[var(--testo-terziario)] mt-1">{t('dashboard.ultimeAttivita.vuotoTesto')}</p>
                       </div>
-                      <Link to="/schede" style={{ color: '#fff' }} className="mt-1 w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold transition-colors shadow-[var(--ombra-accent)]">
+                      <Link to="/schede" style={{ color: '#fff' }} className="mt-1 w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold transition-colors shadow-[var(--ombra-accent)]">
                         {t('dashboard.ultimeAttivita.vaiAlleSchede')}
                       </Link>
                     </div>
@@ -677,7 +677,7 @@ export default function Dashboard() {
                   {ptDashboard.annunci?.length > 0 ? ptDashboard.annunci.slice(0, 10).map((a, aIdx, aArr) => (
                     <div key={a.id} className={`px-card-inner py-5 ${aIdx === aArr.length - 1 ? 'card-list-ultimo' : ''}`}>
                       <div className="flex items-center gap-2 mb-1.5">
-                        {a.priorita === 'urgente' && <span className="w-2 h-2 rounded-full bg-[var(--pericolo)] shrink-0" />}
+                        {a.priorita === 'urgente' && <span className="w-2 h-2 rounded-full bg-[var(--pericolo-pieno)] shrink-0" />}
                         {a.priorita === 'importante' && <span className="w-2 h-2 rounded-full bg-[var(--avviso)] shrink-0" />}
                         <h4 className="font-bold text-sm">{a.titolo}</h4>
                         <span className="text-[10px] text-[var(--testo-terziario)] ml-auto">
@@ -710,7 +710,7 @@ export default function Dashboard() {
                       <div className="flex items-center gap-2">
                         <Link to={`/schede/${s.id}`} className="text-xs text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors">{t('dashboard.pt.dettagli')}</Link>
                         <button onClick={() => avviaAllenamento(s.id)} disabled={avviando} aria-label={`${t('dashboard.slide.consiglio.iniziaScheda')}: ${s.titolo}`}
-                          className="p-2 rounded-lg bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors">
+                          className="p-2 rounded-lg bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent-pieno)] hover:text-white transition-colors">
                           <PlayCircle size={18} />
                         </button>
                       </div>

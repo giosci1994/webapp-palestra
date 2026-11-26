@@ -105,7 +105,7 @@ export default function DettaglioScheda() {
               {scheda.creatore?.id === utente?.id ? (
                 <button
                   onClick={() => setMostraModifica(true)}
-                  className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+                  className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent-pieno)] hover:text-white transition-colors"
                 >
                   {t('dettaglioScheda.modifica')}
                 </button>
@@ -113,7 +113,7 @@ export default function DettaglioScheda() {
                 <button
                   onClick={clonaScheda}
                   disabled={clonando}
-                  className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50"
+                  className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent-pieno)] hover:text-white transition-colors disabled:opacity-50"
                   title={t('dettaglioScheda.clonaTitolo')}
                 >
                   {clonando ? t('dettaglioScheda.clono') : t('dettaglioScheda.clona')}
@@ -124,7 +124,7 @@ export default function DettaglioScheda() {
                 onClick={scaricaDocx}
                 disabled={scaricando}
                 title={t('dettaglioScheda.scaricaWordTitolo')}
-                className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent)] hover:text-white transition-colors disabled:opacity-50"
+                className="text-xs bg-[var(--accent-dim)] text-[var(--accent)] font-semibold px-2 py-1 rounded-[var(--raggio-sm)] hover:bg-[var(--accent-pieno)] hover:text-white transition-colors disabled:opacity-50"
               >
                 {scaricando ? t('dettaglioScheda.preparo') : '⬇ Word'}
               </button>

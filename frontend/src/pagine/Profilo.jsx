@@ -58,7 +58,7 @@ const TABS = [
 function Toggle({ attivo, onClick }) {
   return (
     <button onClick={onClick}
-      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${attivo ? 'bg-[var(--accent)]' : 'bg-[var(--bordo)]'}`}>
+      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${attivo ? 'bg-[var(--accent-pieno)]' : 'bg-[var(--bordo)]'}`}>
       <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${attivo ? 'left-[26px]' : 'left-0.5'}`} />
     </button>
   );
@@ -695,7 +695,7 @@ export default function Profilo() {
                               <button onClick={async () => {
                                 try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: messaggioPT.trim() || null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); setMessaggioPT(''); }
                                 catch (err) { alert(err.message); } finally { setInviandoPT(false); }
-                              }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent)] text-white shrink-0">{t('profilo.pt.iscriviti')}</button>
+                              }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent-pieno)] text-white shrink-0">{t('profilo.pt.iscriviti')}</button>
                             </div>
                           ))}
                           <button onClick={() => setMostraListaPT(false)} className="text-xs text-[var(--testo-terziario)] mt-1">← {t('comune.chiudi')}</button>
@@ -884,7 +884,7 @@ export default function Profilo() {
                       <div className="flex gap-2">
                         <button onClick={() => { setMostraReset(false); setConfermaReset(''); }} className="flex-1 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">{t('comune.annulla')}</button>
                         <button onClick={eseguiReset} disabled={confermaReset !== t('profilo.reset.frase') || avviandoReset}
-                                className="flex-1 py-2 rounded-lg bg-[var(--pericolo)] text-white disabled:opacity-50">{avviandoReset ? t('profilo.reset.inCorso') : t('profilo.reset.conferma')}</button>
+                                className="flex-1 py-2 rounded-lg bg-[var(--pericolo-pieno)] text-white disabled:opacity-50">{avviandoReset ? t('profilo.reset.inCorso') : t('profilo.reset.conferma')}</button>
                       </div>
                     </div>
                   )}
@@ -1041,7 +1041,7 @@ export default function Profilo() {
                                 setEliminando(false);
                               }
                             }}
-                            className="flex-1 py-2.5 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
+                            className="flex-1 py-2.5 rounded-lg bg-[var(--pericolo-pieno)] text-white font-bold disabled:opacity-50">
                       {eliminando ? t('profilo.elimina.inCorso') : t('profilo.elimina.definitivo')}
                     </button>
                   </div>

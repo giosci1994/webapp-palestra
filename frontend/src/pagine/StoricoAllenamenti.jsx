@@ -134,7 +134,7 @@ export default function StoricoAllenamenti() {
         <button
           onClick={() => setMostraPassato(true)}
           title={t('storicoAllenamenti.giaFattoTitolo')}
-          className="shrink-0 py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
+          className="shrink-0 py-2 px-4 bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
         >
           {t('storicoAllenamenti.giaFatto')}
         </button>
@@ -323,7 +323,7 @@ export default function StoricoAllenamenti() {
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setInModifica(true)}
-                    className="h-8 px-3 flex items-center gap-1.5 rounded-full text-xs font-semibold bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors"
+                    className="h-8 px-3 flex items-center gap-1.5 rounded-full text-xs font-semibold bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent-pieno)] hover:text-white transition-colors"
                   >
                     {t('storicoAllenamenti.modifica')}
                   </button>
@@ -490,7 +490,7 @@ export default function StoricoAllenamenti() {
                   <button
                     onClick={() => riprendiAllenamento(sessioneAperta)}
                     disabled={riprendendo}
-                    className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-white bg-[var(--accent)] hover:opacity-90 transition-all disabled:opacity-50"
+                    className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-white bg-[var(--accent-pieno)] hover:opacity-90 transition-all disabled:opacity-50"
                   >
                     {riprendendo
                       ? t('storicoAllenamenti.unAttimo')
@@ -504,7 +504,7 @@ export default function StoricoAllenamenti() {
                     <button
                       onClick={() => salvaComeScheda(sessioneAperta)}
                       disabled={salvandoScheda}
-                      className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-[var(--accent)] bg-[var(--accent-dim)] hover:bg-[var(--accent)] hover:text-white transition-all disabled:opacity-50"
+                      className="w-full py-3 rounded-[var(--raggio-md)] text-sm font-semibold text-[var(--accent)] bg-[var(--accent-dim)] hover:bg-[var(--accent-pieno)] hover:text-white transition-all disabled:opacity-50"
                     >
                       {salvandoScheda ? t('storicoAllenamenti.salvataggio') : t('storicoAllenamenti.salvaComeScheda')}
                     </button>
@@ -518,7 +518,7 @@ export default function StoricoAllenamenti() {
                 <button
                   onClick={() => eliminaSessione(sessioneAperta.id)}
                   disabled={eliminando === sessioneAperta.id}
-                  className="mt-2 w-full py-3 rounded-[var(--raggio-md)] text-sm font-medium text-[var(--pericolo)] bg-[var(--pericolo-dim)] hover:bg-[var(--pericolo)] hover:text-white transition-all disabled:opacity-50"
+                  className="mt-2 w-full py-3 rounded-[var(--raggio-md)] text-sm font-medium text-[var(--pericolo)] bg-[var(--pericolo-dim)] hover:bg-[var(--pericolo-pieno)] hover:text-white transition-all disabled:opacity-50"
                 >
                   {eliminando === sessioneAperta.id ? t('storicoAllenamenti.eliminazione') : t('storicoAllenamenti.eliminaSessione')}
                 </button>

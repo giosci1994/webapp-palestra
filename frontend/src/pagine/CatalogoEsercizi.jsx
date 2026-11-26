@@ -394,7 +394,7 @@ export default function CatalogoEsercizi() {
           >
             <SlidersHorizontal size={20} />
             {filtriAttivi > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--accent)] text-white text-[9px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[var(--accent-pieno)] text-white text-[9px] font-bold flex items-center justify-center">
                 {filtriAttivi}
               </span>
             )}

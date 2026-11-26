@@ -133,7 +133,7 @@ export default function Pianificazione() {
         <button
           type="button"
           onClick={() => setPannelloPiano(v => !v)}
-          className="py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)] flex items-center gap-2"
+          className="py-2 px-4 bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)] flex items-center gap-2"
         >
           <Plus size={16} /> {t('pianificazione.pianificaSettimana')}
         </button>
@@ -214,7 +214,7 @@ export default function Pianificazione() {
                       {/* /allenamento/:id wants a session, not a plan: with the plan's number
                           the session did not exist and the user ended up in "Gestione schede"
                           (plan management). "Allenati ora" opens the plan ready to start instead. */}
-                      <Link to={`/allenamento?scheda=${a.scheda.id}`} style={{ color: '#fff' }} className="py-1.5 px-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
+                      <Link to={`/allenamento?scheda=${a.scheda.id}`} style={{ color: '#fff' }} className="py-1.5 px-3 bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-1">
                         <PlayCircle size={14} /> {t('pianificazione.inizia')}
                       </Link>
                       <button onClick={() => rimanda(a, 1)} className="py-1.5 px-3 text-xs font-semibold rounded-lg border border-[var(--bordo-light)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--bg-terziario)] transition-colors">
@@ -298,7 +298,7 @@ function AggiungiSingolo({ schede, data, onFatto, onErrore }) {
           type="button"
           onClick={aggiungi}
           disabled={!schedaId || inCorso}
-          className="py-2 px-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors shrink-0"
+          className="py-2 px-3 bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors shrink-0"
         >
           <Plus size={16} />
         </button>
@@ -413,7 +413,7 @@ function PianificaSettimana({ schede, onFatto, onErrore }) {
           type="button"
           onClick={invia}
           disabled={pronte.length === 0 || inCorso}
-          className="py-2 px-4 bg-[var(--accent)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
+          className="py-2 px-4 bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] disabled:opacity-50 text-white text-sm font-bold rounded-lg transition-colors shadow-[var(--ombra-accent)]"
         >
           {inCorso ? t('pianificazione.pianifico') : t('pianificazione.mettiInCalendario')}
         </button>

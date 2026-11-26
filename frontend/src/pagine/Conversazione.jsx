@@ -263,7 +263,7 @@ export default function Conversazione() {
               <div
                 className={`max-w-[85%] px-5 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                   mio
-                    ? 'bg-[var(--accent)] text-white rounded-br-md'
+                    ? 'bg-[var(--accent-pieno)] text-white rounded-br-md'
                     : 'bg-[var(--bg-terziario)] text-[var(--testo-primario)] rounded-bl-md'
                 }`}
               >

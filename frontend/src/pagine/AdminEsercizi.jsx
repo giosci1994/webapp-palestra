@@ -251,7 +251,7 @@ export default function AdminEsercizi() {
                     <button
                       onClick={() => rifiutaSuggerimento(sugg)}
                       disabled={isGestendo}
-                      className="px-4 py-2 rounded-[var(--raggio-md)] text-sm font-semibold bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo)] hover:text-white transition-all disabled:opacity-50"
+                      className="px-4 py-2 rounded-[var(--raggio-md)] text-sm font-semibold bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo-pieno)] hover:text-white transition-all disabled:opacity-50"
                     >
                       ❌
                     </button>

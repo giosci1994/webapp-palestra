@@ -89,7 +89,7 @@ export default function Gamification() {
         {/* Reset button at the top right */}
         <button 
           onClick={() => setMostraReset(true)}
-          className="absolute top-4 right-4 text-[10px] uppercase font-bold px-2 py-1 rounded bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo)] hover:text-white transition-colors z-10"
+          className="absolute top-4 right-4 text-[10px] uppercase font-bold px-2 py-1 rounded bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo-pieno)] hover:text-white transition-colors z-10"
         >
           {t('gamification.azzeraXp')}
         </button>
@@ -131,7 +131,7 @@ export default function Gamification() {
           <button key={voce.id} onClick={() => setTab(voce.id)}
                   className={`px-5 py-3 rounded-xl text-base font-semibold transition-all flex-1 text-center ${
                     tab === voce.id
-                      ? 'bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/25'
+                      ? 'bg-[var(--accent-pieno)] text-white shadow-lg shadow-[var(--accent)]/25'
                       : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:bg-[var(--bordo)]'
                   }`}>
             {voce.label} <span className="text-xs opacity-70 ml-1">{voce.cnt}</span>
@@ -435,7 +435,7 @@ export default function Gamification() {
               <button 
                 onClick={eseguiReset} 
                 disabled={confermaReset !== parolaConferma || avviandoReset}
-                className="flex-1 py-2 rounded-lg bg-[var(--pericolo)] text-white disabled:opacity-50"
+                className="flex-1 py-2 rounded-lg bg-[var(--pericolo-pieno)] text-white disabled:opacity-50"
               >
                 {avviandoReset ? t('gamification.reset.inCorso') : t('comune.conferma')}
               </button>

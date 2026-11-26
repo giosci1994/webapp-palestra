@@ -25,7 +25,7 @@
   --bg-quaternario: #1A1A33;
 
   /* Accent */
-  --accent: #8B5CF6;       /* Violet: 4.9:1 as text on the background */
+  --accent: #9A6EF8;       /* Violet: 5.8:1 as text on the background, >= 4.5:1 on tinted surfaces (fills under white text use --accent-pieno) */
   --accent-hover: #A78BFA;
   --accent-dim: rgba(139, 92, 246, 0.15);
   --accent-glow: rgba(139, 92, 246, 0.4);
@@ -40,6 +40,7 @@
   --successo-dim: rgba(16, 185, 129, 0.15);
   --pericolo: #F43F5E;
   --pericolo-dim: rgba(244, 63, 94, 0.15);
+  --pericolo-pieno: #E11D48; /* red fill under white text (badges, buttons): 4.7:1 */
   --avviso: #F59E0B;
   --avviso-dim: rgba(245, 158, 11, 0.15);
   --info: #3B82F6;
@@ -137,6 +138,7 @@
   --successo-dim: rgba(4, 120, 87, 0.10);
   --pericolo: #BE123C;     /* 6.3:1 */
   --pericolo-dim: rgba(190, 18, 60, 0.10);
+  --pericolo-pieno: #BE123C;
   --avviso: #92400E;       /* 7.1:1 on white, 6.0:1 on its tint */
   --avviso-dim: rgba(180, 83, 9, 0.12);
   --info: #1D4ED8;
@@ -242,7 +244,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* --- Text selection --- */
 ::selection {
-  background-color: var(--accent);
+  background-color: var(--accent-pieno);
   color: white;
 }
 

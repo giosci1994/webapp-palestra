@@ -165,7 +165,7 @@ export default function Login() {
                 className="sr-only peer"
               />
               <div className="w-10 h-[22px] rounded-full transition-colors duration-200
-                              bg-[var(--bg-terziario)] peer-checked:bg-[var(--accent)]
+                              bg-[var(--bg-terziario)] peer-checked:bg-[var(--accent-pieno)]
                               border border-[var(--bordo)] peer-checked:border-[var(--accent)]" />
               <div className="absolute top-[3px] left-[3px] w-4 h-4 rounded-full transition-transform duration-200
                               bg-[var(--testo-terziario)] peer-checked:bg-white

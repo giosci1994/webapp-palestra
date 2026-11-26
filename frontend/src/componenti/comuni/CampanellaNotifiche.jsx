@@ -42,7 +42,7 @@ export default function CampanellaNotifiche({ compatta = false }) {
         {nonLette > 0 && (
           <span
             className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-            style={{ background: 'var(--pericolo, #ef4444)', color: '#fff' }}
+            style={{ background: 'var(--pericolo-pieno)', color: '#fff' }}
           >
             {testoContatore(nonLette)}
           </span>

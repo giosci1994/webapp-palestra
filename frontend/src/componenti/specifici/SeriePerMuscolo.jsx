@@ -73,7 +73,7 @@ export default function SeriePerMuscolo({ dati }) {
                   >
                     <span className="text-xs text-[var(--testo-secondario)] truncate">{nomeGruppo(g.nome)}</span>
                     <span className="h-3.5 relative">
-                      <span className="absolute inset-y-0 left-0 rounded-r-[4px] bg-[var(--accent)]" style={{ width: pos(g.serieSettimanali) }} />
+                      <span className="absolute inset-y-0 left-0 rounded-r-[4px] bg-[var(--accent-pieno)]" style={{ width: pos(g.serieSettimanali) }} />
                     </span>
                     <span className="text-xs text-right text-[var(--testo-primario)] tabular-nums">{numero(g.serieSettimanali)}</span>
                   </li>
