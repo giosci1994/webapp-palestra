@@ -36,10 +36,11 @@ export const GRUPPI_MUSCOLARI = {
  * (#0a0a14): monotonic lightness, minimum jump of 0.06 between steps, the
  * darkest step at 2.2:1 from the background.
  */
-export const SCALA_ALLENAMENTO = ['#523b8c', '#704cc5', '#9060fb', '#aa8fff', '#c9bdfe'];
+// The colours are CSS variables (index.css, --scala-1…5): the light theme has its own steps, dark for a lot.
+export const SCALA_ALLENAMENTO = ['var(--scala-1)', 'var(--scala-2)', 'var(--scala-3)', 'var(--scala-4)', 'var(--scala-5)'];
 
 /** Muscle never trained: neutral gray, it recedes behind the scale. */
-export const COLORE_NON_ALLENATO = '#282734';
+export const COLORE_NON_ALLENATO = 'var(--non-allenato)';
 
 /** Step 1-5 of the scale for a number of sets (0: never trained). */
 export function gradinoAllenamento(serie, massimo) {
@@ -57,9 +58,9 @@ export function gradinoAllenamento(serie, massimo) {
  */
 // etichetta and dettaglio are translation keys: show them with t()
 export const STATI_RECUPERO = {
-  recupero: { etichetta: 'costanti.recupero.recupero', dettaglio: 'costanti.recupero.recuperoDettaglio', colore: '#ca8402' },
-  pronto: { etichetta: 'costanti.recupero.pronto', dettaglio: 'costanti.recupero.prontoDettaglio', colore: '#02a573' },
-  trascurato: { etichetta: 'costanti.recupero.trascurato', dettaglio: 'costanti.recupero.trascuratoDettaglio', colore: '#5066a3' },
+  recupero: { etichetta: 'costanti.recupero.recupero', dettaglio: 'costanti.recupero.recuperoDettaglio', colore: 'var(--recupero-recupero)' },
+  pronto: { etichetta: 'costanti.recupero.pronto', dettaglio: 'costanti.recupero.prontoDettaglio', colore: 'var(--recupero-pronto)' },
+  trascurato: { etichetta: 'costanti.recupero.trascurato', dettaglio: 'costanti.recupero.trascuratoDettaglio', colore: 'var(--recupero-trascurato)' },
 };
 
 /**

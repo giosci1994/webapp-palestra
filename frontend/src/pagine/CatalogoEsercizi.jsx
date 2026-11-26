@@ -162,8 +162,8 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
 
         {/* Difficulty badge */}
         {esercizio.difficulty && (
-          <span className="text-[10px] font-bold px-2 py-1 rounded-full shrink-0 hidden sm:inline-block"
-                style={{ background: diffColor.bg, color: diffColor.text }}>
+          <span className="testo-tinta text-[10px] font-bold px-2 py-1 rounded-full shrink-0 hidden sm:inline-block"
+                style={{ background: diffColor.bg, '--tinta': diffColor.text }}>
             {valoreTradotto(t, 'difficolta', esercizio.difficulty)}
           </span>
         )}
@@ -183,7 +183,7 @@ function EsercizioCard({ esercizio, isExpanded, onToggle, preferito, onPreferito
         aria-pressed={preferito}
         aria-label={preferito ? t('catalogoEsercizi.togliPreferiti') : t('catalogoEsercizi.aggiungiPreferiti')}
         title={preferito ? t('catalogoEsercizi.togliPreferiti') : t('catalogoEsercizi.aggiungiPreferiti')}
-        className={`shrink-0 pl-2 pr-5 flex items-center transition-colors hover:bg-[var(--bg-terziario)] ${preferito ? 'text-[#EAB308]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)]'}`}
+        className={`shrink-0 pl-2 pr-5 flex items-center transition-colors hover:bg-[var(--bg-terziario)] ${preferito ? 'text-[var(--stella)]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)]'}`}
       >
         <Star size={18} fill={preferito ? 'currentColor' : 'none'} />
       </button>
@@ -266,7 +266,7 @@ function InfoBadge({ label, value, color }) {
   return (
     <div className="rounded-[var(--raggio-sm)] p-2 bg-[var(--bg-terziario)]">
       <span className="text-[10px] text-[var(--testo-terziario)] block">{label}</span>
-      <span className="text-xs font-medium" style={color ? { color: color.text } : {}}>{value}</span>
+      <span className={`text-xs font-medium ${color ? 'testo-tinta' : ''}`} style={color ? { '--tinta': color.text } : {}}>{value}</span>
     </div>
   );
 }

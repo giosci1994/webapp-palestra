@@ -1339,7 +1339,7 @@ export default function WorkoutLive() {
               </button>
 
               <button onClick={() => setMostraSelettoreEsercizi(true)}
-                      className="btn-enorme mt-2" style={{ background: 'var(--bg-primario)', border: '1px solid var(--bordo)' }}>
+                      className="btn-enorme mt-2" style={{ background: 'var(--bg-primario)', color: 'var(--testo-primario)', border: '1px solid var(--bordo)' }}>
                 {t('workoutLive.azioni.cambiaEsercizio')}
               </button>
             </div>

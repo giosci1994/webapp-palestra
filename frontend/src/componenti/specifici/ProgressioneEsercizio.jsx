@@ -17,9 +17,9 @@ import { formattaPeso } from '../../utils/formattatori.js';
 
 const COLORI = {
   carico: 'var(--accent)',
-  stimato: '#c9bdfe',               // light step of the same hue
+  stimato: 'var(--grafico-stimato)', // light step of the same hue (index.css)
   massimale: 'var(--avviso)',       // like the trophy next to the max
-  superficie: '#0a0a14',            // ring around the dots, on the card background
+  superficie: 'var(--vetro)',       // ring around the dots, on the card background
 };
 
 const dataBreve = (iso) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(localeCorrente(), { day: 'numeric', month: 'short' });
@@ -91,12 +91,12 @@ export default function ProgressioneEsercizio({ esercizioId }) {
       )}
       <ResponsiveContainer width="100%" height={170}>
         <LineChart data={punti} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
-          <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+          <CartesianGrid vertical={false} stroke="var(--griglia)" />
           <XAxis dataKey="data" tickFormatter={dataBreve} tick={{ fontSize: 10, fill: 'var(--testo-terziario)' }}
                  axisLine={false} tickLine={false} minTickGap={16} />
           <YAxis tick={{ fontSize: 10, fill: 'var(--testo-terziario)' }} axisLine={false} tickLine={false}
                  width={52} domain={['auto', 'auto']} allowDecimals={false} unit={` ${unita}`} />
-          <Tooltip content={<Suggerimento modo={modo} />} cursor={{ stroke: 'rgba(255,255,255,0.15)' }} />
+          <Tooltip content={<Suggerimento modo={modo} />} cursor={{ stroke: 'var(--cursore-grafico)' }} />
           <Line type="linear" dataKey={campo} name={t('progressioneEsercizio.carico')} stroke={COLORI.carico} strokeWidth={2}
                 dot={anello(COLORI.carico)} activeDot={{ ...anello(COLORI.carico), r: 5 }} isAnimationActive={false} />
           {conStima && (

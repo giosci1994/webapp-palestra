@@ -77,7 +77,7 @@ export default function Statistiche() {
                     className={`px-4 py-1.5 rounded-lg text-xs md:text-sm font-bold transition-all ${
                       periodo === p.id 
                         ? 'bg-[var(--accent)] text-white shadow-md' 
-                        : 'text-[var(--testo-secondario)] hover:text-white hover:bg-[rgba(255,255,255,0.05)]'
+                        : 'text-[var(--testo-secondario)] hover:text-[var(--testo-primario)] hover:bg-[var(--velo)]'
                     }`}>
               {t(p.label)}
             </button>

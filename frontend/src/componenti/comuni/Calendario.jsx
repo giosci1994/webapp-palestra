@@ -94,7 +94,7 @@ export default function Calendario({
   return (
     <div>
       {/* Header: navigation and, if requested, the mode selector */}
-      <div className="flex items-center justify-between gap-2 mb-4 bg-[rgba(0,0,0,0.2)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
+      <div className="flex items-center justify-between gap-2 mb-4 bg-[var(--incavo)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
         <button
           onClick={() => scorri(-1)}
           aria-label={modo === 'mese' ? t('calendario.mesePrecedente') : t('calendario.settimanaPrecedente')}

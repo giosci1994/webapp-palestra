@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
 import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
+import SceltaTema from '../componenti/specifici/SceltaTema.jsx';
 
 // `v` is the value saved on the account, `chiave` the translation key of its label
 const OBIETTIVI = [
@@ -405,7 +406,7 @@ export default function Profilo() {
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
                       ? 'px-10 text-[var(--testo-primario)]' 
-                      : 'px-5 text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]'
+                      : 'px-5 text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[var(--velo)]'
                   } ${tab.id === 'elimina' && tabAttivo !== tab.id ? '!text-[var(--pericolo)] opacity-70 hover:opacity-100' : ''}`}>
                   
                   {/* Animated active background */}
@@ -518,6 +519,8 @@ export default function Profilo() {
 
               <SceltaLingua />
 
+              <SceltaTema />
+
               {/* Professional account: become a Personal Trainer (standard users only) */}
               {utente?.ruolo === 'UTENTE' && (
                 <div className="glass-card overflow-hidden">
@@ -592,7 +595,7 @@ export default function Profilo() {
               {/* Gamification */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles size={20} className="text-amber-400" /> {t('profilo.privacy.gamification')}</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles size={20} className="text-[var(--avviso)]" /> {t('profilo.privacy.gamification')}</h3>
                 </div>
                 <div className="p-card-inner">
                   <div className="flex items-center justify-between px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
@@ -971,7 +974,7 @@ export default function Profilo() {
                   {/* Developer */}
                   <div className="mt-2 pt-4 border-t border-[var(--bordo)]">
                     <a href="https://github.com/giosci1994/" target="_blank" rel="noopener noreferrer"
-                       className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] hover:bg-[rgba(255,255,255,0.08)] transition-all group cursor-pointer">
+                       className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] hover:bg-[var(--velo-forte)] transition-all group cursor-pointer">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--bordo)] group-hover:border-[var(--accent)] transition-colors shadow-lg">
                         <img src="https://github.com/giosci1994.png" alt={t('profilo.legale.sviluppatore')} className="w-full h-full object-cover" />
                       </div>

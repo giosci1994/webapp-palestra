@@ -72,7 +72,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
          style={{ 
-           background: 'linear-gradient(135deg, #0A0A0F 0%, #12121A 40%, #1A1A2E 100%)',
+           background: 'linear-gradient(135deg, var(--bg-primario) 0%, var(--bg-secondario) 40%, var(--bg-quaternario) 100%)',
            paddingTop: 'calc(16px + var(--safe-top))',
            paddingBottom: 'calc(16px + var(--safe-bottom))',
            paddingLeft: 'calc(16px + var(--safe-left))',

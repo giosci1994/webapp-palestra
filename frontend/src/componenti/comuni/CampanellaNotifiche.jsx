@@ -36,7 +36,7 @@ export default function CampanellaNotifiche({ compatta = false }) {
         onClick={() => setAperto(v => !v)}
         aria-label={nonLette > 0 ? t('campanellaNotifiche.notificheNonLette', { numero: nonLette }) : t('campanellaNotifiche.notifiche')}
         aria-expanded={aperto}
-        className="relative p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-white"
+        className="relative p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-[var(--testo-primario)]"
       >
         <Bell size={compatta ? 22 : 26} />
         {nonLette > 0 && (

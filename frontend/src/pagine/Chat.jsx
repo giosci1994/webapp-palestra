@@ -224,7 +224,7 @@ export default function Chat() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={`font-semibold text-sm truncate ${nonLetto ? 'text-white' : ''}`}>
+                        <p className={`font-semibold text-sm truncate ${nonLetto ? 'text-[var(--testo-primario)]' : ''}`}>
                           {altro?.nome || t('chat.utente')}
                         </p>
                         {altro?.ruolo === 'PERSONAL_TRAINER' && (

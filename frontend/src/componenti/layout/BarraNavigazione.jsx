@@ -64,7 +64,7 @@ export default function BarraNavigazione() {
                 } ${
                   isActive && !tab.principale
                     ? 'text-[var(--accent)] bg-[var(--accent-dim)]'
-                    : !tab.principale ? 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]' : ''
+                    : !tab.principale ? 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[var(--velo)]' : ''
                 }`
               }
             >
