@@ -91,6 +91,7 @@ export default function CaroselloAzioni({ slide = [] }) {
   return (
     <div
       className="mb-8 md:mb-12"
+      data-senza-gesto
       onMouseEnter={() => setInPausa(true)}
       onMouseLeave={() => setInPausa(false)}
       onFocusCapture={() => setInPausa(true)}

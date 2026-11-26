@@ -10,8 +10,10 @@ import { Home, ClipboardList, Dumbbell, MessageCircle, User } from 'lucide-react
 import { useLingua } from '../../hooks/useLingua.js';
 import { useNotifiche } from '../../contesti/NotificheContesto.jsx';
 import { testoContatore } from '../../utils/notifiche.js';
+import { sostituisceStoria } from '../../utils/gestoPagine.js';
 
-// `chiave` is a translation key, shown with t() when rendering
+// `chiave` is a translation key, shown with t() when rendering.
+// The same order as PAGINE_ISOLA (utils/gestoPagine.js): the swipe between pages follows it.
 const TABS = [
   { percorso: '/dashboard', Icona: Home, chiave: 'barraNavigazione.home' },
   { percorso: '/schede', Icona: ClipboardList, chiave: 'barraNavigazione.schede' },
@@ -19,8 +21,6 @@ const TABS = [
   { percorso: '/chat', Icona: MessageCircle, chiave: 'barraNavigazione.chat', daLeggere: true },
   { percorso: '/profilo', Icona: User, chiave: 'barraNavigazione.profilo' }
 ];
-
-const HOME = '/dashboard';
 
 export default function BarraNavigazione() {
   const { t } = useLingua();
@@ -35,9 +35,8 @@ export default function BarraNavigazione() {
   // Rule: only one entry is pushed, the home one. From the home the chosen
   // tab is pushed (back -> home); from any other page the tab replaces the
   // current entry; the home always replaces.
-  // So the history stays [home] or [home, tab].
-  const sullaHome = pathname === HOME;
-  const sostituisci = (percorso) => percorso === HOME || !sullaHome;
+  // So the history stays [home] or [home, tab] (the swipe between pages uses the same rule).
+  const sostituisci = (percorso) => sostituisceStoria(pathname, percorso);
 
   return (
     <nav className="md:hidden fixed z-50 w-[calc(100%-2rem)] left-4 border border-[var(--vetro-bordo)] rounded-[32px] shadow-[var(--ombra-modale)]"

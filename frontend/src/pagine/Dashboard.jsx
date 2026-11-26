@@ -29,7 +29,7 @@ import { caricaPagina } from '../utils/caricaPagina.js';
 import Spinner from '../componenti/comuni/Spinner.jsx';
 import './Dashboard.css';
 import IsolaSchede from '../componenti/comuni/IsolaSchede.jsx';
-import PannelloTrascinabile from '../componenti/comuni/PannelloTrascinabile.jsx';
+import { useSchedeSfogliabili } from '../hooks/useSchedeSfogliabili.js';
 
 // The Statistics tab (with all its charts) is loaded only when it is opened
 const Statistiche = caricaPagina(() => import('./Statistiche.jsx'));
@@ -49,6 +49,8 @@ export default function Dashboard() {
   const [tabAttivo, setTabAttivo] = useState('attività');
   // Fractional tab position, shared by the island and the swipeable panel
   const posizioneSchede = useMotionValue(0);
+  // Horizontal offset of the tab panel while the finger moves it
+  const xPannello = useMotionValue(0);
   const [sessioniRecenti, setSessioniRecenti] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
   
@@ -214,6 +216,10 @@ export default function Dashboard() {
     setTabAttivo(tab);
     if (tab === 'il mio PT' && !ptDashboard) caricaDatiPT();
   };
+  useSchedeSfogliabili({
+    indice: indiceTab, conteggio: schede.length, progresso: posizioneSchede, x: xPannello,
+    onCambia: (i) => cambiaTab(schede[i])
+  });
 
   if (caricamento) {
     return (
@@ -368,12 +374,9 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Tabs content: the panel of the island, swipeable sideways */}
-      <PannelloTrascinabile
-        role="tabpanel" id="dash-pannello" aria-labelledby={`dash-scheda-${indiceTab}`}
-        indice={indiceTab} conteggio={schede.length} progresso={posizioneSchede}
-        onCambia={(i) => cambiaTab(schede[i])}
-      >
+      {/* Tabs content: the panel of the island. The page's swipe moves through
+          the tabs first (PaginaSfogliabile), the panel follows the finger */}
+      <motion.div role="tabpanel" id="dash-pannello" aria-labelledby={`dash-scheda-${indiceTab}`} style={{ x: xPannello }}>
       <AnimatePresence mode="wait">
         {tabAttivo === 'attività' && (
           <motion.div 
@@ -789,7 +792,7 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
-      </PannelloTrascinabile>
+      </motion.div>
     </div>
     </MotionConfig>
   );
