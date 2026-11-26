@@ -11,7 +11,7 @@ import { api } from '../config/api.js';
 import { formattaData, formattaDataRelativa, aStringaData, lunediDi, titoloAllenamento } from '../utils/formattatori.js';
 import { datiFermi } from '../utils/affluenza.js';
 import { marcatoriCalendario, COLORI_CALENDARIO } from '../utils/marcatoriCalendario.js';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig, useMotionValue } from 'framer-motion';
 import { 
   MessageCircle, ChevronRight, ClipboardList, History, 
   Trophy, Activity, Info, Edit2, Check, X, Bot, CalendarDays, Trash2, Library,
@@ -27,6 +27,9 @@ import { useLingua } from '../hooks/useLingua.js';
 import { localeCorrente } from '../i18n/index.js';
 import { caricaPagina } from '../utils/caricaPagina.js';
 import Spinner from '../componenti/comuni/Spinner.jsx';
+import './Dashboard.css';
+import IsolaSchede from '../componenti/comuni/IsolaSchede.jsx';
+import PannelloTrascinabile from '../componenti/comuni/PannelloTrascinabile.jsx';
 
 // The Statistics tab (with all its charts) is loaded only when it is opened
 const Statistiche = caricaPagina(() => import('./Statistiche.jsx'));
@@ -44,6 +47,8 @@ export default function Dashboard() {
   const { avvia } = useAllenamentoInCorso();
   
   const [tabAttivo, setTabAttivo] = useState('attività');
+  // Fractional tab position, shared by the island and the swipeable panel
+  const posizioneSchede = useMotionValue(0);
   const [sessioniRecenti, setSessioniRecenti] = useState([]);
   const [caricamento, setCaricamento] = useState(true);
   
@@ -202,9 +207,17 @@ export default function Dashboard() {
   const ora = new Date().getHours();
   const saluto = ora < 12 ? t('dashboard.saluto.mattina') : ora < 18 ? t('dashboard.saluto.pomeriggio') : t('dashboard.saluto.sera');
 
+  // The tabs shown, in order (the PT one only with a trainer)
+  const schede = ['attività', 'statistiche', ...(mioPTDash ? ['il mio PT'] : [])];
+  const indiceTab = Math.max(schede.indexOf(tabAttivo), 0);
+  const cambiaTab = (tab) => {
+    setTabAttivo(tab);
+    if (tab === 'il mio PT' && !ptDashboard) caricaDatiPT();
+  };
+
   if (caricamento) {
     return (
-      <div className="py-4 md:py-8 pb-12">
+      <div aria-busy="true" className="dash-combinata py-4 md:py-8 pb-12">
         {/* Header */}
         <div className="mb-8 md:mb-12">
           <div className="h-10 w-56 rounded-xl bg-[var(--bg-terziario)] animate-pulse" />
@@ -267,12 +280,12 @@ export default function Dashboard() {
 
 
   return (
-    <div className="py-4 md:py-8 pb-12">
+    <MotionConfig reducedMotion="user">
+    <div className="dash-combinata py-4 md:py-8 pb-12">
       {/* Greeting header */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 md:mb-20 relative">
-        <div className="absolute -top-20 -left-20 w-64 h-64 bg-[var(--accent)] rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
-        <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-2 relative z-10">
-          {saluto} <br className="md:hidden" /><span className="testo-gradient">{utente?.nome?.split(' ')[0]}</span>
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="dash-saluto mb-8 md:mb-12 relative">
+        <h1 className="dash-titolo relative z-10">
+          {saluto} <br className="md:hidden" /><span className="dash-nome">{utente?.nome?.split(' ')[0]}</span>
         </h1>
       </motion.div>
 
@@ -283,17 +296,14 @@ export default function Dashboard() {
             initial={{ opacity: 0, height: 0 }} 
             animate={{ opacity: 1, height: 'auto' }} 
             exit={{ opacity: 0, height: 0 }}
-            className="mb-8 md:mb-20"
+            className="mb-8 md:mb-12"
           >
-            <div className={`border rounded-[var(--raggio-lg)] p-card-inner flex flex-col relative overflow-hidden transition-colors ${!banner.visibile ? 'bg-transparent border-dashed border-[var(--testo-terziario)] opacity-50' : 'bg-[var(--accent-dim)] border-[var(--accent-glow)]'}`}>
+            <div className={`dash-banner border rounded-[var(--raggio-lg)] p-card-inner flex flex-col relative overflow-hidden transition-colors ${!banner.visibile ? 'bg-transparent border-dashed border-[var(--testo-terziario)] opacity-50' : 'bg-[var(--accent-dim)] border-[var(--accent-glow)]'}`}>
               
-              {banner.visibile && (
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[var(--accent)] opacity-20 rounded-full blur-3xl pointer-events-none transform translate-x-1/2 -translate-y-1/2"></div>
-              )}
               
               <div className="flex items-start justify-between gap-4 z-10">
-                <div className="flex items-center gap-6 w-full">
-                  <Info className={banner.visibile ? 'text-[var(--accent)]' : 'text-[var(--testo-terziario)]'} size={40} />
+                <div className="flex items-center gap-4 w-full">
+                  <Info className={`dash-banner-icona shrink-0 ${banner.visibile ? 'text-[var(--accent)]' : 'text-[var(--testo-terziario)]'}`} size={22} />
                   
                   {editBanner ? (
                     <input 
@@ -302,6 +312,7 @@ export default function Dashboard() {
                       onChange={(e) => setTempBannerTesto(e.target.value)}
                       className="flex-1 bg-black/20 border border-[var(--bordo-light)] rounded px-4 py-3 text-base md:text-lg outline-none focus:border-[var(--accent)]"
                       placeholder={t('dashboard.banner.placeholder')}
+                      aria-label={t('dashboard.banner.placeholder')}
                       autoFocus
                     />
                   ) : (
@@ -317,15 +328,15 @@ export default function Dashboard() {
                   <div className="flex gap-2 shrink-0">
                     {editBanner ? (
                       <>
-                        <button onClick={() => salvaBanner(true)} className="p-1.5 bg-[var(--successo-dim)] text-[var(--successo)] rounded hover:bg-[var(--successo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaMostra')}>
+                        <button onClick={() => salvaBanner(true)} className="p-1.5 bg-[var(--successo-dim)] text-[var(--successo)] rounded hover:bg-[var(--successo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaMostra')} aria-label={t('dashboard.banner.salvaMostra')}>
                           <Check size={16} />
                         </button>
-                        <button onClick={() => salvaBanner(false)} className="p-1.5 bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded hover:bg-[var(--pericolo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaNascondi')}>
+                        <button onClick={() => salvaBanner(false)} className="p-1.5 bg-[var(--pericolo-dim)] text-[var(--pericolo)] rounded hover:bg-[var(--pericolo)] hover:text-white transition-colors" title={t('dashboard.banner.salvaNascondi')} aria-label={t('dashboard.banner.salvaNascondi')}>
                           <X size={16} />
                         </button>
                       </>
                     ) : (
-                      <button onClick={() => setEditBanner(true)} className="p-1.5 bg-[var(--bg-terziario)] text-[var(--testo-secondario)] rounded hover:text-[var(--testo-primario)] transition-colors">
+                      <button onClick={() => setEditBanner(true)} aria-label={t('comune.modifica')} className="p-1.5 bg-[var(--bg-terziario)] text-[var(--testo-secondario)] rounded hover:text-[var(--testo-primario)] transition-colors">
                         <Edit2 size={16} />
                       </button>
                     )}
@@ -340,38 +351,29 @@ export default function Dashboard() {
       {/* Contextual prompts gathered in a single sliding banner */}
       <CaroselloAzioni slide={slideAzioni} />
 
-      {/* Tabs */}
+      {/* Tabs: the Kokonut UI island (IsolaSchede), coloured with the app accent */}
       <div style={{ paddingTop: '15px', paddingBottom: '25px', width: '100%' }}>
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar" style={{ background: 'var(--vetro)', border: '1px solid var(--vetro-bordo)', padding: '10px', borderRadius: '32px', boxShadow: 'var(--ombra-card)' }}>
-          {['attività', 'statistiche', ...(mioPTDash ? ['il mio PT'] : [])].map((tab) => {
-            let IconaTab = tab === 'attività' ? Activity : tab === 'statistiche' ? BarChart3 : Dumbbell;
-            return (
-              <button
-                key={tab}
-                onClick={() => {
-                  setTabAttivo(tab);
-                  if (tab === 'il mio PT' && !ptDashboard) caricaDatiPT();
-                }}
-                className={`flex items-center justify-center gap-2 py-2.5 px-6 rounded-[14px] text-sm font-bold capitalize transition-all duration-300 whitespace-nowrap shrink-0 relative ${
-                  tabAttivo === tab ? 'text-[var(--testo-primario)]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]'
-                }`}
-              >
-                {/* Animated active background */}
-                {tabAttivo === tab && (
-                  <motion.div layoutId="dashboardTabBg" className="absolute inset-0 bg-[var(--bg-terziario)] border border-[var(--bordo)] rounded-[14px] shadow-sm z-0" transition={{ type: "spring", stiffness: 300, damping: 25 }} />
-                )}
-                
-                <div className="relative z-10 flex items-center justify-center gap-2">
-                  <IconaTab size={18} className={`shrink-0 transition-transform duration-300 ${tabAttivo === tab ? 'text-[var(--accent)]' : ''}`} />
-                  {t(ETICHETTE_TAB[tab])}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <IsolaSchede
+          idBase="dash-scheda"
+          idPannello="dash-pannello"
+          label={t('dashboard.schede')}
+          value={tabAttivo}
+          onChange={cambiaTab}
+          progresso={posizioneSchede}
+          items={schede.map((tab) => ({
+            id: tab,
+            title: t(ETICHETTE_TAB[tab]),
+            icon: tab === 'attività' ? Activity : tab === 'statistiche' ? BarChart3 : Dumbbell
+          }))}
+        />
       </div>
 
-      {/* Tabs content */}
+      {/* Tabs content: the panel of the island, swipeable sideways */}
+      <PannelloTrascinabile
+        role="tabpanel" id="dash-pannello" aria-labelledby={`dash-scheda-${indiceTab}`}
+        indice={indiceTab} conteggio={schede.length} progresso={posizioneSchede}
+        onCambia={(i) => cambiaTab(schede[i])}
+      >
       <AnimatePresence mode="wait">
         {tabAttivo === 'attività' && (
           <motion.div 
@@ -425,8 +427,9 @@ export default function Dashboard() {
                             onClick={(e) => eliminaSessione(sessione.id, e)}
                             className="p-2 text-[var(--testo-terziario)] hover:text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)] rounded-full transition-colors"
                             title={t('dashboard.ultimeAttivita.elimina')}
+                            aria-label={`${t('dashboard.ultimeAttivita.elimina')}: ${titoloAllenamento(sessione)}`}
                           >
-                            <Trash2 size={18} />
+                            <Trash2 size={18} aria-hidden="true" />
                           </button>
                         </li>
                       ))}
@@ -486,17 +489,17 @@ export default function Dashboard() {
                   <div className="p-card-inner pb-4 flex items-center gap-3">
                     <Building size={22} className="text-[var(--accent)]" />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg">{t('dashboard.affluenza.titolo')}</h3>
-                      <p className="text-[10px] text-[var(--testo-terziario)] truncate">
+                      <h3 className="dash-h3">{t('dashboard.affluenza.titolo')}</h3>
+                      <p className="text-xs text-[var(--testo-terziario)] truncate">
                         {utente?.palestra?.nomeCatena || t('dashboard.affluenza.latuaPalestra')}
                       </p>
                     </div>
                     {/* Hidden when the data is stale: it would look like the level right now */}
                     {affluenza?.livelloColore && affluenza.livelloColore !== 'grigio' && !datiFermi(affluenza.ultimoAggiornamento) && (
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        affluenza.livelloColore === 'verde' ? 'bg-green-500/20 text-green-400' :
-                        affluenza.livelloColore === 'giallo' ? 'bg-amber-500/20 text-amber-400' :
-                        affluenza.livelloColore === 'rosso' ? 'bg-red-500/20 text-red-400' :
+                      <span className={`dash-livello px-2.5 py-1 rounded-full text-xs ${
+                        affluenza.livelloColore === 'verde' ? 'bg-[var(--livello-basso-dim)] text-[var(--livello-basso-testo)]' :
+                        affluenza.livelloColore === 'giallo' ? 'bg-[var(--livello-medio-dim)] text-[var(--livello-medio-testo)]' :
+                        affluenza.livelloColore === 'rosso' ? 'bg-[var(--livello-alto-dim)] text-[var(--livello-alto-testo)]' :
                         'bg-[var(--bg-terziario)] text-[var(--testo-terziario)]'
                       }`}>
                         {affluenza.livelloTesto}
@@ -505,7 +508,7 @@ export default function Dashboard() {
                   </div>
                   <div className="px-6 pb-6">
                     {affluenzaCaricamento ? (
-                      <div className="flex justify-center py-6">
+                      <div className="flex justify-center py-6" role="status" aria-busy="true">
                         <div className="w-6 h-6 border-2 border-[var(--bg-terziario)] border-t-[var(--accent)] rounded-full anima-ruota" />
                       </div>
                     ) : affluenza?.graficoGiornata?.length > 0 ? (
@@ -517,9 +520,9 @@ export default function Dashboard() {
                             return { ora, livello: dato?.live ?? dato?.livello ?? 0, isOra: ora === affluenza.oraCorrente };
                           });
                           const maxLivello = Math.max(1, ...ore.map(o => o.livello));
-                          const coloreBarra = (liv) => liv <= 0 ? null : liv <= 30 ? ['#22c55e', '#15803d'] : liv <= 60 ? ['#f59e0b', '#b45309'] : ['#ef4444', '#b91c1c'];
+                          const livelloBarra = (liv) => liv <= 30 ? 'basso' : liv <= 60 ? 'medio' : 'alto';
                           return (
-                            <div className="mb-2">
+                            <div className="mb-2" role="img" aria-label={`${t('dashboard.affluenza.titolo')}: ${affluenza.livelloTesto || ''} ${affluenza.liveDescrizione || ''}`.trim()}>
                               {/* current hour marker */}
                               <div className="flex gap-[3px] h-3 mb-1">
                                 {ore.map(({ ora, isOra }) => (
@@ -529,27 +532,25 @@ export default function Dashboard() {
                                 ))}
                               </div>
                               {/* bars with a background track */}
-                              <div className="flex items-end gap-[3px] h-24">
+                              <div className="dash-barre flex items-end gap-[3px] h-28">
                                 {ore.map(({ ora, livello, isOra }) => {
-                                  const c = coloreBarra(livello);
-                                  const pct = livello > 0 ? Math.max(7, Math.round((livello / maxLivello) * 100)) : 3;
+                                                                    const pct = livello > 0 ? Math.max(7, Math.round((livello / maxLivello) * 100)) : 3;
                                   return (
                                     <div key={ora} title={`${ora}:00 — ${livello}%`}
-                                         className="flex-1 h-full flex items-end rounded-[5px] overflow-hidden"
-                                         style={{ background: 'rgba(255,255,255,0.1)', boxShadow: isOra ? '0 0 0 1.5px rgba(255,255,255,0.6)' : 'none' }}>
+                                         className={`dash-binario flex-1 h-full flex items-end overflow-hidden ${isOra ? 'dash-ora' : ''}`}>
                                       <motion.div
-                                        className="w-full rounded-[5px]"
+                                        className="dash-barra w-full" data-livello={livello > 0 ? livelloBarra(livello) : undefined}
                                         initial={{ scaleY: 0 }}
                                         animate={{ scaleY: 1 }}
                                         transition={{ duration: 0.5, delay: ora * 0.012, ease: [0.22, 1, 0.36, 1] }}
-                                        style={{ height: `${pct}%`, transformOrigin: 'bottom', background: c ? c[0] : 'transparent' }}
+                                        style={{ height: `${pct}%`, transformOrigin: 'bottom' }}
                                       />
                                     </div>
                                   );
                                 })}
                               </div>
                               {/* hours axis */}
-                              <div className="flex gap-[3px] mt-2 text-[10px] text-[var(--testo-terziario)]">
+                              <div className="dash-asse flex gap-[3px] mt-2 text-[11px] text-[var(--testo-terziario)]">
                                 {ore.map(({ ora }) => (
                                   <div key={ora} className="flex-1 text-center">{ora % 6 === 0 ? String(ora).padStart(2, '0') : ''}</div>
                                 ))}
@@ -561,23 +562,23 @@ export default function Dashboard() {
                             the level badge: "live" and the pulsing dot would say it is now */}
                         {affluenza.liveDescrizione && !datiFermi(affluenza.ultimoAggiornamento) && (
                           <div className={`mt-3 p-3 rounded-xl flex items-center gap-3 border ${
-                            affluenza.livelloColore === 'verde' ? 'bg-green-500/10 border-green-500/30' :
-                            affluenza.livelloColore === 'giallo' ? 'bg-amber-500/10 border-amber-500/30' :
-                            affluenza.livelloColore === 'rosso' ? 'bg-red-500/10 border-red-500/30' :
+                            affluenza.livelloColore === 'verde' ? 'bg-[var(--livello-basso-dim)] border-[var(--livello-basso-dim)]' :
+                            affluenza.livelloColore === 'giallo' ? 'bg-[var(--livello-medio-dim)] border-[var(--livello-medio-dim)]' :
+                            affluenza.livelloColore === 'rosso' ? 'bg-[var(--livello-alto-dim)] border-[var(--livello-alto-dim)]' :
                             'bg-[var(--bg-terziario)] border-[var(--bordo-light)]'
                           }`}>
-                            <span className={`w-3 h-3 rounded-full shrink-0 animate-pulse ${
-                              affluenza.livelloColore === 'verde' ? 'bg-green-500' :
-                              affluenza.livelloColore === 'giallo' ? 'bg-amber-500' :
-                              affluenza.livelloColore === 'rosso' ? 'bg-red-500' :
-                              'bg-gray-400'
+                            <span className={`dash-punto-live w-2.5 h-2.5 rounded-full shrink-0 ${
+                              affluenza.livelloColore === 'verde' ? 'bg-[var(--livello-basso)]' :
+                              affluenza.livelloColore === 'giallo' ? 'bg-[var(--livello-medio)]' :
+                              affluenza.livelloColore === 'rosso' ? 'bg-[var(--livello-alto)]' :
+                              'bg-[var(--testo-terziario)]'
                             }`} />
                             <div>
-                              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--testo-terziario)]">{t('dashboard.affluenza.tempoReale')}</p>
+                              <p className="text-xs text-[var(--testo-secondario)]">{t('dashboard.affluenza.tempoReale')}</p>
                               <p className={`text-sm font-semibold ${
-                                affluenza.livelloColore === 'verde' ? 'text-green-400' :
-                                affluenza.livelloColore === 'giallo' ? 'text-amber-400' :
-                                affluenza.livelloColore === 'rosso' ? 'text-red-400' :
+                                affluenza.livelloColore === 'verde' ? 'text-[var(--livello-basso-testo)]' :
+                                affluenza.livelloColore === 'giallo' ? 'text-[var(--livello-medio-testo)]' :
+                                affluenza.livelloColore === 'rosso' ? 'text-[var(--livello-alto-testo)]' :
                                 'text-[var(--testo-primario)]'
                               }`}>{affluenza.liveDescrizione}</p>
                             </div>
@@ -585,11 +586,11 @@ export default function Dashboard() {
                         )}
                         {/* Update timestamp; for old data, the day it stopped */}
                         {datiFermi(affluenza.ultimoAggiornamento) ? (
-                          <p className="text-[10px] text-[var(--testo-terziario)] mt-2">
+                          <p className="text-xs text-[var(--testo-terziario)] mt-3">
                             {t('dashboard.affluenza.datiFermi', { data: formattaData(affluenza.ultimoAggiornamento) })}
                           </p>
                         ) : affluenza.aggiornatoIl && (
-                          <p className="text-[9px] text-[var(--testo-terziario)] mt-2 text-right">
+                          <p className="text-xs text-[var(--testo-terziario)] mt-3 text-right tabular-nums">
                             {t('dashboard.affluenza.aggiornato', { ora: new Date(affluenza.aggiornatoIl).toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
                           </p>
                         )}
@@ -645,7 +646,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-bold shrink-0 overflow-hidden" style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
                       {ptDashboard.trainer?.immagineProfilo
-                        ? <img src={ptDashboard.trainer.immagineProfilo} className="w-full h-full object-cover" />
+                        ? <img src={ptDashboard.trainer.immagineProfilo} alt="" className="w-full h-full object-cover" />
                         : ptDashboard.trainer?.nome?.charAt(0)?.toUpperCase()}
                     </div>
                     <div>
@@ -664,10 +665,10 @@ export default function Dashboard() {
               {/* 2. Announcements board */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
-                  <Megaphone size={20} className="text-amber-400" />
+                  <Megaphone size={20} className="text-[var(--avviso)]" />
                   <h3 className="font-bold text-lg">{t('dashboard.pt.bacheca')}</h3>
                   {ptDashboard.annunci?.length > 0 && (
-                    <span className="bg-amber-500/20 text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    <span className="bg-[var(--avviso-dim)] text-[var(--avviso)] text-[10px] font-bold px-2 py-0.5 rounded-full">
                       {ptDashboard.annunci.length}
                     </span>
                   )}
@@ -676,8 +677,8 @@ export default function Dashboard() {
                   {ptDashboard.annunci?.length > 0 ? ptDashboard.annunci.slice(0, 10).map((a, aIdx, aArr) => (
                     <div key={a.id} className={`px-card-inner py-5 ${aIdx === aArr.length - 1 ? 'card-list-ultimo' : ''}`}>
                       <div className="flex items-center gap-2 mb-1.5">
-                        {a.priorita === 'urgente' && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
-                        {a.priorita === 'importante' && <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
+                        {a.priorita === 'urgente' && <span className="w-2 h-2 rounded-full bg-[var(--pericolo)] shrink-0" />}
+                        {a.priorita === 'importante' && <span className="w-2 h-2 rounded-full bg-[var(--avviso)] shrink-0" />}
                         <h4 className="font-bold text-sm">{a.titolo}</h4>
                         <span className="text-[10px] text-[var(--testo-terziario)] ml-auto">
                           {formattaDataRelativa(a.creatoIl)}
@@ -708,7 +709,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Link to={`/schede/${s.id}`} className="text-xs text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors">{t('dashboard.pt.dettagli')}</Link>
-                        <button onClick={() => avviaAllenamento(s.id)} disabled={avviando}
+                        <button onClick={() => avviaAllenamento(s.id)} disabled={avviando} aria-label={`${t('dashboard.slide.consiglio.iniziaScheda')}: ${s.titolo}`}
                           className="p-2 rounded-lg bg-[var(--accent-dim)] text-[var(--accent)] hover:bg-[var(--accent)] hover:text-white transition-colors">
                           <PlayCircle size={18} />
                         </button>
@@ -727,7 +728,7 @@ export default function Dashboard() {
               {/* 4. Appointments calendar */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
-                  <Calendar size={20} className="text-green-400" />
+                  <Calendar size={20} className="text-[var(--successo)]" />
                   <h3 className="font-bold text-lg">{t('dashboard.pt.appuntamenti')}</h3>
                 </div>
                 <div className="divide-y divide-[var(--bordo-light)]">
@@ -735,8 +736,8 @@ export default function Dashboard() {
                     const data = new Date(a.dataOra);
                     const isProssimo = i === 0;
                     return (
-                      <div key={a.id} className={`px-card-inner flex items-center gap-4 ${isProssimo ? 'bg-green-500/5' : ''} py-5 ${i === arr.length - 1 ? 'card-list-ultimo' : ''}`}>
-                        <div className={`w-12 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${isProssimo ? 'bg-green-500/20 text-green-400' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'}`}>
+                      <div key={a.id} className={`px-card-inner flex items-center gap-4 ${isProssimo ? 'bg-[var(--successo-dim)]' : ''} py-5 ${i === arr.length - 1 ? 'card-list-ultimo' : ''}`}>
+                        <div className={`w-12 h-14 rounded-xl flex flex-col items-center justify-center shrink-0 ${isProssimo ? 'bg-[var(--successo-dim)] text-[var(--successo)]' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'}`}>
                           <span className="text-[10px] font-bold uppercase">{data.toLocaleDateString(localeCorrente(), { month: 'short' })}</span>
                           <span className="text-lg font-extrabold leading-none">{data.getDate()}</span>
                         </div>
@@ -760,15 +761,15 @@ export default function Dashboard() {
               {/* 5. Statistics summary */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner flex items-center gap-3 border-b border-[var(--bordo-light)]">
-                  <BarChart3 size={20} className="text-purple-400" />
+                  <BarChart3 size={20} className="text-[var(--accent)]" />
                   <h3 className="font-bold text-lg">{t('dashboard.pt.riepilogo')}</h3>
                 </div>
                 <div className="p-card-inner grid grid-cols-2 gap-4">
                   {[
                     { label: t('dashboard.pt.giorniIscritto'), value: ptDashboard.giorniIscritto, icon: <CalendarHeart size={22} className="mx-auto text-[var(--accent)]" /> },
-                    { label: t('dashboard.pt.schedeRicevute'), value: ptDashboard.statistiche?.schedeAssegnate || 0, icon: <FileText size={22} className="mx-auto text-blue-400" /> },
-                    { label: t('dashboard.pt.appuntamentiFatti'), value: ptDashboard.statistiche?.appuntamentiCompletati || 0, icon: <CheckCircle size={22} className="mx-auto text-green-400" /> },
-                    { label: t('dashboard.pt.prossimiAppuntamenti'), value: ptDashboard.statistiche?.appuntamentiFuturi || 0, icon: <CalendarClock size={22} className="mx-auto text-orange-400" /> },
+                    { label: t('dashboard.pt.schedeRicevute'), value: ptDashboard.statistiche?.schedeAssegnate || 0, icon: <FileText size={22} className="mx-auto text-[var(--info)]" /> },
+                    { label: t('dashboard.pt.appuntamentiFatti'), value: ptDashboard.statistiche?.appuntamentiCompletati || 0, icon: <CheckCircle size={22} className="mx-auto text-[var(--successo)]" /> },
+                    { label: t('dashboard.pt.prossimiAppuntamenti'), value: ptDashboard.statistiche?.appuntamentiFuturi || 0, icon: <CalendarClock size={22} className="mx-auto text-[var(--avviso)]" /> },
                   ].map((stat, i) => (
                     <div key={i} className="text-center p-4 rounded-xl bg-[var(--bg-terziario)] border border-[var(--bordo-light)]">
                       <span className="block mb-2">{stat.icon}</span>
@@ -788,7 +789,9 @@ export default function Dashboard() {
           </div>
         )}
       </AnimatePresence>
+      </PannelloTrascinabile>
     </div>
+    </MotionConfig>
   );
 }
 
