@@ -1,7 +1,8 @@
 {
   "titolo": "Theme",
-  "descrizione": "The app follows your phone's light or dark mode. Pick one to always use it on this phone.",
+  "descrizione": "The app follows your phone's light or dark mode. Pick one to always use it: it is saved on your account.",
   "auto": "Automatic (phone setting)",
   "chiaro": "Light",
-  "scuro": "Dark"
+  "scuro": "Dark",
+  "salvato": "Theme saved"
 }

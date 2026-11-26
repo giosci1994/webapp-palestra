@@ -8,6 +8,7 @@ import { api, apiChiamata, impostaToken, cancellaToken, refreshSessione, imposta
 import { disiscriviDispositivo } from '../utils/push.js';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { scegli } from '../i18n/index.js';
+import { scegliTema, sceltaDaAccount } from '../utils/tema.js';
 
 const AuthContesto = createContext(null);
 
@@ -22,6 +23,13 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (linguaAccount !== undefined) scegli(linguaAccount);
   }, [linguaAccount]);
+
+  // The same for the theme: the account's wins, this phone's is the fallback
+  // (before signing in, or with an account that never chose one). null = the phone's.
+  const temaAccount = utente ? sceltaDaAccount(utente.tema) : null;
+  useEffect(() => {
+    if (temaAccount) scegliTema(temaAccount);
+  }, [temaAccount]);
 
   // The session dies in ONE place only: when a real protected call gets a
   // 401 and the refresh fails (api.js). So a transient blip or a race on the

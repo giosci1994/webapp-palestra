@@ -8,6 +8,8 @@
 // read. The meta color-scheme and theme-color (the phone's status bar)
 // follow it too. index.html repeats the first application in a small script,
 // before the first paint, with the same key and colours (a test checks it).
+// The choice is saved on the account too (Utente.tema, from Profile): after
+// signing in the account's wins (AuthContesto), this phone's is the fallback.
 
 export const TEMI = ['auto', 'chiaro', 'scuro'];
 export const CHIAVE_TEMA = 'gymmaster_tema';
@@ -66,6 +68,16 @@ export function temaScelto() {
 export function iscriviTema(ascoltatore) {
   ascoltatori.add(ascoltatore);
   return () => ascoltatori.delete(ascoltatore);
+}
+
+/**
+ * The choice to apply from the account's theme: null = "auto" (the account
+ * follows the phone), a theme = that one. undefined (an older server, no field)
+ * or an unknown value: null, keep this phone's choice.
+ */
+export function sceltaDaAccount(valore) {
+  if (valore === null) return 'auto';
+  return valore === 'chiaro' || valore === 'scuro' ? valore : null;
 }
 
 /** Applies and keeps a choice; "auto" removes it. */

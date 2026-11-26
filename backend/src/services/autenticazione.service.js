@@ -205,7 +205,8 @@ export const CAMPI_ACCESSO = {
   profiloCompletato: true,
   ruoloRichiesto: true,
   emailVerificata: true,
-  lingua: true
+  lingua: true,
+  tema: true
 };
 
 /**
@@ -293,7 +294,8 @@ export async function apriSessione(utente, { ricordaDispositivo = false, disposi
       palestraId: utente.palestraId,
       profiloCompletato: utente.profiloCompletato,
       ruoloRichiesto: utente.ruoloRichiesto,
-      lingua: utente.lingua ?? null
+      lingua: utente.lingua ?? null,
+      tema: utente.tema ?? null
     }
   };
 }
