@@ -81,8 +81,12 @@ mkdir -p "$(dirname "$uscita")"
   --v4-signing-enabled false --out "$uscita" "$lavoro/allineato.apk"
 "$strumenti/apksigner" verify "$uscita"
 
-# The fingerprint Android compares with the site's assetlinks.json (public)
-impronta="$("$strumenti/apksigner" verify --print-certs "$uscita" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')"
+# The fingerprint Android compares with the site's assetlinks.json (public).
+# Taken from the certificate of the key that signed the APK: apksigner's
+# --print-certs output changes between versions, keytool's does not.
+"$strumenti/apksigner" verify --print-certs "$uscita" 2>&1 | grep -i 'SHA-256' || true
+impronta="$(keytool -list -v -keystore "$ANDROID_KEYSTORE" -alias "$ANDROID_KEY_ALIAS" -storepass:env ANDROID_KEYSTORE_PASSWORD | sed -n 's/^[[:space:]]*SHA256: //p' | head -n 1)"
+[ -n "$impronta" ] || errore "keytool non ha dato l'impronta SHA-256 della chiave"
 echo "Firmato: $uscita"
 echo "Impronta SHA-256: $impronta"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
