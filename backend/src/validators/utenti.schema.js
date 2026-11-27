@@ -139,8 +139,8 @@ export const schemaCompletaProfilo = z.object({
 
 // --- Profile (PATCH /utenti/profilo) ---
 // null empties a field. The length of the bio and of the picture, the
-// language and the chat retention are checked by the service, with their own
-// messages: they are listed so that zod does not drop them.
+// language, the theme and the chat retention are checked by the service, with
+// their own messages: they are listed so that zod does not drop them.
 
 export const schemaAggiornaProfilo = z.object({
   nome: campo('utentiSchema.nomeNonValido', valore => testoFinoA(100)(valore) && valore.trim().length > 0),
@@ -155,6 +155,7 @@ export const schemaAggiornaProfilo = z.object({
   gamificationAttiva: campo('utentiSchema.gamificationNonValida', eBooleano),
   palestraId: campo('utentiSchema.palestraNonValida', idPalestra),
   lingua: z.any().optional(),
+  tema: z.any().optional(),
   chatRetentionGiorni: z.any().optional()
 }, SE_NON_E_UN_OGGETTO);
 

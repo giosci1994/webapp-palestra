@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { leggiTemaScelto, temaEffettivo, applicaTema, scegliTema, CHIAVE_TEMA, COLORE_BARRA } from './tema.js';
+import { leggiTemaScelto, temaEffettivo, applicaTema, scegliTema, sceltaDaAccount, CHIAVE_TEMA, COLORE_BARRA } from './tema.js';
 
 const memoria = (iniziale = {}) => {
   const dati = { ...iniziale };
@@ -58,6 +58,14 @@ describe('theme', () => {
     scegliTema('auto', m);
     expect(CHIAVE_TEMA in m.dati).toBe(false);
     expect(() => scegliTema('chiaro', rotta)).not.toThrow();
+  });
+
+  it('the account\'s theme wins; without one (older server) this phone\'s stays', () => {
+    expect(sceltaDaAccount('chiaro')).toBe('chiaro');
+    expect(sceltaDaAccount('scuro')).toBe('scuro');
+    expect(sceltaDaAccount(null)).toBe('auto');
+    expect(sceltaDaAccount(undefined)).toBeNull();
+    expect(sceltaDaAccount('blu')).toBeNull();
   });
 
   it('index.html applies it before the first paint with the same key and colours', () => {

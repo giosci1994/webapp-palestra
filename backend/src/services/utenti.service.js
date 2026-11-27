@@ -10,6 +10,7 @@ import logger from '../utils/logger.js';
 import { t } from '../i18n/index.js';
 import { chiudiAltreSessioni } from './autenticazione.service.js';
 import { leggiLingua } from '../utils/lingue.js';
+import { leggiTema } from '../utils/temi.js';
 import { eliminaAccount } from './eliminazioneAccount.service.js';
 import { scollegaSessioni } from '../socket/sessioni.js';
 
@@ -151,6 +152,7 @@ export async function ottieniProfilo(utenteId) {
       gamificationAttiva: true,
       ruoloRichiesto: true,
       lingua: true,
+      tema: true,
       palestra: { select: { id: true, nomeCatena: true, citta: true, nazione: true } }
     }
   });
@@ -182,7 +184,7 @@ export async function aggiornaProfilo(utenteId, dati) {
   const campiConsentiti = [
     'nome', 'immagineProfilo', 'dataNascita', 'pesoKg', 'altezzaCm',
     'genere', 'bio', 'obiettivoFitness', 'preferenzeVisibilita',
-    'gamificationAttiva', 'palestraId', 'lingua', 'chatRetentionGiorni'
+    'gamificationAttiva', 'palestraId', 'lingua', 'tema', 'chatRetentionGiorni'
   ];
 
   const datiAggiornamento = {};
@@ -199,6 +201,8 @@ export async function aggiornaProfilo(utenteId, dati) {
         datiAggiornamento[campo] = dati[campo] ? parseInt(dati[campo]) : null;
       } else if (campo === 'lingua') {
         datiAggiornamento[campo] = leggiLingua(dati[campo]);
+      } else if (campo === 'tema') {
+        datiAggiornamento[campo] = leggiTema(dati[campo]);
       } else if (campo === 'chatRetentionGiorni') {
         datiAggiornamento[campo] = leggiDurataChat(dati[campo]);
       } else {
@@ -245,6 +249,7 @@ export async function aggiornaProfilo(utenteId, dati) {
       preferenzeVisibilita: true,
       gamificationAttiva: true,
       lingua: true,
+      tema: true,
       palestra: { select: { id: true, nomeCatena: true, citta: true, nazione: true } }
     }
   });
