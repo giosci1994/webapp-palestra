@@ -1,0 +1,4 @@
+{
+  "corpoNonValido": "The request data is not valid",
+  "livelloNonValido": "The crowd level must be a whole number from 0 to 3"
+}

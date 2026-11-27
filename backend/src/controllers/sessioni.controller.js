@@ -405,7 +405,8 @@ export async function avviaSessione(req, res, next) {
       }
     });
 
-    res.status(201).json({ successo: true, dati: sessione });
+    // A new workout: the app asks how busy the gym is (POST /sessioni/:id/affluenza)
+    res.status(201).json({ successo: true, dati: { ...sessione, affluenzaSegnalata: false } });
   } catch (errore) { next(errore); }
 }
 
@@ -437,7 +438,9 @@ export async function dettaglioSessione(req, res, next) {
             }
           },
           orderBy: [{ esercizioId: 'asc' }, { serieNumero: 'asc' }]
-        }
+        },
+        // Only whether the gym's crowd level was reported, never the report
+        segnalazioneAffluenza: { select: { id: true } }
       }
     });
 
@@ -448,7 +451,8 @@ export async function dettaglioSessione(req, res, next) {
     // A finished workout opened from the workout screen (an old notification):
     // the app offers to resume it only while it still can be
     const fino = sessione.dataFine ? riapribileFinoA(sessione, await fusoDelProprietario(sessione, req)) : null;
-    res.json({ successo: true, dati: { ...sessione, riapribileFinoA: fino } });
+    const { segnalazioneAffluenza, ...dati } = sessione;
+    res.json({ successo: true, dati: { ...dati, riapribileFinoA: fino, affluenzaSegnalata: segnalazioneAffluenza !== null } });
   } catch (errore) { next(errore); }
 }
 

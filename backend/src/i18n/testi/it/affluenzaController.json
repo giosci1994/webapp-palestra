@@ -1,0 +1,9 @@
+{
+  "giaSegnalata": "Hai già detto quanta gente c'è durante questo allenamento",
+  "allenamentoConcluso": "L'allenamento è già concluso",
+  "allenamentoTroppoVecchio_one": "Puoi dire quanta gente c'è solo nella prima ora di allenamento",
+  "allenamentoTroppoVecchio_other": "Puoi dire quanta gente c'è solo nelle prime {count} ore di allenamento",
+  "senzaPalestra": "Prima scegli la tua palestra nel Profilo",
+  "segnalazioneRecente_one": "Puoi dire quanta gente c'è una volta al minuto",
+  "segnalazioneRecente_other": "Puoi dire quanta gente c'è una volta ogni {count} minuti"
+}

@@ -41,6 +41,10 @@ beforeEach(async () => {
     inizio: giorniFa(2), serie: [{ esercizio: panca, peso: 50, rep: 8 }, { esercizio: panca, peso: 52.5, rep: 6 }]
   });
   await creaRecord(utente, panca, 52.5, sessione.dataInizio);
+  const palestra = await prisma.palestra.create({ data: { nomeCatena: 'FitClub', citta: 'Copenaghen', indirizzo: 'Via 1' } });
+  await prisma.segnalazioneAffluenza.create({
+    data: { utenteId: utente.id, palestraId: palestra.id, sessioneId: sessione.id, livello: 2, giornoSettimana: 1, ora: 18 }
+  });
   await prisma.misurazioneCorporea.create({ data: { utenteId: utente.id, peso: 62, grassoCorporeoPct: 21.5 } });
   await prisma.allenamentoPianificato.create({
     data: { utenteId: utente.id, schedaId: scheda.id, data: giornoLocale(new Date()), creatoDaId: trainer.id }
@@ -89,7 +93,10 @@ beforeEach(async () => {
 
   // Marco's data, which must not appear in Giulia's file
   const schedaAltro = await creaScheda(altro, [panca], { titolo: 'Scheda di Marco' });
-  await creaSessione(altro, schedaAltro, { serie: [{ esercizio: panca, peso: 100, rep: 5 }] });
+  const sessioneAltro = await creaSessione(altro, schedaAltro, { serie: [{ esercizio: panca, peso: 100, rep: 5 }] });
+  await prisma.segnalazioneAffluenza.create({
+    data: { utenteId: altro.id, palestraId: palestra.id, sessioneId: sessioneAltro.id, livello: 3, giornoSettimana: 2, ora: 7 }
+  });
   await prisma.misurazioneCorporea.create({ data: { utenteId: altro.id, peso: 90 } });
 });
 
@@ -130,6 +137,8 @@ describe('esportazione dei dati', () => {
     assert.deepEqual(dati.suggerimentiEsercizi.map(s => s.nome), ['Hip thrust con elastico']);
     assert.deepEqual(dati.dispositivi.map(d => d.dispositivo), ['Chrome · Android']);
     assert.deepEqual(dati.passkey.map(p => p.nome), ['Safari · iPhone']);
+    // The crowd levels this user reported, and only theirs
+    assert.deepEqual(dati.segnalazioniAffluenza.map(s => [s.livello, s.giornoSettimana, s.ora, s.palestra.nomeCatena]), [[2, 1, 18, 'FitClub']]);
   });
 
   it('nelle chat ci sono anche i messaggi ricevuti, ma degli altri solo il nome', async () => {

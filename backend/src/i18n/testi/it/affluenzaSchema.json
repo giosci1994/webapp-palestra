@@ -1,0 +1,4 @@
+{
+  "corpoNonValido": "I dati della richiesta non sono validi",
+  "livelloNonValido": "Il livello di affluenza deve essere un numero intero da 0 a 3"
+}
