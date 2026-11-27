@@ -59,13 +59,23 @@
     "prossimaSerie": "Prossima: Serie {numero} di {totale}",
     "prossimoEsercizio": "Prossimo Esercizio: {nome}",
     "fineAllenamento": "Prossima Azione: Fine Allenamento",
-    "notifica": "{nome} · serie {numero}"
+    "notifica": "{nome} · serie {numero}",
+    "notificaGiro": "Giro {giro} · {nome}",
+    "dopoGiro": "Recupero dopo il giro",
+    "pausa": "Pausa"
+  },
+  "superset": {
+    "giroSuperset": "Superset {lettera} · giro {giro}/{giri}",
+    "giroCircuito": "Circuito {lettera} · giro {giro}/{giri}",
+    "poi": "Poi: {nome}",
+    "poiRecupero": "Poi: recupero {tempo} · {nome}"
   },
   "tempoAllenamento": "Tempo Allenamento",
   "esercizio": {
     "inclinazione": "incl {valore}%",
     "livello": "liv {valore}",
-    "riepilogoSerie": "{serie} × {rep} · {secondi}s rec."
+    "riepilogoSerie": "{serie} × {rep} · {secondi}s rec.",
+    "riepilogoSerieGruppo": "{serie} × {rep}"
   },
   "video": {
     "mostra": "Vedi come si esegue",

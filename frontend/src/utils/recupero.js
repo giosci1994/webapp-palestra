@@ -12,6 +12,8 @@
 export const SEGNALE_ENTRO_MS = 5000;
 
 const PREFISSO = 'gymmaster_recupero_';
+/** The kinds of rest in a superset or circuit (see salvaRecupero) */
+const TIPI = ['giro', 'pausa'];
 
 /**
  * The seconds left until `fine`, rounded up (a rest of 90 seconds starts at
@@ -37,10 +39,12 @@ export function statoRecupero(fine, adesso) {
 
 /**
  * Keeps the rest of workout `sessioneId` on the phone.
- * @param {{ fine: number, durata: number, inCima: boolean, avvisato: boolean, esercizio?: number }} recupero
+ * @param {{ fine: number, durata: number, inCima: boolean, avvisato: boolean, esercizio?: number, tipo?: 'giro'|'pausa' }} recupero
  *   durata: seconds, for the progress bar; inCima: shown at the top, above the
  *   next exercise; avvisato: the server will send the end-of-rest push;
- *   esercizio: index of the exercise whose set started it (one more set of it)
+ *   esercizio: index of the exercise whose set started it (one more set of it);
+ *   tipo, in a superset or circuit: the rest after the round ('giro') or the
+ *   pause between two members of the same round ('pausa')
  */
 export function salvaRecupero(sessioneId, recupero, archivio = globalThis.localStorage) {
   try {
@@ -80,6 +84,7 @@ export function leggiRecupero(sessioneId, adesso, archivio = globalThis.localSto
     durata: recupero.durata,
     inCima: Boolean(recupero.inCima),
     avvisato: Boolean(recupero.avvisato),
-    esercizio: Number.isInteger(recupero.esercizio) ? recupero.esercizio : null
+    esercizio: Number.isInteger(recupero.esercizio) ? recupero.esercizio : null,
+    tipo: TIPI.includes(recupero.tipo) ? recupero.tipo : null
   };
 }

@@ -51,7 +51,7 @@ describe('statoRecupero', () => {
 });
 
 describe('the rest kept on the phone', () => {
-  const recupero = { fine: dopo(90), durata: 90, inCima: true, avvisato: true, esercizio: 2 };
+  const recupero = { fine: dopo(90), durata: 90, inCima: true, avvisato: true, esercizio: 2, tipo: null };
 
   it('comes back after the app is closed and reopened, while it is still running', () => {
     const archivio = archivioFinto();
@@ -65,7 +65,17 @@ describe('the rest kept on the phone', () => {
     const archivio = archivioFinto();
     const vecchio = { fine: recupero.fine, durata: 90, inCima: true, avvisato: true };
     salvaRecupero(7, vecchio, archivio);
-    expect(leggiRecupero(7, dopo(30), archivio)).toEqual({ ...vecchio, esercizio: null });
+    expect(leggiRecupero(7, dopo(30), archivio)).toEqual({ ...vecchio, esercizio: null, tipo: null });
+  });
+
+  it('in a superset it keeps whether it is the rest after the round or a pause in it', () => {
+    const archivio = archivioFinto();
+    salvaRecupero(7, { ...recupero, tipo: 'giro' }, archivio);
+    expect(leggiRecupero(7, dopo(30), archivio).tipo).toBe('giro');
+    salvaRecupero(7, { ...recupero, tipo: 'pausa' }, archivio);
+    expect(leggiRecupero(7, dopo(30), archivio).tipo).toBe('pausa');
+    salvaRecupero(7, { ...recupero, tipo: 'altro' }, archivio);
+    expect(leggiRecupero(7, dopo(30), archivio).tipo).toBeNull();
   });
 
   it('once over it is forgotten', () => {

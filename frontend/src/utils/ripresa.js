@@ -9,6 +9,7 @@
 // first set and the sets already done were logged a second time.
 
 import { diLavoro } from './tipiSerie.js';
+import { normalizzaGruppi, membroDiTurno } from './superset.js';
 
 /** Values for an exercise added during the workout (WorkoutLive uses them too) */
 export const ESERCIZIO_EXTRA = { serieTarget: 3, repTarget: 10, recuperoSecondi: 90 };
@@ -52,12 +53,23 @@ export function statoDaSessione(sessione) {
   const registrate = esercizioId => serie.filter(s => s.esercizioId === esercizioId && diLavoro(s)).length;
   // More sets than the plan: some were added during the workout, and today's
   // sets are those, not the plan's
-  const eserciziLive = [...eserciziScheda, ...extra].map(e =>
-    registrate(e.esercizioId) > (e.serieTarget ?? 0) ? { ...e, serieOggi: registrate(e.esercizioId) } : e);
+  const tutti = [...eserciziScheda, ...extra];
+  // In a superset or circuit the skipped sets are kept on the member
+  // (saltate): the turns go by sets done or skipped, and only the done ones
+  // are among the completed sets
+  const inGruppo = normalizzaGruppi(tutti).map(e => e.gruppo != null);
+  const saltate = esercizioId => serie.filter(s => s.esercizioId === esercizioId && diLavoro(s) && !s.completato).length;
+  const eserciziLive = tutti.map((e, i) => {
+    const conOggi = registrate(e.esercizioId) > (e.serieTarget ?? 0) ? { ...e, serieOggi: registrate(e.esercizioId) } : e;
+    return inGruppo[i] && saltate(e.esercizioId) > 0 ? { ...conOggi, saltate: saltate(e.esercizioId) } : conOggi;
+  });
 
-  // Start again from the first exercise with sets still to do
-  let esercizioIdx = eserciziLive.findIndex(e => registrate(e.esercizioId) < (serieDiOggi(e) ?? 1));
+  // Start again from the first exercise with sets still to do; in a group,
+  // from the member whose turn it is (half a round done: the next member)
+  const fatte = eserciziLive.map(e => registrate(e.esercizioId));
+  let esercizioIdx = eserciziLive.findIndex((e, i) => fatte[i] < (serieDiOggi(e) ?? 1));
   if (esercizioIdx === -1) esercizioIdx = Math.max(0, eserciziLive.length - 1);
+  else esercizioIdx = membroDiTurno(eserciziLive, fatte, esercizioIdx);
   const attuale = eserciziLive[esercizioIdx];
 
   return {

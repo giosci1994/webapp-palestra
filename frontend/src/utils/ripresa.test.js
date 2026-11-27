@@ -88,4 +88,35 @@ describe('limitaSerieOggi', () => {
   it('never more than the limit', () => {
     expect(limitaSerieOggi(SERIE_MAX_OGGI + 1, 3)).toBe(SERIE_MAX_OGGI);
   });
+
+  describe('in a superset', () => {
+    // Squat, then superset A: Bench (A1, pause 0) and Row (A2, 90 s after the round), 3 rounds
+    const PANCA_A1 = { ...PANCA, gruppo: 1, recuperoSecondi: 0 };
+    const REMATORE_A2 = { esercizioId: 3, esercizio: { id: 3, nome: 'Rematore' }, serieTarget: 3, gruppo: 1, recuperoSecondi: 90 };
+    const conSuperset = (...logSerie) =>
+      ({ dataInizio: '2026-10-11T16:00:00.000Z', scheda: { esercizi: [SQUAT, PANCA_A1, REMATORE_A2] }, logSerie });
+
+    it('half a round done: it goes on from the member whose turn it is, not from A1', () => {
+      const stato = statoDaSessione(conSuperset(serie(2), serie(2), serie(1), serie(3), serie(1)));
+      expect([stato.esercizioIdx, stato.serieCorrente]).toEqual([2, 2]);
+    });
+
+    it('a round complete: back to A1 for the next round', () => {
+      const stato = statoDaSessione(conSuperset(serie(2), serie(2), serie(1), serie(3)));
+      expect([stato.esercizioIdx, stato.serieCorrente]).toEqual([1, 2]);
+    });
+
+    it('a skipped set of a member counts for the turns and stays on the member (saltate)', () => {
+      const stato = statoDaSessione(conSuperset(serie(2), serie(2), serie(1, false)));
+      expect([stato.esercizioIdx, stato.serieCorrente]).toEqual([2, 1]);
+      expect(stato.eserciziLive[1].saltate).toBe(1);
+      // outside a group nothing new on the exercise
+      expect(statoDaSessione(sessione(serie(1, false))).eserciziLive[0]).toEqual(PANCA);
+    });
+
+    it('warm-up sets do not move the turn', () => {
+      const stato = statoDaSessione(conSuperset(serie(2), serie(2), serie(1, true, 'RISCALDAMENTO'), serie(1)));
+      expect([stato.esercizioIdx, stato.serieCorrente]).toEqual([2, 1]);
+    });
+  });
 });
