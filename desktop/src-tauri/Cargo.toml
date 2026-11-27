@@ -1,0 +1,28 @@
+[package]
+name = "gymmaster"
+# The real version is in tauri.conf.json, written by the app workflow from
+# version.json at build time
+version = "0.0.0"
+description = "GymMaster for Windows: a light window on the web app"
+edition = "2021"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-updater = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+sys-locale = "0.3"
+# Needed by tauri::generate_context!()
+serde_json = "1"
+
+# A small installer: the window only shows the site
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

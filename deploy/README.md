@@ -12,6 +12,10 @@ The production server updates itself when a new release comes out on GitHub. `de
 
 Within a couple of minutes Telegram says `✅ GymMaster 1.2.1 installata` (installed), or what went wrong.
 
+## The apps
+
+After a real release the button also runs `.github/workflows/app.yml`: it builds the Android app (`android/`) and the Windows one (`desktop/`), signs them with the keys in the `app` environment and adds them to the same release (`gymmaster-android.apk`, `gymmaster-windows-setup.exe` and its `.sig`, `latest.json`, `SHA256SUMS`). The `/scarica` page links them. The site does not wait for them: they arrive a few minutes after the release. If the build fails, the release and the site stay as they are: **Actions → App → Run workflow** with the tag and **carica** redoes it; without **carica** it only builds, and the files are the run's artifacts.
+
 ## What the script does
 
 It installs a release only if it is newer than the installed one: it never goes back on its own. Before changing anything it checks that:

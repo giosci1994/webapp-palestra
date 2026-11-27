@@ -4,6 +4,8 @@
 # tests of that commit are green (deploy/pubblica-release.sh). The server then
 # installs it within a couple of minutes (deploy/rilascio.sh).
 # "Solo prova" runs every check and shows the notes, without publishing.
+# After a real release, the app job builds the Android and Windows apps and
+# adds them to it (app.yml): the site does not wait for them.
 name: Rilascia
 
 on:
@@ -26,6 +28,8 @@ concurrency:
 jobs:
   rilascia:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
     steps:
       - name: Si rilascia solo da master
         if: github.ref != 'refs/heads/master'
@@ -40,3 +44,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash deploy/pubblica-release.sh ${{ inputs.prova && '--prova' || '' }}
+      # The tag the script has just published (v + the version in version.json)
+      - name: Tag pubblicato
+        id: tag
+        run: echo "tag=v$(jq -r '.versione' version.json)" >>"$GITHUB_OUTPUT"
+
+  # The apps for that release: APK, Windows installer, latest.json, SHA256SUMS.
+  # Only after a real release; if it fails the release stays as it is and
+  # Actions → App → Run workflow (with the tag and "carica") redoes it.
+  app:
+    needs: rilascia
+    if: ${{ !inputs.prova }}
+    permissions:
+      contents: write   # add the files to the release
+    uses: ./.github/workflows/app.yml
+    with:
+      tag: ${{ needs.rilascia.outputs.tag }}
+      carica: true

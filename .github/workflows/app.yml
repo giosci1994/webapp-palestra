@@ -1,0 +1,267 @@
+# The installable apps: Android (a Trusted Web Activity, android/) and Windows
+# (a Tauri window with its installer, desktop/). Both only show the site, which
+# keeps updating itself like the PWA.
+#
+# - Called by rilascia.yml after a release is published: builds, signs and
+#   adds the files to that release (gymmaster-android.apk,
+#   gymmaster-windows-setup.exe and its .sig, latest.json for the Windows
+#   updater, SHA256SUMS). The site is already updated by then: if this fails,
+#   nothing else is touched, and it can be run again by hand.
+# - By hand (Actions → App → Run workflow): with a tag and "carica", redoes the
+#   files of that release; without "carica" it only builds, and the files are
+#   the run's artifacts (to try them on a phone and a PC first).
+# - On pull requests that touch the apps: the same build, with throwaway keys
+#   made in the job and no secret, no upload. Those APKs and installers are
+#   for testing only: their signatures are not the real ones.
+#
+# The keys are in the "app" environment: only the android and windows jobs see
+# them, never on pull requests. They are never printed: the keystore is
+# decoded to a file in $RUNNER_TEMP and deleted at the end.
+name: App
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Tag of the release to add the files to (v + version)'
+        type: string
+        required: true
+      carica:
+        description: 'Upload the files to the release'
+        type: boolean
+        default: true
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag della release (es. v1.7.0). Vuoto: il branch scelto, solo artefatti'
+        type: string
+        default: ''
+      carica:
+        description: 'Carica i file nella release del tag (senza: solo artefatti)'
+        type: boolean
+        default: false
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'desktop/**'
+      - '.github/workflows/app.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+env:
+  # Pull requests: throwaway keys, no environment, no upload
+  PROVA: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  versione:
+    runs-on: ubuntu-latest
+    outputs:
+      versione: ${{ steps.versione.outputs.versione }}
+      tag: ${{ steps.versione.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - name: Versione da version.json
+        id: versione
+        env:
+          TAG: ${{ inputs.tag }}
+          CARICA: ${{ inputs.carica }}
+        run: |
+          versione="$(jq -r '.versione' version.json)"
+          [[ "$versione" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::version.json dice \"$versione\""; exit 1; }
+          if [ -n "$TAG" ] && [ "$TAG" != "v$versione" ]; then
+            echo "::error::nel tag $TAG version.json dice $versione"; exit 1
+          fi
+          if [ "$CARICA" = true ] && [ -z "$TAG" ]; then
+            echo "::error::per caricare i file serve il tag della release"; exit 1
+          fi
+          echo "versione=$versione" >>"$GITHUB_OUTPUT"
+          echo "tag=${TAG:-v$versione}" >>"$GITHUB_OUTPUT"
+          echo "App $versione (${TAG:-${GITHUB_REF_NAME}})" >>"$GITHUB_STEP_SUMMARY"
+
+  android:
+    needs: versione
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name != 'pull_request' && 'app' || '' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      # Bubblewrap and the Android tools want JDK 17, not newer
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Il pacchetto è quello di assetlinks.json
+        run: |
+          pacchetto="$(jq -r '.packageId' android/twa-manifest.json)"
+          sito="$(jq -r '.[0].target.package_name' frontend/public/.well-known/assetlinks.json)"
+          [ "$pacchetto" = "$sito" ] || { echo "::error::twa-manifest.json dice $pacchetto, assetlinks.json $sito"; exit 1; }
+      - name: Chiave di firma
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          umask 077
+          chiave="$RUNNER_TEMP/android.keystore"
+          if [ "$PROVA" = true ]; then
+            # Throwaway key for pull requests: lives only in this job
+            keytool -genkeypair -storetype PKCS12 -keystore "$chiave" -alias prova -keyalg RSA -keysize 2048 \
+              -validity 2 -dname "CN=GymMaster test build" -storepass prova-usa-e-getta -keypass prova-usa-e-getta >/dev/null
+          else
+            [ -n "$ANDROID_KEYSTORE_BASE64" ] || { echo "::error::manca il segreto ANDROID_KEYSTORE_BASE64 (environment app)"; exit 1; }
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode >"$chiave"
+          fi
+          echo "ANDROID_KEYSTORE=$chiave" >>"$GITHUB_ENV"
+      - name: Build e firma dell'APK
+        id: apk
+        env:
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          VERSIONE: ${{ needs.versione.outputs.versione }}
+        run: |
+          if [ "$PROVA" = true ]; then
+            export ANDROID_KEY_ALIAS=prova ANDROID_KEYSTORE_PASSWORD=prova-usa-e-getta ANDROID_KEY_PASSWORD=prova-usa-e-getta
+          fi
+          bash android/costruisci.sh "$VERSIONE" uscita/gymmaster-android.apk
+      - name: L'impronta è quella di assetlinks.json
+        if: env.PROVA != 'true'
+        env:
+          IMPRONTA: ${{ steps.apk.outputs.impronta }}
+        run: |
+          jq -e --arg i "$IMPRONTA" '.[0].target.sha256_cert_fingerprints | index($i) != null' \
+            frontend/public/.well-known/assetlinks.json >/dev/null \
+            || { echo "::error::l'APK è firmato con $IMPRONTA, che non è in assetlinks.json: si aprirebbe con la barra dell'indirizzo"; exit 1; }
+      - name: Cancella la chiave
+        if: always()
+        run: rm -f "$RUNNER_TEMP/android.keystore"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: android
+          path: uscita/gymmaster-android.apk
+          if-no-files-found: error
+          retention-days: 3
+
+  windows:
+    needs: versione
+    runs-on: windows-latest
+    environment: ${{ github.event_name != 'pull_request' && 'app' || '' }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci
+      - name: Icone e versione
+        env:
+          VERSIONE: ${{ needs.versione.outputs.versione }}
+        run: |
+          npm run icone
+          node -e "const f='src-tauri/tauri.conf.json',fs=require('fs'),c=JSON.parse(fs.readFileSync(f));c.version=process.env.VERSIONE;fs.writeFileSync(f,JSON.stringify(c,null,2))"
+      # The updater key signs the installer: the app only installs an update
+      # whose signature matches the public key in tauri.conf.json
+      - name: Build e firma dell'installer
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          if [ "$PROVA" = true ]; then
+            npx tauri signer generate --ci -p prova-usa-e-getta -w "$RUNNER_TEMP/prova.key" >/dev/null
+            export TAURI_SIGNING_PRIVATE_KEY="$RUNNER_TEMP/prova.key" TAURI_SIGNING_PRIVATE_KEY_PASSWORD=prova-usa-e-getta
+          elif [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+            echo "::error::manca il segreto TAURI_SIGNING_PRIVATE_KEY (environment app)"; exit 1
+          fi
+          npm run build -- --bundles nsis --ci
+      - name: File della release e latest.json
+        env:
+          VERSIONE: ${{ needs.versione.outputs.versione }}
+          TAG: ${{ needs.versione.outputs.tag }}
+        run: |
+          mkdir -p ../uscita
+          installer="$(ls src-tauri/target/release/bundle/nsis/*-setup.exe)"
+          cp "$installer" ../uscita/gymmaster-windows-setup.exe
+          cp "$installer.sig" ../uscita/gymmaster-windows-setup.exe.sig
+          node -e "
+            const fs = require('fs');
+            const { VERSIONE, TAG, GITHUB_SERVER_URL, GITHUB_REPOSITORY } = process.env;
+            const base = GITHUB_SERVER_URL + '/' + GITHUB_REPOSITORY + '/releases';
+            fs.writeFileSync('../uscita/latest.json', JSON.stringify({
+              version: VERSIONE,
+              notes: base + '/tag/' + TAG,
+              pub_date: new Date().toISOString(),
+              platforms: { 'windows-x86_64': {
+                signature: fs.readFileSync('../uscita/gymmaster-windows-setup.exe.sig', 'utf8').trim(),
+                url: base + '/download/' + TAG + '/gymmaster-windows-setup.exe'
+              } }
+            }, null, 2) + '\n');
+          "
+      - name: Cancella la chiave di prova
+        if: always()
+        run: rm -f "$RUNNER_TEMP/prova.key" "$RUNNER_TEMP/prova.key.pub"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: windows
+          path: uscita/
+          if-no-files-found: error
+          retention-days: 3
+
+  # All the files together, with their checksums: the artifact to download
+  # and try, the same files that go into the release
+  pacchetto:
+    needs: [versione, android, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: uscita
+          merge-multiple: true
+      - name: SHA256SUMS
+        working-directory: uscita
+        run: |
+          sha256sum gymmaster-android.apk gymmaster-windows-setup.exe gymmaster-windows-setup.exe.sig latest.json >SHA256SUMS
+          cat SHA256SUMS
+      - uses: actions/upload-artifact@v7
+        with:
+          name: gymmaster-app-${{ needs.versione.outputs.versione }}${{ env.PROVA == 'true' && '-prova' || '' }}
+          path: uscita/
+          if-no-files-found: error
+          retention-days: 14
+
+  carica:
+    needs: [versione, pacchetto]
+    if: inputs.carica
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # add the files to the release
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: gymmaster-app-${{ needs.versione.outputs.versione }}
+          path: uscita
+      - name: Carica nella release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.versione.outputs.tag }}
+        run: |
+          gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null || { echo "::error::la release $TAG non c'è"; exit 1; }
+          gh release upload "$TAG" -R "$GITHUB_REPOSITORY" --clobber \
+            uscita/gymmaster-android.apk uscita/gymmaster-windows-setup.exe \
+            uscita/gymmaster-windows-setup.exe.sig uscita/latest.json uscita/SHA256SUMS
+          echo "✅ App caricate in $TAG" >>"$GITHUB_STEP_SUMMARY"
