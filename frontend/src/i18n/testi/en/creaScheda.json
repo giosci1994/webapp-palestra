@@ -27,5 +27,15 @@
   "aggiungiEserciziAvanti": "Add exercises →",
   "salvataggio": "Saving...",
   "salvaModifiche": "Save changes ({numero} ex.)",
-  "creaScheda": "Create plan ({numero} ex.)"
+  "creaScheda": "Create plan ({numero} ex.)",
+  "superset": "Superset {lettera}",
+  "circuito": "Circuit {lettera}",
+  "giri": "Rounds",
+  "giriDiversi": "The members have different sets: type a number to make them all the same",
+  "recuperoDopoGiro": "Rest after round",
+  "pausaTraEsercizi": "Pause before next",
+  "unisci": "Join with next",
+  "unisciAria": "Join {nome} with {prossimo} in a superset",
+  "separa": "Split",
+  "separaAria": "Take {nome} out of the group"
 }

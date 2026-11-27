@@ -19,6 +19,11 @@ import {
   XAxis, YAxis, CartesianGrid, ResponsiveContainer
 } from 'recharts';
 import ComposizioneCorporea from '../componenti/specifici/ComposizioneCorporea.jsx';
+import { RiquadroGruppo, PulsanteUnisci, PulsanteSepara } from '../componenti/specifici/SupersetEditor.jsx';
+import {
+  normalizzaGruppi, gruppiDi, blocchiDi, puoUnire, unisci, separa, impostaGiri, giriDi, ultimoDelGruppo,
+  leggiSecondi, letteraGruppo
+} from '../utils/superset.js';
 
 const COLORI_GRAFICI = ['#6366F1', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4'];
 
@@ -173,7 +178,48 @@ export default function DashboardPT() {
   };
 
   const rimuoviEsercizioDaScheda = (idx) => {
-    setFormScheda(prev => ({ ...prev, esercizi: prev.esercizi.filter((_, i) => i !== idx) }));
+    setFormScheda(prev => ({ ...prev, esercizi: normalizzaGruppi(prev.esercizi.filter((_, i) => i !== idx)) }));
+  };
+
+  // Plan form: one field of one exercise, and the supersets (utils/superset.js)
+  const aggiornaEsercizioPT = (idx, campo, valore) => {
+    setFormScheda(prev => ({ ...prev, esercizi: prev.esercizi.map((e, i) => (i === idx ? { ...e, [campo]: valore } : e)) }));
+  };
+  const cambiaGruppiPT = cambia => setFormScheda(prev => ({ ...prev, esercizi: cambia(prev.esercizi) }));
+
+  // One exercise of the plan form. In a group the number becomes A1, A2...,
+  // the rest is the pause before the next member, and the last member's rest
+  // is on the group's box (rest after the round)
+  const postiPT = gruppiDi(formScheda.esercizi);
+  const rigaEsercizioPT = (idx, posto) => {
+    const es = formScheda.esercizi[idx];
+    return (
+      <div key={idx} className="flex flex-wrap items-center gap-2 p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
+        <span className="min-w-6 h-6 px-1 rounded-full bg-[var(--accent-dim)] text-[var(--accent)] text-xs font-bold flex items-center justify-center shrink-0">{posto ? posto.etichetta : idx + 1}</span>
+        <span className="flex-1 min-w-0 text-sm font-medium truncate">{es.nome}</span>
+        {/* On a phone the fields go on their own line, under the name */}
+        <div className="flex items-center gap-2 order-last basis-full sm:order-none sm:basis-auto">
+          <input type="number" value={es.serieTarget} onChange={e => aggiornaEsercizioPT(idx, 'serieTarget', parseInt(e.target.value) || 3)}
+            className="campo-input !w-14 text-center text-xs !py-1 !px-1" title={t('dashboardPT.serie')} aria-label={t('dashboardPT.serie')} min="1" />
+          <span className="text-[10px] text-[var(--testo-terziario)]">x</span>
+          <input type="text" value={es.repTarget} onChange={e => aggiornaEsercizioPT(idx, 'repTarget', e.target.value)}
+            className="campo-input !w-16 text-center text-xs !py-1 !px-1" title={t('dashboardPT.ripetizioni')} aria-label={t('dashboardPT.ripetizioni')} />
+          {!posto?.ultimo && (
+            <>
+              {/* 0 stays 0: no rest, or no pause before the next member */}
+              <input type="number" value={es.recuperoSecondi} onChange={e => aggiornaEsercizioPT(idx, 'recuperoSecondi', leggiSecondi(e.target.value, ''))}
+                className="campo-input !w-16 text-center text-xs !py-1 !px-1"
+                title={posto ? t('dashboardPT.pausaSecondi') : t('dashboardPT.recuperoSecondi')}
+                aria-label={posto ? t('dashboardPT.pausaSecondi') : t('dashboardPT.recuperoSecondi')} min="0" step="15" />
+              <span className="text-[10px] text-[var(--testo-terziario)]">s</span>
+            </>
+          )}
+        </div>
+        {posto && <PulsanteSepara nome={es.nome} onClick={() => cambiaGruppiPT(lista => separa(lista, idx))} />}
+        <button onClick={() => rimuoviEsercizioDaScheda(idx)} aria-label={t('dashboardPT.rimuoviEsercizio', { nome: es.nome })}
+          className="min-w-11 min-h-11 flex items-center justify-center text-[var(--pericolo)] text-xs opacity-60 hover:opacity-100">✕</button>
+      </div>
+    );
   };
 
   // --- Calendar helpers ---
@@ -620,21 +666,37 @@ export default function DashboardPT() {
                 {/* List of added exercises */}
                 {formScheda.esercizi.length > 0 && (
                   <div className="flex flex-col gap-2">
-                    {formScheda.esercizi.map((es, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
-                        <span className="w-6 h-6 rounded-full bg-[var(--accent-dim)] text-[var(--accent)] text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
-                        <span className="flex-1 text-sm font-medium truncate">{es.nome}</span>
-                        <input type="number" value={es.serieTarget} onChange={e => { const n = [...formScheda.esercizi]; n[idx].serieTarget = parseInt(e.target.value) || 3; setFormScheda(p => ({...p, esercizi: n})); }}
-                          className="campo-input !w-14 text-center text-xs !py-1" title={t('dashboardPT.serie')} min="1" />
-                        <span className="text-[10px] text-[var(--testo-terziario)]">x</span>
-                        <input type="text" value={es.repTarget} onChange={e => { const n = [...formScheda.esercizi]; n[idx].repTarget = e.target.value; setFormScheda(p => ({...p, esercizi: n})); }}
-                          className="campo-input !w-16 text-center text-xs !py-1" title={t('dashboardPT.ripetizioni')} />
-                        <input type="number" value={es.recuperoSecondi} onChange={e => { const n = [...formScheda.esercizi]; n[idx].recuperoSecondi = parseInt(e.target.value) || 90; setFormScheda(p => ({...p, esercizi: n})); }}
-                          className="campo-input !w-16 text-center text-xs !py-1" title={t('dashboardPT.recuperoSecondi')} min="0" step="15" />
-                        <span className="text-[10px] text-[var(--testo-terziario)]">s</span>
-                        <button onClick={() => rimuoviEsercizioDaScheda(idx)} className="text-[var(--pericolo)] text-xs opacity-60 hover:opacity-100">✕</button>
-                      </div>
-                    ))}
+                    {blocchiDi(formScheda.esercizi).map(blocco => {
+                        const ultimoIdx = blocco.indici[blocco.indici.length - 1];
+                        const unisciDopo = puoUnire(formScheda.esercizi, ultimoIdx) && (
+                          <PulsanteUnisci nome={formScheda.esercizi[ultimoIdx].nome} prossimo={formScheda.esercizi[ultimoIdx + 1].nome}
+                                          onClick={() => cambiaGruppiPT(lista => unisci(lista, ultimoIdx))} />
+                        );
+                        if (blocco.gruppo == null) {
+                          return (
+                            <div key={`e-${ultimoIdx}`} className="flex flex-col gap-2">
+                              {rigaEsercizioPT(ultimoIdx, null)}
+                              {unisciDopo}
+                            </div>
+                          );
+                        }
+                        const ultimo = ultimoDelGruppo(formScheda.esercizi, blocco.gruppo);
+                        return (
+                          <div key={`g-${blocco.indici[0]}`} className="flex flex-col gap-2">
+                            <RiquadroGruppo
+                              lettera={letteraGruppo(blocco.gruppo)}
+                              membri={blocco.indici.length}
+                              giri={giriDi(formScheda.esercizi, blocco.gruppo)}
+                              recuperoGiro={formScheda.esercizi[ultimo].recuperoSecondi}
+                              onGiri={v => cambiaGruppiPT(lista => impostaGiri(lista, blocco.gruppo, v))}
+                              onRecuperoGiro={v => aggiornaEsercizioPT(ultimo, 'recuperoSecondi', leggiSecondi(v, ''))}
+                            >
+                              {blocco.indici.map(idx => rigaEsercizioPT(idx, postiPT[idx]))}
+                            </RiquadroGruppo>
+                            {unisciDopo}
+                          </div>
+                        );
+                    })}
                   </div>
                 )}
 

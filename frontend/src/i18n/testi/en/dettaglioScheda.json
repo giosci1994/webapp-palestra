@@ -17,5 +17,10 @@
   "riscaldamento": "warm-up",
   "cardio": "Cardio",
   "recupero": "{secondi}s rest",
-  "iniziaAllenamento": "🏋️ Start workout"
+  "iniziaAllenamento": "🏋️ Start workout",
+  "superset": "Superset {lettera} · in turn",
+  "circuito": "Circuit {lettera} · in turn",
+  "recuperoDopoGiro": "{secondi}s rest after round",
+  "pausa": "{secondi}s pause",
+  "subitoIlProssimo": "then straight to the next"
 }

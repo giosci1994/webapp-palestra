@@ -27,5 +27,15 @@
   "aggiungiEserciziAvanti": "Aggiungi esercizi →",
   "salvataggio": "Salvataggio...",
   "salvaModifiche": "Salva modifiche ({numero} es.)",
-  "creaScheda": "Crea scheda ({numero} es.)"
+  "creaScheda": "Crea scheda ({numero} es.)",
+  "superset": "Superset {lettera}",
+  "circuito": "Circuito {lettera}",
+  "giri": "Giri",
+  "giriDiversi": "Gli esercizi hanno serie diverse: scrivi un numero per averle tutte uguali",
+  "recuperoDopoGiro": "Recupero dopo il giro",
+  "pausaTraEsercizi": "Pausa prima del prossimo",
+  "unisci": "Unisci con il successivo",
+  "unisciAria": "Unisci {nome} con {prossimo} in un superset",
+  "separa": "Separa",
+  "separaAria": "Togli {nome} dal gruppo"
 }

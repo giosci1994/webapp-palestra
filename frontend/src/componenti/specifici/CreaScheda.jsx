@@ -13,6 +13,11 @@ import Testo from '../../i18n/Testo.jsx';
 import { api } from '../../config/api.js';
 import { GRUPPI_MUSCOLARI, LIVELLI } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  normalizzaGruppi, gruppiDi, blocchiDi, puoUnire, unisci, separa, impostaGiri, giriDi, ultimoDelGruppo,
+  sposta, leggiSecondi, letteraGruppo
+} from '../../utils/superset.js';
+import { RiquadroGruppo, PulsanteUnisci, PulsanteSepara } from './SupersetEditor.jsx';
 
 export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null }) {
   const { t } = useLingua();
@@ -24,10 +29,11 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
   );
   const [eserciziSelezionati, setEserciziSelezionati] = useState(
     schedaEsistente && schedaEsistente.esercizi 
-      ? schedaEsistente.esercizi.map(es => ({
+      ? normalizzaGruppi(schedaEsistente.esercizi.map(es => ({
           esercizioId: es.esercizioId,
           nome: nomeEsercizio(es.esercizio),
-          gruppo: es.esercizio.gruppoMuscoloPrimario,
+          // Superset or circuit (utils/superset.js)
+          gruppo: es.gruppo ?? null,
           serieTarget: es.serieTarget,
           repTarget: es.repTarget,
           recuperoSecondi: es.recuperoSecondi,
@@ -39,7 +45,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
           inclinazione: es.inclinazione,
           livelloResistenza: es.livelloResistenza,
           distanzaKm: es.distanzaKm
-        }))
+        })))
       : []
   );
   const [eserciziCatalogo, setEserciziCatalogo] = useState([]);
@@ -67,11 +73,11 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
   const toggleEsercizio = (esercizio) => {
     setEserciziSelezionati(prev => {
       const esiste = prev.find(e => e.esercizioId === esercizio.id);
-      if (esiste) return prev.filter(e => e.esercizioId !== esercizio.id);
+      if (esiste) return normalizzaGruppi(prev.filter(e => e.esercizioId !== esercizio.id));
       return [...prev, {
         esercizioId: esercizio.id,
         nome: nomeEsercizio(esercizio),
-        gruppo: esercizio.gruppoMuscoloPrimario,
+        gruppo: null,
         serieTarget: 3,
         repTarget: '8-12',
         recuperoSecondi: 90,
@@ -86,15 +92,84 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
     ));
   };
 
-  // Move an exercise up or down in the list
+  // Move an exercise up or down in the list: away from the other members
+  // of its superset it leaves the group (utils/superset.js)
   const spostaEsercizio = (idx, direzione) => {
-    setEserciziSelezionati(prev => {
-      const nuovoIdx = idx + direzione;
-      if (nuovoIdx < 0 || nuovoIdx >= prev.length) return prev;
-      const copia = [...prev];
-      [copia[idx], copia[nuovoIdx]] = [copia[nuovoIdx], copia[idx]];
-      return copia;
-    });
+    setEserciziSelezionati(prev => sposta(prev, idx, direzione));
+  };
+
+  const etichetteGruppi = gruppiDi(eserciziSelezionati);
+
+  // One selected exercise. In a group its number becomes A1, A2..., its rest
+  // is the pause before the next member, and the last member's rest is set on
+  // the group's box (rest after the round)
+  const schedaEsercizio = (idx) => {
+    const es = eserciziSelezionati[idx];
+    const posto = etichetteGruppi[idx];
+    return (
+      <div className="esercizio-selezionato-card">
+        {/* Exercise name row */}
+        <div className="esercizio-sel-header">
+          {/* Reorder arrows */}
+          <div className="flex flex-col shrink-0">
+            <button
+              onClick={() => spostaEsercizio(idx, -1)}
+              disabled={idx === 0}
+              className="btn-freccia-ordine"
+              title={t('creaScheda.spostaSu')}
+              aria-label={t('creaScheda.spostaSu')}
+            >▲</button>
+            <button
+              onClick={() => spostaEsercizio(idx, 1)}
+              disabled={idx === eserciziSelezionati.length - 1}
+              className="btn-freccia-ordine"
+              title={t('creaScheda.spostaGiu')}
+              aria-label={t('creaScheda.spostaGiu')}
+            >▼</button>
+          </div>
+          <span className="esercizio-sel-numero">{posto ? posto.etichetta : idx + 1}</span>
+          <span className="esercizio-sel-nome">{es.nome}</span>
+          {posto && <PulsanteSepara nome={es.nome} onClick={() => setEserciziSelezionati(prev => separa(prev, idx))} />}
+          <button onClick={() => toggleEsercizio({ id: es.esercizioId })}
+                  className="text-[var(--pericolo)] text-sm px-1 hover:scale-110 transition-transform shrink-0"
+                  title={t('creaScheda.rimuoviEsercizio')} aria-label={t('creaScheda.rimuoviEsercizio')}>✕</button>
+        </div>
+
+        {/* Parameters row */}
+        <div className="esercizio-sel-parametri flex-wrap">
+          <div className="esercizio-param-gruppo">
+            <label className="esercizio-param-label">{t('creaScheda.serie')}</label>
+            <input type="number" value={es.serieTarget} onChange={e => aggiornaPianoEsercizio(idx, 'serieTarget', e.target.value)}
+                   className="esercizio-param-input" style={{ width: '52px' }} min={1} max={10} />
+          </div>
+          <span className="esercizio-param-sep">×</span>
+          <div className="esercizio-param-gruppo">
+            <label className="esercizio-param-label">{t('creaScheda.rep')}</label>
+            <input type="text" value={es.repTarget ?? ''} onChange={e => aggiornaPianoEsercizio(idx, 'repTarget', e.target.value)}
+                   className="esercizio-param-input" style={{ width: '64px' }} />
+          </div>
+          {/* The last member's rest is the rest after the round, on the group's box */}
+          {!posto?.ultimo && (
+            <div className="esercizio-param-gruppo ml-auto">
+              <label className="esercizio-param-label">{posto ? t('creaScheda.pausaTraEsercizi') : t('creaScheda.recupero')}</label>
+              <input type="number" value={es.recuperoSecondi} onChange={e => aggiornaPianoEsercizio(idx, 'recuperoSecondi', e.target.value)}
+                     className="esercizio-param-input" style={{ width: '64px' }} step={15} min={0} />
+              <span className="esercizio-param-unita">s</span>
+            </div>
+          )}
+        </div>
+
+        {/* Technique note: posture corrections, tempo,
+            one-sided execution. Optional. */}
+        <input
+          type="text"
+          value={es.note || ''}
+          onChange={e => aggiornaPianoEsercizio(idx, 'note', e.target.value)}
+          placeholder={t('creaScheda.notaTecnica')}
+          className="w-full mt-2 px-3 py-2 rounded-[var(--raggio-sm)] text-xs bg-[var(--bg-terziario)] text-[var(--testo-primario)] border border-[var(--bordo-light)] focus:border-[var(--accent)] focus:outline-none"
+        />
+      </div>
+    );
   };
 
   const gestisciCrea = async () => {
@@ -111,6 +186,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
               serieTarget: e.serieTarget ?? 1,
               repTarget: e.repTarget ?? null,
               recuperoSecondi: e.recuperoSecondi ?? 0,
+              gruppo: e.gruppo ?? null,
               riscaldamento: !!e.riscaldamento,
               durataMinuti: e.durataMinuti ?? null,
               velocitaKmh: e.velocitaKmh ?? null,
@@ -123,7 +199,9 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
             esercizioId: e.esercizioId,
             serieTarget: parseInt(e.serieTarget),
             repTarget: e.repTarget,
-            recuperoSecondi: parseInt(e.recuperoSecondi),
+            // 0 is a valid rest (no pause before the next member)
+            recuperoSecondi: leggiSecondi(e.recuperoSecondi),
+            gruppo: e.gruppo ?? null,
             note: e.note?.trim() || null
           };
         })
@@ -211,72 +289,44 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
                   </h3>
                   <div className="flex flex-col gap-3">
                     <AnimatePresence initial={false}>
-                      {eserciziSelezionati.map((es, idx) => (
-                        <motion.div
-                          key={es.esercizioId}
-                          layout
-                          initial={{ opacity: 0, y: -8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                          className="esercizio-selezionato-card"
-                        >
-                          {/* Exercise name row */}
-                          <div className="esercizio-sel-header">
-                            {/* Reorder arrows */}
-                            <div className="flex flex-col shrink-0">
-                              <button
-                                onClick={() => spostaEsercizio(idx, -1)}
-                                disabled={idx === 0}
-                                className="btn-freccia-ordine"
-                                title={t('creaScheda.spostaSu')}
-                              >▲</button>
-                              <button
-                                onClick={() => spostaEsercizio(idx, 1)}
-                                disabled={idx === eserciziSelezionati.length - 1}
-                                className="btn-freccia-ordine"
-                                title={t('creaScheda.spostaGiu')}
-                              >▼</button>
-                            </div>
-                            <span className="esercizio-sel-numero">{idx + 1}</span>
-                            <span className="esercizio-sel-nome">{es.nome}</span>
-                            <button onClick={() => toggleEsercizio({ id: es.esercizioId })}
-                                    className="text-[var(--pericolo)] text-sm px-1 hover:scale-110 transition-transform shrink-0"
-                                    title={t('creaScheda.rimuoviEsercizio')}>✕</button>
-                          </div>
-
-                          {/* Parameters row - IMPROVED */}
-                          <div className="esercizio-sel-parametri">
-                            <div className="esercizio-param-gruppo">
-                              <label className="esercizio-param-label">{t('creaScheda.serie')}</label>
-                              <input type="number" value={es.serieTarget} onChange={e => aggiornaPianoEsercizio(idx, 'serieTarget', e.target.value)}
-                                     className="esercizio-param-input" style={{ width: '52px' }} min={1} max={10} />
-                            </div>
-                            <span className="esercizio-param-sep">×</span>
-                            <div className="esercizio-param-gruppo">
-                              <label className="esercizio-param-label">{t('creaScheda.rep')}</label>
-                              <input type="text" value={es.repTarget} onChange={e => aggiornaPianoEsercizio(idx, 'repTarget', e.target.value)}
-                                     className="esercizio-param-input" style={{ width: '64px' }} />
-                            </div>
-                            <div className="esercizio-param-gruppo ml-auto">
-                              <label className="esercizio-param-label">{t('creaScheda.recupero')}</label>
-                              <input type="number" value={es.recuperoSecondi} onChange={e => aggiornaPianoEsercizio(idx, 'recuperoSecondi', e.target.value)}
-                                     className="esercizio-param-input" style={{ width: '64px' }} step={15} min={0} />
-                              <span className="esercizio-param-unita">s</span>
-                            </div>
-                          </div>
-
-                          {/* Technique note: posture corrections, tempo,
-                              one-sided execution. Optional. */}
-                          <input
-                            type="text"
-                            value={es.note || ''}
-                            onChange={e => aggiornaPianoEsercizio(idx, 'note', e.target.value)}
-                            placeholder={t('creaScheda.notaTecnica')}
-                            className="w-full mt-2 px-3 py-2 rounded-[var(--raggio-sm)] text-xs bg-[var(--bg-terziario)] text-[var(--testo-primario)] border border-[var(--bordo-light)] focus:border-[var(--accent)] focus:outline-none"
-                          />
-                        </motion.div>
-                      ))}
+                      {blocchiDi(eserciziSelezionati).map(blocco => {
+                        const ultimoIdx = blocco.indici[blocco.indici.length - 1];
+                        const unisciDopo = puoUnire(eserciziSelezionati, ultimoIdx) && (
+                          <PulsanteUnisci nome={eserciziSelezionati[ultimoIdx].nome} prossimo={eserciziSelezionati[ultimoIdx + 1].nome}
+                                          onClick={() => setEserciziSelezionati(prev => unisci(prev, ultimoIdx))} />
+                        );
+                        const animazione = {
+                          layout: true,
+                          initial: { opacity: 0, y: -8 },
+                          animate: { opacity: 1, y: 0 },
+                          exit: { opacity: 0, scale: 0.95 },
+                          transition: { type: 'spring', stiffness: 400, damping: 30 }
+                        };
+                        if (blocco.gruppo == null) {
+                          return (
+                            <motion.div key={`e-${eserciziSelezionati[ultimoIdx].esercizioId}`} {...animazione} className="flex flex-col gap-3">
+                              {schedaEsercizio(ultimoIdx)}
+                              {unisciDopo}
+                            </motion.div>
+                          );
+                        }
+                        const ultimo = ultimoDelGruppo(eserciziSelezionati, blocco.gruppo);
+                        return (
+                          <motion.div key={`g-${eserciziSelezionati[blocco.indici[0]].esercizioId}`} {...animazione} className="flex flex-col gap-3">
+                            <RiquadroGruppo
+                              lettera={letteraGruppo(blocco.gruppo)}
+                              membri={blocco.indici.length}
+                              giri={giriDi(eserciziSelezionati, blocco.gruppo)}
+                              recuperoGiro={eserciziSelezionati[ultimo].recuperoSecondi}
+                              onGiri={v => setEserciziSelezionati(prev => impostaGiri(prev, blocco.gruppo, v))}
+                              onRecuperoGiro={v => aggiornaPianoEsercizio(ultimo, 'recuperoSecondi', v)}
+                            >
+                              {blocco.indici.map(idx => <div key={eserciziSelezionati[idx].esercizioId}>{schedaEsercizio(idx)}</div>)}
+                            </RiquadroGruppo>
+                            {unisciDopo}
+                          </motion.div>
+                        );
+                      })}
                     </AnimatePresence>
                   </div>
                 </div>

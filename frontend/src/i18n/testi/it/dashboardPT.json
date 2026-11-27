@@ -101,5 +101,7 @@
   "selezionaCliente": "Seleziona cliente...",
   "titoloAppuntamento": "Titolo appuntamento",
   "durataMinuti": "Durata (minuti)",
-  "crea": "Crea"
+  "crea": "Crea",
+  "pausaSecondi": "Pausa prima del prossimo (sec)",
+  "rimuoviEsercizio": "Togli {nome}"
 }
