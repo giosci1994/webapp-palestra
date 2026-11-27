@@ -18,7 +18,7 @@ import { useState, useRef, useEffect, useEffectEvent } from 'react';
 import {
   User, Shield, Dumbbell, Lock, CreditCard, FileText, Trash2,
   Sparkles, AlertCircle, ExternalLink, Building, LogOut,
-  Pencil, Download, Smartphone, Monitor, KeyRound, Bell, MessageCircle, Heart
+  Pencil, Download, Smartphone, Monitor, KeyRound, Bell, MessageCircle, Heart, Camera
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
 import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
@@ -371,6 +371,10 @@ export default function Profilo() {
               <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <span className="text-white text-lg">📷</span>
               </div>
+              {/* Always visible: on a phone there is no hover to reveal that the photo can be changed */}
+              <span aria-hidden="true" className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-[var(--accent)] text-[var(--su-accento)] flex items-center justify-center border-2 border-[var(--bg-primario)] shadow-md">
+                <Camera size={14} />
+              </span>
               <input ref={fileRef} type="file" accept="image/*" onChange={gestisciImmagine} className="hidden" />
             </div>
             <div className="flex-1 min-w-0">
