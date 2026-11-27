@@ -39,5 +39,4 @@
 .dash-combinata .hover\:text-white:hover { color: var(--testo-primario); }
 .dash-combinata :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* The tab panel can be swiped sideways: vertical scrolling stays with the page */
-.dash-pannello-trascinabile { touch-action: pan-y; }
+

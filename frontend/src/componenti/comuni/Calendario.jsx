@@ -92,7 +92,7 @@ export default function Calendario({
   }
 
   return (
-    <div>
+    <div data-senza-gesto>
       {/* Header: navigation and, if requested, the mode selector */}
       <div className="flex items-center justify-between gap-2 mb-4 bg-[var(--incavo)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
         <button

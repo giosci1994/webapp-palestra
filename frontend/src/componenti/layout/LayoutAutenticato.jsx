@@ -4,7 +4,7 @@
 // ============================================
 
 import { useState, useEffect, Suspense } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contesti/AuthContesto.jsx';
 import Spinner, { SpinnerPagina } from '../comuni/Spinner.jsx';
 import Sidebar from './Sidebar.jsx';
@@ -16,6 +16,7 @@ import { useInvioCoda } from '../../hooks/useCodaSerie.js';
 import { AllenamentoInCorsoProvider } from '../../contesti/AllenamentoInCorsoContesto.jsx';
 import { NotificheProvider } from '../../contesti/NotificheContesto.jsx';
 import BarraAllenamentoInCorso from '../specifici/BarraAllenamentoInCorso.jsx';
+import PaginaSfogliabile from './PaginaSfogliabile.jsx';
 
 export default function LayoutAutenticato() {
   const { autenticato, caricamento, utente } = useAuth();
@@ -65,13 +66,18 @@ export default function LayoutAutenticato() {
             >
               {!isImmersivo && <BarraAllenamentoInCorso />}
 
-              {/* The key resets the error when the page changes */}
-              <RecuperoErrori key={location.pathname}>
-                {/* Pages are loaded when they are opened: meanwhile the sidebar stays */}
-                <Suspense fallback={<div className="flex justify-center py-16"><Spinner /></div>}>
-                  <Outlet />
-                </Suspense>
-              </RecuperoErrori>
+              {/* The pages turn like a book (transition and swipe). Each page has
+                  its own error boundary, so the error resets when the page changes,
+                  and is loaded when it is opened: meanwhile the sidebar stays */}
+              <PaginaSfogliabile
+                avvolgi={(pagina) => (
+                  <RecuperoErrori>
+                    <Suspense fallback={<div className="flex justify-center py-16"><Spinner /></div>}>
+                      {pagina}
+                    </Suspense>
+                  </RecuperoErrori>
+                )}
+              />
             </div>
           </main>
 

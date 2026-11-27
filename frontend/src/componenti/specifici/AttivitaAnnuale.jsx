@@ -71,7 +71,7 @@ export default function AttivitaAnnuale({ giorni = [] }) {
         </div>
       </div>
 
-      <div ref={scorrimento} className="overflow-x-auto no-scrollbar pb-1">
+      <div ref={scorrimento} className="overflow-x-auto no-scrollbar pb-1" data-senza-gesto>
         <div className="flex gap-2 w-max">
           {/* Days of the week, aligned with the rows */}
           <div className="grid shrink-0 text-[9px] text-[var(--testo-terziario)]"

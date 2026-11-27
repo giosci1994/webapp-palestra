@@ -213,7 +213,9 @@ body {
   letter-spacing: 0;
   overflow-x: hidden;
   min-height: 100vh;
-  touch-action: manipulation;
+  /* Vertical scrolling to the browser, sideways swipes to the app (pages that
+     turn, PaginaSfogliabile.jsx); elements that scroll sideways still do */
+  touch-action: pan-y pinch-zoom;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -569,6 +571,13 @@ input:-webkit-autofill:focus {
    theme, mixed with the text colour on the light one so it stays readable */
 .testo-tinta { color: var(--tinta); }
 :root[data-tema="chiaro"] .testo-tinta { color: color-mix(in srgb, var(--tinta) 55%, #16131F); }
+
+/* Pages that turn like a book (componenti/layout/PaginaSfogliabile.jsx): the
+   pages stack in one grid cell during the transition; pan-y leaves vertical
+   scrolling to the browser and the horizontal swipe to the app */
+.pagine-sfogliabili { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr); overflow-x: clip; touch-action: pan-y; }
+.pagina-foglio { grid-area: 1 / 1; min-width: 0; display: flex; flex-direction: column; background: var(--bg-primario); }
+.pagina-foglio-dentro { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
 /* .no-scrollbar: kept for the components that use it; every scrollbar is hidden anyway (top of this file) */
 .no-scrollbar::-webkit-scrollbar { display: none; }
