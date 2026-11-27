@@ -392,7 +392,9 @@ async function eseguiFunzione(nome, args, utente, stato) {
         nomeIt: es.nomeIt,
         serie: parseInt(args.serie) || 3,
         ripetizioni: String(args.ripetizioni || '8-12'),
-        recuperoSecondi: args.recuperoSecondi ? parseInt(args.recuperoSecondi) : 90
+        // 0 is a valid rest (no pause); missing or not a number, the default
+        recuperoSecondi: Number.isInteger(parseInt(args.recuperoSecondi)) && parseInt(args.recuperoSecondi) >= 0
+          ? parseInt(args.recuperoSecondi) : 90
       };
       stato.bozza.esercizi.push(voce);
       return { ok: true, aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length };

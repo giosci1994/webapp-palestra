@@ -314,7 +314,8 @@ export async function aggiungiEsercizio(req, res, next) {
         esercizioId,
         serieTarget: serieTarget || 3,
         repTarget: repTarget || '8-12',
-        recuperoSecondi: recuperoSecondi || 90,
+        // 0 is a valid rest: no pause
+        recuperoSecondi: recuperoSecondi ?? 90,
         ordineEsecuzione: (ultimo?.ordineEsecuzione || 0) + 1
       },
       include: {

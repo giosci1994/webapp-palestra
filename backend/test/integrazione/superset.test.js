@@ -85,6 +85,18 @@ describe('the group in a plan', () => {
     assert.equal(await prisma.schedaAllenamento.count({ where: { titolo: 'X' } }), 0);
   });
 
+  it('a rest of 0 seconds stays 0, also when an exercise is added to a plan', async () => {
+    const scheda = await creaScheda(utente, [panca]);
+    const zero = await come('POST', `/schede/${scheda.id}/esercizi`, { esercizioId: rematore.id, recuperoSecondi: 0 });
+    assert.deepEqual([zero.stato, zero.corpo.dati.recuperoSecondi, zero.corpo.dati.gruppo], [201, 0, null]);
+    // Not sent: the default
+    const predefinito = await come('POST', `/schede/${scheda.id}/esercizi`, { esercizioId: squat.id });
+    assert.equal(predefinito.corpo.dati.recuperoSecondi, 90);
+
+    const creata = await come('POST', '/schede', { titolo: 'Zero', esercizi: [{ esercizioId: panca.id, recuperoSecondi: 0 }] });
+    assert.equal(creata.corpo.dati.esercizi[0].recuperoSecondi, 0);
+  });
+
   it('plans from before the column have no groups', async () => {
     const vecchia = await creaScheda(utente, [panca, rematore]);
     const { dati } = (await come('GET', `/schede/${vecchia.id}`)).corpo;
