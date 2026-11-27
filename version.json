@@ -905,6 +905,7 @@
   ],
   "stack": {
     "frontend": "React 19 + Vite 8 + TailwindCSS 4 + Framer Motion",
+    "app": "Android TWA (Bubblewrap) + Windows Tauri 2",
     "backend": "Node.js 22 + Express 4 + Prisma 6 + Socket.io 4",
     "database": "PostgreSQL 17 + Redis 7",
     "proxy": "Nginx Alpine",
