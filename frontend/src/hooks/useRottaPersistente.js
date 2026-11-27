@@ -12,8 +12,11 @@ import { useLocation } from 'react-router-dom';
 
 const CHIAVE_ROTTA = 'gymmaster_ultima_rotta';
 
-// Routes that must NOT be saved (public pages)
-const ROTTE_ESCLUSE = ['/login', '/registrazione'];
+// Routes that must NOT be saved (public pages). The download and legal pages
+// too: their "Back to the app" link goes to "/", which restores the saved
+// route, so saving them would bring the user straight back to the same page
+// (and the Android app, which shares Chrome's storage, would open on /scarica)
+export const ROTTE_ESCLUSE = ['/login', '/registrazione', '/scarica', '/privacy', '/cookie-policy', '/termini'];
 
 /**
  * Hook that tracks the current route and saves it in localStorage.
@@ -32,8 +35,10 @@ export function useRottaPersistente() {
 
 /**
  * Gets the last saved route from localStorage.
- * Returns null if no route has been saved.
+ * Returns null if no route has been saved, or if it is an excluded one.
  */
 export function ottieniUltimaRotta() {
-  return localStorage.getItem(CHIAVE_ROTTA);
+  const rotta = localStorage.getItem(CHIAVE_ROTTA);
+  // A route saved by an older version that is now excluded is ignored
+  return rotta && !ROTTE_ESCLUSE.includes(rotta) ? rotta : null;
 }
