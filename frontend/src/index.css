@@ -886,6 +886,102 @@ input:-webkit-autofill:focus {
   font-weight: 500;
 }
 
+/* --- Superset / circuit box in the plan editors (SupersetEditor.jsx) --- */
+.riquadro-superset {
+  border: 1px solid var(--accent);
+  border-radius: var(--raggio-md);
+  background: var(--accent-dim);
+  overflow: hidden;
+}
+
+.riquadro-superset-intestazione {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  padding: 10px 14px;
+}
+
+.riquadro-superset-titolo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.riquadro-superset-campi {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+}
+
+.riquadro-superset-campi .esercizio-param-gruppo {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.riquadro-superset-campi .esercizio-param-label {
+  font-size: 0.7rem;
+}
+
+.riquadro-superset-campi .esercizio-param-input {
+  min-height: 44px;
+}
+
+.riquadro-superset-membri {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 8px 8px;
+}
+
+.btn-unisci-superset,
+.btn-separa-superset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  min-width: 44px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: transparent;
+  border-radius: var(--raggio-sm);
+  cursor: pointer;
+  transition: background var(--transizione), border-color var(--transizione);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-unisci-superset {
+  align-self: center;
+  padding: 0 14px;
+  border: 1px dashed var(--accent);
+}
+
+.btn-separa-superset {
+  flex-shrink: 0;
+  padding: 0 8px;
+  border: 1px solid transparent;
+}
+
+.btn-unisci-superset:hover,
+.btn-separa-superset:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.btn-unisci-superset:focus-visible,
+.btn-separa-superset:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* --- Mobile responsive for the plan filters --- */
 @media (max-width: 640px) {
   .schede-filtri-avanzati {

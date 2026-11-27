@@ -15,6 +15,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import StellaPreferita from '../componenti/comuni/StellaPreferita.jsx';
 import { usePreferiti } from '../hooks/usePreferiti.js';
+import { gruppiDi } from '../utils/superset.js';
 
 export default function DettaglioScheda() {
   const { t } = useLingua();
@@ -170,7 +171,9 @@ export default function DettaglioScheda() {
 
         {/* Exercise list */}
         <div className="flex flex-col gap-2 mb-6">
-          {scheda.esercizi?.map((es, i) => {
+          {scheda.esercizi?.map((es, i, tutti) => {
+            // Superset or circuit: A1, A2... and the rest after the round on the last member
+            const posto = gruppiDi(tutti)[i];
             const cardio = es.riscaldamento || es.durataMinuti != null || es.velocitaKmh != null ||
                            es.livelloResistenza != null || es.distanzaKm != null;
             const partiCardio = [];
@@ -179,6 +182,9 @@ export default function DettaglioScheda() {
             if (es.inclinazione != null) partiCardio.push(t('dettaglioScheda.inclinazione', { valore: es.inclinazione }));
             if (es.livelloResistenza != null) partiCardio.push(t('dettaglioScheda.livelloResistenza', { valore: es.livelloResistenza }));
             if (es.distanzaKm != null) partiCardio.push(`${es.distanzaKm} km`);
+            let testoRecupero = t('dettaglioScheda.recupero', { secondi: es.recuperoSecondi ?? '' });
+            if (posto?.ultimo) testoRecupero = t('dettaglioScheda.recuperoDopoGiro', { secondi: es.recuperoSecondi ?? '' });
+            else if (posto) testoRecupero = es.recuperoSecondi ? t('dettaglioScheda.pausa', { secondi: es.recuperoSecondi }) : t('dettaglioScheda.subitoIlProssimo');
             return (
             <motion.div
               key={es.id}
@@ -186,11 +192,19 @@ export default function DettaglioScheda() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
               className="glass-card px-card-inner py-4"
+              style={posto ? { borderLeft: '3px solid var(--accent)' } : undefined}
             >
+              {posto?.primo && (
+                <p className="text-xs font-bold text-[var(--accent)] mb-2">
+                  {posto.tipo === 'superset'
+                    ? t('dettaglioScheda.superset', { lettera: posto.lettera })
+                    : t('dettaglioScheda.circuito', { lettera: posto.lettera })}
+                </p>
+              )}
               <div className="flex items-center gap-4">
               <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
                    style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
-                {i + 1}
+                {posto ? posto.etichetta : i + 1}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium">
@@ -211,7 +225,7 @@ export default function DettaglioScheda() {
                 ) : (
                   <>
                     <p className="text-sm font-semibold">{es.serieTarget} × {es.repTarget}</p>
-                    <p className="text-xs text-[var(--testo-terziario)]">{t('dettaglioScheda.recupero', { secondi: es.recuperoSecondi ?? '' })}</p>
+                    <p className="text-xs text-[var(--testo-terziario)]">{testoRecupero}</p>
                   </>
                 )}
               </div>

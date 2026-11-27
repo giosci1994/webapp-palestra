@@ -101,5 +101,7 @@
   "selezionaCliente": "Select client…",
   "titoloAppuntamento": "Appointment title",
   "durataMinuti": "Duration (minutes)",
-  "crea": "Create"
+  "crea": "Create",
+  "pausaSecondi": "Pause before next (sec)",
+  "rimuoviEsercizio": "Remove {nome}"
 }
