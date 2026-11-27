@@ -215,6 +215,11 @@ export default function Login() {
           <Testo t="login.nessunAccount" componenti={{ registrati: <Link to="/registrazione" className="font-semibold" /> }} />
         </p>
 
+        {/* Download the app (Android, Windows, iPhone) */}
+        <p className="text-center mt-3 text-xs">
+          <Link to="/scarica" className="text-[var(--testo-terziario)] hover:text-[var(--accent)] transition-colors">{t('login.scaricaApp')}</Link>
+        </p>
+
         <FooterLegale />
       </motion.div>
     </div>

@@ -188,7 +188,8 @@
     "versione": "Versione",
     "versioneValori": "App v{app} · Server v{server} · Build {build}",
     "sviluppatore": "Developer",
-    "sviluppatoreRuolo": "Sviluppatore & Creatore"
+    "sviluppatoreRuolo": "Sviluppatore & Creatore",
+    "scaricaApp": "Scarica l'app"
   },
   "elimina": {
     "titolo": "Elimina Account",

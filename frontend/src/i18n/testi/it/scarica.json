@@ -1,0 +1,51 @@
+{
+  "tornaApp": "Torna all'app",
+  "titolo": "Scarica l'app GymMaster",
+  "sottotitolo": "Sul telefono o sul computer, si apre come le altre app.",
+  "scegliSistema": "Il tuo dispositivo",
+  "piattaforma": {
+    "android": "Android",
+    "ios": "iPhone / iPad",
+    "windows": "Windows",
+    "altro": "Altro"
+  },
+  "giaInstallata": "Stai già usando l'app installata.",
+  "rilevato": "Riconosciuto da questo dispositivo",
+  "android": {
+    "titolo": "GymMaster per Android",
+    "descrizione": "L'app si apre a tutto schermo e si aggiorna da sola insieme al sito.",
+    "scarica": "Scarica l'APK",
+    "passo1": "Apri il file scaricato (dalla notifica o dalla cartella Download).",
+    "passo2": "Se Android lo chiede, consenti l'installazione di app da questa fonte, poi torna indietro e tocca <b>Installa</b>.",
+    "passo3": "Apri GymMaster dalla schermata Home."
+  },
+  "windows": {
+    "titolo": "GymMaster per Windows",
+    "descrizione": "Una finestra leggera per Windows 10 e 11, che ti avvisa quando esce una versione nuova.",
+    "scarica": "Scarica per Windows",
+    "passo1": "Apri il programma di installazione scaricato.",
+    "passo2": "Se Windows mostra <b>Windows ha protetto il PC</b>, scegli <b>Ulteriori informazioni</b> e poi <b>Esegui comunque</b>: l'installer non è firmato con un certificato a pagamento.",
+    "passo3": "Apri GymMaster dal menu Start."
+  },
+  "ios": {
+    "titolo": "GymMaster su iPhone e iPad",
+    "descrizione": "Niente da scaricare: aggiungi l'app alla schermata Home da Safari.",
+    "passo1": "Apri questa pagina in <b>Safari</b>.",
+    "passo2": "Tocca <b>Condividi</b> in fondo allo schermo (in alto su iPad).",
+    "passo3": "Scegli <b>Aggiungi alla schermata Home</b>, poi <b>Aggiungi</b>.",
+    "notifiche": "Dall'app sulla schermata Home puoi attivare anche le notifiche (iOS 16.4 o successivo)."
+  },
+  "altro": {
+    "titolo": "GymMaster nel browser",
+    "descrizione": "Su Mac, Linux e altri sistemi installa la web app dal browser.",
+    "passo1": "In Chrome o Edge: l'icona di installazione nella barra degli indirizzi, oppure il menu e poi <b>Installa GymMaster</b>.",
+    "passo2": "In Safari su Mac: <b>File</b> e poi <b>Aggiungi al Dock</b>."
+  },
+  "webApp": {
+    "titolo": "Oppure installa la web app",
+    "android": "In Chrome: il menu ⋮ e poi <b>Aggiungi a schermata Home</b>.",
+    "windows": "In Edge o Chrome: l'icona di installazione nella barra degli indirizzi."
+  },
+  "installa": "Installa la web app",
+  "versioneRelease": "Il download è l'ultima versione pubblicata su GitHub."
+}

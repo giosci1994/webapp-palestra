@@ -49,6 +49,8 @@ export default defineConfig({
         description: 'Gym workout tracker with rest timer, progress stats and an AI coach',
         theme_color: '#0A0A0F',
         background_color: '#0A0A0F',
+        // A stable identity for the installed app, whatever start_url becomes
+        id: '/',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -58,11 +60,20 @@ export default defineConfig({
             sizes: '192x192',
             type: 'image/png'
           },
+          // The same image for both purposes, as separate entries: "any maskable"
+          // in one entry is discouraged, the maskable one is cropped to a circle
+          // or a squircle (Android adaptive icons, the Android app's icon)
           {
             src: '/icons/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: '/icons/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
           }
         ]
       },

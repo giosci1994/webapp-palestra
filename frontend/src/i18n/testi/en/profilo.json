@@ -188,7 +188,8 @@
     "versione": "Version",
     "versioneValori": "App v{app} · Server v{server} · Build {build}",
     "sviluppatore": "Developer",
-    "sviluppatoreRuolo": "Developer & creator"
+    "sviluppatoreRuolo": "Developer & creator",
+    "scaricaApp": "Download the app"
   },
   "elimina": {
     "titolo": "Delete account",

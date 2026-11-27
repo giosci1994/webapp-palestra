@@ -971,6 +971,10 @@ export default function Profilo() {
                       <span className="text-xs text-[var(--testo-secondario)] text-left sm:text-right">{v}</span>
                     </div>
                   ))}
+                  {/* Download the app (Android, Windows, iPhone): the /scarica page */}
+                  <Link to="/scarica" className="btn-secondario w-full" style={{ padding: '12px 20px' }}>
+                    <Download size={18} /> {t('profilo.legale.scaricaApp')}
+                  </Link>
                   {/* Developer */}
                   <div className="mt-2 pt-4 border-t border-[var(--bordo)]">
                     <a href="https://github.com/giosci1994/" target="_blank" rel="noopener noreferrer"

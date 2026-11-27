@@ -31,6 +31,7 @@ ROUTES=(
   "/sw.js"
   "/sw-push.js"
   "/version.json"
+  "/.well-known/assetlinks.json"
   "/api/v1/salute"
   "/socket.io/"
 )

@@ -58,6 +58,9 @@ jobs:
       # A broken import or bad JSX makes the build fail before
       # any test
       - run: npm run build
+      # Android reads it at this address: the build must copy the dot folder too
+      - name: The build publishes .well-known/assetlinks.json
+        run: node -e "JSON.parse(require('fs').readFileSync('dist/.well-known/assetlinks.json', 'utf8'))"
 
   immagini:
     # It is not enough for an image to build: it must also start. The backend

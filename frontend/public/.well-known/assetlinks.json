@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "uk.casadm.gymmaster",
+      "sha256_cert_fingerprints": [
+        "F0:64:3C:EC:CE:31:98:3F:BB:BC:34:77:4A:3F:CE:F6:CD:8A:53:86:9A:4A:55:3D:36:78:18:CB:DD:38:F9:68"
+      ]
+    }
+  }
+]

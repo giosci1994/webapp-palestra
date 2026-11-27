@@ -1,0 +1,51 @@
+{
+  "tornaApp": "Back to the app",
+  "titolo": "Get the GymMaster app",
+  "sottotitolo": "On your phone or computer, opened like any other app.",
+  "scegliSistema": "Your device",
+  "piattaforma": {
+    "android": "Android",
+    "ios": "iPhone / iPad",
+    "windows": "Windows",
+    "altro": "Other"
+  },
+  "giaInstallata": "You are already using the installed app.",
+  "rilevato": "Detected from this device",
+  "android": {
+    "titolo": "GymMaster for Android",
+    "descrizione": "The app opens full screen and updates itself together with the site.",
+    "scarica": "Download the APK",
+    "passo1": "Open the downloaded file (from the notification or the Downloads folder).",
+    "passo2": "If Android asks, allow installing apps from this source, then go back and tap <b>Install</b>.",
+    "passo3": "Open GymMaster from your home screen."
+  },
+  "windows": {
+    "titolo": "GymMaster for Windows",
+    "descrizione": "A light window for Windows 10 and 11 that tells you when a new version is out.",
+    "scarica": "Download for Windows",
+    "passo1": "Open the downloaded installer.",
+    "passo2": "If Windows shows <b>Windows protected your PC</b>, choose <b>More info</b> and then <b>Run anyway</b>: the installer is not signed with a paid certificate.",
+    "passo3": "Open GymMaster from the Start menu."
+  },
+  "ios": {
+    "titolo": "GymMaster on iPhone and iPad",
+    "descrizione": "Nothing to download: add the app to your Home Screen from Safari.",
+    "passo1": "Open this page in <b>Safari</b>.",
+    "passo2": "Tap <b>Share</b> at the bottom of the screen (at the top on iPad).",
+    "passo3": "Choose <b>Add to Home Screen</b>, then <b>Add</b>.",
+    "notifiche": "From the Home Screen app you can also turn on notifications (iOS 16.4 or later)."
+  },
+  "altro": {
+    "titolo": "GymMaster in your browser",
+    "descrizione": "On Mac, Linux and other systems install the web app from your browser.",
+    "passo1": "In Chrome or Edge: the install icon in the address bar, or the menu and then <b>Install GymMaster</b>.",
+    "passo2": "In Safari on Mac: <b>File</b> and then <b>Add to Dock</b>."
+  },
+  "webApp": {
+    "titolo": "Or install the web app",
+    "android": "In Chrome: the menu ⋮ and then <b>Add to Home screen</b>.",
+    "windows": "In Edge or Chrome: the install icon in the address bar."
+  },
+  "installa": "Install the web app",
+  "versioneRelease": "The download is the latest version published on GitHub."
+}
