@@ -24,6 +24,7 @@ import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js'
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { leggiRecupero, salvaRecupero, togliRecupero } from '../utils/recupero.js';
+import { passoDopoSerie, giroDi, gruppiDi } from '../utils/superset.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaData, formattaDurata, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -124,6 +125,9 @@ export default function WorkoutLive() {
   // The exercise whose set started the rest: once finished, "one more set" of it
   // from the bar at the top, without going through the exercise picker
   const [recuperoDi, setRecuperoDi] = useState(recuperoSalvato?.esercizio ?? null);
+  // In a superset or circuit: the rest after the round ('giro') or the pause
+  // between two members of the same round ('pausa'); null otherwise
+  const [tipoRecupero, setTipoRecupero] = useState(recuperoSalvato?.tipo ?? null);
   const timerAttivo = recuperoAvviato && !(timer.secondiRimasti === 0 && !timer.inCorso);
   const nuoviRecord = chiusura.risposta?.recordPersonali || [];
   // Closed hours after the last set: the server makes it end there (and it cannot be resumed)
@@ -309,11 +313,18 @@ export default function WorkoutLive() {
     return serieCompletate.filter(s => s.esercizioId === es.esercizioId && diLavoro(s)).length;
   }, [esercizi, serieCompletate]);
 
+  // Sets done or skipped: in a superset or circuit the skipped ones are kept
+  // on the member (saltate), because the turns go by them. Outside a group
+  // saltate is never set, and this is the count of sets done
+  const fatteDi = useCallback(
+    idxEsercizio => contaSeriePerEsercizio(idxEsercizio) + (esercizi[idxEsercizio]?.saltate ?? 0),
+    [esercizi, contaSeriePerEsercizio]);
+
   const esercizioCompletato = useCallback((idxEsercizio) => {
     const es = esercizi[idxEsercizio];
     if (!es) return false;
-    return contaSeriePerEsercizio(idxEsercizio) >= serieDiOggi(es);
-  }, [esercizi, contaSeriePerEsercizio]);
+    return fatteDi(idxEsercizio) >= serieDiOggi(es);
+  }, [esercizi, fatteDi]);
 
   // Find the next NOT completed exercise (starting from the given index)
   const prossimoEsercizioNonCompletato = useCallback((daDove = 0) => {
@@ -334,6 +345,17 @@ export default function WorkoutLive() {
 
   // Next not completed index (for navigation)
   const prossimoIdx = prossimoEsercizioNonCompletato(esercizioIdx + 1);
+
+  // --- Supersets and circuits (utils/superset.js) ---
+  // Labels A1, A2... of the members, the round of the current one, and what
+  // comes after this set: the same step completaSerie will take
+  const gruppi = useMemo(() => gruppiDi(esercizi), [esercizi]);
+  /** For each exercise, the sets done or skipped; the current one as if this set were done */
+  const fatteDopoQuesta = () => esercizi.map((_, i) => (i === esercizioIdx ? serieCorrente : fatteDi(i)));
+  const giro = giroDi(esercizi, esercizi.map((_, i) => fatteDi(i)), esercizioIdx);
+  const passoPrevisto = giro ? passoDopoSerie(esercizi, fatteDopoQuesta(), esercizioIdx) : null;
+  /** "A2 · Rowing" in a group, the name alone outside */
+  const nomeConEtichetta = i => (gruppi[i] ? `${gruppi[i].etichetta} · ` : '') + nomeEsercizio(esercizi[i].esercizio);
 
   // Time calculation
   const oreMinuti = oraAttuale.toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' });
@@ -465,15 +487,18 @@ export default function WorkoutLive() {
       return { ...dati, idClient: voce.id, registrataIl: voce.il };
     });
     const nuoveCompletate = [...serieCompletate, ...registrate];
-    // Once the exercise is finished we move straight to the next not completed one.
-    // prossimoIdx already excludes the current exercise, and this set does not
-    // change the state of the others: the value computed in render is the right one.
-    const passaAvanti = serieCorrente >= serieDiOggi(esercizioAttuale) && prossimoIdx !== -1;
+    // Where we go (utils/superset.js): outside a group, once the exercise is
+    // finished, straight to the next not completed one; in a superset or
+    // circuit, to the next member of the round. This set does not change the
+    // state of the others: the counts of this render are the right ones.
+    const passo = passoDopoSerie(esercizi, fatteDopoQuesta(), esercizioIdx);
+    const verso = passo.prossimoIdx;
+    const passaAvanti = verso !== -1 && verso !== esercizioIdx;
     if (passaAvanti) {
-      const verso = statoEsercizio(prossimoIdx, form);
-      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: prossimoIdx, ...verso });
+      const stato = statoEsercizio(verso, form);
+      salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, esercizioIdx: verso, ...stato });
       setSerieCompletate(nuoveCompletate);
-      apriEsercizio(prossimoIdx);
+      apriEsercizio(verso);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       // Weight and reps stay for the next set, the drop sets do not
@@ -484,14 +509,37 @@ export default function WorkoutLive() {
       setForm(formDopo);
     }
 
-    // Rest: the one of the exercise just finished, even if we have already moved on
-    const prossimo = passaAvanti
-      ? t('workoutLive.recupero.notifica', { nome: nomeEsercizio(esercizi[prossimoIdx].esercizio), numero: 1 })
-      : t('workoutLive.recupero.notifica', { nome: nomeEsercizio(esercizioAttuale.esercizio), numero: serieCorrente + 1 });
-    if (esercizioAttuale?.recuperoSecondi) avviaRecupero(esercizioAttuale.recuperoSecondi, passaAvanti, prossimo, esercizioIdx);
-    else fermaRecupero();
+    avviaRecuperoDopo(passo, nuoveCompletate);
   };
 
+  /**
+   * The rest after a set, from the step it took (passoDopoSerie): 0 means
+   * straight on, no timer. Outside a group, the exercise's rest. In a group,
+   * the pause between members is only on the screen; the rest after the
+   * round also sends the end-of-rest push, once per round.
+   */
+  const avviaRecuperoDopo = (passo, serieDopo) => {
+    const verso = passo.prossimoIdx;
+    const inGruppo = Boolean(gruppi[esercizioIdx]);
+    if (!(passo.recuperoSecondi > 0)) {
+      fermaRecupero();
+      return;
+    }
+    const stessa = verso === -1 || verso === esercizioIdx;
+    const numero = stessa ? serieCorrente + 1 : statoEsercizio(verso, form, serieDopo).serieCorrente;
+    const nome = nomeEsercizio(esercizi[stessa ? esercizioIdx : verso].esercizio);
+    const versoInGruppo = !stessa && gruppi[verso] && gruppi[verso].lettera === gruppi[esercizioIdx]?.lettera;
+    const prossimo = inGruppo && passo.fineGiro && (stessa || versoInGruppo)
+      ? t('workoutLive.recupero.notificaGiro', { giro: numero, nome })
+      : t('workoutLive.recupero.notifica', { nome, numero });
+    const tipo = inGruppo ? (passo.fineGiro ? 'giro' : 'pausa') : null;
+    avviaRecupero(passo.recuperoSecondi, !stessa, prossimo, esercizioIdx, { tipo, avvisa: tipo !== 'pausa' });
+  };
+
+  // A skipped set counts as done: the same step as a set (passoDopoSerie).
+  // Outside a group nothing else changes and no rest starts. In a superset or
+  // circuit it is kept on the member (saltate), and a skip that closes the
+  // round starts the rest after the round only if someone did a set in it.
   const saltaSerie = () => {
     if (inviandoRef.current) return;
     riposaUnAttimo();
@@ -503,13 +551,25 @@ export default function WorkoutLive() {
       completato: false,
       motivoSaltoEsercizio: 'Saltata'
     });
-    if (serieCorrente >= serieDiOggi(esercizioAttuale) && prossimoIdx !== -1) {
-      salvaProgressi({ ...statoAttuale(), esercizioIdx: prossimoIdx, ...statoEsercizio(prossimoIdx, form) });
-      cambiaEsercizio(prossimoIdx);
+    const inGruppo = Boolean(gruppi[esercizioIdx]);
+    const eserciziDopo = inGruppo
+      ? esercizi.map((es, i) => (i === esercizioIdx ? { ...es, saltate: (es.saltate ?? 0) + 1 } : es))
+      : esercizi;
+    if (inGruppo) setEserciziLive(eserciziDopo);
+    const passo = passoDopoSerie(esercizi, fatteDopoQuesta(), esercizioIdx);
+    const verso = passo.prossimoIdx;
+    if (verso !== -1 && verso !== esercizioIdx) {
+      salvaProgressi({ ...statoAttuale(), eserciziLive: eserciziDopo, esercizioIdx: verso, ...statoEsercizio(verso, form) });
+      cambiaEsercizio(verso);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      salvaProgressi({ ...statoAttuale(), serieCorrente: serieCorrente + 1 });
+      salvaProgressi({ ...statoAttuale(), eserciziLive: eserciziDopo, serieCorrente: serieCorrente + 1 });
       setSerieCorrente(serieCorrente + 1);
+    }
+    if (inGruppo && passo.fineGiro) {
+      const membri = esercizi.filter((_, i) => gruppi[i]?.lettera === gruppi[esercizioIdx].lettera).map(es => es.esercizioId);
+      const qualcunoHaFatto = serieCompletate.some(s => membri.includes(s.esercizioId) && diLavoro(s) && s.serieNumero === serieCorrente);
+      if (qualcunoHaFatto) avviaRecuperoDopo(passo, serieCompletate);
     }
   };
 
@@ -533,13 +593,14 @@ export default function WorkoutLive() {
    * (it used to start again from set 1, logging the same numbers twice), and
    * the fields for a new exercise with today's weight of this one, if any.
    */
-  const statoEsercizio = (indice, f) => {
+  const statoEsercizio = (indice, f, serie = serieCompletate) => {
     const es = esercizi[indice];
-    const fatte = es ? serieCompletate.filter(s => s.esercizioId === es.esercizioId && diLavoro(s)) : [];
+    const fatte = es ? serie.filter(s => s.esercizioId === es.esercizioId && diLavoro(s)) : [];
     const ultima = fatte[fatte.length - 1];
     const nuovo = formPerNuovoEsercizio(f);
     return {
-      serieCorrente: fatte.length + 1,
+      // Skipped sets of a superset member count too (saltate, see fatteDi)
+      serieCorrente: fatte.length + (es?.saltate ?? 0) + 1,
       form: ultima && ultima.pesoEffettivo > 0 ? { ...nuovo, peso: String(ultima.pesoEffettivo) } : nuovo
     };
   };
@@ -557,9 +618,9 @@ export default function WorkoutLive() {
   // --- Sets of today (utils/ripresa.js, serieDiOggi) ---
   // One more because today there is strength to spare, one less: only this
   // workout changes, the plan stays as it is. Never fewer than those already done.
-  const minimoSerieOggi = indice => limitaSerieOggi(1, contaSeriePerEsercizio(indice));
+  const minimoSerieOggi = indice => limitaSerieOggi(1, fatteDi(indice));
   const cambiaSerieOggi = (indice, quante) => setEserciziLive(prev => prev.map((es, i) =>
-    (i === indice ? { ...es, serieOggi: limitaSerieOggi(quante, contaSeriePerEsercizio(indice)) } : es)));
+    (i === indice ? { ...es, serieOggi: limitaSerieOggi(quante, fatteDi(indice)) } : es)));
   const aggiungiSerieOggi = indice => cambiaSerieOggi(indice, (serieDiOggi(esercizi[indice]) ?? 0) + 1);
   const togliSerieOggi = indice => cambiaSerieOggi(indice, (serieDiOggi(esercizi[indice]) ?? 1) - 1);
 
@@ -581,22 +642,29 @@ export default function WorkoutLive() {
    * @param {boolean} inCima - rest at the top, above the next exercise
    * @param {string} prossimo - what comes next, for the notification: "Panca piana · serie 2"
    * @param {number} esercizio - index of the exercise whose set starts it
+   * @param {{ tipo?: 'giro'|'pausa'|null, avvisa?: boolean }} [opzioni] - tipo: in a superset or
+   *   circuit, the rest after the round or a pause in it; avvisa: false for no end-of-rest push
    */
-  const avviaRecupero = (secondi, inCima, prossimo, esercizio) => {
+  const avviaRecupero = (secondi, inCima, prossimo, esercizio, { tipo = null, avvisa = true } = {}) => {
     const fine = adesso() + secondi * 1000;
     timer.avvia(secondi, { fine });
     setDurataRecupero(secondi);
     setRecuperoAvviato(true);
     setRecuperoInCima(inCima);
     setRecuperoDi(esercizio);
+    setTipoRecupero(tipo);
     // The app's timer stops with the screen locked: tell the server, with
-    // this workout, where the tap on the notification comes back to
-    if (push.iscritto) {
+    // this workout, where the tap on the notification comes back to. A
+    // pause between two members of a round has no push (short, and you are
+    // moving to the next machine): one still pending from before goes away
+    if (push.iscritto && avvisa) {
       avvisoRecuperoRef.current = true;
       api.post('/notifiche/push/recupero', { secondi, prossimo, sessioneId: Number(id) }).catch(() => {});
+    } else {
+      annullaAvvisoRecupero();
     }
     // Kept on the phone: closed and reopened, the app finds the rest where the clock says
-    recuperoRef.current = { fine, durata: secondi, inCima, avvisato: avvisoRecuperoRef.current, esercizio };
+    recuperoRef.current = { fine, durata: secondi, inCima, avvisato: avvisoRecuperoRef.current, esercizio, tipo };
     salvaRecupero(id, recuperoRef.current);
   };
 
@@ -962,8 +1030,10 @@ export default function WorkoutLive() {
           <div className="max-w-lg mx-auto rounded-[var(--raggio-md)] border border-[var(--accent)]/40 bg-[var(--bg-secondario)] shadow-lg overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-2.5">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">{t('workoutLive.recupero.titolo')}</p>
-                <p className="text-xs text-[var(--testo-secondario)] truncate">{t('workoutLive.recupero.prossimo', { nome: nomeEsercizio(esercizioAttuale.esercizio) })}</p>
+                <p className="text-[10px] uppercase tracking-wider text-[var(--testo-terziario)]">
+                  {t(tipoRecupero === 'giro' ? 'workoutLive.recupero.dopoGiro' : tipoRecupero === 'pausa' ? 'workoutLive.recupero.pausa' : 'workoutLive.recupero.titolo')}
+                </p>
+                <p className="text-xs text-[var(--testo-secondario)] truncate">{t('workoutLive.recupero.prossimo', { nome: nomeConEtichetta(esercizioIdx) })}</p>
               </div>
               <p className="text-3xl font-extrabold tabular-nums leading-none testo-gradient" role="timer" aria-label={t('workoutLive.recupero.ariaTimer', { tempo: formattaTempo(timer.secondiRimasti) })}>
                 {formattaTempo(timer.secondiRimasti)}
@@ -1011,6 +1081,24 @@ export default function WorkoutLive() {
         {/* Exercise name */}
         <motion.div key={esercizioIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                     className="text-center py-2">
+          {/* In a superset or circuit: which one, the round, and what comes after this set */}
+          {giro && (
+            <div className="flex flex-col items-center gap-1 mb-2">
+              <p className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--accent)] bg-[var(--accent-dim)] px-2.5 py-1 rounded-full">
+                <span className="tabular-nums">{giro.etichetta}</span>
+                <span aria-hidden="true">·</span>
+                <span>{t(giro.tipo === 'superset' ? 'workoutLive.superset.giroSuperset' : 'workoutLive.superset.giroCircuito',
+                  { lettera: giro.lettera, giro: giro.giro, giri: giro.giri })}</span>
+              </p>
+              {passoPrevisto && passoPrevisto.prossimoIdx !== -1 && passoPrevisto.prossimoIdx !== esercizioIdx && (
+                <p className="text-xs text-[var(--testo-secondario)] max-w-full truncate">
+                  {passoPrevisto.fineGiro && passoPrevisto.recuperoSecondi > 0
+                    ? t('workoutLive.superset.poiRecupero', { tempo: formattaTempo(passoPrevisto.recuperoSecondi), nome: nomeConEtichetta(passoPrevisto.prossimoIdx) })
+                    : t('workoutLive.superset.poi', { nome: nomeConEtichetta(passoPrevisto.prossimoIdx) })}
+                </p>
+              )}
+            </div>
+          )}
           <h2 className="text-xl md:text-2xl font-bold">{nomeEsercizio(esercizioAttuale.esercizio)}</h2>
           <p className="text-sm text-[var(--testo-terziario)] mt-1">
             {nomeGruppo(esercizioAttuale.esercizio.gruppoMuscoloPrimario)}
@@ -1023,7 +1111,11 @@ export default function WorkoutLive() {
                   if (esercizioAttuale.livelloResistenza != null) p.push(t('workoutLive.esercizio.livello', { valore: esercizioAttuale.livelloResistenza }));
                   return p.length ? ' · ' + p.join(' · ') : '';
                 })()
-              : ` · ${t('workoutLive.esercizio.riepilogoSerie', { serie: serieDiOggi(esercizioAttuale), rep: esercizioAttuale.repTarget, secondi: esercizioAttuale.recuperoSecondi })}`}
+              // In a group the member's rest is a pause in the round, not after the
+              // set: what comes next (and the rest after the round) is in the heading
+              : giro
+                ? ` · ${t('workoutLive.esercizio.riepilogoSerieGruppo', { serie: serieDiOggi(esercizioAttuale), rep: esercizioAttuale.repTarget })}`
+                : ` · ${t('workoutLive.esercizio.riepilogoSerie', { serie: serieDiOggi(esercizioAttuale), rep: esercizioAttuale.repTarget, secondi: esercizioAttuale.recuperoSecondi })}`}
           </p>
         </motion.div>
 

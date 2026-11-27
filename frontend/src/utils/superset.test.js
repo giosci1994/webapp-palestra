@@ -3,7 +3,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   normalizzaGruppi, eCardioOriscaldamento, letteraGruppo, gruppiDi, blocchiDi, puoUnire,
-  unisci, separa, impostaGiri, giriDi, ultimoDelGruppo, sposta, leggiSecondi
+  unisci, separa, impostaGiri, giriDi, ultimoDelGruppo, sposta, leggiSecondi,
+  passoDopoSerie, giroDi, membroDiTurno, RECUPERO_PREDEFINITO
 } from './superset.js';
 
 const voce = (esercizioId, gruppo, altro = {}) => ({ esercizioId, gruppo, ...altro });
@@ -185,5 +186,181 @@ describe('leggiSecondi', () => {
     expect(leggiSecondi('', 90)).toBe(90);
     expect(leggiSecondi('abc')).toBe(null);
     expect(leggiSecondi('-5', 0)).toBe(0);
+  });
+});
+
+// --- During the workout ---
+
+/**
+ * A whole workout set by set, starting at `inizio`, as WorkoutLive does it:
+ * after each set the step says where to go. Returns the steps as
+ * "index:rest" ('·' after the rest when it closes a round), so a test reads
+ * like the order of the sets.
+ */
+function allenamento(lista, inizio = 0) {
+  const fatte = lista.map(() => 0);
+  const passi = [];
+  let idx = inizio;
+  while (idx !== -1 && passi.length < 100) {
+    fatte[idx]++;
+    const passo = passoDopoSerie(lista, fatte, idx);
+    passi.push(`${idx}:${passo.recuperoSecondi}${passo.fineGiro ? '·' : ''}`);
+    idx = passo.prossimoIdx;
+  }
+  return passi;
+}
+
+describe('passoDopoSerie: a plan without groups works as before', () => {
+  const lista = [forza(1, null, 60, 2), forza(2, null, 120, 2)];
+
+  it('the same exercise while it has sets, then the next one, each with its rest', () => {
+    expect(allenamento(lista)).toEqual(['0:60', '0:60', '1:120', '1:120']);
+    expect(passoDopoSerie(lista, [1, 0], 0)).toEqual({ prossimoIdx: 0, recuperoSecondi: 60, fineGiro: false });
+    expect(passoDopoSerie(lista, [2, 0], 0)).toEqual({ prossimoIdx: 1, recuperoSecondi: 60, fineGiro: false });
+  });
+
+  it('nothing after it: back to an exercise skipped earlier, then -1 when all is done', () => {
+    expect(passoDopoSerie(lista, [0, 2], 1).prossimoIdx).toBe(0);
+    expect(passoDopoSerie(lista, [2, 2], 1).prossimoIdx).toBe(-1);
+  });
+
+  it('rest 0 stays 0 (no timer), a missing rest is the usual 90 seconds', () => {
+    expect(passoDopoSerie([forza(1, null, 0, 3)], [1], 0).recuperoSecondi).toBe(0);
+    expect(passoDopoSerie([forza(1, null, null, 3)], [1], 0).recuperoSecondi).toBe(RECUPERO_PREDEFINITO);
+    expect(passoDopoSerie([{ esercizioId: 1, serieTarget: 3 }], [1], 0).recuperoSecondi).toBe(90);
+  });
+
+  it('an index that does not exist: nothing to do', () => {
+    expect(passoDopoSerie(lista, [0, 0], 5)).toEqual({ prossimoIdx: -1, recuperoSecondi: 0, fineGiro: false });
+  });
+});
+
+describe('passoDopoSerie: superset', () => {
+  // A1 straight into A2 (pause 0), 90 seconds after the round, 3 rounds
+  const superset = [forza(1, 1, 0, 3), forza(2, 1, 90, 3)];
+
+  it('A1 → A2 with no timer, rest after the round, back to A1, three rounds', () => {
+    expect(allenamento(superset)).toEqual(['0:0', '1:90·', '0:0', '1:90·', '0:0', '1:90·']);
+  });
+
+  it('a pause between the members: the first member\'s rest, not after the round', () => {
+    const conPausa = [forza(1, 1, 15, 2), forza(2, 1, 120, 2)];
+    expect(passoDopoSerie(conPausa, [1, 0], 0)).toEqual({ prossimoIdx: 1, recuperoSecondi: 15, fineGiro: false });
+    expect(passoDopoSerie(conPausa, [1, 1], 1)).toEqual({ prossimoIdx: 0, recuperoSecondi: 120, fineGiro: true });
+  });
+
+  it('rest 0 after the round: straight back to A1; a missing pause in the round is 0, a missing rest after it 90', () => {
+    expect(allenamento([forza(1, 1, 0, 2), forza(2, 1, 0, 2)])).toEqual(['0:0', '1:0·', '0:0', '1:0·']);
+    const senza = [forza(1, 1, null, 2), forza(2, 1, null, 2)];
+    expect(passoDopoSerie(senza, [1, 0], 0).recuperoSecondi).toBe(0);
+    expect(passoDopoSerie(senza, [1, 1], 1).recuperoSecondi).toBe(90);
+  });
+
+  it('different sets: the round goes on with whoever still has sets (A1 4, A2 3)', () => {
+    const diversi = [forza(1, 1, 0, 4), forza(2, 1, 60, 3)];
+    expect(allenamento(diversi)).toEqual(['0:0', '1:60·', '0:0', '1:60·', '0:0', '1:60·', '0:60·']);
+    // and the other way round (A1 2, A2 3): the last rounds are A2 alone
+    expect(allenamento([forza(1, 1, 0, 2), forza(2, 1, 60, 3)])).toEqual(['0:0', '1:60·', '0:0', '1:60·', '1:60·']);
+  });
+
+  it('the member alone in its last rounds rests after each set with the rest after the round', () => {
+    expect(passoDopoSerie([forza(1, 1, 0, 4), forza(2, 1, 60, 3)], [4, 3], 0))
+      .toEqual({ prossimoIdx: -1, recuperoSecondi: 60, fineGiro: true });
+  });
+
+  it('one more set today (serieOggi) adds a round for that member, one less takes it away', () => {
+    const inPiu = [{ ...forza(1, 1, 0, 2), serieOggi: 3 }, forza(2, 1, 60, 2)];
+    expect(allenamento(inPiu)).toEqual(['0:0', '1:60·', '0:0', '1:60·', '0:60·']);
+    const inMeno = [forza(1, 1, 0, 3), { ...forza(2, 1, 60, 3), serieOggi: 2 }];
+    expect(allenamento(inMeno)).toEqual(['0:0', '1:60·', '0:0', '1:60·', '0:60·']);
+  });
+
+  it('a skipped set counts as done: the step is the same', () => {
+    // A2's second set skipped: still back to A1 for the third round
+    expect(passoDopoSerie(superset, [2, 2], 1)).toEqual({ prossimoIdx: 0, recuperoSecondi: 90, fineGiro: true });
+  });
+
+  it('a member skipped altogether (all its sets counted) leaves the round, the other goes on alone', () => {
+    // A1 skipped: its sets are all counted, A2 does its rounds alone
+    expect(passoDopoSerie(superset, [3, 1], 1)).toEqual({ prossimoIdx: 1, recuperoSecondi: 90, fineGiro: true });
+    // A2 skipped in the middle of the workout: A1 goes on alone, with the rest after the round
+    expect(passoDopoSerie(superset, [2, 3], 0)).toEqual({ prossimoIdx: 0, recuperoSecondi: 90, fineGiro: true });
+  });
+
+  it('warm-up entries are no member: the round is the two strength exercises', () => {
+    const lista = [{ esercizioId: 9, riscaldamento: true, durataMinuti: 5, gruppo: 1, serieTarget: 1 }, ...superset];
+    expect(passoDopoSerie(lista, [1, 0, 0], 0)).toEqual({ prossimoIdx: 1, recuperoSecondi: 90, fineGiro: false });
+    expect(passoDopoSerie(lista, [1, 1, 0], 1)).toEqual({ prossimoIdx: 2, recuperoSecondi: 0, fineGiro: false });
+  });
+});
+
+describe('passoDopoSerie: a group inside a plan', () => {
+  // Squat, then superset A (Bench A1, Row A2), then Curl
+  const scheda = [forza(1, null, 120, 2), forza(2, 1, 0, 2), forza(3, 1, 75, 2), forza(4, null, 60, 2)];
+
+  it('before, in turn, after: the whole workout', () => {
+    expect(allenamento(scheda)).toEqual([
+      '0:120', '0:120',
+      '1:0', '2:75·', '1:0', '2:75·',
+      '3:60', '3:60'
+    ]);
+  });
+
+  it('every round done: the first exercise not finished after the group, with the rest after the round', () => {
+    expect(passoDopoSerie(scheda, [2, 2, 2, 0], 2)).toEqual({ prossimoIdx: 3, recuperoSecondi: 75, fineGiro: true });
+    // Curl already done: back to an exercise left before the group
+    expect(passoDopoSerie(scheda, [0, 2, 2, 2], 2).prossimoIdx).toBe(0);
+    expect(passoDopoSerie(scheda, [2, 2, 2, 2], 2).prossimoIdx).toBe(-1);
+  });
+
+  it('the exercise before the group, finished, goes to the first member', () => {
+    expect(passoDopoSerie(scheda, [2, 0, 0, 0], 0)).toEqual({ prossimoIdx: 1, recuperoSecondi: 120, fineGiro: false });
+  });
+
+  it('a circuit of three: A1 → A2 → A3 → rest → A1', () => {
+    const circuito = [forza(1, 2, 0, 2), forza(2, 2, 10, 2), forza(3, 2, 60, 2)];
+    expect(allenamento(circuito)).toEqual(['0:0', '1:10', '2:60·', '0:0', '1:10', '2:60·']);
+    // A2 finished early (skipped): A3 → A1 in the round
+    expect(passoDopoSerie(circuito, [2, 2, 1], 0)).toEqual({ prossimoIdx: 2, recuperoSecondi: 0, fineGiro: false });
+  });
+
+  it('two groups one after the other: the second starts when the first is done', () => {
+    const due = [forza(1, 1, 0, 1), forza(2, 1, 30, 1), forza(3, 2, 0, 1), forza(4, 2, 45, 1)];
+    expect(allenamento(due)).toEqual(['0:0', '1:30·', '2:0', '3:45·']);
+  });
+});
+
+describe('giroDi', () => {
+  const scheda = [forza(1, null), forza(2, 1, 0, 4), forza(3, 1, 90, 3), forza(4, 1, 90, 3)];
+
+  it('outside a group: null', () => {
+    expect(giroDi(scheda, [0, 0, 0, 0], 0)).toBeNull();
+  });
+
+  it('the member\'s label, the round of its next set, the most sets of a member as rounds', () => {
+    expect(giroDi(scheda, [3, 1, 1, 0], 3)).toEqual({ lettera: 'A', etichetta: 'A3', tipo: 'circuito', giro: 1, giri: 4 });
+    expect(giroDi(scheda, [3, 1, 0, 0], 1)).toEqual({ lettera: 'A', etichetta: 'A1', tipo: 'circuito', giro: 2, giri: 4 });
+  });
+
+  it('a superset; once a member is done, its last round', () => {
+    const superset = [forza(1, 1, 0, 2), forza(2, 1, 60, 2)];
+    expect(giroDi(superset, [2, 2], 0)).toMatchObject({ tipo: 'superset', giro: 2, giri: 2 });
+  });
+});
+
+describe('membroDiTurno (resuming a workout)', () => {
+  const scheda = [forza(1, null, 90, 2), forza(2, 1, 0, 3), forza(3, 1, 90, 3)];
+
+  it('half a round done: the member whose turn it is', () => {
+    expect(membroDiTurno(scheda, [2, 2, 1], 1)).toBe(2);
+  });
+
+  it('round complete: the first member', () => {
+    expect(membroDiTurno(scheda, [2, 1, 1], 1)).toBe(1);
+  });
+
+  it('a member already finished does not count, outside a group the index itself', () => {
+    expect(membroDiTurno([forza(1, 1, 0, 4), forza(2, 1, 60, 2)], [3, 2], 0)).toBe(0);
+    expect(membroDiTurno(scheda, [0, 0, 0], 0)).toBe(0);
   });
 });

@@ -191,3 +191,110 @@ export function leggiSecondi(valore, vuoto = null) {
   const n = parseInt(valore, 10);
   return Number.isNaN(n) || n < 0 ? vuoto : n;
 }
+
+// --- During the workout (pagine/WorkoutLive.jsx) ---
+
+/** The rest when a plan has none: 0 is a valid rest (no timer), a missing value is not */
+export const RECUPERO_PREDEFINITO = 90;
+
+/** A rest from the plan: 0 stays 0, a missing or broken value gives `base` */
+const secondiDi = (valore, base) => (Number.isInteger(valore) && valore >= 0 ? valore : base);
+
+// Today's sets of an entry, as serieDiOggi in ripresa.js (not imported from
+// there: ripresa.js imports this file)
+const serieDelGiorno = e => e?.serieOggi ?? e?.serieTarget ?? 0;
+
+/**
+ * The first entry with sets still to do, looking from `da` to the end and
+ * then from the start, never `escluso`: -1 when everything is done.
+ */
+function primoDaFare(lista, fatte, da, escluso) {
+  for (let passo = 0; passo < lista.length; passo++) {
+    const i = (da + passo) % lista.length;
+    if (i !== escluso && (fatte[i] ?? 0) < serieDelGiorno(lista[i])) return i;
+  }
+  return -1;
+}
+
+/**
+ * Where the workout goes after a set (done or skipped) of the entry at `idx`.
+ *
+ * Outside a group, the same as before supersets: the same exercise while it
+ * has sets to do, then the first one not finished after it (from the start
+ * when there is none after), with that exercise's rest.
+ *
+ * In a group (superset, circuit) the members are done in turn: after a member
+ * comes the next member of the round with sets still to do, after that
+ * member's pause (0 by default: straight on, no timer). When no member after
+ * it has sets left the round is over: the rest after the round (the last
+ * member's) and back to the first member with sets to do; members with fewer
+ * sets simply drop out of the later rounds. With every round done, the first
+ * exercise not finished after the group.
+ *
+ * @param {object[]} esercizi - the workout's entries, with gruppo, serieTarget, serieOggi, recuperoSecondi
+ * @param {number[]} fatte - for each entry, the working sets done or skipped, counting this one
+ *   (warm-up and drop sets do not count)
+ * @param {number} idx - the entry whose set was just done
+ * @returns {{ prossimoIdx: number, recuperoSecondi: number, fineGiro: boolean }}
+ *   prossimoIdx -1: nothing left to do; fineGiro: the set closed a round of a group
+ */
+export function passoDopoSerie(esercizi, fatte, idx) {
+  const lista = normalizzaGruppi(esercizi);
+  const attuale = lista[idx];
+  if (!attuale) return { prossimoIdx: -1, recuperoSecondi: 0, fineGiro: false };
+  const daFare = i => (fatte[i] ?? 0) < serieDelGiorno(lista[i]);
+
+  if (attuale.gruppo == null) {
+    const recuperoSecondi = secondiDi(attuale.recuperoSecondi, RECUPERO_PREDEFINITO);
+    const prossimoIdx = daFare(idx) ? idx : primoDaFare(lista, fatte, idx + 1, idx);
+    return { prossimoIdx, recuperoSecondi, fineGiro: false };
+  }
+
+  const { primo, ultimo } = estremi(lista, idx);
+  for (let i = idx + 1; i <= ultimo; i++) {
+    if (daFare(i)) return { prossimoIdx: i, recuperoSecondi: secondiDi(attuale.recuperoSecondi, 0), fineGiro: false };
+  }
+  // The round is over: its rest is the last member's
+  const recuperoSecondi = secondiDi(lista[ultimo].recuperoSecondi, RECUPERO_PREDEFINITO);
+  for (let i = primo; i <= ultimo; i++) {
+    if (daFare(i)) return { prossimoIdx: i, recuperoSecondi, fineGiro: true };
+  }
+  // Every round done: on to the rest of the workout
+  return { prossimoIdx: primoDaFare(lista, fatte, ultimo + 1, -1), recuperoSecondi, fineGiro: true };
+}
+
+/**
+ * The round the entry at `idx` is in, for the heading "Superset A · round 2/4":
+ * null outside a group. The rounds are the most sets of a member today; the
+ * current round is the member's next set (the last round once it is done).
+ * @param {number[]} fatte - for each entry, the working sets done or skipped
+ * @returns {null | { lettera: string, etichetta: string, tipo: 'superset'|'circuito', giro: number, giri: number }}
+ */
+export function giroDi(esercizi, fatte, idx) {
+  const gruppo = gruppiDi(esercizi)[idx];
+  if (!gruppo) return null;
+  const lista = normalizzaGruppi(esercizi);
+  const { primo, ultimo } = estremi(lista, idx);
+  const giri = Math.max(1, ...lista.slice(primo, ultimo + 1).map(serieDelGiorno));
+  const giro = Math.min(giri, (fatte[idx] ?? 0) + 1);
+  return { lettera: gruppo.lettera, etichetta: gruppo.etichetta, tipo: gruppo.tipo, giro, giri };
+}
+
+/**
+ * Where to start again inside a group when the workout is rebuilt from the
+ * server: the member with the fewest sets among those with sets to do (the
+ * first one when they are even), so a round half done goes on from the
+ * member whose turn it is. Outside a group, `idx` itself.
+ * @param {number[]} fatte - for each entry, the working sets done or skipped
+ */
+export function membroDiTurno(esercizi, fatte, idx) {
+  const lista = normalizzaGruppi(esercizi);
+  if (lista[idx]?.gruppo == null) return idx;
+  const { primo, ultimo } = estremi(lista, idx);
+  let scelto = -1;
+  for (let i = primo; i <= ultimo; i++) {
+    if ((fatte[i] ?? 0) >= serieDelGiorno(lista[i])) continue;
+    if (scelto === -1 || (fatte[i] ?? 0) < (fatte[scelto] ?? 0)) scelto = i;
+  }
+  return scelto === -1 ? idx : scelto;
+}
