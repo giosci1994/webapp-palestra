@@ -342,9 +342,9 @@ export default function AdminEsercizi() {
                 <p className="text-sm font-medium truncate">{nomeEsercizio(e)}</p>
                 <p className="text-[10px] text-[var(--testo-terziario)]">{nomeGruppo(e.gruppoMuscoloPrimario)}{e.gruppoMuscoloSecondario ? ` + ${nomeGruppo(e.gruppoMuscoloSecondario)}` : ''}{e.attrezzatura ? ` · ${nomeAttrezzatura(e.attrezzatura.nome)}` : ''}</p>
               </div>
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => apriForm(e)} className="text-xs text-[var(--accent)] px-1">✏️</button>
-                <button onClick={() => elimina(e.id)} className="text-xs text-[var(--pericolo)] px-1">🗑️</button>
+              <div className="flex gap-1">
+                <button onClick={() => apriForm(e)} className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-xs text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-colors">✏️</button>
+                <button onClick={() => elimina(e.id)} className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-xs text-[var(--pericolo)] hover:bg-[var(--pericolo-dim)] transition-colors">🗑️</button>
               </div>
             </motion.div>
           ))}
