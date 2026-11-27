@@ -1,0 +1,45 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "GymMaster",
+  "version": "0.0.0",
+  "identifier": "uk.casadm.gymmaster",
+  "build": {
+    "frontendDist": "https://gymmaster.casadm.uk/"
+  },
+  "app": {
+    "windows": [],
+    "security": {
+      "capabilities": []
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "createUpdaterArtifacts": true,
+    "publisher": "GymMaster",
+    "shortDescription": "GymMaster",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU0RThEMzE4NzZDQkMxNjEKUldSaHdjdDJHTlBvVkIxN3RyVlZOcVNEVitrNStKOGQxWlFrdWZBUm5zUVpZZVppRmt4RlpaSGwK",
+      "endpoints": [
+        "https://github.com/giosci1994/webapp-palestra/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}
