@@ -11,7 +11,7 @@ export default function CookiePolicy() {
   return (
     <div className="min-h-screen bg-[var(--bg-primario)] text-[var(--testo-primario)]">
       <div className="max-w-3xl mx-auto p-6 md:p-12">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] mb-8 transition-colors">
+        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] mb-8 transition-colors">
           <ArrowLeft size={16} /> {t('cookiePolicy.tornaApp')}
         </Link>
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>

@@ -89,7 +89,7 @@ export default function Scarica() {
   return (
     <div className="min-h-screen flex justify-center text-[var(--testo-primario)]" style={SFONDO}>
       <div className="w-full max-w-lg">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] mb-6 transition-colors">
+        <Link to="/dashboard" className="inline-flex items-center gap-2 text-sm text-[var(--testo-terziario)] hover:text-[var(--testo-primario)] mb-6 transition-colors">
           <ArrowLeft size={16} /> {t('scarica.tornaApp')}
         </Link>
 
