@@ -16,6 +16,24 @@ import { avvisaSeDiUnAltro } from '../services/allenamentiDaControllare.service.
 import { SOLO_LAVORO, diLavoro, volumeDi, leggiTipo, ordineSerie } from '../utils/tipiSerie.js';
 import { annullaFineRecupero } from '../services/push.service.js';
 import { ID_MASSIMO } from '../middleware/validazione.js';
+import { gruppiPerEsercizio, normalizzaGruppi } from '../utils/superset.js';
+
+/**
+ * The superset group of each exercise of a workout's plan, as it is now:
+ * what a set logged now is saved with (LogSerie.gruppo). Taken from the plan
+ * on the server, not from the phone. Empty map for a free workout.
+ */
+async function gruppiDellaScheda(schedaId) {
+  if (schedaId == null) return new Map();
+  const esercizi = await prisma.esercizioScheda.findMany({
+    where: { schedaId },
+    orderBy: { ordineEsecuzione: 'asc' }
+  });
+  return gruppiPerEsercizio(esercizi);
+}
+
+/** The group of an exercise in a workout, from its sets: the first one that has it */
+const gruppoDaSerie = serie => serie.find(l => l.gruppo != null)?.gruppo ?? null;
 
 /** List of the user's workouts */
 export async function listaSessioni(req, res, next) {
@@ -70,9 +88,12 @@ export function formattaPerStorico(s) {
     if (!eserciziRaggruppati[log.esercizioId]) {
       eserciziRaggruppati[log.esercizioId] = {
         esercizio: log.esercizio,
+        // The superset or circuit the exercise was in that day (null: none)
+        gruppo: null,
         serie: []
       };
     }
+    if (eserciziRaggruppati[log.esercizioId].gruppo == null) eserciziRaggruppati[log.esercizioId].gruppo = log.gruppo ?? null;
     eserciziRaggruppati[log.esercizioId].serie.push({
       id: log.id,
       serieNumero: log.serieNumero,
@@ -496,7 +517,9 @@ export async function completaSessione(req, res, next) {
  * least one completed set, in the order you started them, with the sets done
  * and the reps (a number, or "min-max" if they changed). Rest, notes and
  * warm-up come from the plan followed, if the exercise was in it; for the
- * exercises without reps (cardio), the values of the last set.
+ * exercises without reps (cardio), the values of the last set. The supersets
+ * are the ones done that day (the sets' group), kept when their exercises
+ * are still next to each other.
  */
 export function eserciziDaSessione(logSerie, eserciziScheda = []) {
   const dallaScheda = new Map(eserciziScheda.map(e => [e.esercizioId, e]));
@@ -508,7 +531,7 @@ export function eserciziDaSessione(logSerie, eserciziScheda = []) {
     perEsercizio.get(serie.esercizioId).push(serie);
   }
 
-  return [...perEsercizio].map(([esercizioId, serie], i) => {
+  return normalizzaGruppi([...perEsercizio].map(([esercizioId, serie], i) => {
     const origine = dallaScheda.get(esercizioId);
     const rep = serie.map(s => s.repEffettive).filter(n => n > 0);
     const senzaRep = rep.length === 0;
@@ -527,9 +550,10 @@ export function eserciziDaSessione(logSerie, eserciziScheda = []) {
       velocitaKmh: senzaRep ? ultima.velocitaKmh : null,
       inclinazione: senzaRep ? ultima.inclinazione : null,
       livelloResistenza: senzaRep ? ultima.livelloResistenza : null,
-      distanzaKm: senzaRep ? ultima.distanzaKm : null
+      distanzaKm: senzaRep ? ultima.distanzaKm : null,
+      gruppo: gruppoDaSerie(serie)
     };
-  });
+  }));
 }
 
 const TITOLO_SCHEDA_MAX = 100;
@@ -732,6 +756,7 @@ export async function logSerie(req, res, next) {
       if (arrivata) return res.json({ successo: true, dati: arrivata });
     }
 
+    const gruppo = (await gruppiDellaScheda(sessione.schedaId)).get(idEsercizio) ?? null;
     let log;
     try {
       log = await prisma.logSerie.create({
@@ -740,6 +765,7 @@ export async function logSerie(req, res, next) {
           esercizioId: idEsercizio,
           serieNumero: numeroSerie,
           tipo: tipoSerie,
+          gruppo,
           ...valori,
           completato: completato !== false,
           idClient: idClient || null,
@@ -927,6 +953,11 @@ export async function registraSessionePassata(req, res, next) {
       const mancante = preparate.findIndex(r => !esistenti.has(r.esercizioId));
       if (mancante !== -1) throw new ErroreValidazione(t('sessioniController.serie.esercizioNonTrovato', { n: mancante + 1 }));
     }
+
+    // The superset of each set, from the plan (the phone's queue recreates
+    // here a workout done without a network)
+    const gruppi = await gruppiDellaScheda(idScheda);
+    for (const r of preparate) r.gruppo = gruppi.get(r.esercizioId) ?? null;
 
     const volume = volumeDi(preparate);
 
@@ -1185,8 +1216,10 @@ export async function modificaSessione(req, res, next) {
               tocca(r.esercizioId);
             }
           } else {
+            // A set added from the history joins the exercise's superset of that day
+            const gruppo = gruppoDaSerie(sessione.logSerie.filter(l => l.esercizioId === r.esercizioId));
             await tx.logSerie.create({
-              data: { pesoEffettivo: 0, repEffettive: 0, ...valori, sessioneId: id, esercizioId: r.esercizioId, completato: true }
+              data: { pesoEffettivo: 0, repEffettive: 0, ...valori, sessioneId: id, esercizioId: r.esercizioId, completato: true, gruppo }
             });
             tocca(r.esercizioId);
           }

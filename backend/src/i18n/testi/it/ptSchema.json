@@ -18,8 +18,9 @@
   "esercizioIdNonValido": "Ogni esercizio ha bisogno di un ID esercizio valido",
   "serieTargetNonValido": "Il numero di serie deve essere un numero intero da 1 a 100",
   "repTargetNonValido": "Le ripetizioni devono essere un testo, per esempio \"8-12\"",
-  "recuperoNonValido": "Il recupero deve essere un numero intero di secondi da 1 a 3600",
+  "recuperoNonValido": "Il recupero deve essere un numero intero di secondi da 0 a 3600",
   "schedaIdNonValido": "Serve un ID scheda valido",
   "destinatarioIdNonValido": "L'ID del destinatario non è valido",
-  "prioritaNonValida": "La priorità deve essere normale, importante o urgente"
+  "prioritaNonValida": "La priorità deve essere normale, importante o urgente",
+  "gruppoNonValido": "Il gruppo del superset non è valido"
 }

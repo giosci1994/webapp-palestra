@@ -433,6 +433,11 @@ model EsercizioScheda {
   recuperoSecondi  Int?    @map("recupero_secondi")
   ordineEsecuzione Int     @map("ordine_esecuzione")
 
+  // Exercises next to each other with the same number are done in turn
+  // (superset, or circuit with three or more): see utils/superset.js. Empty
+  // for an exercise done on its own
+  gruppo           Int?    @map("gruppo")
+
   // Technique cue for THIS exercise in THIS plan: posture corrections,
   // tempo, notes on one-sided execution. It lives here and not on the
   // exercise because it changes from plan to plan.
@@ -509,6 +514,11 @@ model LogSerie {
   // Chosen by the phone for each set: if the same set arrives twice (sent
   // without a network and then retried) it is logged only once
   idClient             String?   @map("id_client")
+  // The superset or circuit the exercise was in during this workout: the
+  // plan's group number when the set was logged (utils/superset.js), so the
+  // history shows it even after the plan changes. Empty outside a group, in
+  // a free workout and for sets logged before this column existed
+  gruppo               Int?      @map("gruppo")
 
   // Optional fields for CARDIO
   distanzaKm           Float?  @map("distanza_km")

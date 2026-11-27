@@ -8,6 +8,7 @@ import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.serv
 import { t } from '../i18n/index.js';
 import { ID_MASSIMO } from '../middleware/validazione.js';
 import { eliminaScheda as eliminaSchedaTenendoAllenamenti } from '../services/schede.service.js';
+import { normalizzaGruppi } from '../utils/superset.js';
 
 /**
  * Throws a 404 if one of the exercises does not exist: without the check the
@@ -26,7 +27,8 @@ async function verificaEserciziEsistenti(ids) {
 }
 
 // Maps an exercise entry (from the client) to EsercizioScheda data, keeping
-// the cardio fields (duration/speed/incline/resistance/distance + warm-up).
+// the cardio fields (duration/speed/incline/resistance/distance + warm-up)
+// and the superset group, already passed through normalizzaGruppi.
 function mappaEsercizioScheda(e, ordine) {
   return {
     esercizioId: e.esercizioId,
@@ -34,6 +36,7 @@ function mappaEsercizioScheda(e, ordine) {
     repTarget: e.repTarget !== undefined ? e.repTarget : '8-12',
     recuperoSecondi: e.recuperoSecondi != null ? e.recuperoSecondi : 90,
     ordineEsecuzione: ordine,
+    gruppo: e.gruppo ?? null,
     note: e.note?.trim() || null,
     riscaldamento: !!e.riscaldamento,
     durataMinuti: e.durataMinuti != null ? e.durataMinuti : null,
@@ -124,7 +127,7 @@ export async function creaScheda(req, res, next) {
         visibilita: vis,
         creatoreId: req.utente.id,
         esercizi: esercizi?.length ? {
-          create: esercizi.map((e, i) => mappaEsercizioScheda(e, i + 1))
+          create: normalizzaGruppi(esercizi).map((e, i) => mappaEsercizioScheda(e, i + 1))
         } : undefined
       },
       include: {
@@ -162,7 +165,7 @@ export async function clonaScheda(req, res, next) {
         visibilita: 'PERSONALE',
         creatoreId: req.utente.id,
         esercizi: sorgente.esercizi.length ? {
-          create: sorgente.esercizi.map((e, i) => mappaEsercizioScheda(e, i + 1))
+          create: normalizzaGruppi(sorgente.esercizi).map((e, i) => mappaEsercizioScheda(e, i + 1))
         } : undefined
       },
       include: {
@@ -203,7 +206,7 @@ export async function aggiornaScheda(req, res, next) {
         
         if (esercizi.length > 0) {
           await tx.esercizioScheda.createMany({
-            data: esercizi.map((e, i) => ({ schedaId: id, ...mappaEsercizioScheda(e, i + 1) }))
+            data: normalizzaGruppi(esercizi).map((e, i) => ({ schedaId: id, ...mappaEsercizioScheda(e, i + 1) }))
           });
         }
       }
@@ -311,7 +314,8 @@ export async function aggiungiEsercizio(req, res, next) {
         esercizioId,
         serieTarget: serieTarget || 3,
         repTarget: repTarget || '8-12',
-        recuperoSecondi: recuperoSecondi || 90,
+        // 0 is a valid rest: no pause
+        recuperoSecondi: recuperoSecondi ?? 90,
         ordineEsecuzione: (ultimo?.ordineEsecuzione || 0) + 1
       },
       include: {
