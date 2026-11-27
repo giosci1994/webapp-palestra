@@ -82,7 +82,9 @@ mkdir -p "$(dirname "$uscita")"
 "$strumenti/apksigner" verify "$uscita"
 
 # The fingerprint Android compares with the site's assetlinks.json (public)
-impronta="$("$strumenti/apksigner" verify --print-certs "$uscita" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')"
+# Newer apksigner versions print "Signer (minSdkVersion=…) certificate …" instead of "Signer #1 certificate …"
+impronta="$("$strumenti/apksigner" verify --print-certs "$uscita" | sed -n 's/^Signer[^:]* certificate SHA-256 digest: //p' | head -n 1 | tr 'a-f' 'A-F' | sed 's/../&:/g; s/:$//')"
+[ -n "$impronta" ] || errore "apksigner non ha dato l'impronta SHA-256 dell'APK"
 echo "Firmato: $uscita"
 echo "Impronta SHA-256: $impronta"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
