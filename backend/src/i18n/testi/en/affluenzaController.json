@@ -1,0 +1,9 @@
+{
+  "giaSegnalata": "You have already said how busy the gym is during this workout",
+  "allenamentoConcluso": "The workout is already finished",
+  "allenamentoTroppoVecchio_one": "You can only say how busy the gym is in the first hour of a workout",
+  "allenamentoTroppoVecchio_other": "You can only say how busy the gym is in the first {count} hours of a workout",
+  "senzaPalestra": "Choose your gym in Profile first",
+  "segnalazioneRecente_one": "You can say how busy the gym is once a minute",
+  "segnalazioneRecente_other": "You can say how busy the gym is once every {count} minutes"
+}

@@ -196,6 +196,7 @@ model Utente {
   eserciziPreferiti EsercizioPreferito[]
   schedePreferite   SchedaPreferita[]
   iscrizioniPush    IscrizionePush[]
+  segnalazioniAffluenza SegnalazioneAffluenza[]
 
   @@map("utenti")
 }
@@ -318,6 +319,7 @@ model Palestra {
   utenti          Utente[]
   attrezzature    PalestraAttrezzatura[]
   affluenzaDati   AfluenzaPalestra[]
+  segnalazioniAffluenza SegnalazioneAffluenza[]
 
   @@map("palestre")
 }
@@ -336,6 +338,28 @@ model AfluenzaPalestra {
 
   @@unique([palestraId, giornoSettimana, ora])
   @@map("affluenza_palestra")
+}
+
+// How busy the gym was, as a user said during a workout (the banner in the
+// workout screen). One per workout. Only aggregates ever leave the server
+// (utils/affluenzaSegnalata.js), never single rows or who sent them.
+model SegnalazioneAffluenza {
+  id              Int      @id @default(autoincrement())
+  utenteId        Int      @map("utente_id")
+  palestraId      Int      @map("palestra_id")
+  sessioneId      Int      @unique @map("sessione_id")   // one per workout
+  livello         Int                                    // 0-3, LIVELLI_AFFLUENZA
+  istante         DateTime @default(now())
+  giornoSettimana Int      @map("giorno_settimana")      // 0=Mon, in the gym's FUSO_ORARIO
+  ora             Int                                    // 0-23, same
+  utente   Utente              @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  palestra Palestra            @relation(fields: [palestraId], references: [id], onDelete: Cascade)
+  sessione SessioneAllenamento @relation(fields: [sessioneId], references: [id], onDelete: Cascade)
+
+  @@index([palestraId, giornoSettimana, ora, istante])
+  @@index([palestraId, istante])
+  @@index([utenteId, istante])
+  @@map("segnalazioni_affluenza")
 }
 
 model Attrezzatura {
@@ -483,6 +507,7 @@ model SessioneAllenamento {
   scheda   SchedaAllenamento?  @relation(fields: [schedaId], references: [id], onDelete: SetNull)
   logSerie LogSerie[]
   pianificazione AllenamentoPianificato?
+  segnalazioneAffluenza SegnalazioneAffluenza?
 
   @@map("sessioni_allenamento")
 }

@@ -8,6 +8,9 @@ import { verificaToken } from '../middleware/autenticazione.js';
 import * as controller from '../controllers/sessioni.controller.js';
 import { idNumerico, valida } from '../middleware/validazione.js';
 import { schemaAvviaSessione, schemaListaSessioni, schemaStoricoSessioni } from '../validators/sessioni.schema.js';
+import { segnalaAffluenza } from '../controllers/affluenza.controller.js';
+import { schemaSegnalaAffluenza } from '../validators/affluenza.schema.js';
+import { limitatoreSegnalazioni } from '../middleware/limitatore.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -40,5 +43,8 @@ router.delete('/:id', controller.eliminaSessione);
 
 // --- Set logging inside a session ---
 router.post('/:id/serie', controller.logSerie);
+
+// --- How busy the gym is (the banner during a workout) ---
+router.post('/:id/affluenza', limitatoreSegnalazioni, valida({ body: schemaSegnalaAffluenza }), segnalaAffluenza);
 
 export default router;

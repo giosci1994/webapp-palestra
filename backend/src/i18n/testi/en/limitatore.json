@@ -1,5 +1,6 @@
 {
   "troppeRichieste": "Too many requests, try again in a few minutes.",
   "troppiTentativiAuth": "Too many sign-in attempts, try again in 15 minutes.",
-  "troppeRichiesteAI": "Too many requests to the AI assistant, try again in a minute."
+  "troppeRichiesteAI": "Too many requests to the AI assistant, try again in a minute.",
+  "troppeSegnalazioni": "Too many crowd reports, try again later."
 }

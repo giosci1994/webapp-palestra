@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 import { t, linguaDaIntestazione } from '../i18n/index.js';
+import { RICHIESTE_SEGNALAZIONE_ORA } from '../utils/affluenzaSegnalata.js';
 
 // Helper: extracts the real IP from the request
 const getIp = (req) => req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip);
@@ -85,6 +86,26 @@ export const limitatoreAI = rateLimit({
       successo: false,
       codice: 'TROPPE_RICHIESTE_AI',
       messaggio: t('limitatore.troppeRichiesteAI', {}, linguaDi(req))
+    });
+  }
+});
+
+/**
+ * Rate limiter for the crowd reports (POST /sessioni/:id/affluenza).
+ * RICHIESTE_SEGNALAZIONE_ORA requests per hour per user: one report per
+ * workout is all the app sends.
+ */
+export const limitatoreSegnalazioni = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: RICHIESTE_SEGNALAZIONE_ORA,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: getUserKey,
+  handler: (req, res) => {
+    res.status(429).json({
+      successo: false,
+      codice: 'TROPPE_SEGNALAZIONI',
+      messaggio: t('limitatore.troppeSegnalazioni', {}, linguaDi(req))
     });
   }
 });
