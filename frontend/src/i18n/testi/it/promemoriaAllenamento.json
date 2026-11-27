@@ -21,6 +21,7 @@
     "nellaFascia": "Fra le ore in cui ti alleni di solito ({da}–{a})",
     "ora": "ora",
     "adessoMeno": "Se sei già in palestra, adesso c’è ancora meno gente ({livello}%).",
+    "adessoMenoAbituale": "Se sei già in palestra, di solito a quest’ora c’è ancora meno gente ({livello}%).",
     "strisciaAria": "Affluenza prevista oggi dalle {da} alle {a}",
     "strisciaAriaConsigliata": "Affluenza prevista oggi dalle {da} alle {a}: consigliate le {ora}"
   },

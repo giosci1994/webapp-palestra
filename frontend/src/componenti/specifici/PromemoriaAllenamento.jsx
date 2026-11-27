@@ -20,6 +20,7 @@ import { api } from '../../config/api.js';
 import { useLingua } from '../../hooks/useLingua.js';
 import { nomeGruppo } from '../../utils/formattatori.js';
 import { promemoriaDaMostrare, rimandaPromemoria } from '../../utils/promemoriaRimandato.js';
+import { chiaveAdessoMeno } from '../../utils/affluenza.js';
 
 // After how long in the background coming back counts as a new opening
 const RIAPERTURA_MS = 30 * 60 * 1000;
@@ -294,7 +295,7 @@ function QuandoAndare({ orario }) {
 
       {adessoMeglio && (
         <p className="text-xs text-[var(--testo-secondario)] mt-3">
-          {t('promemoriaAllenamento.quando.adessoMeno', { livello: adesso.livello })}
+          {t(chiaveAdessoMeno(adesso.live), { livello: adesso.livello })}
         </p>
       )}
     </div>
