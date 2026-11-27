@@ -13,5 +13,6 @@
   "accessoInCorso": "Signing in…",
   "accedi": "Sign in",
   "accediPasskey": "🔑 Sign in with a passkey",
-  "nessunAccount": "Don't have an account? <registrati>Sign up</registrati>"
+  "nessunAccount": "Don't have an account? <registrati>Sign up</registrati>",
+  "scaricaApp": "Download the app for your phone or computer"
 }
