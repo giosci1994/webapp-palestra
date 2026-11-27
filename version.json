@@ -1,7 +1,23 @@
 {
-  "versione": "1.7.0",
+  "versione": "1.7.1",
   "build": "2026-11-27",
   "changelog": [
+    {
+      "versione": "1.7.1",
+      "data": "2026-11-27",
+      "modifiche": [
+        "GymMaster si installa come app: APK per Android e programma di installazione per Windows, dalla nuova pagina Scarica",
+        "Su iPhone e iPad la pagina Scarica spiega come aggiungere l'app alla schermata Home",
+        "La pagina Scarica si apre dal Profilo, dalla pagina di accesso e dal sito del progetto",
+        "L'app per Windows ti avvisa quando esce una versione nuova e si aggiorna da sola"
+      ],
+      "modificheEn": [
+        "GymMaster installs as an app: an APK for Android and an installer for Windows, from the new Download page",
+        "On iPhone and iPad the Download page shows how to add the app to the Home Screen",
+        "The Download page opens from Profile, from the sign-in page and from the project's website",
+        "The Windows app tells you when a new version is out and updates itself"
+      ]
+    },
     {
       "versione": "1.7.0",
       "data": "2026-11-27",
@@ -889,6 +905,7 @@
   ],
   "stack": {
     "frontend": "React 19 + Vite 8 + TailwindCSS 4 + Framer Motion",
+    "app": "Android TWA (Bubblewrap) + Windows Tauri 2",
     "backend": "Node.js 22 + Express 4 + Prisma 6 + Socket.io 4",
     "database": "PostgreSQL 17 + Redis 7",
     "proxy": "Nginx Alpine",
