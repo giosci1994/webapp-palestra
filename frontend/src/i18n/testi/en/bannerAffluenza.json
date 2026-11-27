@@ -1,0 +1,14 @@
+{
+  "domanda": "How busy is the gym right now?",
+  "livelli": {
+    "0": "Empty",
+    "1": "A few people",
+    "2": "Busy",
+    "3": "Packed"
+  },
+  "ariaLivello": "The gym is: {livello}",
+  "nonInPalestra": "I'm not at the gym",
+  "salta": "Skip",
+  "etichettaChiudi": "Close the question about how busy the gym is",
+  "grazie": "Thanks! It helps everyone find a quieter time."
+}

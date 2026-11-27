@@ -35,6 +35,7 @@ export default function PrivacyPolicy() {
                 <li><Testo t="privacyPolicy.datiRaccolti.allenamento" componenti={GRASSETTO} /></li>
                 <li><Testo t="privacyPolicy.datiRaccolti.tecnici" componenti={GRASSETTO} /></li>
                 <li><Testo t="privacyPolicy.datiRaccolti.comunicazione" componenti={GRASSETTO} /></li>
+                <li><Testo t="privacyPolicy.datiRaccolti.affluenza" componenti={GRASSETTO} /></li>
               </ul>
             </section>
 
@@ -56,6 +57,7 @@ export default function PrivacyPolicy() {
                 <li>{t('privacyPolicy.conservazione.allenamento')}</li>
                 <li>{t('privacyPolicy.conservazione.chat')}</li>
                 <li>{t('privacyPolicy.conservazione.log')}</li>
+                <li>{t('privacyPolicy.conservazione.affluenza')}</li>
               </ul>
             </section>
 

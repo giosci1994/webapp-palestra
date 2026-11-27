@@ -1,0 +1,14 @@
+{
+  "domanda": "Quanta gente c'è adesso in palestra?",
+  "livelli": {
+    "0": "Vuota",
+    "1": "Poca gente",
+    "2": "Affollata",
+    "3": "Piena zeppa"
+  },
+  "ariaLivello": "La palestra è: {livello}",
+  "nonInPalestra": "Non sono in palestra",
+  "salta": "Salta",
+  "etichettaChiudi": "Chiudi la domanda su quanta gente c'è in palestra",
+  "grazie": "Grazie! Aiuta tutti a trovare l'ora più tranquilla."
+}
