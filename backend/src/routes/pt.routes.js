@@ -21,6 +21,7 @@ import { creaNotifica } from '../services/notifiche.service.js';
 import { chiaveGiorno, fusoDi, inizioGiorno } from '../utils/date.js';
 import { creaEsercizio } from '../services/esercizi.service.js';
 import { eliminaScheda } from '../services/schede.service.js';
+import { normalizzaGruppi } from '../utils/superset.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -519,12 +520,14 @@ router.post('/schede', valida({ body: schemaNuovaScheda }), async (req, res, nex
         livello: livello || 'BASE',
         visibilita: 'PERSONALE',
         esercizi: {
-          create: esercizi.map((e, i) => ({
+          create: normalizzaGruppi(esercizi.map(e => ({ ...e, gruppo: e.gruppo != null ? parseInt(e.gruppo) : null }))).map((e, i) => ({
             esercizioId: parseInt(e.esercizioId),
             serieTarget: parseInt(e.serieTarget) || 3,
             repTarget: e.repTarget || '8-12',
-            recuperoSecondi: parseInt(e.recuperoSecondi) || 90,
-            ordineEsecuzione: i + 1
+            // 0 is a valid pause between the members of a superset
+            recuperoSecondi: e.recuperoSecondi != null ? parseInt(e.recuperoSecondi) : 90,
+            ordineEsecuzione: i + 1,
+            gruppo: e.gruppo
           }))
         }
       },
@@ -582,7 +585,8 @@ router.post('/clienti/:id/assegna-scheda', valida({ body: schemaAssegnaScheda })
             serieTarget: e.serieTarget,
             repTarget: e.repTarget,
             recuperoSecondi: e.recuperoSecondi,
-            ordineEsecuzione: e.ordineEsecuzione
+            ordineEsecuzione: e.ordineEsecuzione,
+            gruppo: e.gruppo
           }))
         }
       },

@@ -17,5 +17,6 @@
   "velocitaKmhNonValida": "The speed is not valid",
   "inclinazioneNonValida": "The incline is not valid",
   "livelloResistenzaNonValido": "The resistance level is not valid",
-  "distanzaKmNonValida": "The distance is not valid"
+  "distanzaKmNonValida": "The distance is not valid",
+  "gruppoNonValido": "The superset group is not valid"
 }

@@ -23,6 +23,7 @@ const DURATA_MASSIMA_MINUTI = 1440;
 const SERIE_MASSIME = 100;
 const RECUPERO_MASSIMO_SECONDI = 3600;
 const ESERCIZI_MASSIMI = 100;
+const GRUPPO_MASSIMO = 1000;
 
 const PRIORITA = ['normale', 'importante', 'urgente'];
 const LIVELLI = ['BASE', 'INTERMEDIO', 'AVANZATO'];
@@ -107,7 +108,10 @@ const schemaEsercizioScheda = z.object({
   esercizioId: idIntero('ptSchema.esercizioIdNonValido'),
   serieTarget: z.custom(valore => eIntero(valore, 1, SERIE_MASSIME), 'ptSchema.serieTargetNonValido').nullish(),
   repTarget: testo('ptSchema.repTargetNonValido').nullish(),
-  recuperoSecondi: z.custom(valore => eIntero(valore, 1, RECUPERO_MASSIMO_SECONDI), 'ptSchema.recuperoNonValido').nullish()
+  // 0: no pause, between the members of a superset
+  recuperoSecondi: z.custom(valore => eIntero(valore, 0, RECUPERO_MASSIMO_SECONDI), 'ptSchema.recuperoNonValido').nullish(),
+  // Superset or circuit (utils/superset.js)
+  gruppo: z.custom(valore => eIntero(valore, 1, GRUPPO_MASSIMO), 'ptSchema.gruppoNonValido').nullish()
 }, { error: 'ptSchema.esercizioNonValido' });
 
 /**

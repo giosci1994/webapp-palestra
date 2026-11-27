@@ -70,6 +70,9 @@ const schemaEsercizioInScheda = z.object({
   repTarget: testoFacoltativo('schedeSchema.repTargetNonValido'),
   recuperoSecondi: numeroFacoltativo('schedeSchema.recuperoSecondiNonValido', { max: 86400 }),
   note: testoFacoltativo('schedeSchema.noteNonValide'),
+  // Superset or circuit (utils/superset.js): a group left with one member,
+  // or not next to its others, is fixed by the handler, not refused
+  gruppo: numeroFacoltativo('schedeSchema.gruppoNonValido', { min: 1, max: 1000 }),
   // Any value: the handler only asks whether it is truthy
   riscaldamento: z.unknown().optional(),
   durataMinuti: numeroFacoltativo('schedeSchema.durataMinutiNonValida', { max: 1440 }),
