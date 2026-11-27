@@ -1,5 +1,5 @@
-// Starting, closing and correcting workouts (PATCH /sessioni/:id), through
-// the real routes and a real database.
+// Starting, closing, correcting (PATCH /sessioni/:id) and deleting workouts,
+// through the real routes and a real database.
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
@@ -152,6 +152,49 @@ describe('correzione di un allenamento: serie e record personali', () => {
     assert.equal(risposta.corpo.messaggio, 'Serie 1: non appartiene a questo allenamento');
     const intatta = await prisma.logSerie.findUnique({ where: { id: altra.logSerie[0].id } });
     assert.equal(intatta.pesoEffettivo, 70);
+  });
+});
+
+describe('deleting a workout: personal records', () => {
+  const elimina = (sessione) =>
+    server.richiesta('DELETE', `/sessioni/${sessione.id}`, { token: tokenPer(utente) });
+
+  it('the record born from the deleted workout goes, the one from before stays', async () => {
+    const prima = await creaSessione(utente, scheda, {
+      inizio: giorniFa(10), serie: [{ esercizio: panca, peso: 70, rep: 5 }]
+    });
+    await creaRecord(utente, panca, 70, prima.dataInizio);
+    const seconda = await creaSessione(utente, scheda, {
+      inizio: giorniFa(2), serie: [{ esercizio: panca, peso: 90, rep: 5 }]
+    });
+    await creaRecord(utente, panca, 90, seconda.dataInizio);
+
+    assert.equal((await elimina(seconda)).stato, 200);
+    const rimasti = await recordDi(utente, panca);
+    assert.deepEqual(rimasti.map(r => [r.pesoMaxRaggiunto, r.dataRecord]), [[70, prima.dataInizio]]);
+  });
+
+  it('with no other workout with the exercise, the record goes', async () => {
+    const unica = await creaSessione(utente, scheda, {
+      inizio: giorniFa(2), serie: [{ esercizio: panca, peso: 90, rep: 5 }]
+    });
+    await creaRecord(utente, panca, 90, unica.dataInizio);
+
+    assert.equal((await elimina(unica)).stato, 200);
+    assert.deepEqual(await recordDi(utente, panca), []);
+  });
+
+  it('a record born in another workout stays', async () => {
+    const vecchia = await creaSessione(utente, scheda, {
+      inizio: giorniFa(10), serie: [{ esercizio: panca, peso: 100, rep: 3 }]
+    });
+    await creaRecord(utente, panca, 100, vecchia.dataInizio);
+    const leggera = await creaSessione(utente, scheda, {
+      inizio: giorniFa(2), serie: [{ esercizio: panca, peso: 100, rep: 2 }, { esercizio: panca, peso: 80, rep: 5 }]
+    });
+
+    assert.equal((await elimina(leggera)).stato, 200);
+    assert.deepEqual((await recordDi(utente, panca)).map(r => r.pesoMaxRaggiunto), [100]);
   });
 });
 
