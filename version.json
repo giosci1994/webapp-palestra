@@ -1,7 +1,17 @@
 {
-  "versione": "1.7.1",
+  "versione": "1.7.2",
   "build": "2026-11-27",
   "changelog": [
+    {
+      "versione": "1.7.2",
+      "data": "2026-11-27",
+      "modifiche": [
+        "L'app per Android non resta più bloccata sulla pagina Scarica: «Torna all'app» porta alla Dashboard, anche dalle pagine Privacy, Cookie e Termini"
+      ],
+      "modificheEn": [
+        "The Android app no longer gets stuck on the Download page: \"Back to the app\" goes to the Dashboard, also from the Privacy, Cookie and Terms pages"
+      ]
+    },
     {
       "versione": "1.7.1",
       "data": "2026-11-27",
