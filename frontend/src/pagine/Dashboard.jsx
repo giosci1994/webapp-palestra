@@ -9,7 +9,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import { api } from '../config/api.js';
 import { formattaData, formattaDataRelativa, aStringaData, lunediDi, titoloAllenamento } from '../utils/formattatori.js';
-import { datiFermi } from '../utils/affluenza.js';
+import { datiFermi, datiRecenti } from '../utils/affluenza.js';
 import { marcatoriCalendario, COLORI_CALENDARIO } from '../utils/marcatoriCalendario.js';
 import { motion, AnimatePresence, MotionConfig, useMotionValue } from 'framer-motion';
 import { 
@@ -561,8 +561,9 @@ export default function Dashboard() {
                             </div>
                           );
                         })()}
-                        {/* Live description — prominent. Hidden when the data is stale, like
-                            the level badge: "live" and the pulsing dot would say it is now */}
+                        {/* Live description — prominent. The server sends it only for a value
+                            at most 90 minutes old (catalogo.routes.js), so "Live" is true here;
+                            also hidden when the data is stale, like the level badge */}
                         {affluenza.liveDescrizione && !datiFermi(affluenza.ultimoAggiornamento) && (
                           <div className={`mt-3 p-3 rounded-xl flex items-center gap-3 border ${
                             affluenza.livelloColore === 'verde' ? 'bg-[var(--livello-basso-dim)] border-[var(--livello-basso-dim)]' :
@@ -587,14 +588,18 @@ export default function Dashboard() {
                             </div>
                           </div>
                         )}
-                        {/* Update timestamp; for old data, the day it stopped */}
+                        {/* Update timestamp: the time alone only for the latest scraper
+                            run; older data says the day and time it was collected, and
+                            data stopped for days the day it stopped */}
                         {datiFermi(affluenza.ultimoAggiornamento) ? (
                           <p className="text-xs text-[var(--testo-terziario)] mt-3">
                             {t('dashboard.affluenza.datiFermi', { data: formattaData(affluenza.ultimoAggiornamento) })}
                           </p>
                         ) : affluenza.aggiornatoIl && (
                           <p className="text-xs text-[var(--testo-terziario)] mt-3 text-right tabular-nums">
-                            {t('dashboard.affluenza.aggiornato', { ora: new Date(affluenza.aggiornatoIl).toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })}
+                            {datiRecenti(affluenza.aggiornatoIl)
+                              ? t('dashboard.affluenza.aggiornato', { ora: new Date(affluenza.aggiornatoIl).toLocaleTimeString(localeCorrente(), { hour: '2-digit', minute: '2-digit' }) })
+                              : t('dashboard.affluenza.datiDel', { data: formattaData(affluenza.aggiornatoIl, true) })}
                           </p>
                         )}
                       </>

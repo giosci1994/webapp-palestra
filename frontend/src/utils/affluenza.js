@@ -15,3 +15,22 @@ export function datiFermi(ultimoAggiornamento, adesso = Date.now()) {
   if (!ultimoAggiornamento) return false;
   return adesso - Date.parse(ultimoAggiornamento) > GIORNI_DATI_FERMI * 24 * 60 * 60 * 1000;
 }
+
+/**
+ * Up to how many minutes the crowd data counts as recent. The scraper runs
+ * every 6 hours (scraper/Dockerfile), so data that is just one run old is
+ * still the latest there can be; the extra half hour covers the run itself.
+ * Older than that, a run was missed and an update time alone ("Updated:
+ * 18:23") would look like today's.
+ */
+export const MINUTI_DATI_RECENTI = 6 * 60 + 30;
+
+/**
+ * True if the crowd data was collected within the last MINUTI_DATI_RECENTI
+ * minutes.
+ * @param {string | null | undefined} istante - ISO instant from the server
+ */
+export function datiRecenti(istante, adesso = Date.now()) {
+  if (!istante) return false;
+  return adesso - Date.parse(istante) <= MINUTI_DATI_RECENTI * 60 * 1000;
+}

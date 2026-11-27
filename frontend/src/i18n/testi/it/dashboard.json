@@ -66,6 +66,7 @@
     "latuaPalestra": "La tua palestra",
     "tempoReale": "In tempo reale",
     "aggiornato": "Aggiornato: {ora}",
+    "datiDel": "Dati del {data}",
     "nonDisponibile": "Dati affluenza non disponibili",
     "aggiornamentoBreve": "Saranno aggiornati a breve",
     "datiFermi": "Andamento registrato fino al {data}: al momento non si aggiorna"
