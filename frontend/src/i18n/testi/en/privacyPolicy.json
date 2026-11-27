@@ -1,7 +1,7 @@
 {
   "tornaApp": "Back to the app",
   "titolo": "Privacy Policy",
-  "ultimoAggiornamento": "Last updated: 11 May 2026",
+  "ultimoAggiornamento": "Last updated: 27 November 2026",
   "titolare": {
     "titolo": "1. Data Controller",
     "nome": "Giovanni — GymMaster source-available project",
@@ -14,7 +14,8 @@
     "profilo": "<b>Profile data:</b> profile photo, date of birth, sex, weight, height, fitness goal",
     "allenamento": "<b>Workout data:</b> sessions, exercises, sets, reps, loads, personal records",
     "tecnici": "<b>Technical data:</b> IP address, browser type, technical session cookies",
-    "comunicazione": "<b>Communication data:</b> messages in the internal chat"
+    "comunicazione": "<b>Communication data:</b> messages in the internal chat",
+    "affluenza": "<b>Gym crowd reports:</b> if you answer \"How busy is the gym right now?\" during a workout, the level you choose, your gym and the time. They are used only added up with other users' reports, to show how busy the gym usually is; no one sees who reported what"
   },
   "baseGiuridica": {
     "titolo": "3. Legal Basis and Purposes",
@@ -29,7 +30,8 @@
     "account": "Account data: until the account is deleted",
     "allenamento": "Workout data: until the account is deleted or upon request",
     "chat": "Chat messages: for the time each user chooses in Profile → Privacy for the messages they send (default: 7 days)",
-    "log": "Technical logs: 90 days at most"
+    "log": "Technical logs: 90 days at most",
+    "affluenza": "Gym crowd reports: until the account or the workout they belong to is deleted"
   },
   "diritti": {
     "titolo": "5. User Rights",

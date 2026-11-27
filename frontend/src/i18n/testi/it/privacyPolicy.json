@@ -1,7 +1,7 @@
 {
   "tornaApp": "Torna all'app",
   "titolo": "Informativa sulla Privacy",
-  "ultimoAggiornamento": "Ultimo aggiornamento: 11 maggio 2026",
+  "ultimoAggiornamento": "Ultimo aggiornamento: 27 novembre 2026",
   "titolare": {
     "titolo": "1. Titolare del Trattamento",
     "nome": "Giovanni — Progetto source-available GymMaster",
@@ -14,7 +14,8 @@
     "profilo": "<b>Dati del profilo:</b> foto profilo, data di nascita, sesso, peso, altezza, obiettivo fitness",
     "allenamento": "<b>Dati di allenamento:</b> sessioni, esercizi, serie, ripetizioni, carichi, record personali",
     "tecnici": "<b>Dati tecnici:</b> indirizzo IP, tipo di browser, cookie tecnici di sessione",
-    "comunicazione": "<b>Dati di comunicazione:</b> messaggi nella chat interna"
+    "comunicazione": "<b>Dati di comunicazione:</b> messaggi nella chat interna",
+    "affluenza": "<b>Segnalazioni sull'affluenza della palestra:</b> se durante un allenamento rispondi a «Quanta gente c'è adesso in palestra?», il livello che scegli, la tua palestra e l'ora. Si usano solo sommate a quelle degli altri utenti, per mostrare quanto è piena di solito la palestra; nessuno vede chi ha segnalato cosa"
   },
   "baseGiuridica": {
     "titolo": "3. Base Giuridica e Finalità",
@@ -29,7 +30,8 @@
     "account": "Dati account: fino alla cancellazione dell'account",
     "allenamento": "Dati di allenamento: fino alla cancellazione dell'account o su richiesta",
     "chat": "Messaggi chat: per il tempo che ogni utente sceglie in Profilo → Privacy per i messaggi che invia (default: 7 giorni)",
-    "log": "Log tecnici: massimo 90 giorni"
+    "log": "Log tecnici: massimo 90 giorni",
+    "affluenza": "Segnalazioni sull'affluenza: fino alla cancellazione dell'account o dell'allenamento a cui appartengono"
   },
   "diritti": {
     "titolo": "5. Diritti dell'Utente",

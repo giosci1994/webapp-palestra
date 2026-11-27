@@ -28,6 +28,7 @@ import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaData, formattaDurata, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import FineAllenamento from '../componenti/specifici/FineAllenamento.jsx';
+import BannerAffluenza from '../componenti/specifici/BannerAffluenza.jsx';
 
 /** The load proposal by outcome: label (a translation key) and colors of the card */
 const STILE_PROPOSTA = {
@@ -1003,6 +1004,9 @@ export default function WorkoutLive() {
             <span className="text-[10px] text-[var(--accent)] opacity-80 uppercase tracking-wider mt-1">{t('workoutLive.tempoAllenamento')}</span>
           </div>
         </div>
+
+        {/* How busy is the gym: once per workout, in the flow of the page so it covers nothing */}
+        {sessione && <BannerAffluenza key={sessione.id} sessione={sessione} utente={utente} />}
 
         {/* Exercise name */}
         <motion.div key={esercizioIdx} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
