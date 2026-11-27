@@ -773,19 +773,31 @@ export async function logSerie(req, res, next) {
 export async function eliminaSessione(req, res, next) {
   try {
     const id = parseInt(req.params.id);
-    const sessione = await prisma.sessioneAllenamento.findUnique({ where: { id } });
+    const sessione = await prisma.sessioneAllenamento.findUnique({
+      where: { id },
+      include: { logSerie: { select: { esercizioId: true, pesoEffettivo: true, completato: true } } }
+    });
 
     if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
     if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
       throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiEliminare'));
     }
 
+    // The weights the workout contained, per exercise: a record born from
+    // this workout must not outlive it (same realignment as modificaSessione)
+    const pesiPrima = new Map();
+    for (const l of sessione.logSerie.filter(l => l.completato)) {
+      if (!pesiPrima.has(l.esercizioId)) pesiPrima.set(l.esercizioId, new Set());
+      pesiPrima.get(l.esercizioId).add(l.pesoEffettivo);
+    }
+
     // The schema already deletes the LogSerie rows (onDelete: Cascade); deleting
-    // them explicitly, in the same transaction, does not depend on it:
-    await prisma.$transaction([
-      prisma.logSerie.deleteMany({ where: { sessioneId: id } }),
-      prisma.sessioneAllenamento.delete({ where: { id } })
-    ]);
+    // them explicitly, in the same transaction, does not depend on it
+    await prisma.$transaction(async (tx) => {
+      await tx.logSerie.deleteMany({ where: { sessioneId: id } });
+      await tx.sessioneAllenamento.delete({ where: { id } });
+      await riallineaRecord(tx, sessione.utenteId, pesiPrima);
+    });
     // Thrown away during its rest ("Termina" without saving): no "rest is over" later
     annullaFineRecupero(sessione.utenteId, id);
     await avvisaSeDiUnAltro(req.app.get('io'), req.utente, sessione, 'notificaEliminato');
@@ -1001,7 +1013,8 @@ export function leggiValoriSerie(riga, n) {
 }
 
 /**
- * Realigns the personal records after the sets of a workout are corrected.
+ * Realigns the personal records after the sets of a workout are corrected,
+ * or after the workout is deleted.
  *
  * A record born from a wrong weight (800 kg instead of 80) disappears when the
  * set is corrected and no other set reaches it; if the real maximum is left
