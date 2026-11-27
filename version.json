@@ -1,7 +1,23 @@
 {
-  "versione": "1.6.6",
-  "build": "2026-11-24",
+  "versione": "1.7.0",
+  "build": "2026-11-27",
   "changelog": [
+    {
+      "versione": "1.7.0",
+      "data": "2026-11-27",
+      "modifiche": [
+        "Nuovo tema chiaro accanto a quello scuro: si sceglie nel Profilo (automatico, chiaro o scuro) e resta salvato sul tuo account, anche su altri dispositivi",
+        "Home rinnovata: Attività, Statistiche e Il mio PT in un'unica barra di schede da scorrere con il dito",
+        "Scorri a destra e a sinistra per passare da una pagina all'altra della barra in basso; tornando indietro la pagina si sfoglia come un libro",
+        "Testi più leggibili nel tema scuro"
+      ],
+      "modificheEn": [
+        "New light theme next to the dark one: pick it in Profile (automatic, light or dark) and it stays saved on your account, on other devices too",
+        "Refreshed home: Activity, Statistics and My PT in a single tab bar you can swipe through",
+        "Swipe left and right to move between the pages of the bottom bar; going back, the page turns like a book",
+        "Easier-to-read text in the dark theme"
+      ]
+    },
     {
       "versione": "1.6.6",
       "data": "2026-11-24",
