@@ -66,6 +66,7 @@
     "latuaPalestra": "Your gym",
     "tempoReale": "Live",
     "aggiornato": "Updated: {ora}",
+    "datiDel": "Data from {data}",
     "nonDisponibile": "Crowd data not available",
     "aggiornamentoBreve": "It will be updated soon",
     "datiFermi": "Pattern recorded up to {data}: it is not being updated at the moment"
