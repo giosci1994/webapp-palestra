@@ -34,6 +34,9 @@ const PrivacyPolicy = caricaPagina(() => import('./pagine/legale/PrivacyPolicy.j
 const CookiePolicy = caricaPagina(() => import('./pagine/legale/CookiePolicy.jsx'));
 const TerminiServizio = caricaPagina(() => import('./pagine/legale/TerminiServizio.jsx'));
 
+// Download the app (public)
+const Scarica = caricaPagina(() => import('./pagine/Scarica.jsx'));
+
 // Protected pages
 const Profilo = caricaPagina(() => import('./pagine/Profilo.jsx'));
 const SchedeAllenamento = caricaPagina(() => import('./pagine/SchedeAllenamento.jsx'));
@@ -120,6 +123,9 @@ export default function App() {
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/cookie-policy" element={<CookiePolicy />} />
             <Route path="/termini" element={<TerminiServizio />} />
+
+            {/* Download the app (public) */}
+            <Route path="/scarica" element={<Scarica />} />
 
             {/* Protected pages */}
             <Route element={<LayoutAutenticato />}>
