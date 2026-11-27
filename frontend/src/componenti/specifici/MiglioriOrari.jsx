@@ -26,9 +26,9 @@ function oggiIndice() {
 }
 
 function colorePerLivello(livello) {
-  if (livello <= 30) return 'var(--successo, #22c55e)';
-  if (livello <= 60) return '#eab308';
-  return 'var(--pericolo, #ef4444)';
+  if (livello <= 30) return 'var(--livello-basso-testo)';
+  if (livello <= 60) return 'var(--livello-medio-testo)';
+  return 'var(--livello-alto-testo)';
 }
 
 export default function MiglioriOrari({ palestraId }) {

@@ -73,8 +73,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
   const classeLink = ({ isActive }) =>
     `flex items-center ${isCollapsed ? 'justify-center px-0' : 'gap-5 px-6'} py-4 rounded-[var(--raggio-md)] transition-all duration-200 text-lg font-medium relative group ${
       isActive
-        ? 'bg-[var(--accent-dim)] text-orange-400'
-        : 'text-orange-500 hover:bg-[var(--bg-terziario)] hover:text-orange-400'
+        ? 'bg-[var(--accent-dim)] text-[var(--avviso)]'
+        : 'text-[var(--avviso)] hover:bg-[var(--bg-terziario)] hover:text-[var(--avviso)]'
     }`;
 
   return (
@@ -93,7 +93,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
         {!isCollapsed && (
           <motion.span 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="text-3xl font-extrabold testo-gradient relative z-10" style={{ fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.03em' }}
+            className="text-3xl font-extrabold testo-gradient relative z-10" style={{ fontFamily: 'var(--font-titoli)', letterSpacing: '-0.03em' }}
           >
             GymMaster
           </motion.span>
@@ -103,7 +103,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           <CampanellaNotifiche compatta={isCollapsed} />
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-white"
+            className="p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-[var(--testo-primario)]"
           >
             <Menu size={28} />
           </button>
@@ -116,7 +116,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           const { Icona } = item;
           return (
             <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? t(item.chiave) : undefined}>
-              <Icona size={28} className="text-white shrink-0" />
+              <Icona size={28} className="text-[var(--testo-primario)] shrink-0" />
               
               {!isCollapsed && (
                 <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="whitespace-nowrap">
@@ -143,7 +143,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
               const { Icona } = item;
               return (
                 <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? t(item.chiave) : undefined}>
-                  <Icona size={28} className="text-white shrink-0" />
+                  <Icona size={28} className="text-[var(--testo-primario)] shrink-0" />
                   
                   {!isCollapsed && (
                     <>
@@ -151,7 +151,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                         {t(item.chiave)}
                       </motion.span>
                       {item.badgeKey === 'suggerimenti' && badgeSuggerimenti > 0 && (
-                        <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-bold bg-[var(--pericolo)] text-white animate-pulse">
+                        <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full text-[10px] font-bold bg-[var(--pericolo-pieno)] text-white animate-pulse">
                           {badgeSuggerimenti}
                         </span>
                       )}
@@ -161,7 +161,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
                   {isCollapsed && (
                     <>
                       {item.badgeKey === 'suggerimenti' && badgeSuggerimenti > 0 && (
-                        <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[var(--pericolo)]"></span>
+                        <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-[var(--pericolo-pieno)]"></span>
                       )}
                     </>
                   )}
@@ -187,7 +187,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
               const { Icona } = item;
               return (
                 <NavLink key={item.percorso} to={item.percorso} className={classeLink} title={isCollapsed ? t(item.chiave) : undefined}>
-                  <Icona size={28} className="text-white shrink-0" />
+                  <Icona size={28} className="text-[var(--testo-primario)] shrink-0" />
                   {!isCollapsed && (
                     <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="whitespace-nowrap">
                       {t(item.chiave)}
@@ -201,7 +201,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
       </nav>
 
       {/* User profile at the bottom */}
-      <div className={`p-6 border-t border-[var(--vetro-bordo)] bg-[rgba(0,0,0,0.2)] ${isCollapsed ? 'flex flex-col items-center gap-4' : ''}`}>
+      <div className={`p-6 border-t border-[var(--vetro-bordo)] bg-[var(--incavo)] ${isCollapsed ? 'flex flex-col items-center gap-4' : ''}`}>
         <NavLink to="/profilo" className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-4'} hover:bg-[var(--bg-terziario)] p-3 -m-3 rounded-[var(--raggio-md)] transition-colors group`} title={isCollapsed ? t('sidebar.profilo') : undefined}>
           <div className="w-14 h-14 shrink-0 rounded-full flex items-center justify-center text-xl font-bold shadow-[var(--ombra-accent)]"
                style={{ background: 'var(--accent-dim)', color: 'var(--accent)' }}>
@@ -210,7 +210,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }) {
           
           {!isCollapsed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 min-w-0">
-              <p className="text-lg font-medium text-orange-500 group-hover:text-orange-400 truncate transition-colors">{utente?.nome}</p>
+              <p className="text-lg font-medium text-[var(--avviso)] group-hover:text-[var(--avviso)] truncate transition-colors">{utente?.nome}</p>
               <p className="text-sm text-[var(--testo-terziario)]">{etichettaRuolo}</p>
             </motion.div>
           )}

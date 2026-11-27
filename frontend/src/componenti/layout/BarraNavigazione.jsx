@@ -64,7 +64,7 @@ export default function BarraNavigazione() {
                 } ${
                   isActive && !tab.principale
                     ? 'text-[var(--accent)] bg-[var(--accent-dim)]'
-                    : !tab.principale ? 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]' : ''
+                    : !tab.principale ? 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[var(--velo)]' : ''
                 }`
               }
             >
@@ -73,7 +73,7 @@ export default function BarraNavigazione() {
                   {tab.principale ? (
                     <div className={`w-[56px] h-[56px] rounded-full flex items-center justify-center shadow-xl transition-all ${
                       isActive
-                        ? 'bg-[var(--accent)] shadow-[var(--ombra-accent)] text-white'
+                        ? 'bg-[var(--accent-pieno)] shadow-[var(--ombra-accent)] text-white'
                         : 'bg-[var(--bg-terziario)] text-[var(--testo-primario)] border-[2px] border-[var(--bg-secondario)]'
                     }`}>
                       <Icona size={28} />
@@ -84,7 +84,7 @@ export default function BarraNavigazione() {
                       {tab.daLeggere && daLeggere > 0 && (
                         <span
                           className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-                          style={{ background: 'var(--pericolo, #ef4444)', color: '#fff' }}
+                          style={{ background: 'var(--pericolo-pieno)', color: '#fff' }}
                         >
                           {testoContatore(daLeggere)}
                         </span>

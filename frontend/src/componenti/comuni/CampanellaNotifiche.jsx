@@ -36,13 +36,13 @@ export default function CampanellaNotifiche({ compatta = false }) {
         onClick={() => setAperto(v => !v)}
         aria-label={nonLette > 0 ? t('campanellaNotifiche.notificheNonLette', { numero: nonLette }) : t('campanellaNotifiche.notifiche')}
         aria-expanded={aperto}
-        className="relative p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-white"
+        className="relative p-2 rounded hover:bg-[var(--bg-terziario)] transition-colors text-[var(--testo-primario)]"
       >
         <Bell size={compatta ? 22 : 26} />
         {nonLette > 0 && (
           <span
             className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-bold flex items-center justify-center"
-            style={{ background: 'var(--pericolo, #ef4444)', color: '#fff' }}
+            style={{ background: 'var(--pericolo-pieno)', color: '#fff' }}
           >
             {testoContatore(nonLette)}
           </span>

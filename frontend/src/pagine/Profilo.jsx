@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import ImpostazioniNotifiche from '../componenti/specifici/ImpostazioniNotifiche.jsx';
 import SceltaLingua from '../componenti/specifici/SceltaLingua.jsx';
+import SceltaTema from '../componenti/specifici/SceltaTema.jsx';
 
 // `v` is the value saved on the account, `chiave` the translation key of its label
 const OBIETTIVI = [
@@ -57,7 +58,7 @@ const TABS = [
 function Toggle({ attivo, onClick }) {
   return (
     <button onClick={onClick}
-      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${attivo ? 'bg-[var(--accent)]' : 'bg-[var(--bordo)]'}`}>
+      className={`w-12 h-6 rounded-full relative transition-colors shrink-0 ${attivo ? 'bg-[var(--accent-pieno)]' : 'bg-[var(--bordo)]'}`}>
       <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${attivo ? 'left-[26px]' : 'left-0.5'}`} />
     </button>
   );
@@ -405,7 +406,7 @@ export default function Profilo() {
                   className={`flex items-center justify-center py-2.5 rounded-[14px] text-sm font-bold transition-all duration-300 whitespace-nowrap shrink-0 relative ${
                     tabAttivo === tab.id 
                       ? 'px-10 text-[var(--testo-primario)]' 
-                      : 'px-5 text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[rgba(255,255,255,0.05)]'
+                      : 'px-5 text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)] hover:bg-[var(--velo)]'
                   } ${tab.id === 'elimina' && tabAttivo !== tab.id ? '!text-[var(--pericolo)] opacity-70 hover:opacity-100' : ''}`}>
                   
                   {/* Animated active background */}
@@ -518,6 +519,8 @@ export default function Profilo() {
 
               <SceltaLingua />
 
+              <SceltaTema />
+
               {/* Professional account: become a Personal Trainer (standard users only) */}
               {utente?.ruolo === 'UTENTE' && (
                 <div className="glass-card overflow-hidden">
@@ -592,7 +595,7 @@ export default function Profilo() {
               {/* Gamification */}
               <div className="glass-card overflow-hidden">
                 <div className="p-card-inner border-b border-[var(--bordo-light)]">
-                  <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles size={20} className="text-amber-400" /> {t('profilo.privacy.gamification')}</h3>
+                  <h3 className="font-bold text-lg flex items-center gap-2"><Sparkles size={20} className="text-[var(--avviso)]" /> {t('profilo.privacy.gamification')}</h3>
                 </div>
                 <div className="p-card-inner">
                   <div className="flex items-center justify-between px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
@@ -692,7 +695,7 @@ export default function Profilo() {
                               <button onClick={async () => {
                                 try { setInviandoPT(true); await api.post('/utenti/iscrizione-pt', { trainerId: pt.id, messaggio: messaggioPT.trim() || null }); const r = await api.get('/utenti/mio-pt'); setMioPT(r.dati); setMostraListaPT(false); setMessaggioPT(''); }
                                 catch (err) { alert(err.message); } finally { setInviandoPT(false); }
-                              }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent)] text-white shrink-0">{t('profilo.pt.iscriviti')}</button>
+                              }} disabled={inviandoPT} className="px-4 py-2 rounded-[var(--raggio-sm)] text-xs font-bold bg-[var(--accent-pieno)] text-white shrink-0">{t('profilo.pt.iscriviti')}</button>
                             </div>
                           ))}
                           <button onClick={() => setMostraListaPT(false)} className="text-xs text-[var(--testo-terziario)] mt-1">← {t('comune.chiudi')}</button>
@@ -881,7 +884,7 @@ export default function Profilo() {
                       <div className="flex gap-2">
                         <button onClick={() => { setMostraReset(false); setConfermaReset(''); }} className="flex-1 py-2 rounded-lg bg-[var(--bg-terziario)] text-[var(--testo-secondario)]">{t('comune.annulla')}</button>
                         <button onClick={eseguiReset} disabled={confermaReset !== t('profilo.reset.frase') || avviandoReset}
-                                className="flex-1 py-2 rounded-lg bg-[var(--pericolo)] text-white disabled:opacity-50">{avviandoReset ? t('profilo.reset.inCorso') : t('profilo.reset.conferma')}</button>
+                                className="flex-1 py-2 rounded-lg bg-[var(--pericolo-pieno)] text-white disabled:opacity-50">{avviandoReset ? t('profilo.reset.inCorso') : t('profilo.reset.conferma')}</button>
                       </div>
                     </div>
                   )}
@@ -971,7 +974,7 @@ export default function Profilo() {
                   {/* Developer */}
                   <div className="mt-2 pt-4 border-t border-[var(--bordo)]">
                     <a href="https://github.com/giosci1994/" target="_blank" rel="noopener noreferrer"
-                       className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] hover:bg-[rgba(255,255,255,0.08)] transition-all group cursor-pointer">
+                       className="flex items-center gap-3 px-card-inner py-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] hover:bg-[var(--velo-forte)] transition-all group cursor-pointer">
                       <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[var(--bordo)] group-hover:border-[var(--accent)] transition-colors shadow-lg">
                         <img src="https://github.com/giosci1994.png" alt={t('profilo.legale.sviluppatore')} className="w-full h-full object-cover" />
                       </div>
@@ -1038,7 +1041,7 @@ export default function Profilo() {
                                 setEliminando(false);
                               }
                             }}
-                            className="flex-1 py-2.5 rounded-lg bg-[var(--pericolo)] text-white font-bold disabled:opacity-50">
+                            className="flex-1 py-2.5 rounded-lg bg-[var(--pericolo-pieno)] text-white font-bold disabled:opacity-50">
                       {eliminando ? t('profilo.elimina.inCorso') : t('profilo.elimina.definitivo')}
                     </button>
                   </div>

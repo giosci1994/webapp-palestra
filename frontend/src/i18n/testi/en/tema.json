@@ -1,0 +1,7 @@
+{
+  "titolo": "Theme",
+  "descrizione": "The app follows your phone's light or dark mode. Pick one to always use it on this phone.",
+  "auto": "Automatic (phone setting)",
+  "chiaro": "Light",
+  "scuro": "Dark"
+}

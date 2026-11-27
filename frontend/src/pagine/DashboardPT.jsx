@@ -210,7 +210,7 @@ export default function DashboardPT() {
         {TABS.map(voce => (
           <button key={voce.id} onClick={() => { setTab(voce.id); if (voce.id === 'esercizi') caricaCatalogo(); }}
             className={`shrink-0 px-4 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all ${
-              tab === voce.id ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)]'
+              tab === voce.id ? 'bg-[var(--accent-pieno)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)] hover:text-[var(--testo-primario)]'
             }`}>{t(voce.label)}</button>
         ))}
       </div>
@@ -373,8 +373,8 @@ export default function DashboardPT() {
                   <div key={a.id} className="flex items-start gap-3 p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)]">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        {a.priorita === 'urgente' && <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />}
-                        {a.priorita === 'importante' && <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />}
+                        {a.priorita === 'urgente' && <span className="w-2 h-2 rounded-full bg-[var(--pericolo-pieno)] shrink-0" />}
+                        {a.priorita === 'importante' && <span className="w-2 h-2 rounded-full bg-[var(--avviso)] shrink-0" />}
                         <p className="font-bold text-sm truncate">{a.titolo}</p>
                         {a.destinatario && <span className="text-[10px] bg-[var(--accent-dim)] text-[var(--accent)] px-1.5 py-0.5 rounded-full shrink-0">→ {a.destinatario.nome}</span>}
                       </div>
@@ -452,13 +452,13 @@ export default function DashboardPT() {
                     <button key={g} onClick={() => setGiornoSelezionato(isSel ? null : g)}
                       className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all
                         ${isOggi ? 'ring-2 ring-[var(--accent)]' : ''}
-                        ${isSel ? 'bg-[var(--accent)] text-white' : 'hover:bg-[var(--bg-terziario)]'}
+                        ${isSel ? 'bg-[var(--accent-pieno)] text-white' : 'hover:bg-[var(--bg-terziario)]'}
                       `}>
                       <span className={`font-medium ${isOggi && !isSel ? 'text-[var(--accent)]' : ''}`}>{g}</span>
                       {appInData.length > 0 && (
                         <div className="flex gap-0.5 mt-0.5">
                           {appInData.slice(0, 3).map((a, j) => (
-                            <span key={j} className={`w-1.5 h-1.5 rounded-full ${a.completato ? 'bg-emerald-400' : isSel ? 'bg-white' : 'bg-[var(--accent)]'}`} />
+                            <span key={j} className={`w-1.5 h-1.5 rounded-full ${a.completato ? 'bg-emerald-400' : isSel ? 'bg-white' : 'bg-[var(--accent-pieno)]'}`} />
                           ))}
                         </div>
                       )}
@@ -717,7 +717,7 @@ export default function DashboardPT() {
                   ].map((k, i) => (
                     <div key={i} className="p-3 rounded-[var(--raggio-md)] bg-[var(--bg-terziario)] text-center">
                       <div className="text-lg mb-0.5">{k.i}</div>
-                      <div className="text-lg font-extrabold" style={{ color: k.c }}>{k.v}</div>
+                      <div className="testo-tinta text-lg font-extrabold" style={{ '--tinta': k.c }}>{k.v}</div>
                       <div className="text-[10px] text-[var(--testo-terziario)] uppercase">{k.l}</div>
                     </div>
                   ))}
@@ -737,9 +737,9 @@ export default function DashboardPT() {
                   <ResponsiveContainer width="100%" height={160}>
                     <AreaChart data={clienteDettaglio.statistiche.sessioni}>
                       <defs><linearGradient id="gv" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} /><stop offset="95%" stopColor="#6366F1" stopOpacity={0} /></linearGradient></defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="data" tick={{ fontSize: 9, fill: '#666' }} tickFormatter={v => v.slice(5)} />
-                      <YAxis tick={{ fontSize: 9, fill: '#666' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--griglia)" />
+                      <XAxis dataKey="data" tick={{ fontSize: 9, fill: 'var(--testo-terziario)' }} tickFormatter={v => v.slice(5)} />
+                      <YAxis tick={{ fontSize: 9, fill: 'var(--testo-terziario)' }} />
                       <Area type="monotone" dataKey="volume" stroke="#6366F1" strokeWidth={2} fill="url(#gv)" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -781,7 +781,7 @@ export default function DashboardPT() {
                           <p className="text-[10px] text-[var(--testo-terziario)]">{t('comune.esercizi', { count: s.esercizi?.length || 0 })} · {t('dashboardPT.sessioni', { count: s._count?.sessioni || 0 })} · {new Date(s.creatoIl).toLocaleDateString(localeCorrente())}</p>
                         </div>
                         <button onClick={() => eliminaSchedaAssegnata(clienteDettaglio.cliente?.id, s.id)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo)] hover:text-white transition-colors shrink-0 text-xs">✕</button>
+                          className="w-7 h-7 rounded-full flex items-center justify-center bg-[var(--pericolo-dim)] text-[var(--pericolo)] hover:bg-[var(--pericolo-pieno)] hover:text-white transition-colors shrink-0 text-xs">✕</button>
                       </div>
                     ))}
                   </div>

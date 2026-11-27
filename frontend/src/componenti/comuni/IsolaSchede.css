@@ -1,0 +1,33 @@
+/* Kokonut UI tab island (IsolaSchede.jsx): colours from the app variables only, so it follows the app theme */
+.isola-schede-riga { display: flex; justify-content: center; }
+.isola-schede {
+  position: relative; display: inline-flex; max-width: 100%;
+  padding: 4px; border-radius: 999px;
+  background: var(--bg-terziario); border: 1px solid var(--bordo-light);
+}
+.isola-scheda {
+  position: relative; display: flex; flex-shrink: 0; align-items: center; gap: 6px;
+  padding: 8px 16px; min-height: 40px; border-radius: 999px;
+  font-size: 15px; font-weight: 600; white-space: nowrap; text-transform: capitalize;
+  color: var(--testo-secondario); background: none; border: 0; cursor: pointer;
+  transition: color 150ms ease-out;
+  touch-action: manipulation;
+}
+.isola-scheda:hover { color: var(--testo-primario); }
+.isola-scheda:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.isola-icona { width: 18px; height: 18px; flex-shrink: 0; }
+/* The same labels in the active colour, clipped to the indicator */
+.isola-indicatore {
+  position: absolute; inset: 0; display: flex; padding: 4px; pointer-events: none;
+  background: var(--accent-pieno); border-radius: 999px;
+}
+.isola-indicatore .isola-scheda { color: var(--su-accento); cursor: default; }
+@media (max-width: 400px) {
+  .isola-scheda { padding: 8px 12px; font-size: 14px; gap: 5px; }
+  .isola-icona { width: 16px; height: 16px; }
+}
+@media (forced-colors: active) {
+  .isola-indicatore { background: Highlight; }
+  .isola-indicatore .isola-scheda { color: HighlightText; }
+}
+

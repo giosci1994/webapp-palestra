@@ -1,16 +1,22 @@
 /* ============================================
    GymMaster — Design System
-   Premium dark-mode palette, glassmorphism, utilities
+   Two themes on the same tokens: dark (the default, "deep space") and light.
+   utils/tema.js (and the script in index.html, before the first paint) puts
+   data-tema="scuro|chiaro" on <html>: "auto" resolves to the system setting.
+   Do not use Tailwind's `dark:` variant: it follows the system, not the
+   app's theme. Contrast ratios (WCAG) are in the comments.
    ============================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 @import "tailwindcss";
 
-/* --- CSS Custom Properties --- */
+/* --- CSS Custom Properties: dark theme (default) --- */
 :root {
-  /* The app is already dark-themed: this stops Chrome (Android) from darkening/desaturating the colors again */
+  /* Tells the browser the page is already dark: Chrome (Android) does not darken it again */
   color-scheme: dark;
+
+  /* Fonts (Archivo, loaded in index.html) */
+  --font-testo: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-titoli: 'Archivo', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Background (Deep Space) */
   --bg-primario: #030308;
@@ -18,12 +24,14 @@
   --bg-terziario: #111122;
   --bg-quaternario: #1A1A33;
 
-  /* Accent (Neon Cyber) */
-  --accent: #8B5CF6;       /* Violet */
+  /* Accent */
+  --accent: #9A6EF8;       /* Violet: 5.8:1 as text on the background, >= 4.5:1 on tinted surfaces (fills under white text use --accent-pieno) */
   --accent-hover: #A78BFA;
   --accent-dim: rgba(139, 92, 246, 0.15);
   --accent-glow: rgba(139, 92, 246, 0.4);
-  
+  --accent-pieno: #7C3AED; /* The accent as a fill under white text: 5.7:1 */
+  --su-accento: #FFFFFF;
+
   --accent-alt: #06B6D4;   /* Cyan */
   --accent-alt-dim: rgba(6, 182, 212, 0.15);
 
@@ -32,29 +40,63 @@
   --successo-dim: rgba(16, 185, 129, 0.15);
   --pericolo: #F43F5E;
   --pericolo-dim: rgba(244, 63, 94, 0.15);
+  --pericolo-pieno: #E11D48; /* red fill under white text (badges, buttons): 4.7:1 */
   --avviso: #F59E0B;
   --avviso-dim: rgba(245, 158, 11, 0.15);
   --info: #3B82F6;
+  --stella: #EAB308;
+
+  /* Gym crowd levels: bars (>= 3:1 on the card) and text (>= 4.5:1) */
+  --livello-basso: #22C55E;
+  --livello-medio: #F59E0B;
+  --livello-alto: #EF4444;
+  --livello-basso-testo: #4ADE80;
+  --livello-medio-testo: #FBBF24;
+  --livello-alto-testo: #F87171;
+  --livello-basso-dim: rgba(34, 197, 94, 0.15);
+  --livello-medio-dim: rgba(245, 158, 11, 0.15);
+  --livello-alto-dim: rgba(239, 68, 68, 0.15);
+
+  /* Muscle map and yearly activity: a lot lights up on the dark background */
+  --scala-1: #523B8C;
+  --scala-2: #704CC5;
+  --scala-3: #9060FB;
+  --scala-4: #AA8FFF;
+  --scala-5: #C9BDFE;
+  --non-allenato: #282734;
+  --recupero-recupero: #CA8402;
+  --recupero-pronto: #02A573;
+  --recupero-trascurato: #5066A3;
 
   /* Text */
-  --testo-primario: #F8FAFC;
-  --testo-secondario: #94A3B8;
-  --testo-terziario: #475569;
+  --testo-primario: #F8FAFC;   /* 19.7:1 on the background */
+  --testo-secondario: #94A3B8; /* 8.0:1 */
+  --testo-terziario: #8590A6;  /* 6.2:1 (it was #475569, 2.6:1) */
 
-  /* Borders & Dividers */
-  --bordo: rgba(255, 255, 255, 0.05);
+  /* Borders, overlays & dividers */
+  --bordo: rgba(255, 255, 255, 0.06);
   --bordo-hover: rgba(139, 92, 246, 0.3);
-  --bordo-light: rgba(255, 255, 255, 0.1);
+  --bordo-light: rgba(255, 255, 255, 0.12);
+  --velo: rgba(255, 255, 255, 0.05);        /* hover on a surface */
+  --velo-forte: rgba(255, 255, 255, 0.08);
+  --incavo: rgba(0, 0, 0, 0.2);             /* a recessed strip inside a card */
+  --griglia: rgba(255, 255, 255, 0.06);     /* chart grid lines */
+  --cursore-grafico: rgba(255, 255, 255, 0.15);
+  --grafico-stimato: #C9BDFE;
+  --binario: rgba(255, 255, 255, 0.08);     /* the empty track behind a bar */
 
-  /* Glassmorphism Premium */
-  --vetro: rgba(13, 13, 26, 0.65);
-  --vetro-bordo: rgba(255, 255, 255, 0.08);
-  --vetro-luce: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  /* Surfaces: flat, thin borders instead of shadows */
+  --vetro: #090914;
+  --vetro-bordo: rgba(255, 255, 255, 0.10);
+  --vetro-luce: 0 0 transparent;
+  --striscia: #1A1A33;          /* the dashboard banner: dark in both themes */
+  --striscia-testo: #F8FAFC;
+  --striscia-icona: #A78BFA;
 
-  /* Sizes (Soft and rounded) */
-  --raggio-sm: 8px;
-  --raggio-md: 12px;
-  --raggio-lg: 16px;
+  /* Sizes */
+  --raggio-sm: 2px;
+  --raggio-md: 4px;
+  --raggio-lg: 4px;
   --raggio-xl: 24px;
   --raggio-pieno: 9999px;
 
@@ -62,16 +104,88 @@
   --transizione: 250ms cubic-bezier(0.2, 0.8, 0.2, 1);
   --transizione-lenta: 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* 3D shadow — soft, avoids the halo between nearby cards on a dark background */
-  --ombra-card: 0 4px 16px rgba(0, 0, 0, 0.3);
+  /* Shadows */
+  --ombra-card: 0 0 transparent;
   --ombra-modale: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--bordo-light);
-  --ombra-accent: 0 8px 25px var(--accent-glow);
+  --ombra-accent: 0 0 transparent;
 
   /* Safe area */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+}
+
+/* --- Light theme: the same family, violet and cyan darkened where they are text --- */
+:root[data-tema="chiaro"] {
+  color-scheme: light;
+
+  --bg-primario: #F7F6FB;
+  --bg-secondario: #FFFFFF;
+  --bg-terziario: #EEECF6;
+  --bg-quaternario: #E4E1F0;
+
+  --accent: #6D28D9;       /* 7.1:1 on white, 6.6:1 on the background */
+  --accent-hover: #5B21B6;
+  --accent-dim: rgba(109, 40, 217, 0.08);
+  --accent-glow: rgba(109, 40, 217, 0.28);
+  --accent-pieno: #6D28D9; /* white text on it: 7.1:1 */
+
+  --accent-alt: #0E7490;   /* 5.4:1 on white */
+  --accent-alt-dim: rgba(14, 116, 144, 0.10);
+
+  --successo: #047857;     /* 5.5:1 */
+  --successo-dim: rgba(4, 120, 87, 0.10);
+  --pericolo: #BE123C;     /* 6.3:1 */
+  --pericolo-dim: rgba(190, 18, 60, 0.10);
+  --pericolo-pieno: #BE123C;
+  --avviso: #92400E;       /* 7.1:1 on white, 6.0:1 on its tint */
+  --avviso-dim: rgba(180, 83, 9, 0.12);
+  --info: #1D4ED8;
+  --stella: #A16207;
+
+  --livello-basso: #16A34A;
+  --livello-medio: #D97706;
+  --livello-alto: #DC2626;
+  --livello-basso-testo: #15803D;
+  --livello-medio-testo: #92400E;
+  --livello-alto-testo: #B91C1C;
+  --livello-basso-dim: rgba(22, 163, 74, 0.10);
+  --livello-medio-dim: rgba(217, 119, 6, 0.12);
+  --livello-alto-dim: rgba(220, 38, 38, 0.10);
+
+  /* On a light background a lot is dark */
+  --scala-1: #D9CCFD;
+  --scala-2: #B79DF9;
+  --scala-3: #9166F0;
+  --scala-4: #6D3BD8;
+  --scala-5: #4C1D95;
+  --non-allenato: #E4E1EE;
+  --recupero-recupero: #A16207;
+  --recupero-pronto: #047857;
+  --recupero-trascurato: #4058A0;
+
+  --testo-primario: #16131F;   /* 17.0:1 on the background */
+  --testo-secondario: #4A4760; /* 8.3:1 */
+  --testo-terziario: #5F5B76;  /* 6.0:1 */
+
+  --bordo: rgba(22, 19, 31, 0.10);
+  --bordo-hover: rgba(109, 40, 217, 0.3);
+  --bordo-light: rgba(22, 19, 31, 0.14);
+  --velo: rgba(22, 19, 31, 0.05);
+  --velo-forte: rgba(22, 19, 31, 0.08);
+  --incavo: rgba(22, 19, 31, 0.04);
+  --griglia: rgba(22, 19, 31, 0.08);
+  --cursore-grafico: rgba(22, 19, 31, 0.15);
+  --grafico-stimato: #9166F0;
+  --binario: rgba(22, 19, 31, 0.07);
+
+  --vetro: #FFFFFF;
+  --vetro-bordo: rgba(22, 19, 31, 0.14);
+  --striscia: #1E1B2E;
+  --striscia-testo: #F7F6FB;
+
+  --ombra-modale: 0 30px 60px rgba(22, 19, 31, 0.25), 0 0 0 1px var(--bordo-light);
 }
 
 /* --- Reset and Base: in @layer base, so the Tailwind spacing utilities can override it --- */
@@ -92,15 +206,11 @@ html {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-testo);
   background-color: var(--bg-primario);
-  background-image: 
-    radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.04) 0%, transparent 50%),
-    radial-gradient(circle at 85% 30%, rgba(6, 182, 212, 0.04) 0%, transparent 50%);
-  background-attachment: fixed;
   color: var(--testo-primario);
   line-height: 1.7;
-  letter-spacing: 0.015em;
+  letter-spacing: 0;
   overflow-x: hidden;
   min-height: 100vh;
   touch-action: manipulation;
@@ -110,8 +220,8 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Outfit', sans-serif;
-  letter-spacing: -0.01em;
+  font-family: var(--font-titoli);
+  letter-spacing: 0;
 }
 
 #root {
@@ -119,27 +229,22 @@ h1, h2, h3, h4, h5, h6 {
   min-height: 100dvh;
 }
 
-/* --- Custom scrollbar --- */
-::-webkit-scrollbar {
-  width: 6px;
+/* --- No visible scrollbars: the page and the inner containers still scroll
+   with the finger, the wheel and the keyboard --- */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--bg-primario);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--bg-terziario);
-  border-radius: var(--raggio-pieno);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-dim);
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 /* --- Text selection --- */
 ::selection {
-  background-color: var(--accent);
+  background-color: var(--accent-pieno);
   color: white;
 }
 
@@ -202,7 +307,7 @@ input:-webkit-autofill:focus {
   padding: 14px 28px;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
   color: white;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-titoli);
   font-weight: 600;
   border: none;
   border-radius: var(--raggio-pieno);
@@ -240,9 +345,9 @@ input:-webkit-autofill:focus {
   justify-content: center;
   gap: 8px;
   padding: 14px 28px;
-  background: rgba(255,255,255,0.03);
+  background: var(--velo);
   color: var(--testo-primario);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-titoli);
   font-weight: 500;
   border: 1px solid var(--bordo-light);
   border-radius: var(--raggio-pieno);
@@ -254,7 +359,7 @@ input:-webkit-autofill:focus {
 }
 
 .btn-secondario:hover {
-  background: rgba(255,255,255,0.08);
+  background: var(--velo-forte);
   border-color: var(--bordo-hover);
   transform: translateY(-1px);
 }
@@ -270,7 +375,7 @@ input:-webkit-autofill:focus {
   padding: 16px 32px;
   background: linear-gradient(135deg, var(--accent), var(--accent-alt));
   color: white;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-titoli);
   font-weight: 700;
   font-size: 1.25rem;
   letter-spacing: 0.02em;
@@ -460,6 +565,12 @@ input:-webkit-autofill:focus {
   background-clip: text;
 }
 
+/* A data colour (style="--tinta: #rrggbb") used as text: as it is on the dark
+   theme, mixed with the text colour on the light one so it stays readable */
+.testo-tinta { color: var(--tinta); }
+:root[data-tema="chiaro"] .testo-tinta { color: color-mix(in srgb, var(--tinta) 55%, #16131F); }
+
+/* .no-scrollbar: kept for the components that use it; every scrollbar is hidden anyway (top of this file) */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -505,7 +616,7 @@ input:-webkit-autofill:focus {
   justify-content: center;
   gap: 8px;
   padding: 12px 20px;
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-titoli);
   font-size: 0.95rem;
   font-weight: 600;
   color: var(--testo-terziario);
@@ -664,7 +775,7 @@ input:-webkit-autofill:focus {
 }
 
 .crea-scheda-gruppo-btn.attivo {
-  color: white;
+  color: var(--testo-primario);
   background: var(--accent-dim);
   border-color: var(--accent);
   font-weight: 600;
@@ -719,7 +830,7 @@ input:-webkit-autofill:focus {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: rgba(0,0,0,0.15);
+  background: var(--incavo);
 }
 
 .esercizio-param-gruppo {
@@ -807,7 +918,7 @@ input:-webkit-autofill:focus {
   background: transparent;
   border: none;
   color: var(--accent-hover);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-titoli);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;

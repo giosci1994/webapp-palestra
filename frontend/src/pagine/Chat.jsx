@@ -105,28 +105,28 @@ export default function Chat() {
         <div className="flex gap-2 mt-4 flex-wrap">
           <button onClick={() => setTab('chat')}
                   className={`px-3 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all ${
-                    tab === 'chat' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
+                    tab === 'chat' ? 'bg-[var(--accent-pieno)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
             {t('chat.tabChat')}
           </button>
           <button onClick={() => setTab('notifiche')}
                   className={`px-3 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all relative ${
-                    tab === 'notifiche' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
+                    tab === 'notifiche' ? 'bg-[var(--accent-pieno)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
             {t('chat.tabNotifiche')}
             {nonLette > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-[var(--pericolo)] text-white text-xs flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-[var(--pericolo-pieno)] text-white text-xs flex items-center justify-center font-bold">
                 {testoContatore(nonLette)}
               </span>
             )}
           </button>
           <button onClick={() => setTab('richieste')}
                   className={`px-3 py-2 rounded-[var(--raggio-pieno)] text-sm font-medium transition-all relative ${
-                    tab === 'richieste' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
+                    tab === 'richieste' ? 'bg-[var(--accent-pieno)] text-white' : 'bg-[var(--bg-terziario)] text-[var(--testo-secondario)]'
                   }`}>
             {t('chat.tabRichieste')}
             {richieste.length > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--pericolo)] text-white text-xs flex items-center justify-center font-bold">
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[var(--pericolo-pieno)] text-white text-xs flex items-center justify-center font-bold">
                 {richieste.length}
               </span>
             )}
@@ -224,7 +224,7 @@ export default function Chat() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={`font-semibold text-sm truncate ${nonLetto ? 'text-white' : ''}`}>
+                        <p className={`font-semibold text-sm truncate ${nonLetto ? 'text-[var(--testo-primario)]' : ''}`}>
                           {altro?.nome || t('chat.utente')}
                         </p>
                         {altro?.ruolo === 'PERSONAL_TRAINER' && (
@@ -242,7 +242,7 @@ export default function Chat() {
                         {ultimoMsg ? formattaDataRelativa(ultimoMsg.inviatoIl) : ''}
                       </span>
                       {nonLetto && (
-                        <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent)]" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-[var(--accent-pieno)]" />
                       )}
                     </div>
                   </Link>

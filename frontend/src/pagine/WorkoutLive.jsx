@@ -980,7 +980,7 @@ export default function WorkoutLive() {
               </button>
             )}
             <div className="h-1 bg-[var(--bg-terziario)]">
-              <div className="h-full bg-[var(--accent)] transition-[width] duration-1000 ease-linear"
+              <div className="h-full bg-[var(--accent-pieno)] transition-[width] duration-1000 ease-linear"
                    style={{ width: `${(timer.secondiRimasti / (durataRecupero || 1)) * 100}%` }} />
             </div>
           </div>
@@ -1339,7 +1339,7 @@ export default function WorkoutLive() {
               </button>
 
               <button onClick={() => setMostraSelettoreEsercizi(true)}
-                      className="btn-enorme mt-2" style={{ background: 'var(--bg-primario)', border: '1px solid var(--bordo)' }}>
+                      className="btn-enorme mt-2" style={{ background: 'var(--bg-primario)', color: 'var(--testo-primario)', border: '1px solid var(--bordo)' }}>
                 {t('workoutLive.azioni.cambiaEsercizio')}
               </button>
             </div>
@@ -1439,7 +1439,7 @@ export default function WorkoutLive() {
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                        inCorso ? 'bg-[var(--accent)] text-white' 
+                        inCorso ? 'bg-[var(--accent-pieno)] text-white' 
                         : tutteSeriFatte ? 'bg-[var(--successo)] text-white'
                         : 'bg-[var(--bg-primario)] text-[var(--testo-secondario)]'
                       }`}>

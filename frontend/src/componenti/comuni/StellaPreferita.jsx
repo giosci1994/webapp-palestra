@@ -20,7 +20,7 @@ export default function StellaPreferita({ attiva, onCambia, className = '' }) {
       aria-label={testo}
       title={testo}
       className={`shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-terziario)] ${
-        attiva ? 'text-[#EAB308]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)]'
+        attiva ? 'text-[var(--stella)]' : 'text-[var(--testo-terziario)] hover:text-[var(--testo-secondario)]'
       } ${className}`}
     >
       <Star size={18} fill={attiva ? 'currentColor' : 'none'} />

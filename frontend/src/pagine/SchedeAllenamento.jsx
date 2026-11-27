@@ -292,7 +292,7 @@ export default function SchedeAllenamento() {
                     <span
                       className="w-6 h-6 rounded-full shrink-0 mr-2 mt-0.5 flex items-center justify-center text-xs font-bold border"
                       style={selezionate.includes(scheda.id)
-                        ? { background: 'var(--accent)', borderColor: 'var(--accent)', color: '#fff' }
+                        ? { background: 'var(--accent-pieno)', borderColor: 'var(--accent)', color: '#fff' }
                         : { borderColor: 'var(--bordo-light)', color: 'var(--testo-terziario)' }}
                       aria-label={selezionate.includes(scheda.id) ? t('schedeAllenamento.selezionata') : t('schedeAllenamento.nonSelezionata')}
                     >

@@ -1,0 +1,43 @@
+/* Dashboard: the big greeting with the GymMaster gradient on the name, thin
+   lines instead of shadows, the banner as a dark strip (in both themes) and
+   the crowd bars in the level colours. Colours from index.css. */
+
+.dash-combinata .glass-card { backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+/* The greeting */
+.dash-combinata .dash-saluto { margin-bottom: 40px; border-bottom: 2px solid var(--testo-primario); padding-bottom: 16px; }
+.dash-combinata .dash-titolo { font-size: clamp(56px, 9vw, 112px); line-height: 0.9; font-weight: 800; font-stretch: 68%; letter-spacing: -0.01em; text-wrap: balance; }
+.dash-combinata .dash-nome {
+  background: linear-gradient(135deg, var(--accent), var(--accent-alt));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: var(--accent);
+}
+@media (forced-colors: active) { .dash-combinata .dash-nome { -webkit-text-fill-color: currentColor; background: none; } }
+
+.dash-combinata h3, .dash-combinata .dash-h3 { font-size: 19px; font-weight: 700; font-stretch: 82%; }
+.dash-combinata .uppercase { text-transform: none; letter-spacing: 0; }
+.dash-combinata .tracking-wide, .dash-combinata .tracking-wider { letter-spacing: 0; }
+.dash-combinata .text-\[10px\], .dash-combinata .text-\[9px\] { font-size: 12px; }
+
+/* Banner: a solid strip, the icon in the light accent (15.6:1 text, 6.2:1 icon) */
+.dash-combinata .dash-banner { background: var(--striscia) !important; border-color: var(--accent-glow) !important; color: var(--striscia-testo); }
+.dash-combinata .dash-banner span { color: var(--striscia-testo) !important; font-weight: 500; }
+.dash-combinata .dash-banner-icona { color: var(--striscia-icona) !important; }
+
+/* Gym crowd: green / amber / red bars on an empty track; the current hour is outlined */
+.dash-combinata .dash-binario { background: var(--binario); border-radius: 2px; }
+.dash-combinata .dash-ora { box-shadow: 0 0 0 1.5px var(--testo-primario); }
+.dash-combinata .dash-barra { border-radius: 2px; background: transparent; }
+.dash-combinata .dash-barra[data-livello="basso"] { background: var(--livello-basso); }
+.dash-combinata .dash-barra[data-livello="medio"] { background: var(--livello-medio); }
+.dash-combinata .dash-barra[data-livello="alto"] { background: var(--livello-alto); }
+.dash-combinata .dash-asse { font-variant-numeric: tabular-nums; }
+.dash-combinata .dash-livello { font-weight: 600; }
+
+/* Child components: veils and white text made for the dark theme */
+.dash-combinata [style*="linear-gradient(120deg"] { display: none; }
+.dash-combinata .hover\:text-white:hover { color: var(--testo-primario); }
+.dash-combinata :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* The tab panel can be swiped sideways: vertical scrolling stays with the page */
+.dash-pannello-trascinabile { touch-action: pan-y; }

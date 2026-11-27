@@ -362,7 +362,7 @@ export default function ModificaAllenamento({ sessione, onChiudi, onSalvato }) {
             <button
               onClick={salva}
               disabled={salvando}
-              className="flex-1 py-2.5 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
+              className="flex-1 py-2.5 rounded-lg bg-[var(--accent-pieno)] hover:bg-[var(--accent-hover)] text-white font-bold disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <Save size={16} /> {salvando ? t('modificaAllenamento.salvo') : t('modificaAllenamento.salvaModifiche')}
             </button>

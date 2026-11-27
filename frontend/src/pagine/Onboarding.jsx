@@ -188,9 +188,9 @@ export default function Onboarding() {
             ))}
             {form.tipoAccount === 'PERSONAL_TRAINER' && (
               <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                <AlertCircle size={16} className="text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-300">
+                className="flex items-start gap-2 p-3 rounded-xl bg-[var(--avviso-dim)] border border-[var(--avviso-dim)]">
+                <AlertCircle size={16} className="text-[var(--avviso)] shrink-0 mt-0.5" />
+                <p className="text-xs text-[var(--avviso)]">
                   {t('onboarding.tipo.avvisoPT')}
                 </p>
               </motion.div>
@@ -326,7 +326,7 @@ export default function Onboarding() {
                   return (
                     <button key={s} type="button"
                       onClick={() => aggiorna('specializzazioni', sel ? form.specializzazioni.filter(x => x !== s) : [...form.specializzazioni, s])}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${sel ? 'bg-[var(--accent)] text-white border-[var(--accent)]' : 'border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)]'}`}>
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${sel ? 'bg-[var(--accent-pieno)] text-white border-[var(--accent)]' : 'border-[var(--bordo)] text-[var(--testo-secondario)] hover:border-[var(--accent)]'}`}>
                       {t(chiave)}
                     </button>
                   );
@@ -407,7 +407,7 @@ export default function Onboarding() {
                   className="accent-[var(--accent)] w-4 h-4" />
                 <div>
                   <p className="text-sm font-bold flex items-center gap-1.5">
-                    <Sparkles size={14} className="text-amber-400" /> {t('onboarding.privacy.gamification')}
+                    <Sparkles size={14} className="text-[var(--avviso)]" /> {t('onboarding.privacy.gamification')}
                   </p>
                   <p className="text-[10px] text-[var(--testo-terziario)]">{t('onboarding.privacy.gamificationDesc')}</p>
                 </div>
@@ -448,7 +448,7 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4"
          style={{ 
-           background: 'linear-gradient(135deg, #0A0A0F 0%, #12121A 40%, #1A1A2E 100%)',
+           background: 'linear-gradient(135deg, var(--bg-primario) 0%, var(--bg-secondario) 40%, var(--bg-quaternario) 100%)',
            paddingTop: 'calc(16px + var(--safe-top))',
            paddingBottom: 'calc(16px + var(--safe-bottom))',
            paddingLeft: 'calc(16px + var(--safe-left))',
@@ -465,7 +465,7 @@ export default function Onboarding() {
             {Array.from({ length: STEP_TOTALI }).map((_, i) => (
               <div key={i} className="flex items-center flex-1">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-                  i < step ? 'bg-[var(--accent)] text-white'
+                  i < step ? 'bg-[var(--accent-pieno)] text-white'
                   : i === step ? 'bg-[var(--accent-dim)] border-2 border-[var(--accent)] text-[var(--accent)]'
                   : 'bg-[var(--bg-terziario)] text-[var(--testo-terziario)]'
                 }`}>
@@ -473,7 +473,7 @@ export default function Onboarding() {
                 </div>
                 {i < STEP_TOTALI - 1 && (
                   <div className={`flex-1 h-0.5 mx-1.5 rounded-full transition-colors ${
-                    i < step ? 'bg-[var(--accent)]' : 'bg-[var(--bordo)]'
+                    i < step ? 'bg-[var(--accent-pieno)]' : 'bg-[var(--bordo)]'
                   }`} />
                 )}
               </div>

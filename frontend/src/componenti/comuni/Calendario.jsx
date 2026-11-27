@@ -94,7 +94,7 @@ export default function Calendario({
   return (
     <div>
       {/* Header: navigation and, if requested, the mode selector */}
-      <div className="flex items-center justify-between gap-2 mb-4 bg-[rgba(0,0,0,0.2)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
+      <div className="flex items-center justify-between gap-2 mb-4 bg-[var(--incavo)] p-2 rounded-[var(--raggio-md)] border border-[var(--bordo-light)]">
         <button
           onClick={() => scorri(-1)}
           aria-label={modo === 'mese' ? t('calendario.mesePrecedente') : t('calendario.settimanaPrecedente')}
@@ -118,7 +118,7 @@ export default function Calendario({
                   aria-pressed={modo === v}
                   className="px-2 py-1 text-[11px] font-bold transition-colors"
                   style={modo === v
-                    ? { background: 'var(--accent)', color: '#fff' }
+                    ? { background: 'var(--accent-pieno)', color: '#fff' }
                     : { color: 'var(--testo-terziario)' }}
                 >
                   {v === 'mese' ? t('calendario.modoMese') : t('calendario.modoSettimana')}

@@ -78,8 +78,8 @@ export default function TrainerProfilo() {
       <div className="grid grid-cols-3 gap-3">
         {[
           { icona: <Users size={20} className="text-[var(--accent)]" />, valore: pt._count?.clientiComePT || 0, label: t('trainerProfilo.clienti') },
-          { icona: <ClipboardList size={20} className="text-blue-400" />, valore: pt._count?.schedeCreate || 0, label: t('trainerProfilo.schede') },
-          { icona: <Award size={20} className="text-green-400" />, valore: pt.anniEsperienza != null ? t('trainerProfilo.anni', { count: pt.anniEsperienza }) : '—', label: t('trainerProfilo.esperienza') },
+          { icona: <ClipboardList size={20} className="text-[var(--info)]" />, valore: pt._count?.schedeCreate || 0, label: t('trainerProfilo.schede') },
+          { icona: <Award size={20} className="text-[var(--successo)]" />, valore: pt.anniEsperienza != null ? t('trainerProfilo.anni', { count: pt.anniEsperienza }) : '—', label: t('trainerProfilo.esperienza') },
         ].map((s, i) => (
           <div key={i} className="glass-card p-card-inner text-center">
             <div className="flex justify-center mb-1">{s.icona}</div>

@@ -270,7 +270,7 @@ export default function SezioneCorpo({ dati, periodo, adesso }) {
                     type="button"
                     onClick={() => cambiaVista(id)}
                     aria-pressed={vista === id}
-                    className={`px-4 py-1 rounded-lg text-xs font-bold transition-colors ${vista === id ? 'bg-[var(--accent)] text-white' : 'text-[var(--testo-secondario)] hover:text-white'}`}
+                    className={`px-4 py-1 rounded-lg text-xs font-bold transition-colors ${vista === id ? 'bg-[var(--accent-pieno)] text-white' : 'text-[var(--testo-secondario)] hover:text-white'}`}
                   >
                     {testo}
                   </button>
