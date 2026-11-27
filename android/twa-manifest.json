@@ -1,0 +1,42 @@
+{
+  "packageId": "uk.casadm.gymmaster",
+  "host": "gymmaster.casadm.uk",
+  "name": "GymMaster",
+  "launcherName": "GymMaster",
+  "display": "standalone",
+  "orientation": "portrait",
+  "themeColor": "#0A0A0F",
+  "themeColorDark": "#0A0A0F",
+  "navigationColor": "#0A0A0F",
+  "navigationColorDark": "#0A0A0F",
+  "navigationDividerColor": "#0A0A0F",
+  "navigationDividerColorDark": "#0A0A0F",
+  "backgroundColor": "#0A0A0F",
+  "enableNotifications": true,
+  "startUrl": "/",
+  "iconUrl": "https://gymmaster.casadm.uk/icons/icon-512.png",
+  "maskableIconUrl": "https://gymmaster.casadm.uk/icons/icon-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "gymmaster"
+  },
+  "appVersionCode": 1,
+  "appVersion": "0.0.0",
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://gymmaster.casadm.uk/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://gymmaster.casadm.uk/",
+  "minSdkVersion": 24,
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": []
+}
