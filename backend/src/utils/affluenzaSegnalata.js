@@ -15,6 +15,7 @@
 // until GET /palestre/:id/affluenza and the reminder use these functions.
 
 import prisma from '../config/database.js';
+import { FUSO_ORARIO, lunediLocale } from './date.js';
 
 const MINUTO = 60 * 1000;
 const SETTIMANA = 7 * 24 * 60 * MINUTO;
@@ -38,8 +39,12 @@ export const RICHIESTE_SEGNALAZIONE_ORA = 10;
 export const SETTIMANE_CELLA = 12;
 /** …when it has at least this many reports… */
 export const MIN_SEGNALAZIONI_CELLA = 15;
-/** …from at least this many different people */
+/** …from at least this many different people… */
 export const MIN_UTENTI_CELLA = 2;
+/** …of whom at least MIN_PERSONE_COSTANTI_CELLA reported in that cell… */
+export const MIN_PERSONE_COSTANTI_CELLA = 2;
+/** …each in at least this many different weeks (of the SETTIMANE_CELLA) */
+export const SETTIMANE_DIVERSE_PER_PERSONA = 3;
 /** In a cell's average the reports of the last weeks count in full, older ones half */
 export const SETTIMANE_PESO_PIENO = 4;
 export const PESO_VECCHIE = 0.5;
@@ -58,6 +63,14 @@ export function percentualeDi(livello) {
   return Number.isInteger(livello) && livello >= 0 && livello <= LIVELLO_MASSIMO ? LIVELLI_AFFLUENZA[livello] : null;
 }
 
+/**
+ * The week a report belongs to: the Monday of its calendar week (Monday to
+ * Sunday) in the gym's time zone, as milliseconds. It depends only on the
+ * instant, not on when the aggregate is computed, so the same reports always
+ * fall in the same weeks; three reports in one week count as one week.
+ */
+export const settimanaDi = istante => lunediLocale(istante, FUSO_ORARIO);
+
 const mediaPesata = coppie => {
   const pesi = coppie.reduce((somma, [, peso]) => somma + peso, 0);
   return Math.round(coppie.reduce((somma, [valore, peso]) => somma + valore * peso, 0) / pesi);
@@ -67,9 +80,11 @@ const mediaPesata = coppie => {
  * The cells of a gym from its reports.
  * @param {{ giornoSettimana: number, ora: number, livello: number, utenteId: number, istante: Date }[]} righe
  * @returns {{ giornoSettimana: number, ora: number, livelloPercentuale: number, segnalazioni: number,
- *   utenti: number, ultimaSegnalazione: Date, sufficiente: boolean }[]}
+ *   utenti: number, personeCostanti: number, ultimaSegnalazione: Date, sufficiente: boolean }[]}
  *   one per cell with at least one report in the window, sorted by day and hour;
- *   `sufficiente` says whether it passes the threshold
+ *   `personeCostanti` is how many people reported in it in at least
+ *   SETTIMANE_DIVERSE_PER_PERSONA different weeks; `sufficiente` says whether
+ *   it passes the threshold. Everyone's reports go into the average.
  */
 export function aggregaCelle(righe, adesso = new Date()) {
   const inizio = adesso.getTime() - SETTIMANE_CELLA * SETTIMANA;
@@ -80,21 +95,28 @@ export function aggregaCelle(righe, adesso = new Date()) {
     const percentuale = percentualeDi(riga.livello);
     if (istante < inizio || istante > adesso.getTime() || percentuale === null) continue;
     const chiave = riga.giornoSettimana * 24 + riga.ora;
-    if (!celle.has(chiave)) celle.set(chiave, { giornoSettimana: riga.giornoSettimana, ora: riga.ora, valori: [], utenti: new Set(), ultima: 0 });
+    if (!celle.has(chiave)) celle.set(chiave, { giornoSettimana: riga.giornoSettimana, ora: riga.ora, valori: [], settimane: new Map(), ultima: 0 });
     const cella = celle.get(chiave);
     cella.valori.push([percentuale, istante >= pieno ? 1 : PESO_VECCHIE]);
-    cella.utenti.add(riga.utenteId);
+    if (!cella.settimane.has(riga.utenteId)) cella.settimane.set(riga.utenteId, new Set());
+    cella.settimane.get(riga.utenteId).add(settimanaDi(istante));
     cella.ultima = Math.max(cella.ultima, istante);
   }
-  return [...celle.entries()].sort(([a], [b]) => a - b).map(([, cella]) => ({
-    giornoSettimana: cella.giornoSettimana,
-    ora: cella.ora,
-    livelloPercentuale: mediaPesata(cella.valori),
-    segnalazioni: cella.valori.length,
-    utenti: cella.utenti.size,
-    ultimaSegnalazione: new Date(cella.ultima),
-    sufficiente: cella.valori.length >= MIN_SEGNALAZIONI_CELLA && cella.utenti.size >= MIN_UTENTI_CELLA
-  }));
+  return [...celle.entries()].sort(([a], [b]) => a - b).map(([, cella]) => {
+    const utenti = cella.settimane.size;
+    const personeCostanti = [...cella.settimane.values()].filter(settimane => settimane.size >= SETTIMANE_DIVERSE_PER_PERSONA).length;
+    return {
+      giornoSettimana: cella.giornoSettimana,
+      ora: cella.ora,
+      livelloPercentuale: mediaPesata(cella.valori),
+      segnalazioni: cella.valori.length,
+      utenti,
+      personeCostanti,
+      ultimaSegnalazione: new Date(cella.ultima),
+      sufficiente: cella.valori.length >= MIN_SEGNALAZIONI_CELLA && utenti >= MIN_UTENTI_CELLA &&
+        personeCostanti >= MIN_PERSONE_COSTANTI_CELLA
+    };
+  });
 }
 
 /**
