@@ -563,3 +563,76 @@ pre code { background: none; border: none; padding: 0; font-size: inherit; }
 
 /* Language switch (EN/IT), same as the other projects */
 .lang-btn { font-family: var(--font-mono); letter-spacing: 0.04em; min-width: 48px; padding: 0 12px; }
+
+/* --- Download page (download.html): one card per system --- */
+.nav-links a[aria-current="page"] { color: var(--brand-text); }
+
+.download-page { padding-top: 128px; }
+.download-page .section-head { margin-bottom: 40px; }
+
+.download-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.download-card { display: flex; flex-direction: column; gap: 16px; }
+.download-card h3,
+.download-card .card-icon { margin-bottom: 0; }
+.download-card .card-icon { color: var(--brand-text); }
+.download-card p a,
+.download-card li a,
+.download-note a { color: var(--brand-text); }
+.download-card b { color: var(--text); font-weight: 600; }
+
+.download-btn { width: 100%; }
+.download-btn svg { width: 18px; height: 18px; flex: none; }
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
+/* The number sits in the left margin, so links and bold words flow as normal text */
+.steps li { counter-increment: step; position: relative; padding-left: 36px; min-height: 24px; }
+
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--brand-text);
+  background: var(--raised);
+  border: 1px solid var(--hairline);
+}
+
+.download-card .download-alt {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--hairline);
+  font-size: 0.875rem;
+  color: var(--dim);
+}
+
+.download-note { margin-top: 24px; font-size: 0.875rem; color: var(--dim); }
+
+@media (max-width: 640px) {
+  .download-page { padding-top: 96px; }
+  .download-grid { grid-template-columns: 1fr; }
+  .download-card { padding: 20px; }
+}
