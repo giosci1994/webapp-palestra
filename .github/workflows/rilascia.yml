@@ -58,6 +58,8 @@ jobs:
     permissions:
       contents: write   # add the files to the release
     uses: ./.github/workflows/app.yml
+    # The signing keys are in the "app" environment: a called workflow sees them only if the caller passes its secrets
+    secrets: inherit
     with:
       tag: ${{ needs.rilascia.outputs.tag }}
       carica: true
