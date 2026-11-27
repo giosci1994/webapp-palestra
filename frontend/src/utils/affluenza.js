@@ -34,3 +34,16 @@ export function datiRecenti(istante, adesso = Date.now()) {
   if (!istante) return false;
   return adesso - Date.parse(istante) <= MINUTI_DATI_RECENTI * 60 * 1000;
 }
+
+/**
+ * The reminder's "it is even quieter now" line, as a translation key: a live
+ * value says how it is right now, the historical pattern only how it usually
+ * is at this hour (the server falls back to it when the live value is not
+ * fresh, or the scraper has stopped).
+ * @param {boolean} live - true if the current level is a fresh live value
+ */
+export function chiaveAdessoMeno(live) {
+  return live
+    ? 'promemoriaAllenamento.quando.adessoMeno'
+    : 'promemoriaAllenamento.quando.adessoMenoAbituale';
+}

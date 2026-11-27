@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { datiFermi, datiRecenti } from './affluenza.js';
+import { datiFermi, datiRecenti, chiaveAdessoMeno } from './affluenza.js';
 
 const ADESSO = Date.parse('2026-11-11T17:00:00Z');
 
@@ -33,5 +33,16 @@ describe('datiRecenti', () => {
   it('without a date it is not recent', () => {
     expect(datiRecenti(null, ADESSO)).toBe(false);
     expect(datiRecenti(undefined, ADESSO)).toBe(false);
+  });
+});
+
+describe('chiaveAdessoMeno', () => {
+  it('a live value speaks of right now', () => {
+    expect(chiaveAdessoMeno(true)).toBe('promemoriaAllenamento.quando.adessoMeno');
+  });
+
+  it('the historical pattern speaks of how it usually is', () => {
+    expect(chiaveAdessoMeno(false)).toBe('promemoriaAllenamento.quando.adessoMenoAbituale');
+    expect(chiaveAdessoMeno(undefined)).toBe('promemoriaAllenamento.quando.adessoMenoAbituale');
   });
 });

@@ -21,6 +21,7 @@
     "nellaFascia": "Within the hours you usually train ({da}–{a})",
     "ora": "now",
     "adessoMeno": "If you're already at the gym, it's even quieter right now ({livello}%).",
+    "adessoMenoAbituale": "If you're already at the gym, this hour is usually even quieter ({livello}%).",
     "strisciaAria": "Expected crowd today from {da} to {a}",
     "strisciaAriaConsigliata": "Expected crowd today from {da} to {a}: {ora} recommended"
   },
