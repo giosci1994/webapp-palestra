@@ -11,7 +11,7 @@
   <img src="docs/assets/social-preview.png" width="800" alt="GymMaster — self-hosted gym web app" />
 </p>
 
-GymMaster is a gym web app you host on your own server with Docker. Members log their workouts from the phone, even offline, and follow their progress and records. The whole gym fits in it: personal trainers, chat, live crowd levels, a Telegram bot and an AI assistant.
+GymMaster is a gym web app you host on your own server with Docker. Members log their workouts from the phone, even offline, and follow their progress and records. The whole gym fits in it: personal trainers, chat, gym crowd levels, a Telegram bot and an AI assistant.
 
 It is a PWA: it goes on the home screen like an app, sends notifications even when closed and updates itself when a new version comes out.
 
@@ -53,7 +53,7 @@ Project page: [giosci1994.github.io/webapp-palestra](https://giosci1994.github.i
 - **Personal trainers**: clients and requests, appointments, assigned plans, announcements, measurements.
 - **Real-time chat** between members and with your trainer; you choose how long the messages you send are kept. [More](docs/features/chat.md)
 - **Notifications** in the app (the bell, or the Notifications tab of Chat on the phone), as push notifications and on Telegram (once linked) when the app is closed; delete them one at a time or all at once.
-- **Crowd levels**: how full the gym is now and the best times to go (Google Maps data).
+- **Crowd levels**: how busy the gym usually is and the best times to go, from Google Maps data collected by an optional scraper (off by default, every 6 hours when on). Since October 2026 Google Maps no longer shows "Popular times" to visitors without an account, so the charts show the last data collected (12/10/2026).
 - **Telegram bot**: plans, statistics, guided plan creation and message notifications.
 - **AI assistant** (Google Gemini) that knows your workouts. [More](docs/features/ai-assistant.md)
 
@@ -70,7 +70,7 @@ phone / PC ──▶ nginx :6969 ──┬──▶ frontend/dist (React PWA)
                              └──▶ /api, /socket.io ──▶ backend :3000 ──┬──▶ PostgreSQL 17
                                                                        └──▶ Redis 7
 Telegram ──▶ bot ──▶ backend
-scraper (crowd levels, every 30 min) ──▶ PostgreSQL
+scraper (optional, off by default; crowd levels every 6 h) ──▶ PostgreSQL
 ```
 
 Every service runs in Docker Compose.
