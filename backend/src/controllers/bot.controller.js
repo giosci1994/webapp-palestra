@@ -117,6 +117,22 @@ export async function guidaAggiungi(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+/** POST /guida/nota { chatId }: "Note" waits for the note of the last entry (the next text) */
+export async function guidaNota(req, res, next) {
+  try {
+    const dati = await botService.chiediNotaGuidata(req.utenteTelegram.id);
+    res.json({ successo: true, dati });
+  } catch (errore) { next(errore); }
+}
+
+/** POST /guida/unisci { chatId }: "Join the previous one", a superset or a circuit */
+export async function guidaUnisci(req, res, next) {
+  try {
+    const dati = await botService.unisciAllaPrecedenteGuidata(req.utenteTelegram.id);
+    res.json({ successo: true, dati });
+  } catch (errore) { next(errore); }
+}
+
 /** POST /guida/titolo { chatId }: "Finish" asks for the title, with the default one proposed */
 export async function guidaTitolo(req, res, next) {
   try {

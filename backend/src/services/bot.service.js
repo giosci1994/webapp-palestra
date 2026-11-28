@@ -16,9 +16,11 @@ import { escapeHtml } from './telegram.service.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { macchinaCardio, dovEsercizioCardio, eEsercizioCardio, SELEZIONE_CARDIO } from '../utils/macchineCardio.js';
 import { fusoCorrente } from '../utils/date.js';
-import { gruppiDi, eCardioOriscaldamento } from '../utils/superset.js';
+import { gruppiDi, eCardioOriscaldamento, normalizzaGruppi, puoUnire, unisci, separa } from '../utils/superset.js';
 import { testoDelProblema } from '../middleware/validazione.js';
-import { schemaVoceForza, schemaVoceCardio, DURATA_CARDIO_PREDEFINITA } from '../validators/bot.schema.js';
+import {
+  schemaVoceForza, schemaVoceCardio, schemaUnisciSuperset, schemaSeparaSuperset, nota as schemaNota, DURATA_CARDIO_PREDEFINITA
+} from '../validators/bot.schema.js';
 import { TITOLO_MASSIMO } from '../validators/schede.schema.js';
 
 // --- Gemini client (lazy) ---
@@ -313,12 +315,14 @@ async function conBloccoUtente(utenteId, lavoro) {
 async function salvaSchedaDallaBozza(utenteId, stato, crea) {
   const bozzaPrima = stato.bozza;
   const attesaPrima = stato.attesaTitoloFino;
+  const attesaNotaPrima = stato.attesaNotaFino;
   const rimetti = () => {
     stato.bozza = bozzaPrima;
     if (attesaPrima) stato.attesaTitoloFino = attesaPrima;
+    if (attesaNotaPrima) stato.attesaNotaFino = attesaNotaPrima;
   };
   stato.bozza = { titolo: null, livello: null, esercizi: [] };
-  delete stato.attesaTitoloFino;
+  smettiDiAttendere(stato);
   try {
     await salvaStato(utenteId, stato);
   } catch (e) {
@@ -396,6 +400,8 @@ Come lavori:
 - Per il CARDIO e il RISCALDAMENTO (tapis roulant, cyclette, ellittica, vogatore, stepper, air bike) NON usare cerca_esercizio: usa "aggiungi_cardio" con la macchina e i parametri disponibili (durata in minuti; se indicati: velocità km/h, inclinazione %, resistenza, distanza km). Imposta riscaldamento=true quando l'utente lo presenta come riscaldamento (es. "10 minuti di tapis per scaldarmi").
 - Quando l'utente dice che ha finito ("ho finito", "basta", "chiudi"), chiama "termina_scheda" con un titolo sensato (se non te l'ha dato, proponilo o chiedilo).
 - Puoi usare "mostra_bozza" per ricapitolare e "rimuovi_ultimo" per togliere l'ultimo esercizio.
+- NOTE: se l'utente dà un'indicazione di tecnica per un esercizio di forza (postura, tempo, presa), passala in "note" di aggiungi_esercizio. Il cardio non ha note.
+- SUPERSET e CIRCUITI: per fare un superset (2 esercizi) o un circuito (3 o più), aggiungi prima gli esercizi uno dopo l'altro, poi chiama "unisci_superset" con le loro posizioni nella bozza (1, 2, 3… come nello STATO BOZZA). Solo esercizi di forza vicini; cardio e riscaldamento non si uniscono. "separa_superset" toglie una voce dal suo gruppo.
 
 Regole:
 1. Rispondi SEMPRE in ${nomeLingua} (la lingua dell'utente), anche per conferme, riepiloghi e domande, in modo breve e amichevole, con qualche emoji 💪
@@ -425,7 +431,8 @@ const dichiarazioniFunzioni = [
         esercizioId: { type: Type.INTEGER, description: 'ID dell\'esercizio scelto tra i candidati' },
         serie: { type: Type.INTEGER, description: 'Numero di serie (set)' },
         ripetizioni: { type: Type.STRING, description: 'Ripetizioni come stringa, es. "8" o "8-12"' },
-        recuperoSecondi: { type: Type.INTEGER, description: 'Recupero in secondi (opzionale, default 90)' }
+        recuperoSecondi: { type: Type.INTEGER, description: 'Recupero in secondi (opzionale, default 90)' },
+        note: { type: Type.STRING, description: 'Nota di tecnica per questo esercizio (opzionale)' }
       },
       required: ['esercizioId', 'serie', 'ripetizioni']
     }
@@ -456,6 +463,28 @@ const dichiarazioniFunzioni = [
     name: 'rimuovi_ultimo',
     description: 'Rimuove l\'ultimo esercizio aggiunto alla bozza.',
     parameters: { type: Type.OBJECT, properties: {} }
+  },
+  {
+    name: 'unisci_superset',
+    description: 'Unisce in un superset (2) o circuito (3+) voci di forza vicine della bozza. Cardio e riscaldamento esclusi.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        posizioni: { type: Type.ARRAY, items: { type: Type.INTEGER }, description: 'Posizioni nella bozza (da 1), almeno 2, una dopo l\'altra, es. [2, 3]' }
+      },
+      required: ['posizioni']
+    }
+  },
+  {
+    name: 'separa_superset',
+    description: 'Toglie una voce dal suo superset o circuito.',
+    parameters: {
+      type: Type.OBJECT,
+      properties: {
+        posizione: { type: Type.INTEGER, description: 'Posizione della voce nella bozza (da 1)' }
+      },
+      required: ['posizione']
+    }
   },
   {
     name: 'termina_scheda',
@@ -499,18 +528,58 @@ function rigaMembro(posto, nome, serie, ripetizioni, recupero) {
   return t(posto.ultimo ? 'botService.voce.forzaDopoGiro' : 'botService.voce.forzaPausa', valori);
 }
 
-function riepilogoBozza(bozza) {
+/** A long text cut to `massimo` characters, with "…" (notes in a summary) */
+function inBreve(testo, massimo) {
+  const caratteri = [...String(testo)];
+  return caratteri.length <= massimo ? String(testo) : `${caratteri.slice(0, massimo - 1).join('').trimEnd()}…`;
+}
+
+/** How long a note may be in the draft summary and in a plan's details */
+const NOTA_IN_BOZZA = 40;
+const NOTA_IN_SCHEDA = 200;
+
+/** The heading "Superset A" / "Circuit A" above the first member of a group, then the line */
+function conIntestazioneGruppo(posto, riga) {
+  if (!posto?.primo) return riga;
+  const titolo = t(posto.tipo === 'superset' ? 'botService.voce.superset' : 'botService.voce.circuito', { lettera: posto.lettera });
+  return `${titolo}\n${riga}`;
+}
+
+/** The line of a note under its entry, shortened to `massimo` (escaped for HTML when asked) */
+function rigaNota(note, massimo, html) {
+  const breve = inBreve(note, massimo);
+  return `\n${t('botService.voce.nota', { nota: html ? escapeHtml(breve) : breve })}`;
+}
+
+/** A draft entry is cardio: by its type, or by its values like a plan's (utils/superset.js) */
+const eVoceCardio = e => e?.tipo === 'CARDIO' || eCardioOriscaldamento(e || {});
+
+/**
+ * The summary of the draft: the AI reads it (plain text, positions 1, 2, 3...
+ * for unisci_superset) and the guided creation shows it (`html`: names and
+ * notes escaped). Members of a group show their position and label, "2 · A1".
+ */
+function riepilogoBozza(bozza, { html = false } = {}) {
   if (!bozza.esercizi.length) return t('botService.bozza.vuota');
+  const testo = v => (html && v != null ? escapeHtml(v) : v);
+  const posti = gruppiDi(bozza.esercizi);
   const righe = bozza.esercizi.map((e, i) => {
-    if (e.tipo === 'CARDIO') {
+    const nome = testo(nomeMostrato(e));
+    if (eVoceCardio(e)) {
       const etichetta = t(e.riscaldamento ? 'botService.voce.etichettaRiscaldamento' : 'botService.voce.etichettaCardio');
       const dettagli = dettagliCardio(e);
-      return t(dettagli ? 'botService.voce.cardioDettagli' : 'botService.voce.cardio', { n: i + 1, etichetta, nome: nomeMostrato(e), dettagli });
+      return t(dettagli ? 'botService.voce.cardioDettagli' : 'botService.voce.cardio', { n: i + 1, etichetta, nome, dettagli });
     }
-    return rigaForza(i + 1, nomeMostrato(e), e.serie, e.ripetizioni, e.recuperoSecondi);
+    const posto = posti[i];
+    const riga = posto
+      ? conIntestazioneGruppo(posto, rigaMembro(
+        { ...posto, etichetta: t('botService.voce.posizioneGruppo', { n: i + 1, etichetta: posto.etichetta }) },
+        nome, e.serie, testo(e.ripetizioni), e.recuperoSecondi))
+      : rigaForza(i + 1, nome, e.serie, testo(e.ripetizioni), e.recuperoSecondi);
+    return e.note ? riga + rigaNota(e.note, NOTA_IN_BOZZA, html) : riga;
   });
   return t('botService.bozza.riepilogo', {
-    titolo: bozza.titolo || t('botService.bozza.titoloDaDefinire'),
+    titolo: testo(bozza.titolo) || t('botService.bozza.titoloDaDefinire'),
     numero: bozza.esercizi.length,
     righe: righe.join('\n')
   });
@@ -532,10 +601,10 @@ const cardio = schemaVoceCardio.shape;
  * limits, and a wrong one takes the default instead of blocking the plan.
  */
 function vociDellaScheda(esercizi) {
-  return esercizi
-    .filter(e => forza.esercizioId.safeParse(e.esercizioId).success)
+  // Groups numbered again on what is saved: an entry left out breaks no group
+  return normalizzaGruppi(esercizi.filter(e => forza.esercizioId.safeParse(e.esercizioId).success))
     .map((e, i) => {
-      if (e.tipo === 'CARDIO') {
+      if (eVoceCardio(e)) {
         return {
           esercizioId: e.esercizioId,
           ordineEsecuzione: i + 1,
@@ -556,7 +625,9 @@ function vociDellaScheda(esercizi) {
         serieTarget: valoreOPredefinito(forza.serie, e.serie, 3),
         repTarget: valoreOPredefinito(forza.ripetizioni, e.ripetizioni, '8-12'),
         recuperoSecondi: valoreOPredefinito(forza.recuperoSecondi, e.recuperoSecondi, 90),
-        ordineEsecuzione: i + 1
+        ordineEsecuzione: i + 1,
+        gruppo: e.gruppo,
+        note: valoreOPredefinito(schemaNota, e.note, null)
       };
     });
 }
@@ -594,6 +665,27 @@ function voceCardio(esercizio, valori = {}, riscaldamento = false) {
   };
 }
 
+/**
+ * Joins the draft entries at `posizioni` (from 1, next to each other: the
+ * schema checks that) into one superset or circuit, with the app's rules
+ * (utils/superset.js): strength entries only, an entry already in a group
+ * brings its group along. An error for the model when they cannot be joined.
+ */
+function unisciVoci(stato, posizioni) {
+  const lista = stato.bozza.esercizi;
+  const indici = [...posizioni].sort((a, b) => a - b).map(p => p - 1);
+  if (indici.at(-1) >= lista.length) return { errore: `Posizione ${indici.at(-1) + 1} fuori dalla bozza: le voci sono ${lista.length}.` };
+  const cardio = indici.filter(i => eVoceCardio(lista[i]));
+  if (cardio.length) {
+    return { errore: `Cardio e riscaldamento non si uniscono in un superset (posizione ${cardio.map(i => i + 1).join(', ')}).` };
+  }
+  let nuova = lista;
+  for (const i of indici.slice(0, -1)) nuova = unisci(nuova, i);
+  stato.bozza.esercizi = nuova;
+  const posto = gruppiDi(nuova)[indici[0]];
+  return { ok: true, gruppo: posto.lettera, tipo: posto.tipo, membri: posto.membri, totaleEsercizi: nuova.length };
+}
+
 async function eseguiFunzione(nome, args, utente, stato) {
   switch (nome) {
     case 'cerca_esercizio': {
@@ -605,7 +697,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
       // model as an error and never enters the draft
       const controllo = schemaVoceForza.safeParse(args);
       if (!controllo.success) return { errore: testoDelProblema(controllo.error.issues[0]) };
-      const { esercizioId, serie, ripetizioni, recuperoSecondi } = controllo.data;
+      const { esercizioId, serie, ripetizioni, recuperoSecondi, note } = controllo.data;
       const es = await prisma.esercizio.findUnique({
         where: { id: esercizioId },
         select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO }
@@ -634,7 +726,8 @@ async function eseguiFunzione(nome, args, utente, stato) {
         serie: serie ?? 3,
         ripetizioni: ripetizioni ?? '8-12',
         // 0 is a valid rest (no pause); missing, the default
-        recuperoSecondi: recuperoSecondi ?? 90
+        recuperoSecondi: recuperoSecondi ?? 90,
+        note: note ?? null
       };
       stato.bozza.esercizi.push(voce);
       return { ok: true, aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length };
@@ -654,8 +747,29 @@ async function eseguiFunzione(nome, args, utente, stato) {
     case 'mostra_bozza':
       return { riepilogo: riepilogoBozza(stato.bozza), totaleEsercizi: stato.bozza.esercizi.length };
     case 'rimuovi_ultimo': {
+      // The last member of a group leaves it first, so the new last member
+      // takes the rest after the round (like "split" in the app)
+      const ultimo = stato.bozza.esercizi.length - 1;
+      if (ultimo >= 0 && gruppiDi(stato.bozza.esercizi)[ultimo]) stato.bozza.esercizi = separa(stato.bozza.esercizi, ultimo);
       const rimosso = stato.bozza.esercizi.pop();
       return { ok: true, rimosso: rimosso ? nomeMostrato(rimosso) : null, totaleEsercizi: stato.bozza.esercizi.length };
+    }
+    case 'unisci_superset': {
+      const controllo = schemaUnisciSuperset.safeParse(args);
+      if (!controllo.success) return { errore: testoDelProblema(controllo.error.issues[0]) };
+      const risultato = unisciVoci(stato, controllo.data.posizioni);
+      if (risultato.errore) return risultato;
+      return { ...risultato, riepilogo: riepilogoBozza(stato.bozza) };
+    }
+    case 'separa_superset': {
+      const controllo = schemaSeparaSuperset.safeParse(args);
+      if (!controllo.success) return { errore: testoDelProblema(controllo.error.issues[0]) };
+      const indice = controllo.data.posizione - 1;
+      const lista = stato.bozza.esercizi;
+      if (indice >= lista.length) return { errore: `Posizione ${indice + 1} fuori dalla bozza: le voci sono ${lista.length}.` };
+      if (!gruppiDi(lista)[indice]) return { errore: `La voce ${indice + 1} non è in un superset o circuito.` };
+      stato.bozza.esercizi = separa(lista, indice);
+      return { ok: true, separato: nomeMostrato(lista[indice]), riepilogo: riepilogoBozza(stato.bozza), totaleEsercizi: lista.length };
     }
     case 'termina_scheda': {
       // Like the other arguments: a title over the limit goes back to the
@@ -702,7 +816,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
 }
 
 /** The functions that change the draft: their result is saved at once */
-const FUNZIONI_CHE_CAMBIANO = new Set(['aggiungi_esercizio', 'aggiungi_cardio', 'rimuovi_ultimo', 'termina_scheda']);
+const FUNZIONI_CHE_CAMBIANO = new Set(['aggiungi_esercizio', 'aggiungi_cardio', 'rimuovi_ultimo', 'unisci_superset', 'separa_superset', 'termina_scheda']);
 
 /** Adds a user message and the answer to the history (the last 16 entries) */
 function aggiungiAllaStoria(stato, testo, risposta) {
@@ -720,11 +834,14 @@ export async function elaboraMessaggio(utente, testo) {
 
   // After "Finish" in the guided creation the next text is the plan's title,
   // not a message for the AI
-  if (attendeTitolo(await caricaStato(utente.id))) {
+  const statoAttuale = await caricaStato(utente.id);
+  if (attendeTitolo(statoAttuale)) {
     const titolo = testo.trim();
     if (titolo.length > TITOLO_MASSIMO) throw new ErroreValidazione(t('botSchema.titoloTroppoLungo'));
     return { scheda: await terminaSchedaGuidata(utente.id, titolo) };
   }
+  // After "Note" the next text is the note of the last entry
+  if (attendeNota(statoAttuale)) return { nota: await salvaNotaGuidata(utente.id, testo.trim()) };
 
   await verificaRateLimit(utente.id);
 
@@ -864,14 +981,13 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
         n: i + 1, icona: e.riscaldamento ? '🔥' : '🏃', nome, dettagli
       });
     }
-    if (posti[i]) {
-      // A heading line above the first member: "Superset A" (2) or "Circuit A" (3+)
-      const riga = rigaMembro(posti[i], nome, e.serieTarget, ripetizioni, e.recuperoSecondi);
-      if (!posti[i].primo) return riga;
-      const titolo = t(posti[i].tipo === 'superset' ? 'botService.voce.superset' : 'botService.voce.circuito', { lettera: posti[i].lettera });
-      return `${titolo}\n${riga}`;
-    }
-    return rigaForza(i + 1, nome, e.serieTarget, ripetizioni, e.recuperoSecondi);
+    // A heading line above the first member: "Superset A" (2) or "Circuit A" (3+)
+    const riga = posti[i]
+      ? conIntestazioneGruppo(posti[i], rigaMembro(posti[i], nome, e.serieTarget, ripetizioni, e.recuperoSecondi))
+      : rigaForza(i + 1, nome, e.serieTarget, ripetizioni, e.recuperoSecondi);
+    // The technique note, escaped (free text in the app), shortened so a
+    // long plan still fits one Telegram message
+    return e.note?.trim() ? riga + rigaNota(e.note.trim(), NOTA_IN_SCHEDA, true) : riga;
   });
   const testo = t('botService.scheda.testo', {
     titolo: escapeHtml(scheda.titolo),
@@ -1024,10 +1140,10 @@ export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, rip
       : { tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
           serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90 };
     stato.bozza.esercizi.push(voce);
-    // Adding again after "Finish": the next text is no longer the title
-    delete stato.attesaTitoloFino;
+    // Adding again after "Finish" or "Note": the next text is no longer the title or the note
+    smettiDiAttendere(stato);
     await salvaStato(utenteId, stato);
-    const dati = { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length, cardio };
+    const dati = { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length, cardio, ...pulsantiDopo(stato) };
     if (cardio) dati.durataMinuti = voce.durataMinuti;
     return dati;
   });
@@ -1042,6 +1158,90 @@ const ATTESA_TITOLO_MS = 15 * 60 * 1000;
 /** Whether the draft is waiting for its title */
 const attendeTitolo = stato => typeof stato.attesaTitoloFino === 'number' && stato.attesaTitoloFino > Date.now();
 
+/**
+ * "Note" works the same way: the next text is the note of the last entry,
+ * for as long as the title waits, and anything else in the guided creation
+ * (or /annulla) ends the wait. One wait at a time.
+ */
+const attendeNota = stato => typeof stato.attesaNotaFino === 'number' && stato.attesaNotaFino > Date.now();
+
+/** The draft no longer waits for a title or a note */
+function smettiDiAttendere(stato) {
+  delete stato.attesaTitoloFino;
+  delete stato.attesaNotaFino;
+}
+
+/** The last entry can be joined to the one before (both strength, not already together) */
+const unibileAllaPrecedente = lista =>
+  lista.length >= 2 && !eVoceCardio(lista.at(-1)) && !eVoceCardio(lista.at(-2)) && puoUnire(lista, lista.length - 2);
+
+/** Which extra buttons the guided creation shows after a step: "Note" (strength only) and "Join the previous one" */
+const pulsantiDopo = stato => ({
+  nota: stato.bozza.esercizi.length > 0 && !eVoceCardio(stato.bozza.esercizi.at(-1)),
+  unibile: unibileAllaPrecedente(stato.bozza.esercizi)
+});
+
+/** The last entry of the draft, if it can take a note; otherwise a clear 400 */
+function ultimaVoceConNota(stato) {
+  const ultima = stato.bozza.esercizi.at(-1);
+  if (!ultima) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
+  if (eVoceCardio(ultima)) throw new ErroreValidazione(t('botService.notaSoloForza'));
+  return ultima;
+}
+
+/** "Note" in the guided creation: the draft waits for the note of its last entry */
+export async function chiediNotaGuidata(utenteId) {
+  return conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    const ultima = ultimaVoceConNota(stato);
+    smettiDiAttendere(stato);
+    stato.attesaNotaFino = Date.now() + ATTESA_TITOLO_MS;
+    await salvaStato(utenteId, stato);
+    return { nome: nomeMostrato(ultima), nota: ultima.note ?? null };
+  });
+}
+
+/** The text written after "Note": it becomes the note of the last entry (it replaces the one before) */
+export async function salvaNotaGuidata(utenteId, testo) {
+  return conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    smettiDiAttendere(stato);
+    let ultima;
+    try {
+      ultima = ultimaVoceConNota(stato);
+    } catch (e) {
+      // Nothing to put the note on any more: the wait is over all the same
+      await salvaStato(utenteId, stato);
+      throw e;
+    }
+    ultima.note = testo;
+    await salvaStato(utenteId, stato);
+    return {
+      nome: nomeMostrato(ultima), riepilogo: riepilogoBozza(stato.bozza, { html: true }),
+      totaleEsercizi: stato.bozza.esercizi.length, ...pulsantiDopo(stato)
+    };
+  });
+}
+
+/**
+ * "Join the previous one": the last entry joins the group of the one before,
+ * or the two make a new superset (the app's rules, utils/superset.js)
+ */
+export async function unisciAllaPrecedenteGuidata(utenteId) {
+  return conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    if (!unibileAllaPrecedente(stato.bozza.esercizi)) throw new ErroreValidazione(t('botService.nienteDaUnire'));
+    smettiDiAttendere(stato);
+    const n = stato.bozza.esercizi.length;
+    const { gruppo, tipo } = unisciVoci(stato, [n - 1, n]);
+    await salvaStato(utenteId, stato);
+    return {
+      gruppo, tipo, riepilogo: riepilogoBozza(stato.bozza, { html: true }),
+      totaleEsercizi: n, ...pulsantiDopo(stato)
+    };
+  });
+}
+
 /** The number of entries in the user's draft (read only, no lock) */
 export async function numeroEserciziBozza(utenteId) {
   return (await caricaStato(utenteId)).bozza.esercizi.length;
@@ -1052,18 +1252,20 @@ export async function chiediTitoloGuidata(utenteId) {
   return conBloccoUtente(utenteId, async () => {
     const stato = await caricaStato(utenteId);
     if (!vociDellaScheda(stato.bozza.esercizi).length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
+    smettiDiAttendere(stato);
     stato.attesaTitoloFino = Date.now() + ATTESA_TITOLO_MS;
     await salvaStato(utenteId, stato);
     return { titoloProposto: titoloScheda(null), numEsercizi: stato.bozza.esercizi.length };
   });
 }
 
-/** Back to the categories: the draft no longer waits for a title */
+/** Back to the categories: the draft no longer waits for a title or a note */
 export async function smettiDiAttendereTitolo(utenteId) {
-  if (!attendeTitolo(await caricaStato(utenteId))) return;
+  const prima = await caricaStato(utenteId);
+  if (!attendeTitolo(prima) && !attendeNota(prima)) return;
   await conBloccoUtente(utenteId, async () => {
     const stato = await caricaStato(utenteId);
-    delete stato.attesaTitoloFino;
+    smettiDiAttendere(stato);
     await salvaStato(utenteId, stato);
   });
 }

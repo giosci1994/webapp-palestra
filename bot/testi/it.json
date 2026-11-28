@@ -46,5 +46,11 @@
   "ricomincia": "🔄 Ricomincia",
   "chiediTitolo": "📝 Come chiamo la scheda? Scrivimi il titolo, oppure usa quello proposto: <b>{titolo}</b>",
   "usaTitoloProposto": "✅ Usa il titolo proposto",
-  "toltoDalCatalogo": "⚠️ Tolto <b>{nome}</b>: non è più nel catalogo."
+  "toltoDalCatalogo": "⚠️ Tolto <b>{nome}</b>: non è più nel catalogo.",
+  "pulsanteNota": "📝 Nota",
+  "pulsanteUnisci": "🔗 Unisci al precedente",
+  "chiediNota": "📝 Scrivimi la nota per <b>{nome}</b> (tecnica, tempo, presa…): il prossimo messaggio diventa la nota.",
+  "notaSalvata": "📝 Nota salvata su <b>{nome}</b>.\n\n{riepilogo}",
+  "unitoSuperset": "🔗 Fatto: <b>Superset {lettera}</b>.\n\n{riepilogo}",
+  "unitoCircuito": "🔗 Fatto: <b>Circuito {lettera}</b>.\n\n{riepilogo}"
 }

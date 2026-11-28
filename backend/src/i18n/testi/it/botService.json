@@ -14,6 +14,8 @@
   "schedaNonTrovata": "Scheda non trovata",
   "esercizioNonTrovato": "Esercizio non trovato",
   "bozzaVuotaGuidata": "La bozza è vuota: aggiungi almeno un esercizio.",
+  "notaSoloForza": "La nota si mette su un esercizio di forza: il cardio non ha note, come nell'app.",
+  "nienteDaUnire": "L'ultima voce non si può unire alla precedente: servono due esercizi di forza, non già insieme.",
   "bozzaSenzaEsercizi": "Gli esercizi della bozza non sono più nel catalogo ({nomi}): la bozza ora è vuota, aggiungine di nuovi.",
   "eserciziTolti": "⚠️ Tolti dalla scheda perché non sono più nel catalogo: {nomi}.",
   "titoloSchedaPredefinito": "Scheda del {data}",
@@ -54,7 +56,9 @@
     "velocita": "{valore} km/h",
     "inclinazione": "incl {valore}%",
     "resistenza": "liv {valore}",
-    "distanza": "{valore} km"
+    "distanza": "{valore} km",
+    "nota": "   📝 {nota}",
+    "posizioneGruppo": "{n} · {etichetta}"
   },
   "scheda": {
     "testo": "📋 <b>{titolo}</b>\nLivello: {livello}\n\n{righe}",

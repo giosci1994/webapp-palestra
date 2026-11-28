@@ -9,9 +9,10 @@ import { run, sequentialize } from '@grammyjs/runner';
 import { createServer } from 'node:http';
 import { t, tLingua, ricordaLingua } from './testi.js';
 import {
-  HTML, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
+  chiaveChat, messaggiHtml, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
   tastieraSchede, tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
-  tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio
+  tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio,
+  testoChiediNota, tastieraNota, testoNotaSalvata, testoUnito
 } from './formato.js';
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -57,6 +58,12 @@ async function api(ctx, percorso, body) {
 
 const chatId = (ctx) => String(ctx.chat.id);
 
+// An HTML reply in as many messages as Telegram needs (4096 characters each),
+// the keyboard under the last one
+async function rispondiHtml(ctx, testo, extra = {}) {
+  for (const [pezzo, opzioni] of messaggiHtml(testo, extra)) await ctx.reply(pezzo, opzioni);
+}
+
 // --- /start [code] ---
 bot.command('start', async (ctx) => {
   const codice = (ctx.match || '').trim();
@@ -100,7 +107,7 @@ bot.command('statistiche', async (ctx) => {
   const r = await api(ctx, 'statistiche', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   // HTML, escaped by the backend
-  await ctx.reply(r.corpo.dati.testo, HTML);
+  await rispondiHtml(ctx, r.corpo.dati.testo);
 });
 
 // --- /guidata: button-based creation by categories ---
@@ -209,7 +216,7 @@ bot.callbackQuery(/^gcx:(\d+)$/, async (ctx) => {
 /** The answer after an exercise is added: the backend tells whether it became cardio */
 async function rispondiAggiunto(ctx, r, serie, rip) {
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  await ctx.reply(testoAggiunto(ctx, r.corpo.dati, serie, rip), { ...HTML, reply_markup: tastieraDopoAggiunta(ctx) });
+  await rispondiHtml(ctx, testoAggiunto(ctx, r.corpo.dati, serie, rip), { reply_markup: tastieraDopoAggiunta(ctx, r.corpo.dati) });
 }
 
 bot.callbackQuery(/^gcadd:(\d+):(\d+)$/, async (ctx) => {
@@ -226,20 +233,36 @@ bot.callbackQuery(/^gadd:(\d+):(\d+):(\S+)$/, async (ctx) => {
   await rispondiAggiunto(ctx, r, serie, rip);
 });
 
+// "Note": the next text is the note of the last entry (the backend knows it is waiting)
+bot.callbackQuery('gnota', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const r = await api(ctx, 'guida/nota', { chatId: chatId(ctx) });
+  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  await rispondiHtml(ctx, testoChiediNota(ctx, r.corpo.dati), { reply_markup: tastieraNota(ctx) });
+});
+
+// "Join the previous one": a superset (or a circuit, if the previous one was in a group)
+bot.callbackQuery('gunisci', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const r = await api(ctx, 'guida/unisci', { chatId: chatId(ctx) });
+  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  await rispondiHtml(ctx, testoUnito(ctx, r.corpo.dati), { reply_markup: tastieraDopoAggiunta(ctx, r.corpo.dati) });
+});
+
 // "Finish" asks for the title: the next text is the title (the backend
 // knows it is waiting), or the button takes the proposed one
 bot.callbackQuery('gfine', async (ctx) => {
   await ctx.answerCallbackQuery();
   const r = await api(ctx, 'guida/titolo', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  await ctx.reply(testoChiediTitolo(ctx, r.corpo.dati), { ...HTML, reply_markup: tastieraTitolo(ctx) });
+  await rispondiHtml(ctx, testoChiediTitolo(ctx, r.corpo.dati), { reply_markup: tastieraTitolo(ctx) });
 });
 
 bot.callbackQuery('gtit', async (ctx) => {
   await ctx.answerCallbackQuery();
   const r = await api(ctx, 'guida/termina', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  await ctx.reply(testoSchedaSalvata(ctx, r.corpo.dati), HTML);
+  await rispondiHtml(ctx, testoSchedaSalvata(ctx, r.corpo.dati));
 });
 
 // --- Callback: plan details ---
@@ -249,7 +272,7 @@ bot.callbackQuery(/^scheda:(\d+)$/, async (ctx) => {
   const r = await api(ctx, 'scheda', { chatId: chatId(ctx), schedaId });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   // HTML, escaped by the backend
-  await ctx.reply(r.corpo.dati.testo, HTML);
+  await rispondiHtml(ctx, r.corpo.dati.testo);
 });
 
 // --- Free-text messages -> conversational engine ---
@@ -261,7 +284,12 @@ bot.on('message:text', async (ctx) => {
   const r = await api(ctx, 'messaggio', { chatId: chatId(ctx), testo });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   // The text was the title the guided creation asked for: the plan is saved
-  if (r.corpo.dati.scheda) { await ctx.reply(testoSchedaSalvata(ctx, r.corpo.dati.scheda), HTML); return; }
+  if (r.corpo.dati.scheda) { await rispondiHtml(ctx, testoSchedaSalvata(ctx, r.corpo.dati.scheda)); return; }
+  // The text was the note "Note" asked for
+  if (r.corpo.dati.nota) {
+    await rispondiHtml(ctx, testoNotaSalvata(ctx, r.corpo.dati.nota), { reply_markup: tastieraDopoAggiunta(ctx, r.corpo.dati.nota) });
+    return;
+  }
   await ctx.reply(r.corpo.dati.risposta);
 });
 

@@ -20,6 +20,90 @@ export function escapeHtml(testo = '') {
 /** The formatting of every message with <b>/<i> (texts from the backend included) */
 export const HTML = { parse_mode: 'HTML' };
 
+/**
+ * Telegram refuses a message longer than 4096 characters. The raw HTML is
+ * measured, which is longer than what Telegram counts (an entity like &amp;
+ * counts 1 there), and the limit keeps a margin for the tags closed at the
+ * end of a piece and opened again at the start of the next one.
+ */
+export const CARATTERI_MESSAGGIO_MASSIMI = 4000;
+
+const TAG = /<(\/?)([a-z]+)[^>]*>/gi;
+
+/** The tags still open at the end of `testo`, given those open at its start: [{ nome, apertura }] */
+function tagAperti(testo, aperti) {
+  const pila = [...aperti];
+  for (const [apertura, chiusura, nome] of testo.matchAll(TAG)) {
+    if (!chiusura) { pila.push({ nome: nome.toLowerCase(), apertura }); continue; }
+    const i = pila.map(t => t.nome).lastIndexOf(nome.toLowerCase());
+    if (i >= 0) pila.splice(i, 1);
+  }
+  return pila;
+}
+
+/**
+ * A line too long for one message, cut into pieces of at most `massimo`: its
+ * formatting is dropped (tags out, so none is cut), and a cut never falls
+ * inside an entity (&amp;) or between the two halves of an emoji
+ */
+function tagliaRiga(riga, massimo) {
+  let resto = riga.replace(TAG, '');
+  const pezzi = [];
+  while (resto.length > massimo) {
+    let taglio = massimo;
+    // An escaped text has "&" only at the start of an entity: one that ends after the cut moves the cut before it
+    const e = resto.lastIndexOf('&', taglio - 1);
+    if (e > 0 && resto.indexOf(';', e) >= taglio) taglio = e;
+    const codice = resto.charCodeAt(taglio - 1);
+    if (codice >= 0xd800 && codice <= 0xdbff) taglio--;
+    pezzi.push(resto.slice(0, taglio));
+    resto = resto.slice(taglio);
+  }
+  pezzi.push(resto);
+  return pezzi;
+}
+
+/**
+ * Splits a ready HTML text into pieces Telegram takes (at most `massimo`
+ * characters each, tags included). It cuts between lines; a tag open at a
+ * cut is closed at the end of the piece and opened again in the next. A text
+ * that fits is one piece, unchanged.
+ */
+export function dividiHtml(testo, massimo = CARATTERI_MESSAGGIO_MASSIMI) {
+  testo = String(testo);
+  if (testo.length <= massimo) return [testo];
+  // Room for closing and opening the tags around a cut
+  const spazio = massimo - 64;
+  const righe = testo.split('\n').flatMap(riga => (riga.length > spazio ? tagliaRiga(riga, spazio) : [riga]));
+  const gruppi = [];
+  let corrente = null;
+  for (const riga of righe) {
+    if (corrente !== null && corrente.length + 1 + riga.length <= spazio) corrente += `\n${riga}`;
+    else {
+      if (corrente !== null) gruppi.push(corrente);
+      corrente = riga;
+    }
+  }
+  gruppi.push(corrente);
+  let aperti = [];
+  return gruppi.map(gruppo => {
+    const prima = aperti.map(t => t.apertura).join('');
+    aperti = tagAperti(gruppo, aperti);
+    const dopo = [...aperti].reverse().map(t => `</${t.nome}>`).join('');
+    return prima + gruppo + dopo;
+  });
+}
+
+/**
+ * The messages for a reply in HTML: the pieces of `testo`, each with the
+ * formatting, and the keyboard (or any other option in `extra`) only on the
+ * last one, so the buttons stay under the whole text. [[text, options], ...]
+ */
+export function messaggiHtml(testo, extra = {}) {
+  const pezzi = dividiHtml(testo);
+  return pezzi.map((pezzo, i) => [pezzo, i === pezzi.length - 1 ? { ...HTML, ...extra } : HTML]);
+}
+
 /** The key for @grammyjs/runner's sequentialize: one chat in order, the chats in parallel */
 export const chiaveChat = (ctx) => ctx.chat?.id?.toString();
 
@@ -105,7 +189,27 @@ export const tastieraSerie = (id) => tastiera([
 
 export const tastieraMinuti = (id) => tastiera([[10, 15, 20, 30].map(minuti => [`${minuti} min`, `gcadd:${id}:${minuti}`])]);
 
-export const tastieraDopoAggiunta = (ctx) => tastiera([[[t(ctx, 'aggiungiAltro'), 'gmenu'], [t(ctx, 'termina'), 'gfine']]]);
+/**
+ * After a step of the guided creation: add another, finish, and, when the
+ * backend says they fit the last entry, "Note" and "Join the previous one"
+ */
+export function tastieraDopoAggiunta(ctx, d = {}) {
+  const extra = [];
+  if (d.nota) extra.push([t(ctx, 'pulsanteNota'), 'gnota']);
+  if (d.unibile) extra.push([t(ctx, 'pulsanteUnisci'), 'gunisci']);
+  return tastiera([[[t(ctx, 'aggiungiAltro'), 'gmenu'], [t(ctx, 'termina'), 'gfine']], extra]);
+}
+
+/** "Note": the question for the note of the last entry (HTML), with a way back to the categories */
+export const testoChiediNota = (ctx, d) => t(ctx, 'chiediNota', { nome: escapeHtml(d.nome) });
+export const tastieraNota = (ctx) => tastiera([[[t(ctx, 'aggiungiAltro'), 'gmenu']]]);
+
+/** The note saved, with the draft summary (HTML, escaped by the backend) */
+export const testoNotaSalvata = (ctx, d) => t(ctx, 'notaSalvata', { nome: escapeHtml(d.nome), riepilogo: d.riepilogo });
+
+/** The superset or circuit made by "Join the previous one", with the draft summary (HTML, escaped by the backend) */
+export const testoUnito = (ctx, d) =>
+  t(ctx, d.tipo === 'circuito' ? 'unitoCircuito' : 'unitoSuperset', { lettera: escapeHtml(d.gruppo), riepilogo: d.riepilogo });
 
 /** The answer after an exercise is added (HTML): the backend tells whether it became cardio */
 export function testoAggiunto(ctx, d, serie, ripetizioni) {

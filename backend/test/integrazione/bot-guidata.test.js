@@ -162,7 +162,7 @@ describe('bot guided creation: "Cardio / warm-up"', () => {
 
     // Picked from there: the minutes buttons add a cardio entry
     const aggiunto = await bot('guida/aggiungi', { esercizioId: macchina.id, durataMinuti: '15' });
-    assert.deepEqual(aggiunto.corpo.dati, { aggiunto: 'Treadmill', totaleEsercizi: 1, cardio: true, durataMinuti: 15 });
+    assert.deepEqual(aggiunto.corpo.dati, { aggiunto: 'Treadmill', totaleEsercizi: 1, cardio: true, durataMinuti: 15, nota: false, unibile: false });
   });
 
   it('"soloCardio" must be true or false', async () => {

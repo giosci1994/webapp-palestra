@@ -9,5 +9,8 @@
   "ripetizioniTroppoLunghe": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)",
   "soloCardioNonValido": "La scelta «cardio» non è valida",
   "offsetNonValido": "La pagina non è valida",
-  "titoloTroppoLungo": "Il titolo è troppo lungo (al massimo 100 caratteri)"
+  "titoloTroppoLungo": "Il titolo è troppo lungo (al massimo 100 caratteri)",
+  "posizioneNonValida": "La posizione non è valida (un numero da 1, come nel riepilogo della bozza)",
+  "posizioniNonValide": "Servono almeno due posizioni della bozza (numeri da 1)",
+  "posizioniNonContigue": "Le voci da unire devono essere una dopo l'altra nella bozza"
 }

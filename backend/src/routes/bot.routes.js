@@ -12,7 +12,7 @@ import {
   schemaGuidaGruppi, schemaGuidaEsercizi, schemaGuidaAggiungi, schemaGuidaTermina
 } from '../validators/bot.schema.js';
 import { limitatoreBot, limitatoreBotTotale } from '../middleware/limitatore.js';
-import { collega, messaggio, annulla, schede, scheda, statistiche, guidaCategorie, guidaGruppi, guidaEsercizi, guidaAggiungi, guidaTitolo, guidaTermina } from '../controllers/bot.controller.js';
+import { collega, messaggio, annulla, schede, scheda, statistiche, guidaCategorie, guidaGruppi, guidaEsercizi, guidaAggiungi, guidaNota, guidaUnisci, guidaTitolo, guidaTermina } from '../controllers/bot.controller.js';
 
 const router = Router();
 
@@ -39,6 +39,8 @@ router.post('/guida/categorie', risolviUtenteTelegram, valida({ body: schemaSolo
 router.post('/guida/gruppi', risolviUtenteTelegram, valida({ body: schemaGuidaGruppi }), guidaGruppi);
 router.post('/guida/esercizi', risolviUtenteTelegram, valida({ body: schemaGuidaEsercizi }), guidaEsercizi);
 router.post('/guida/aggiungi', risolviUtenteTelegram, valida({ body: schemaGuidaAggiungi }), guidaAggiungi);
+router.post('/guida/nota', risolviUtenteTelegram, valida({ body: schemaSoloChat }), guidaNota);
+router.post('/guida/unisci', risolviUtenteTelegram, valida({ body: schemaSoloChat }), guidaUnisci);
 router.post('/guida/titolo', risolviUtenteTelegram, valida({ body: schemaSoloChat }), guidaTitolo);
 router.post('/guida/termina', risolviUtenteTelegram, valida({ body: schemaGuidaTermina }), guidaTermina);
 

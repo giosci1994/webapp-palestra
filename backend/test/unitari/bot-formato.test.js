@@ -7,7 +7,8 @@ import assert from 'node:assert/strict';
 import {
   escapeHtml, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
   tastiera, tastieraSchede, tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
-  tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio
+  tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio,
+  testoChiediNota, tastieraNota, testoNotaSalvata, testoUnito, dividiHtml, messaggiHtml, CARATTERI_MESSAGGIO_MASSIMI
 } from '../../../bot/formato.js';
 
 const utente = codice => ({ from: { language_code: codice }, chat: { id: 4242 } });
@@ -93,7 +94,7 @@ describe('bot formatting: keyboards', () => {
       tastieraGruppi({ gruppi: [gruppo] }), tastieraCategorie(en, { cardio: true, regioni: ['Tutto il Corpo'] }),
       tastieraEsercizi([{ id: 2147483647, nome: 'x', cardio: true }], en, { precedente: 99988, successivo: 100000 }, o => datiPaginaGruppo(gruppo, o)),
       tastieraEsercizi([], en, { precedente: 99988, successivo: 100000 }, datiPaginaCardio),
-      tastieraBozzaInCorso(en, 3), tastieraTitolo(en)
+      tastieraBozzaInCorso(en, 3), tastieraTitolo(en), tastieraDopoAggiunta(en, { nota: true, unibile: true }), tastieraNota(en)
     ].flatMap(m => m.inline_keyboard.flat().map(b => b.callback_data));
     assert.deepEqual(tutti.filter(d => Buffer.byteLength(d) > 64), []);
   });
@@ -147,5 +148,83 @@ describe('bot: updates in order per chat', () => {
   it('the key is the chat id; an update without a chat has none (no ordering)', () => {
     assert.equal(chiaveChat({ chat: { id: -100123 } }), '-100123');
     assert.equal(chiaveChat({}), undefined);
+  });
+});
+
+describe('bot formatting: notes and supersets in the guided creation', () => {
+  it('after a step: "Note" and "Join the previous one" only when the backend says they fit', () => {
+    assert.deepEqual(bottoni(tastieraDopoAggiunta(ita, { nota: true, unibile: true })), [
+      [['➕ Aggiungi altro', 'gmenu'], ['✅ Termina', 'gfine']],
+      [['📝 Nota', 'gnota'], ['🔗 Unisci al precedente', 'gunisci']]
+    ]);
+    assert.deepEqual(bottoni(tastieraDopoAggiunta(en, { nota: true, unibile: false })).at(-1), [['📝 Note', 'gnota']]);
+    assert.deepEqual(bottoni(tastieraDopoAggiunta(en, { nota: false, unibile: false })), [[['➕ Add another', 'gmenu'], ['✅ Finish', 'gfine']]]);
+    assert.deepEqual(bottoni(tastieraNota(ita)), [[['➕ Aggiungi altro', 'gmenu']]]);
+  });
+
+  it('the texts: the name and the letter escaped, the summary as the backend sent it (already escaped)', () => {
+    assert.equal(testoChiediNota(en, { nome: 'Curl <EZ>' }),
+      '📝 Write me the note for <b>Curl &lt;EZ&gt;</b> (technique, tempo, grip…): your next message becomes the note.');
+    assert.equal(testoNotaSalvata(ita, { nome: 'Panca & co', riepilogo: '1. Panca &amp; co' }), '📝 Nota salvata su <b>Panca &amp; co</b>.\n\n1. Panca &amp; co');
+    assert.equal(testoUnito(ita, { gruppo: 'A', tipo: 'superset', riepilogo: 'R' }), '🔗 Fatto: <b>Superset A</b>.\n\nR');
+    assert.equal(testoUnito(en, { gruppo: 'B', tipo: 'circuito', riepilogo: 'R' }), '🔗 Done: <b>Circuit B</b>.\n\nR');
+  });
+});
+
+describe('bot formatting: long HTML messages in pieces Telegram takes', () => {
+  /** Every <b>/<i> opened in a piece is closed in it, in order, and no entity is cut */
+  function benFormato(pezzo) {
+    const pila = [];
+    for (const [, chiusura, nome] of pezzo.matchAll(/<(\/?)([a-z]+)>/g)) {
+      if (!chiusura) pila.push(nome);
+      else if (pila.pop() !== nome) return false;
+    }
+    const senzaEntita = pezzo.replace(/&(amp|lt|gt);/g, '');
+    return pila.length === 0 && !senzaEntita.includes('&') && !/<[^>]*$/.test(pezzo) && !/^[^<]*>/.test(pezzo);
+  }
+
+  it('a short text is one piece, unchanged, with the keyboard', () => {
+    assert.deepEqual(dividiHtml('<b>Hi</b> &amp; bye'), ['<b>Hi</b> &amp; bye']);
+    const tastiera = { inline_keyboard: [] };
+    assert.deepEqual(messaggiHtml('ciao', { reply_markup: tastiera }), [['ciao', { parse_mode: 'HTML', reply_markup: tastiera }]]);
+  });
+
+  it('a long plan: cut between lines, every piece within the limit, the keyboard only on the last', () => {
+    const righe = Array.from({ length: 300 }, (_, i) => `${i + 1}. <b>Curl &lt;EZ&gt; &amp; bar</b> — 3x10\n   📝 ${'&amp;'.repeat(20)}`);
+    const testo = `📋 <b>Plan</b>\n\n${righe.join('\n')}`;
+    const tastiera = { inline_keyboard: [[{ text: 'x', callback_data: 'x' }]] };
+    const messaggi = messaggiHtml(testo, { reply_markup: tastiera });
+    assert.ok(messaggi.length > 1);
+    for (const [pezzo] of messaggi) {
+      assert.ok(pezzo.length <= CARATTERI_MESSAGGIO_MASSIMI && pezzo.length <= 4096);
+      assert.ok(benFormato(pezzo), pezzo.slice(0, 80));
+    }
+    assert.deepEqual(messaggi.map(([, o]) => o.reply_markup ?? null), [...Array(messaggi.length - 1).fill(null), tastiera]);
+    assert.ok(messaggi.every(([, o]) => o.parse_mode === 'HTML'));
+    // Nothing lost: the pieces put together are the text
+    assert.equal(messaggi.map(([p]) => p).join('\n'), testo);
+  });
+
+  it('a tag open across a cut is closed at the end of the piece and opened again in the next', () => {
+    const testo = `<b>${Array.from({ length: 30 }, () => 'y'.repeat(100)).join('\n')}</b>`;
+    const pezzi = dividiHtml(testo, 1000);
+    assert.ok(pezzi.length > 1);
+    for (const pezzo of pezzi) {
+      assert.ok(pezzo.length <= 1000);
+      assert.ok(pezzo.startsWith('<b>') && pezzo.endsWith('</b>'));
+      assert.ok(benFormato(pezzo));
+    }
+  });
+
+  it('one line too long: it loses its formatting and is cut outside entities and emoji', () => {
+    const riga = `<b>${'a&amp;💪'.repeat(600)}</b>`;
+    const pezzi = dividiHtml(riga, 500);
+    assert.ok(pezzi.length > 1);
+    for (const pezzo of pezzi) {
+      assert.ok(pezzo.length <= 500);
+      assert.ok(benFormato(pezzo));
+      assert.ok(!/^[\udc00-\udfff]|[\ud800-\udbff]$/.test(pezzo));
+    }
+    assert.equal(pezzi.join(''), 'a&amp;💪'.repeat(600));
   });
 });

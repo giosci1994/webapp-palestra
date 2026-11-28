@@ -2,7 +2,8 @@
 // a group, and which group a logged set belongs to.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizzaGruppi, gruppiPerEsercizio, eCardioOriscaldamento, gruppiDi, letteraGruppo } from '../../src/utils/superset.js';
+import { normalizzaGruppi, gruppiPerEsercizio, eCardioOriscaldamento, gruppiDi, letteraGruppo, puoUnire, unisci, separa } from '../../src/utils/superset.js';
+import { schemaUnisciSuperset, schemaSeparaSuperset, schemaVoceForza } from '../../src/validators/bot.schema.js';
 import { schemaCreaScheda } from '../../src/validators/schede.schema.js';
 import { eserciziDaSessione, formattaPerStorico } from '../../src/controllers/sessioni.controller.js';
 
@@ -131,5 +132,61 @@ describe('gruppiDi (the labels of the Word export and the bot)', () => {
 
   it('letters A to Z, then AA', () => {
     assert.deepEqual([1, 2, 26, 27, 28].map(letteraGruppo), ['A', 'B', 'Z', 'AA', 'AB']);
+  });
+});
+
+describe('puoUnire, unisci, separa (the bot\'s draft, the same rules as the app)', () => {
+  const forza = (esercizioId, gruppo = null, recuperoSecondi = 90) => ({ esercizioId, gruppo, recuperoSecondi });
+  const righe = lista => lista.map(e => [e.esercizioId, e.gruppo, e.recuperoSecondi]);
+
+  it('only two strength entries not already together can be joined', () => {
+    assert.equal(puoUnire([forza(1), forza(2)], 0), true);
+    assert.equal(puoUnire([forza(1), { esercizioId: 2, durataMinuti: 10 }], 0), false);
+    assert.equal(puoUnire([{ esercizioId: 1, riscaldamento: true }, forza(2)], 0), false);
+    assert.equal(puoUnire([forza(1, 1), forza(2, 1)], 0), false);
+    assert.equal(puoUnire([forza(1)], 0), false);
+  });
+
+  it('joining: a new superset, then a third member makes a circuit; the pause before the next is 0', () => {
+    const superset = unisci([forza(1), forza(2), forza(3, null, 120)], 0);
+    assert.deepEqual(righe(superset), [[1, 1, 0], [2, 1, 90], [3, null, 120]]);
+    assert.deepEqual(righe(unisci(superset, 1)), [[1, 1, 0], [2, 1, 0], [3, 1, 120]]);
+    // Cardio: nothing changes
+    assert.deepEqual(righe(unisci([forza(1), { esercizioId: 2, durataMinuti: 5, recuperoSecondi: 0 }], 0)), [[1, null, 90], [2, null, 0]]);
+  });
+
+  it('splitting: the last member leaves and the one before takes the rest after the round', () => {
+    const circuito = [forza(1, 1, 0), forza(2, 1, 0), forza(3, 1, 120)];
+    assert.deepEqual(righe(separa(circuito, 2)), [[1, 1, 0], [2, 1, 120], [3, null, 120]]);
+    // A middle member moves after the group, with the rest after the round
+    assert.deepEqual(righe(separa(circuito, 1)), [[1, 1, 0], [3, 1, 120], [2, null, 120]]);
+    assert.deepEqual(righe(separa([forza(1, 1, 0), forza(2, 1, 60)], 0)), [[1, null, 60], [2, null, 60]]);
+    assert.deepEqual(righe(separa([forza(1), forza(2)], 0)), [[1, null, 90], [2, null, 90]]);
+  });
+});
+
+describe('the AI arguments for supersets and notes (bot.schema.js)', () => {
+  const messaggio = r => r.error.issues[0].message;
+
+  it('unisci_superset: at least two positions from 1, next to each other in any order', () => {
+    assert.deepEqual(schemaUnisciSuperset.parse({ posizioni: [3, 2, '4'] }).posizioni, [3, 2, 4]);
+    assert.equal(messaggio(schemaUnisciSuperset.safeParse({ posizioni: [1, 3] })), 'botSchema.posizioniNonContigue');
+    assert.equal(messaggio(schemaUnisciSuperset.safeParse({ posizioni: [2, 2] })), 'botSchema.posizioniNonContigue');
+    assert.equal(messaggio(schemaUnisciSuperset.safeParse({ posizioni: [1] })), 'botSchema.posizioniNonValide');
+    assert.equal(messaggio(schemaUnisciSuperset.safeParse({ posizioni: [0, 1] })), 'botSchema.posizioneNonValida');
+    assert.equal(messaggio(schemaUnisciSuperset.safeParse({})), 'botSchema.posizioniNonValide');
+  });
+
+  it('separa_superset: one position from 1', () => {
+    assert.equal(schemaSeparaSuperset.parse({ posizione: 2 }).posizione, 2);
+    assert.equal(messaggio(schemaSeparaSuperset.safeParse({ posizione: 1.5 })), 'botSchema.posizioneNonValida');
+    assert.equal(messaggio(schemaSeparaSuperset.safeParse({})), 'botSchema.posizioneNonValida');
+  });
+
+  it('the note of aggiungi_esercizio: text, trimmed, empty means none', () => {
+    assert.equal(schemaVoceForza.parse({ esercizioId: 1, note: '  slow down  ' }).note, 'slow down');
+    assert.equal(schemaVoceForza.parse({ esercizioId: 1, note: '   ' }).note, undefined);
+    assert.equal(schemaVoceForza.parse({ esercizioId: 1, note: null }).note, null);
+    assert.equal(messaggio(schemaVoceForza.safeParse({ esercizioId: 1, note: 42 })), 'schedeSchema.noteNonValide');
   });
 });

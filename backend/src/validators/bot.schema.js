@@ -48,13 +48,44 @@ const ripetizioni = z.preprocess(
     .optional()
 );
 
+/**
+ * The technique note of a strength entry: text like the app's, with the
+ * app's limit (none); spaces around are cut and empty means "no note"
+ */
+export const nota = z.preprocess(
+  v => (typeof v === 'string' ? (v.trim() || undefined) : v),
+  campi.note
+);
+
 /** A strength entry: the button of the guided creation or `aggiungi_esercizio` of the AI */
 export const schemaVoceForza = z.object({
   esercizioId: campi.esercizioId,
   serie,
   ripetizioni,
-  recuperoSecondi: campi.recuperoSecondi
+  recuperoSecondi: campi.recuperoSecondi,
+  note: nota
 });
+
+/** The position of an entry in the draft, as the AI sees it in the summary: 1, 2, 3... */
+const posizione = numero('botSchema.posizioneNonValida', { min: 1, max: 1000, obbligatorio: 'botSchema.posizioneNonValida' });
+
+/**
+ * `unisci_superset` of the AI: the positions of two or more entries next to
+ * each other, in any order. Whether they exist and can be joined depends on
+ * the draft: the handler checks that.
+ */
+export const schemaUnisciSuperset = z.object({
+  posizioni: z.array(posizione, { error: 'botSchema.posizioniNonValide' })
+    .min(2, { error: 'botSchema.posizioniNonValide' }).max(1000, { error: 'botSchema.posizioniNonValide' })
+}).superRefine(({ posizioni }, ctx) => {
+  const ordinate = [...posizioni].sort((a, b) => a - b);
+  if (ordinate.some((p, i) => i > 0 && p !== ordinate[i - 1] + 1)) {
+    ctx.addIssue({ code: 'custom', path: ['posizioni'], message: 'botSchema.posizioniNonContigue' });
+  }
+});
+
+/** `separa_superset` of the AI: the position of the entry to take out of its group */
+export const schemaSeparaSuperset = z.object({ posizione });
 
 /**
  * The duration of a cardio entry when nobody gives one: without it the entry
@@ -126,7 +157,7 @@ export const schemaGuidaEsercizi = z.object({
  * POST /guida/aggiungi: sets and reps for a strength exercise, minutes for a
  * cardio one (the handler looks at the exercise and keeps what fits)
  */
-export const schemaGuidaAggiungi = schemaVoceForza.omit({ recuperoSecondi: true }).extend({ chatId: idChat, durataMinuti });
+export const schemaGuidaAggiungi = schemaVoceForza.omit({ recuperoSecondi: true, note: true }).extend({ chatId: idChat, durataMinuti });
 
 /** POST /guida/termina: the title is optional (missing or empty, the handler picks one) */
 export const schemaGuidaTermina = z.object({

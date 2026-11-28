@@ -14,6 +14,8 @@
   "schedaNonTrovata": "Plan not found",
   "esercizioNonTrovato": "Exercise not found",
   "bozzaVuotaGuidata": "The draft is empty: add at least one exercise.",
+  "notaSoloForza": "A note goes on a strength exercise: cardio has no notes, as in the app.",
+  "nienteDaUnire": "The last entry cannot be joined to the one before: two strength exercises are needed, not already together.",
   "bozzaSenzaEsercizi": "The exercises in your draft are no longer in the catalog ({nomi}): the draft is now empty, add new ones.",
   "eserciziTolti": "⚠️ Removed from the plan, no longer in the catalog: {nomi}.",
   "titoloSchedaPredefinito": "Plan of {data}",
@@ -54,7 +56,9 @@
     "velocita": "{valore} km/h",
     "inclinazione": "incline {valore}%",
     "resistenza": "level {valore}",
-    "distanza": "{valore} km"
+    "distanza": "{valore} km",
+    "nota": "   📝 {nota}",
+    "posizioneGruppo": "{n} · {etichetta}"
   },
   "scheda": {
     "testo": "📋 <b>{titolo}</b>\nLevel: {livello}\n\n{righe}",
