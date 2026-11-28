@@ -14,7 +14,9 @@
   "schedaNonTrovata": "Plan not found",
   "esercizioNonTrovato": "Exercise not found",
   "bozzaVuotaGuidata": "The draft is empty: add at least one exercise.",
-  "titoloSchedaPredefinito": "Plan from Telegram",
+  "bozzaSenzaEsercizi": "The exercises in your draft are no longer in the catalog ({nomi}): the draft is now empty, add new ones.",
+  "eserciziTolti": "⚠️ Removed from the plan, no longer in the catalog: {nomi}.",
+  "titoloSchedaPredefinito": "Plan of {data}",
   "descrizioneScheda": "Created via the Telegram bot",
   "prompt": {
     "esempioConferma": "✅ Added: <name> — <sets>x<reps>"

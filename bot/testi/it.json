@@ -33,5 +33,18 @@
   "comandoStatistiche": "Riepilogo dei tuoi allenamenti",
   "comandoAnnulla": "Annulla la bozza in corso",
   "comandoSconosciuto": "🤔 Non conosco questo comando. Ecco cosa posso fare:\n/nuova — crea una scheda scrivendomi gli esercizi\n/guidata — crea una scheda a pulsanti\n/schede — le tue schede\n/statistiche — riepilogo allenamenti\n/annulla — annulla la bozza\n/start — avvia o collega il tuo account",
-  "comandoStart": "Avvia o collega il tuo account"
+  "comandoStart": "Avvia o collega il tuo account",
+  "guidataCardio": "🏃 Cardio / riscaldamento",
+  "scegliCardio": "🏃 Cardio / riscaldamento — scegli una macchina:",
+  "nessunCardio": "Nessun esercizio cardio nel catalogo.",
+  "paginaPrecedente": "◀ Indietro",
+  "paginaSuccessiva": "Altri ▶",
+  "bozzaInCorso_one": "📝 Hai una bozza con {count} esercizio. La continui o ricominci?",
+  "bozzaInCorso_other": "📝 Hai una bozza con {count} esercizi. La continui o ricominci?",
+  "continuaBozza_one": "▶️ Continua la bozza ({count} esercizio)",
+  "continuaBozza_other": "▶️ Continua la bozza ({count} esercizi)",
+  "ricomincia": "🔄 Ricomincia",
+  "chiediTitolo": "📝 Come chiamo la scheda? Scrivimi il titolo, oppure usa quello proposto: <b>{titolo}</b>",
+  "usaTitoloProposto": "✅ Usa il titolo proposto",
+  "toltoDalCatalogo": "⚠️ Tolto <b>{nome}</b>: non è più nel catalogo."
 }

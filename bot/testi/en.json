@@ -33,5 +33,18 @@
   "comandoStatistiche": "Your workout summary",
   "comandoAnnulla": "Cancel the current draft",
   "comandoSconosciuto": "🤔 I don't know that command. Here's what I can do:\n/nuova — create a plan by writing me the exercises\n/guidata — create a plan with buttons\n/schede — your plans\n/statistiche — your workout summary\n/annulla — cancel the draft\n/start — start or link your account",
-  "comandoStart": "Start or link your account"
+  "comandoStart": "Start or link your account",
+  "guidataCardio": "🏃 Cardio / warm-up",
+  "scegliCardio": "🏃 Cardio / warm-up — pick a machine:",
+  "nessunCardio": "No cardio exercises in the catalog.",
+  "paginaPrecedente": "◀ Back",
+  "paginaSuccessiva": "More ▶",
+  "bozzaInCorso_one": "📝 You have a draft with {count} exercise. Continue it or start again?",
+  "bozzaInCorso_other": "📝 You have a draft with {count} exercises. Continue it or start again?",
+  "continuaBozza_one": "▶️ Continue the draft ({count} exercise)",
+  "continuaBozza_other": "▶️ Continue the draft ({count} exercises)",
+  "ricomincia": "🔄 Start again",
+  "chiediTitolo": "📝 What should I call the plan? Write me the title, or use the suggested one: <b>{titolo}</b>",
+  "usaTitoloProposto": "✅ Use the suggested title",
+  "toltoDalCatalogo": "⚠️ Removed <b>{nome}</b>: it is no longer in the catalog."
 }

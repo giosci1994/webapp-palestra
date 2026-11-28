@@ -14,7 +14,9 @@
   "schedaNonTrovata": "Scheda non trovata",
   "esercizioNonTrovato": "Esercizio non trovato",
   "bozzaVuotaGuidata": "La bozza è vuota: aggiungi almeno un esercizio.",
-  "titoloSchedaPredefinito": "Scheda da Telegram",
+  "bozzaSenzaEsercizi": "Gli esercizi della bozza non sono più nel catalogo ({nomi}): la bozza ora è vuota, aggiungine di nuovi.",
+  "eserciziTolti": "⚠️ Tolti dalla scheda perché non sono più nel catalogo: {nomi}.",
+  "titoloSchedaPredefinito": "Scheda del {data}",
   "descrizioneScheda": "Creata via bot Telegram",
   "prompt": {
     "esempioConferma": "✅ Aggiunto: <nome> — <serie>x<rip>"

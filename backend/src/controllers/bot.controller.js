@@ -62,10 +62,20 @@ export async function statistiche(req, res, next) {
 // The regions and groups are sent back as they are to pick one; the labels
 // (`etichette`, `etichettaRegione`, `etichettaGruppo`) are the names to show,
 // in the user's language.
+// The categories also say whether there are cardio exercises (the "Cardio /
+// warm-up" button) and how many entries the draft has (/guidata asks whether
+// to go on with it). Back at the categories, the draft no longer waits for
+// its title.
 export async function guidaCategorie(req, res, next) {
   try {
-    const regioni = await botService.categorieEsercizi();
-    res.json({ successo: true, dati: { regioni, etichette: botService.etichette(regioni, botService.nomeRegione) } });
+    const utenteId = req.utenteTelegram.id;
+    await botService.smettiDiAttendereTitolo(utenteId);
+    const [regioni, cardio, numEsercizi] = await Promise.all([
+      botService.categorieEsercizi(), botService.ciSonoEserciziCardio(), botService.numeroEserciziBozza(utenteId)
+    ]);
+    res.json({ successo: true, dati: {
+      regioni, etichette: botService.etichette(regioni, botService.nomeRegione), cardio, bozza: { numEsercizi }
+    } });
   } catch (errore) { next(errore); }
 }
 
@@ -81,13 +91,21 @@ export async function guidaGruppi(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+// A page of exercises: `offset` of this page, `precedente` and `successivo`
+// those of the pages around it (null: none). "Most used" is one page only.
 export async function guidaEsercizi(req, res, next) {
   try {
-    const { gruppo, soloPiuUsati } = req.body;
-    const esercizi = soloPiuUsati
-      ? await botService.eserciziPiuUsati(req.utenteTelegram.id)
-      : await botService.eserciziPerGruppo(req.utenteTelegram.id, gruppo);
-    res.json({ successo: true, dati: { esercizi, etichettaGruppo: soloPiuUsati ? null : botService.nomeGruppo(gruppo) } });
+    const { gruppo, soloPiuUsati, soloCardio, offset } = req.body;
+    const utenteId = req.utenteTelegram.id;
+    if (soloPiuUsati) {
+      const esercizi = await botService.eserciziPiuUsati(utenteId);
+      res.json({ successo: true, dati: { esercizi, etichettaGruppo: null, offset: 0, precedente: null, successivo: null } });
+      return;
+    }
+    const pagina = soloCardio
+      ? await botService.eserciziCardio(utenteId, offset ?? 0)
+      : await botService.eserciziPerGruppo(utenteId, gruppo, offset ?? 0);
+    res.json({ successo: true, dati: { ...pagina, etichettaGruppo: soloCardio ? null : botService.nomeGruppo(gruppo) } });
   } catch (errore) { next(errore); }
 }
 
@@ -95,6 +113,14 @@ export async function guidaAggiungi(req, res, next) {
   try {
     const { esercizioId, serie, ripetizioni, durataMinuti } = req.body;
     const dati = await botService.aggiungiEsercizioGuidato(req.utenteTelegram.id, esercizioId, serie, ripetizioni, durataMinuti);
+    res.json({ successo: true, dati });
+  } catch (errore) { next(errore); }
+}
+
+/** POST /guida/titolo { chatId }: "Finish" asks for the title, with the default one proposed */
+export async function guidaTitolo(req, res, next) {
+  try {
+    const dati = await botService.chiediTitoloGuidata(req.utenteTelegram.id);
     res.json({ successo: true, dati });
   } catch (errore) { next(errore); }
 }

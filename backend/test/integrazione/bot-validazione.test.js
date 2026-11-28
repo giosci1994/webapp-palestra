@@ -5,7 +5,7 @@
 import { describe, it, before, after, beforeEach, afterEach, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
-import { creaUtente, creaEsercizio } from '../supporto/dati.js';
+import { creaUtente, creaEsercizio, titoloDiOggi } from '../supporto/dati.js';
 import { creaServer } from '../../src/app.js';
 import redis from '../../src/config/redis.js';
 import { impostaClientAI } from '../../src/services/bot.service.js';
@@ -202,7 +202,7 @@ describe('bot: a draft saved before the checks does not block "finish"', () => {
     const risultato = rispostaFunzione(richieste, 1);
     assert.equal(risultato.ok, true);
     // A title that is not text: the default one
-    assert.equal(risultato.titolo, 'Plan from Telegram');
+    assert.equal(risultato.titolo, titoloDiOggi('en'));
     assert.deepEqual(await vociSalvate(utente), ATTESE);
   });
 });
