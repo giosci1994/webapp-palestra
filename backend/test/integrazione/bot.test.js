@@ -7,6 +7,7 @@ import { prisma, svuotaDatabase } from '../supporto/database.js';
 import { creaUtente, creaEsercizio, creaScheda } from '../supporto/dati.js';
 import { creaServer } from '../../src/app.js';
 import redis from '../../src/config/redis.js';
+import { RICHIESTE_BOT_PER_CHAT, RICHIESTE_BOT_TOTALI, CHIAVE_BOT_TOTALE, limitatoreBotTotale, chiaveChatBot } from '../../src/middleware/limitatore.js';
 
 const SEGRETO = 'segreto-di-prova-del-bot';
 const CHAT_ID = 777001;
@@ -176,5 +177,80 @@ describe('bot: a chat that is not linked', () => {
     assert.equal(altra.corpo.messaggio, 'Invalid or expired code. Generate a new one from the app.');
     // No account, no language for the bot to follow
     assert.equal(altra.lingua, null);
+  });
+});
+
+// The bot's requests all come from the bot container's address: with the
+// right secret they skip the global limit and have their own, per chat
+describe('bot: the rate limit', () => {
+  /** A bot request from one address, with the secret given (or a wrong one) */
+  async function daIndirizzo(chatId, segreto = SEGRETO) {
+    const risposta = await fetch(`${base}/annulla`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-bot-secret': segreto, 'cf-connecting-ip': '203.0.113.10', 'accept-language': 'en' }, // controllo-dati: ok (TEST-NET example address)
+      body: JSON.stringify({ chatId })
+    });
+    return { stato: risposta.status, corpo: await risposta.json() };
+  }
+
+  it(`each chat has ${RICHIESTE_BOT_PER_CHAT} requests, and all of them together go past the global 500`, async () => {
+    const chat = [880001, 880002, 880003];
+    // 600 requests from the same address: more than the global limit
+    for (const chatId of chat) {
+      for (let i = 0; i < RICHIESTE_BOT_PER_CHAT; i++) {
+        assert.equal((await daIndirizzo(chatId)).stato, 409);
+      }
+    }
+    // Each chat has used up its own limit
+    for (const chatId of chat) {
+      const oltre = await daIndirizzo(chatId);
+      assert.deepEqual([oltre.stato, oltre.corpo.codice], [429, 'TROPPE_RICHIESTE_BOT']);
+      assert.equal(oltre.corpo.messaggio, 'Too many requests from this chat, try again in a few minutes.');
+    }
+    // Another chat, from the same address, still gets through
+    assert.equal((await daIndirizzo(880004)).stato, 409);
+  });
+
+  it('123, "123", "0123" and "0x7b" are one chat', async () => {
+    assert.deepEqual([123, '123', '0123', '0x7b'].map(chiaveChatBot), ['bot:123', 'bot:123', 'bot:123', 'bot:123']);
+    assert.deepEqual(['abc', 1.5, null, undefined, {}, true].map(chiaveChatBot), Array(6).fill('bot:non-valida'));
+    // The route accepts decimal digits only: "0x7b" is refused (400), the
+    // others reach the unlinked chat (409). The limit counts them all as one
+    const forme = [123, '123', '0123', '0x7b'];
+    const atteso = { 123: 409, '123': 409, '0123': 409, '0x7b': 400 };
+    for (let i = 0; i < RICHIESTE_BOT_PER_CHAT; i++) {
+      const forma = forme[i % forme.length];
+      assert.equal((await daIndirizzo(forma)).stato, atteso[forma]);
+    }
+    for (const forma of forme) {
+      assert.equal((await daIndirizzo(forma)).corpo.codice, 'TROPPE_RICHIESTE_BOT');
+    }
+  });
+
+  it(`all the bot's chats together have ${RICHIESTE_BOT_TOTALI} requests`, async () => {
+    // The earlier tests' requests do not count here
+    await limitatoreBotTotale.resetKey(CHIAVE_BOT_TOTALE);
+    const chat = RICHIESTE_BOT_TOTALI / RICHIESTE_BOT_PER_CHAT;
+    for (let c = 0; c < chat; c++) {
+      for (let i = 0; i < RICHIESTE_BOT_PER_CHAT; i++) {
+        assert.equal((await daIndirizzo(870000 + c)).stato, 409);
+      }
+    }
+    // A new chat, with its own limit untouched, meets the ceiling of the bot
+    const oltre = await daIndirizzo(879999);
+    assert.deepEqual([oltre.stato, oltre.corpo.codice], [429, 'TROPPE_RICHIESTE_BOT_TOTALI']);
+    assert.equal(oltre.corpo.messaggio, 'The bot is receiving too many requests, try again in a few minutes.');
+    // A chat over its own limit gets that answer, and does not use up the others'
+    await limitatoreBotTotale.resetKey(CHIAVE_BOT_TOTALE);
+    assert.equal((await daIndirizzo(870000)).corpo.codice, 'TROPPE_RICHIESTE_BOT');
+  });
+
+  it('without the right secret the global limit still counts, per address', async () => {
+    for (let i = 0; i < 500; i++) {
+      // A different chat every time: the chat does not matter without the secret
+      assert.equal((await daIndirizzo(990000 + i, 'segreto-sbagliato')).stato, 403);
+    }
+    const oltre = await daIndirizzo(999999, 'segreto-sbagliato');
+    assert.deepEqual([oltre.stato, oltre.corpo.codice], [429, 'TROPPE_RICHIESTE']);
   });
 });

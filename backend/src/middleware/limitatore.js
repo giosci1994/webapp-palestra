@@ -8,6 +8,7 @@ import jwt from 'jsonwebtoken';
 import logger from '../utils/logger.js';
 import { t, linguaDaIntestazione } from '../i18n/index.js';
 import { RICHIESTE_SEGNALAZIONE_ORA } from '../utils/affluenzaSegnalata.js';
+import { segretiUguali } from './bot.auth.js';
 
 // Helper: extracts the real IP from the request
 const getIp = (req) => req.headers['cf-connecting-ip'] || (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0].trim() : req.ip);
@@ -29,10 +30,21 @@ const getUserKey = (req) => {
 // the middleware that sets the request's language
 const linguaDi = (req) => linguaDaIntestazione(req.headers['accept-language']);
 
+// The Telegram bot's requests: every user of the bot comes from the bot
+// container's address and sends no token, so the global limit would be one
+// for all of them. With the right X-Bot-Secret they skip it and are counted
+// per Telegram chat by limitatoreBot; with a wrong or missing secret they are
+// counted like any other client (and then refused by verificaSegretoBot).
+const PERCORSO_BOT = '/api/v1/bot';
+export const richiestaDelBot = (req) =>
+  (req.path === PERCORSO_BOT || req.path.startsWith(`${PERCORSO_BOT}/`))
+  && segretiUguali(req.headers['x-bot-secret'], process.env.BOT_SECRET);
+
 /**
  * Global rate limiter for all the API routes.
  * 500 requests per 15-minute window.
  * Authenticated users use their ID as the key (they do not share the IP limit).
+ * The bot's requests, once their secret is checked, have their own limit.
  */
 export const limitatoreGlobale = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -40,6 +52,7 @@ export const limitatoreGlobale = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: getUserKey,
+  skip: richiestaDelBot,
   handler: (req, res) => {
     logger.warn({ ip: getIp(req), percorso: req.path }, 'Rate limit globale superato');
     res.status(429).json({
@@ -106,6 +119,74 @@ export const limitatoreSegnalazioni = rateLimit({
       successo: false,
       codice: 'TROPPE_SEGNALAZIONI',
       messaggio: t('limitatore.troppeSegnalazioni', {}, linguaDi(req))
+    });
+  }
+});
+
+/**
+ * Rate limiter for the Telegram bot's routes, after verificaSegretoBot.
+ * RICHIESTE_BOT_PER_CHAT requests per 15-minute window per Telegram chat
+ * (chatId in the body). A guided plan with 6 exercises costs about 25 calls,
+ * so this is several plans in a quarter of an hour, one call every 4-5
+ * seconds without a pause: far above a person tapping buttons, but it stops
+ * one chat (a loop of /start <code>) from loading the server. The AI messages
+ * also have their own limit per user, in bot.service.js.
+ */
+export const RICHIESTE_BOT_PER_CHAT = 200;
+
+/**
+ * The chat as risolviUtenteTelegram reads it (BigInt), so 123, "123", "0123"
+ * and "0x7b" are one chat and one count. Anything that is not a whole number
+ * shares one key; the route itself refuses it.
+ */
+export function chiaveChatBot(chatId) {
+  if (typeof chatId === 'number' || typeof chatId === 'string') {
+    try {
+      return `bot:${BigInt(chatId)}`;
+    } catch { /* not a whole number */ }
+  }
+  return 'bot:non-valida';
+}
+
+export const limitatoreBot = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: RICHIESTE_BOT_PER_CHAT,
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Only the bot reaches here (the secret is already checked): the chat, not
+  // the address, is the key
+  keyGenerator: (req) => chiaveChatBot(req.body?.chatId),
+  handler: (req, res) => {
+    logger.warn({ chatId: req.body?.chatId, percorso: req.path }, 'Rate limit bot superato');
+    res.status(429).json({
+      successo: false,
+      codice: 'TROPPE_RICHIESTE_BOT',
+      messaggio: t('limitatore.troppeRichiesteBot', {}, linguaDi(req))
+    });
+  }
+});
+
+/**
+ * A ceiling for all the bot's requests together, after limitatoreBot (a chat
+ * over its own limit does not use up everybody's). RICHIESTE_BOT_TOTALI per
+ * 15 minutes is 15 chats at their full limit at the same time, six times the
+ * 500 all the bot's users shared before: it only stops the bot as a whole
+ * from loading the server (a bug in a loop, many chats at once).
+ */
+export const RICHIESTE_BOT_TOTALI = 3000;
+export const CHIAVE_BOT_TOTALE = 'bot:tutte';
+export const limitatoreBotTotale = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: RICHIESTE_BOT_TOTALI,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: () => CHIAVE_BOT_TOTALE,
+  handler: (req, res) => {
+    logger.warn({ percorso: req.path }, 'Rate limit totale del bot superato');
+    res.status(429).json({
+      successo: false,
+      codice: 'TROPPE_RICHIESTE_BOT_TOTALI',
+      messaggio: t('limitatore.troppeRichiesteBotTotali', {}, linguaDi(req))
     });
   }
 });

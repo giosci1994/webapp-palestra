@@ -2,5 +2,7 @@
   "troppeRichieste": "Too many requests, try again in a few minutes.",
   "troppiTentativiAuth": "Too many sign-in attempts, try again in 15 minutes.",
   "troppeRichiesteAI": "Too many requests to the AI assistant, try again in a minute.",
-  "troppeSegnalazioni": "Too many crowd reports, try again later."
+  "troppeSegnalazioni": "Too many crowd reports, try again later.",
+  "troppeRichiesteBot": "Too many requests from this chat, try again in a few minutes.",
+  "troppeRichiesteBotTotali": "The bot is receiving too many requests, try again in a few minutes."
 }
