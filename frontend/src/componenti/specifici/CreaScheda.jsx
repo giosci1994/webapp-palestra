@@ -11,7 +11,7 @@ import { nomeEsercizio, nomeGruppo, nomeAttrezzatura, formattaNumero } from '../
 import { useLingua } from '../../hooks/useLingua.js';
 import Testo from '../../i18n/Testo.jsx';
 import { api } from '../../config/api.js';
-import { GRUPPI_MUSCOLARI, LIVELLI } from '../../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, LIVELLI, RIPETIZIONI_MASSIME } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   normalizzaGruppi, gruppiDi, blocchiDi, puoUnire, unisci, separa, impostaGiri, giriDi, ultimoDelGruppo,
@@ -146,7 +146,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
           <div className="esercizio-param-gruppo">
             <label className="esercizio-param-label">{t('creaScheda.rep')}</label>
             <input type="text" value={es.repTarget ?? ''} onChange={e => aggiornaPianoEsercizio(idx, 'repTarget', e.target.value)}
-                   className="esercizio-param-input" style={{ width: '64px' }} />
+                   maxLength={RIPETIZIONI_MASSIME} className="esercizio-param-input" style={{ width: '64px' }} />
           </div>
           {/* The last member's rest is the rest after the round, on the group's box */}
           {!posto?.ultimo && (

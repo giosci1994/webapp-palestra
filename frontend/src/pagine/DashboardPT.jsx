@@ -11,7 +11,7 @@ import { useLingua } from '../hooks/useLingua.js';
 import Testo from '../i18n/Testo.jsx';
 import { localeCorrente } from '../i18n/index.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
-import { LIVELLI, GRUPPI_MUSCOLARI } from '../utils/costanti.js';
+import { LIVELLI, GRUPPI_MUSCOLARI, RIPETIZIONI_MASSIME } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento, istanteDaCampoLocale, giornoLocaleDi } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -203,7 +203,7 @@ export default function DashboardPT() {
             className="campo-input !w-14 text-center text-xs !py-1 !px-1" title={t('dashboardPT.serie')} aria-label={t('dashboardPT.serie')} min="1" />
           <span className="text-[10px] text-[var(--testo-terziario)]">x</span>
           <input type="text" value={es.repTarget} onChange={e => aggiornaEsercizioPT(idx, 'repTarget', e.target.value)}
-            className="campo-input !w-16 text-center text-xs !py-1 !px-1" title={t('dashboardPT.ripetizioni')} aria-label={t('dashboardPT.ripetizioni')} />
+            maxLength={RIPETIZIONI_MASSIME} className="campo-input !w-16 text-center text-xs !py-1 !px-1" title={t('dashboardPT.ripetizioni')} aria-label={t('dashboardPT.ripetizioni')} />
           {!posto?.ultimo && (
             <>
               {/* 0 stays 0: no rest, or no pause before the next member */}

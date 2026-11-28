@@ -8,7 +8,7 @@
 // The messages are translation keys (middleware/validazione.js translates them).
 
 import { z } from 'zod';
-import { numero, schemaEsercizioInScheda } from './schede.schema.js';
+import { numero, schemaEsercizioInScheda, RIPETIZIONI_MASSIME } from './schede.schema.js';
 
 const campi = schemaEsercizioInScheda.shape;
 
@@ -32,9 +32,6 @@ export const idChat = z.unknown().transform((valore, ctx) => {
   }
   return testo;
 });
-
-/** The longest reps text: "8-12", "10-8-6-4", "30 sec" and the like */
-export const RIPETIZIONI_MASSIME = 30;
 
 /**
  * Sets of a strength entry: 1 to 1000 like the app (0 sets would be an empty

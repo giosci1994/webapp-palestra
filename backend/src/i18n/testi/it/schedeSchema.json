@@ -18,5 +18,6 @@
   "inclinazioneNonValida": "L'inclinazione non è valida",
   "livelloResistenzaNonValido": "Il livello di resistenza non è valido",
   "distanzaKmNonValida": "La distanza non è valida",
-  "gruppoNonValido": "Il gruppo del superset non è valido"
+  "gruppoNonValido": "Il gruppo del superset non è valido",
+  "repTargetTroppoLungo": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)"
 }

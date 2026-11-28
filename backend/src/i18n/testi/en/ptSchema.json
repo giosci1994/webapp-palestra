@@ -22,5 +22,6 @@
   "schedaIdNonValido": "A valid plan ID is required",
   "destinatarioIdNonValido": "The recipient ID is not valid",
   "prioritaNonValida": "The priority must be normale, importante or urgente",
-  "gruppoNonValido": "The superset group is not valid"
+  "gruppoNonValido": "The superset group is not valid",
+  "repTargetTroppoLungo": "The repetitions are too long: at most 30 characters, for example \"8-12\""
 }

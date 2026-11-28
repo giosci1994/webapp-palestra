@@ -271,6 +271,33 @@ describe('POST /pt/schede', () => {
   });
 });
 
+describe('POST /pt/schede: the reps text', () => {
+  let panca;
+  beforeEach(async () => { panca = await creaEsercizio(); });
+  const corpo = repTarget => ({ titolo: 'Forza', esercizi: [{ esercizioId: panca.id, repTarget }] });
+
+  it('31 characters are a 400 in the language of the request, 30 are saved', async () => {
+    const [italiano] = await rifiutati('POST', '/pt/schede', [corpo('x'.repeat(31))], 'esercizi.0.repTarget');
+    assert.equal(italiano.corpo.dettagli[0].messaggio, 'Le ripetizioni sono troppo lunghe: al massimo 30 caratteri, ad esempio "8-12"');
+    const inglese = await comePT('POST', '/pt/schede', corpo('x'.repeat(31)), 'en');
+    assert.equal(inglese.corpo.dettagli[0].messaggio, 'The repetitions are too long: at most 30 characters, for example "8-12"');
+    assert.equal(await prisma.schedaAllenamento.count(), 0);
+
+    const buona = await comePT('POST', '/pt/schede', corpo('x'.repeat(30)));
+    assert.equal(buona.stato, 201);
+    assert.equal(buona.corpo.dati.esercizi[0].repTarget, 'x'.repeat(30));
+  });
+
+  it('a plan saved before the limit, with a longer text, is still assigned as it is', async () => {
+    const originale = await creaScheda(trainer, [panca]);
+    const vecchio = 'x'.repeat(40);
+    await prisma.esercizioScheda.updateMany({ where: { schedaId: originale.id }, data: { repTarget: vecchio } });
+    const risposta = await comePT('POST', `/pt/clienti/${cliente.id}/assegna-scheda`, { schedaId: originale.id });
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.esercizi[0].repTarget, vecchio);
+  });
+});
+
 describe('POST /pt/clienti/:id/assegna-scheda', () => {
   it('a plan id that is not one is a 400, nothing is created', async () => {
     await creaScheda(trainer);

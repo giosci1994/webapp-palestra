@@ -220,6 +220,58 @@ describe('exercises inside a plan', () => {
   });
 });
 
+describe('the reps text: at most 30 characters, like the bot', () => {
+  const lunghe = 'x'.repeat(31);
+  const giuste = 'x'.repeat(30);
+  const MESSAGGIO_IT = 'Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)';
+  const MESSAGGIO_EN = 'The reps are too long (at most 30 characters, for example 8-12)';
+
+  it('POST /schede: 31 characters are a 400 in the language of the request, 30 are saved', async () => {
+    const italiano = await chiedi('POST', '/schede', { titolo: 'x', esercizi: [{ esercizioId: panca.id, repTarget: lunghe }] });
+    assert.equal(italiano.stato, 400);
+    assert.deepEqual(messaggi(italiano), { 'esercizi.0.repTarget': MESSAGGIO_IT });
+    const inglese = await chiedi('POST', '/schede', { titolo: 'x', esercizi: [{ esercizioId: panca.id, repTarget: lunghe }] }, 'en');
+    assert.deepEqual(messaggi(inglese), { 'esercizi.0.repTarget': MESSAGGIO_EN });
+    assert.equal(await conta('schedaAllenamento'), 1);
+
+    const buona = await chiedi('POST', '/schede', { titolo: 'x', esercizi: [{ esercizioId: panca.id, repTarget: giuste }] });
+    assert.equal(buona.stato, 201);
+    assert.equal(buona.corpo.dati.esercizi[0].repTarget, giuste);
+  });
+
+  it('PUT /schede/:id and the routes of a single exercise have the same limit', async () => {
+    const voce = await prisma.esercizioScheda.findFirst({ where: { schedaId: scheda.id } });
+    const prove = [
+      ['POST', `/schede/${scheda.id}/esercizi`, r => ({ esercizioId: squat.id, repTarget: r }), 'repTarget'],
+      ['PUT', `/schede/${scheda.id}/esercizi/${voce.id}`, r => ({ repTarget: r }), 'repTarget'],
+      // Last: saving the whole plan replaces its exercises (and their ids)
+      ['PUT', `/schede/${scheda.id}`, r => ({ esercizi: [{ esercizioId: panca.id, repTarget: r }] }), 'esercizi.0.repTarget']
+    ];
+    for (const [metodo, percorso, corpo, campo] of prove) {
+      const rifiutata = await chiedi(metodo, percorso, corpo(lunghe));
+      assert.equal(rifiutata.stato, 400, percorso);
+      assert.deepEqual(messaggi(rifiutata), { [campo]: MESSAGGIO_IT }, percorso);
+    }
+    assert.equal(await prisma.esercizioScheda.count({ where: { schedaId: scheda.id } }), 1);
+    assert.equal((await prisma.esercizioScheda.findUnique({ where: { id: voce.id } })).repTarget, '8-12');
+    for (const [metodo, percorso, corpo] of prove) {
+      const risposta = await chiedi(metodo, percorso, corpo(giuste));
+      assert.ok([200, 201].includes(risposta.stato), `${percorso} → ${risposta.stato}`);
+    }
+  });
+
+  it('a plan saved before the limit, with a longer text, is still read and cloned as it is', async () => {
+    const vecchio = 'x'.repeat(40);
+    await prisma.esercizioScheda.updateMany({ where: { schedaId: scheda.id }, data: { repTarget: vecchio } });
+    const letta = await chiedi('GET', `/schede/${scheda.id}`);
+    assert.equal(letta.stato, 200);
+    assert.equal(letta.corpo.dati.esercizi[0].repTarget, vecchio);
+    const copia = await chiedi('POST', `/schede/${scheda.id}/clona`);
+    assert.equal(copia.stato, 201);
+    assert.equal(copia.corpo.dati.esercizi[0].repTarget, vecchio);
+  });
+});
+
 describe('POST /sessioni', () => {
   it('a wrong plan id: 400 in the language of the app, no workout started', async () => {
     const italiano = await chiedi('POST', '/sessioni', { schedaId: 'abc' });

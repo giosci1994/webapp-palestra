@@ -18,5 +18,6 @@
   "inclinazioneNonValida": "The incline is not valid",
   "livelloResistenzaNonValido": "The resistance level is not valid",
   "distanzaKmNonValida": "The distance is not valid",
-  "gruppoNonValido": "The superset group is not valid"
+  "gruppoNonValido": "The superset group is not valid",
+  "repTargetTroppoLungo": "The reps are too long (at most 30 characters, for example 8-12)"
 }

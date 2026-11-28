@@ -14,6 +14,7 @@
 
 import { z } from 'zod';
 import { ID_MASSIMO } from '../middleware/validazione.js';
+import { RIPETIZIONI_MASSIME } from './schede.schema.js';
 
 // Appointments are instants; PostgreSQL (through Prisma) takes four-digit years
 const ANNO_MINIMO = 1900;
@@ -107,7 +108,9 @@ export const schemaModificaAppuntamento = z.object({
 const schemaEsercizioScheda = z.object({
   esercizioId: idIntero('ptSchema.esercizioIdNonValido'),
   serieTarget: z.custom(valore => eIntero(valore, 1, SERIE_MASSIME), 'ptSchema.serieTargetNonValido').nullish(),
-  repTarget: testo('ptSchema.repTargetNonValido').nullish(),
+  repTarget: testo('ptSchema.repTargetNonValido')
+    .refine(valore => valore.length <= RIPETIZIONI_MASSIME, 'ptSchema.repTargetTroppoLungo')
+    .nullish(),
   // 0: no pause, between the members of a superset
   recuperoSecondi: z.custom(valore => eIntero(valore, 0, RECUPERO_MASSIMO_SECONDI), 'ptSchema.recuperoNonValido').nullish(),
   // Superset or circuit (utils/superset.js)

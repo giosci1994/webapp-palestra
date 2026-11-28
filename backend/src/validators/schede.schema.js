@@ -51,6 +51,19 @@ const numeroFacoltativo = (messaggio, opzioni) => numero(messaggio, { ...opzioni
 /** Optional text, null allowed */
 const testoFacoltativo = messaggio => z.string({ error: messaggio }).nullable().optional();
 
+/** The longest reps text: "8-12", "10-8-6-4", "30 sec" and the like (the bot uses it too) */
+export const RIPETIZIONI_MASSIME = 30;
+
+/**
+ * Optional reps text, null allowed, at most RIPETIZIONI_MASSIME characters.
+ * Plans saved before the limit keep their longer texts: cloning and assigning
+ * copy them from the database without this check.
+ */
+const ripetizioniFacoltative = () => z.string({ error: 'schedeSchema.repTargetNonValido' })
+  .max(RIPETIZIONI_MASSIME, { error: 'schedeSchema.repTargetTroppoLungo' })
+  .nullable()
+  .optional();
+
 /** The body itself is not an object (a list, for example) */
 const CORPO_NON_VALIDO = { error: 'schedeSchema.corpoNonValido' };
 
@@ -70,7 +83,7 @@ const unoDi = (valori, messaggio, { vuotoAmmesso }) => {
 export const schemaEsercizioInScheda = z.object({
   esercizioId: numero('schedeSchema.esercizioIdNonValido', { min: 1, obbligatorio: 'schedeSchema.esercizioIdObbligatorio' }),
   serieTarget: numeroFacoltativo('schedeSchema.serieTargetNonValido', { max: 1000 }),
-  repTarget: testoFacoltativo('schedeSchema.repTargetNonValido'),
+  repTarget: ripetizioniFacoltative(),
   recuperoSecondi: numeroFacoltativo('schedeSchema.recuperoSecondiNonValido', { max: 86400 }),
   note: testoFacoltativo('schedeSchema.noteNonValide'),
   // Superset or circuit (utils/superset.js): a group left with one member,
@@ -115,14 +128,14 @@ export const schemaAggiornaScheda = z.object({
 export const schemaAggiungiEsercizio = z.object({
   esercizioId: numero('schedeSchema.esercizioIdNonValido', { min: 1, obbligatorio: 'schedeSchema.esercizioIdObbligatorio' }),
   serieTarget: numeroFacoltativo('schedeSchema.serieTargetNonValido', { max: 1000 }),
-  repTarget: testoFacoltativo('schedeSchema.repTargetNonValido'),
+  repTarget: ripetizioniFacoltative(),
   recuperoSecondi: numeroFacoltativo('schedeSchema.recuperoSecondiNonValido', { max: 86400 })
 }, CORPO_NON_VALIDO);
 
 /** Schema for PUT /schede/:id/esercizi/:esercizioSchedaId */
 export const schemaAggiornaEsercizioScheda = z.object({
   serieTarget: numeroFacoltativo('schedeSchema.serieTargetNonValido', { max: 1000 }),
-  repTarget: testoFacoltativo('schedeSchema.repTargetNonValido'),
+  repTarget: ripetizioniFacoltative(),
   recuperoSecondi: numeroFacoltativo('schedeSchema.recuperoSecondiNonValido', { max: 86400 }),
   // The column cannot be empty: no null here
   ordineEsecuzione: numero('schedeSchema.ordineEsecuzioneNonValido', { max: 10000 }).optional()
