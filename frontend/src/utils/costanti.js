@@ -27,6 +27,8 @@ export const GRUPPI_MUSCOLARI = {
   'Tutto il corpo': { emoji: '🏋️', colore: '#6B7280' },
 };
 
+/** The longest reps text in a plan ("8-12", "10-8-6-4"): the server refuses longer ones (schede.schema.js) */
+export const RIPETIZIONI_MASSIME = 30;
 
 /**
  * Scale for the muscle map: how many sets a muscle has received.

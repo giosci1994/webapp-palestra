@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { statoRecupero, gradinoAllenamento, SCALA_ALLENAMENTO } from './costanti.js';
+import { readFileSync } from 'node:fs';
+import { statoRecupero, gradinoAllenamento, SCALA_ALLENAMENTO, RIPETIZIONI_MASSIME } from './costanti.js';
 
 describe('statoRecupero', () => {
   const adesso = new Date('2026-10-10T12:00:00Z').getTime();
@@ -47,5 +48,12 @@ describe('gradinoAllenamento', () => {
 
   it('in mezzo sale per gradini proporzionali', () => {
     expect(gradinoAllenamento(10, 20)).toBe(Math.ceil(ultimo / 2));
+  });
+});
+
+describe('RIPETIZIONI_MASSIME', () => {
+  it('is the same limit the server checks', () => {
+    const schema = readFileSync(new URL('../../../backend/src/validators/schede.schema.js', import.meta.url), 'utf8');
+    expect(schema).toMatch(new RegExp(`export const RIPETIZIONI_MASSIME = ${RIPETIZIONI_MASSIME};`));
   });
 });
