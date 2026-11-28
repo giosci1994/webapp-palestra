@@ -7,6 +7,7 @@
   "messaggioTroppoLungo": "Messaggio troppo lungo (max 1000 caratteri)",
   "limiteAI": "Limite di richieste AI raggiunto, riprova tra poco. ⏳",
   "erroreAI": "Errore con l'assistente AI, riprova tra poco.",
+  "statoNonDisponibile": "La memoria del bot non è raggiungibile in questo momento: riprova tra poco. ⏳",
   "rispostaVuota": "Ok 👍",
   "schedaNonTrovata": "Scheda non trovata",
   "esercizioNonTrovato": "Esercizio non trovato",
