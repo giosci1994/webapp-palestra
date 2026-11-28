@@ -18,7 +18,7 @@ import { usePreferiti } from '../hooks/usePreferiti.js';
 import { useAPezzi } from '../hooks/useAPezzi.js';
 import { statoDaSessione, serieDiOggi, limitaSerieOggi, SERIE_MAX_OGGI, ESERCIZIO_EXTRA } from '../utils/ripresa.js';
 import { propostaCarico, incrementoPer } from '../utils/progressione.js';
-import { diLavoro, volumeDi, ordinaSerie, rampaRiscaldamento, pesoDrop } from '../utils/tipiSerie.js';
+import { diLavoro, contaDiLavoro, volumeDi, ordinaSerie, rampaRiscaldamento, pesoDrop } from '../utils/tipiSerie.js';
 import { usePushNotifiche } from '../hooks/usePushNotifiche.js';
 import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js';
 import { useWakeLock } from '../hooks/useWakeLock.js';
@@ -1335,7 +1335,7 @@ export default function WorkoutLive() {
               className="flex items-center justify-between px-3 py-2 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-terziario)] hover:border-[var(--accent)] transition-colors"
             >
               <span className="text-sm font-medium text-[var(--testo-secondario)]">
-                {t('workoutLive.serieFatte.titolo', { count: serieEsercizio.length })}
+                {t('workoutLive.serieFatte.titolo', { count: contaDiLavoro(serieEsercizio) })}
               </span>
               <span className="text-xs text-[var(--testo-terziario)]">{mostraSerieCompletate ? '▲' : '▼'}</span>
             </button>

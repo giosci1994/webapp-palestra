@@ -1,10 +1,26 @@
 import { describe, it, expect } from 'vitest';
-import { diLavoro, volumeDi, ordinaSerie, rampaRiscaldamento, pesoDrop } from './tipiSerie.js';
+import { diLavoro, contaDiLavoro, volumeDi, ordinaSerie, rampaRiscaldamento, pesoDrop } from './tipiSerie.js';
 
 describe('diLavoro', () => {
   it('senza tipo una serie e\' di lavoro, riscaldamento e drop no', () => {
     expect([{}, { tipo: 'LAVORO' }, { tipo: 'RISCALDAMENTO' }, { tipo: 'DROP' }].map(diLavoro))
       .toEqual([true, true, false, false]);
+  });
+});
+
+describe('contaDiLavoro', () => {
+  it('conta solo le serie di lavoro: 2 di lavoro, 1 riscaldamento e 1 drop fanno 2', () => {
+    expect(contaDiLavoro([
+      { tipo: 'RISCALDAMENTO', serieNumero: 1 },
+      { tipo: 'LAVORO', serieNumero: 1 },
+      { tipo: 'DROP', serieNumero: 1 },
+      { serieNumero: 2 }
+    ])).toBe(2);
+  });
+
+  it('senza serie, o con solo riscaldamento e drop, fa 0', () => {
+    expect(contaDiLavoro([])).toBe(0);
+    expect(contaDiLavoro([{ tipo: 'RISCALDAMENTO' }, { tipo: 'DROP' }])).toBe(0);
   });
 });
 

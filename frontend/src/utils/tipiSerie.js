@@ -11,6 +11,9 @@
 /** A working set? Without a tipo (saved before it existed) it is */
 export const diLavoro = s => (s?.tipo ?? 'LAVORO') === 'LAVORO';
 
+/** How many working sets: warm-up and drop sets do not count as sets */
+export const contaDiLavoro = serie => serie.filter(diLavoro).length;
+
 /** The volume (kg × reps) of the sets, warm-up excluded */
 export const volumeDi = serie => serie
   .filter(s => s.tipo !== 'RISCALDAMENTO')
