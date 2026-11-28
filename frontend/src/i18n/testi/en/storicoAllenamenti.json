@@ -23,6 +23,8 @@
   "correggi": "Fix",
   "note": "📝 Notes",
   "dettaglioEsercizi": "Exercise details",
+  "superset": "Superset {lettera} · in turn",
+  "circuito": "Circuit {lettera} · in turn",
   "gruppoESerie_one": "{gruppo} · {count} set",
   "gruppoESerie_other": "{gruppo} · {count} sets",
   "colonne": {

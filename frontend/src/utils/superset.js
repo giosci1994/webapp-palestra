@@ -298,3 +298,52 @@ export function membroDiTurno(esercizi, fatte, idx) {
   }
   return scelto === -1 ? idx : scelto;
 }
+
+/** The id of an exercise's first logged set: the order in which it was started */
+function primaSerie(es) {
+  const id = Math.min(...(es.serie || []).map(s => s.id ?? Infinity));
+  return Number.isFinite(id) ? id : Infinity;
+}
+
+/**
+ * The exercises of a past workout (the history's list, each with the
+ * `gruppo` of that day and its sets) cut into blocks to show: an exercise
+ * alone, or the members of a superset or circuit together, at the place of
+ * the first one. Members are in the order they were started (their first
+ * set), and labelled A1, A2... with the plan's letter. A group with only one
+ * exercise left in the history is no group, and a workout without groups
+ * gives one block per exercise, in the same order.
+ *
+ * @returns {Array<{ gruppo: number|null, lettera?: string, tipo?: 'superset'|'circuito',
+ *   voci: Array<{ es: object, indice: number, etichetta?: string }> }>}
+ */
+export function blocchiStorico(esercizi) {
+  const membriDi = new Map();
+  esercizi.forEach((es, indice) => {
+    if (es.gruppo == null) return;
+    if (!membriDi.has(es.gruppo)) membriDi.set(es.gruppo, []);
+    membriDi.get(es.gruppo).push({ es, indice });
+  });
+
+  const blocchi = [];
+  const mostrati = new Set();
+  esercizi.forEach((es, indice) => {
+    const membri = es.gruppo != null ? membriDi.get(es.gruppo) : null;
+    if (!membri || membri.length < 2) {
+      blocchi.push({ gruppo: null, voci: [{ es, indice }] });
+      return;
+    }
+    if (mostrati.has(es.gruppo)) return;
+    mostrati.add(es.gruppo);
+    const lettera = letteraGruppo(es.gruppo);
+    const ordinati = [...membri].sort((a, b) => {
+      const [pa, pb] = [primaSerie(a.es), primaSerie(b.es)];
+      return pa === pb ? a.indice - b.indice : pa < pb ? -1 : 1;
+    });
+    blocchi.push({
+      gruppo: es.gruppo, lettera, tipo: ordinati.length === 2 ? 'superset' : 'circuito',
+      voci: ordinati.map((voce, k) => ({ ...voce, etichetta: `${lettera}${k + 1}` }))
+    });
+  });
+  return blocchi;
+}

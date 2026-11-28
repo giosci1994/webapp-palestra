@@ -10,9 +10,10 @@ import { useLingua } from '../hooks/useLingua.js';
 import { formattaData, formattaDurata, nomeEsercizio, nomeGruppo, eCardioNelloStorico, titoloAllenamento } from '../utils/formattatori.js';
 import { formattaPeso } from '../utils/formattatori.js';
 import { diLavoro } from '../utils/tipiSerie.js';
+import { blocchiStorico } from '../utils/superset.js';
 import { GRUPPI_MUSCOLARI, DURATA_SOSPETTA_MINUTI } from '../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Link2 } from 'lucide-react';
 import AggiungiAllenamentoPassato from '../componenti/specifici/AggiungiAllenamentoPassato.jsx';
 import ModificaAllenamento from '../componenti/specifici/ModificaAllenamento.jsx';
 
@@ -393,94 +394,115 @@ export default function StoricoAllenamenti() {
                     {t('storicoAllenamenti.dettaglioEsercizi')}
                   </h4>
 
-                  {sessioneAperta.esercizi.map((es, idx) => {
-                    const gruppo = GRUPPI_MUSCOLARI[es.esercizio.gruppoMuscoloPrimario];
-                    const isCardio = eCardioNelloStorico(es);
+                  {blocchiStorico(sessioneAperta.esercizi).map(blocco => {
+                    // Exercises of the same superset or circuit that day are shown together
+                    const voci = blocco.voci.map(({ es, indice: idx, etichetta }) => {
+                      const gruppo = GRUPPI_MUSCOLARI[es.esercizio.gruppoMuscoloPrimario];
+                      const isCardio = eCardioNelloStorico(es);
 
-                    return (
-                      <motion.div
-                        key={idx}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: idx * 0.05 }}
-                        className="rounded-[var(--raggio-md)] border border-[var(--bordo)] overflow-hidden"
-                      >
-                        {/* Exercise header */}
-                        <div className="flex items-center gap-3 px-4 py-3 bg-[var(--bg-terziario)]">
-                          <div
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
-                            style={{
-                              background: (gruppo?.colore || 'var(--accent)') + '22',
-                              color: gruppo?.colore || 'var(--accent)'
-                            }}
-                          >
-                            {gruppo?.emoji || '💪'}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm truncate">{nomeEsercizio(es.esercizio)}</p>
-                            <p className="text-[10px] text-[var(--testo-terziario)]">
-                              {t('storicoAllenamenti.gruppoESerie', { gruppo: nomeGruppo(es.esercizio.gruppoMuscoloPrimario), count: es.serie.filter(diLavoro).length })}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Sets table */}
-                        <div className="px-4 pb-3 pt-2">
-                          {/* Table header */}
-                          <div className={`grid ${isCardio ? 'grid-cols-3' : 'grid-cols-4'} gap-1 mb-1`}>
-                            <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.serie')}</span>
-                            {isCardio ? (
-                              <>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.durata')}</span>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.livello')}</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.peso')}</span>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.rip')}</span>
-                                <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">RPE</span>
-                              </>
-                            )}
-                          </div>
-
-                          {/* Set rows */}
-                          {es.serie.map((serie, sIdx) => (
+                      return (
+                        <motion.div
+                          key={idx}
+                          initial={{ opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.05 }}
+                          className="rounded-[var(--raggio-md)] border border-[var(--bordo)] overflow-hidden"
+                        >
+                          {/* Exercise header */}
+                          <div className="flex items-center gap-3 px-4 py-3 bg-[var(--bg-terziario)]">
                             <div
-                              key={sIdx}
-                              className={`grid ${isCardio ? 'grid-cols-3' : 'grid-cols-4'} gap-1 py-2.5 ${
-                                sIdx < es.serie.length - 1 ? 'border-b border-[var(--bordo)]' : ''
-                              }`}
+                              className="w-8 h-8 rounded-full flex items-center justify-center text-sm shrink-0"
+                              style={{
+                                background: (gruppo?.colore || 'var(--accent)') + '22',
+                                color: gruppo?.colore || 'var(--accent)'
+                              }}
                             >
-                              <span className="text-sm text-center text-[var(--testo-secondario)]"
-                                    title={serie.tipo === 'RISCALDAMENTO' ? t('storicoAllenamenti.riscaldamento') : serie.tipo === 'DROP' ? t('storicoAllenamenti.dropDellaSerie', { numero: serie.serieNumero }) : undefined}>
-                                {serie.tipo === 'RISCALDAMENTO' ? '🔥' : serie.tipo === 'DROP' ? '↳' : serie.serieNumero}
-                              </span>
+                              {gruppo?.emoji || '💪'}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-sm truncate">
+                                {etichetta && <span className="text-[var(--accent)] mr-1.5">{etichetta}</span>}
+                                {nomeEsercizio(es.esercizio)}
+                              </p>
+                              <p className="text-[10px] text-[var(--testo-terziario)]">
+                                {t('storicoAllenamenti.gruppoESerie', { gruppo: nomeGruppo(es.esercizio.gruppoMuscoloPrimario), count: es.serie.filter(diLavoro).length })}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Sets table */}
+                          <div className="px-4 pb-3 pt-2">
+                            {/* Table header */}
+                            <div className={`grid ${isCardio ? 'grid-cols-3' : 'grid-cols-4'} gap-1 mb-1`}>
+                              <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.serie')}</span>
                               {isCardio ? (
                                 <>
-                                  <span className="text-sm font-medium text-center">
-                                    {serie.durataMinuti} min
-                                  </span>
-                                  <span className="text-sm font-medium text-center">
-                                    {serie.livelloResistenza || '—'}
-                                  </span>
+                                  <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.durata')}</span>
+                                  <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.livello')}</span>
                                 </>
                               ) : (
                                 <>
-                                  <span className="text-sm font-medium text-center">
-                                    {formattaPeso(serie.pesoEffettivo)} kg
-                                  </span>
-                                  <span className="text-sm font-medium text-center">
-                                    {serie.repEffettive}
-                                  </span>
-                                  <span className="text-xs text-center text-[var(--testo-terziario)]">
-                                    {serie.rpe ? `${serie.rpe}` : '—'}
-                                  </span>
+                                  <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.peso')}</span>
+                                  <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">{t('storicoAllenamenti.colonne.rip')}</span>
+                                  <span className="text-[10px] font-semibold text-[var(--testo-terziario)] uppercase text-center">RPE</span>
                                 </>
                               )}
                             </div>
-                          ))}
+
+                            {/* Set rows */}
+                            {es.serie.map((serie, sIdx) => (
+                              <div
+                                key={sIdx}
+                                className={`grid ${isCardio ? 'grid-cols-3' : 'grid-cols-4'} gap-1 py-2.5 ${
+                                  sIdx < es.serie.length - 1 ? 'border-b border-[var(--bordo)]' : ''
+                                }`}
+                              >
+                                <span className="text-sm text-center text-[var(--testo-secondario)]"
+                                      title={serie.tipo === 'RISCALDAMENTO' ? t('storicoAllenamenti.riscaldamento') : serie.tipo === 'DROP' ? t('storicoAllenamenti.dropDellaSerie', { numero: serie.serieNumero }) : undefined}>
+                                  {serie.tipo === 'RISCALDAMENTO' ? '🔥' : serie.tipo === 'DROP' ? '↳' : serie.serieNumero}
+                                </span>
+                                {isCardio ? (
+                                  <>
+                                    <span className="text-sm font-medium text-center">
+                                      {serie.durataMinuti} min
+                                    </span>
+                                    <span className="text-sm font-medium text-center">
+                                      {serie.livelloResistenza || '—'}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="text-sm font-medium text-center">
+                                      {formattaPeso(serie.pesoEffettivo)} kg
+                                    </span>
+                                    <span className="text-sm font-medium text-center">
+                                      {serie.repEffettive}
+                                    </span>
+                                    <span className="text-xs text-center text-[var(--testo-terziario)]">
+                                      {serie.rpe ? `${serie.rpe}` : '—'}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      );
+                    });
+                    if (blocco.gruppo == null) return voci[0];
+                    const titolo = blocco.tipo === 'superset'
+                      ? t('storicoAllenamenti.superset', { lettera: blocco.lettera })
+                      : t('storicoAllenamenti.circuito', { lettera: blocco.lettera });
+                    return (
+                      <section key={`gruppo-${blocco.gruppo}`} className="riquadro-superset" aria-label={titolo}>
+                        <div className="riquadro-superset-intestazione">
+                          <span className="riquadro-superset-titolo">
+                            <Link2 size={16} aria-hidden="true" />
+                            {titolo}
+                          </span>
                         </div>
-                      </motion.div>
+                        <div className="riquadro-superset-membri">{voci}</div>
+                      </section>
                     );
                   })}
                 </div>

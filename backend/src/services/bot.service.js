@@ -15,6 +15,7 @@ import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { macchinaCardio, dovEsercizioCardio } from '../utils/macchineCardio.js';
 import { fusoCorrente } from '../utils/date.js';
+import { gruppiDi } from '../utils/superset.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -356,6 +357,17 @@ function rigaForza(n, nome, serie, ripetizioni, recupero) {
   return t(recupero != null ? 'botService.voce.forza' : 'botService.voce.forzaSenzaRecupero', { n, nome, serie, ripetizioni, recupero });
 }
 
+/**
+ * The line of a member of a superset or circuit: "A1. Name — 4x8", then the
+ * pause before the next member when there is one, and on the last member
+ * the rest after the round.
+ */
+function rigaMembro(posto, nome, serie, ripetizioni, recupero) {
+  const valori = { n: posto.etichetta, nome, serie, ripetizioni, recupero };
+  if (!recupero) return t('botService.voce.forzaSenzaRecupero', valori);
+  return t(posto.ultimo ? 'botService.voce.forzaDopoGiro' : 'botService.voce.forzaPausa', valori);
+}
+
 function riepilogoBozza(bozza) {
   if (!bozza.esercizi.length) return t('botService.bozza.vuota');
   const righe = bozza.esercizi.map((e, i) => {
@@ -585,6 +597,8 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
     throw new ErroreNonTrovato(t('botService.schedaNonTrovata'));
   }
 
+  // Superset or circuit of each entry: A1, A2... (null outside a group)
+  const posti = gruppiDi(scheda.esercizi);
   const righe = scheda.esercizi.map((e, i) => {
     const eCardio = e.riscaldamento || e.durataMinuti != null || e.velocitaKmh != null ||
                     e.livelloResistenza != null || e.distanzaKm != null;
@@ -594,6 +608,13 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
       return t(dettagli ? 'botService.voce.cardioSchedaDettagli' : 'botService.voce.cardioScheda', {
         n: i + 1, icona: e.riscaldamento ? '🔥' : '🏃', nome, dettagli
       });
+    }
+    if (posti[i]) {
+      // A heading line above the first member: "Superset A" (2) or "Circuit A" (3+)
+      const riga = rigaMembro(posti[i], nome, e.serieTarget, e.repTarget, e.recuperoSecondi);
+      if (!posti[i].primo) return riga;
+      const titolo = t(posti[i].tipo === 'superset' ? 'botService.voce.superset' : 'botService.voce.circuito', { lettera: posti[i].lettera });
+      return `${titolo}\n${riga}`;
     }
     return rigaForza(i + 1, nome, e.serieTarget, e.repTarget, e.recuperoSecondi);
   });

@@ -29,5 +29,10 @@
   "numeroSerie_other": "{count} serie",
   "riscaldamento": "Riscaldamento",
   "pendenza": "pendenza {valore}%",
-  "resistenza": "resistenza {valore}"
+  "resistenza": "resistenza {valore}",
+  "recuperoDopoGiro": "{secondi}\" dopo il giro",
+  "superset": "Superset con {altri}",
+  "circuito": "Circuito con {altri}",
+  "giri_one": "{count} giro",
+  "giri_other": "{count} giri"
 }

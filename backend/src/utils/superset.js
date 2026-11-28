@@ -68,3 +68,39 @@ export function gruppiPerEsercizio(eserciziScheda) {
   }
   return gruppi;
 }
+
+/** The letter of the n-th group: 1 → A, 26 → Z, 27 → AA (the same as the app's) */
+export function letteraGruppo(n) {
+  let lettere = '';
+  for (let resto = n; resto > 0; resto = Math.floor((resto - 1) / 26)) {
+    lettere = String.fromCharCode(65 + ((resto - 1) % 26)) + lettere;
+  }
+  return lettere;
+}
+
+/**
+ * Where each entry stands in its group, for the labels A1, A2, B1... (the
+ * same as the app's gruppiDi): null outside a group, otherwise { lettera,
+ * posizione, etichetta, membri, primo, ultimo, tipo: 'superset' | 'circuito',
+ * indici } with `indici` the positions of all the members in the list.
+ *
+ * @param {Array<object>} esercizi - entries in execution order
+ * @returns {Array<object|null>}
+ */
+export function gruppiDi(esercizi) {
+  const lista = normalizzaGruppi(esercizi);
+  return lista.map((e, i) => {
+    if (e.gruppo == null) return null;
+    let primo = i;
+    let ultimo = i;
+    while (primo > 0 && lista[primo - 1].gruppo === e.gruppo) primo--;
+    while (ultimo < lista.length - 1 && lista[ultimo + 1].gruppo === e.gruppo) ultimo++;
+    const lettera = letteraGruppo(e.gruppo);
+    const membri = ultimo - primo + 1;
+    return {
+      lettera, posizione: i - primo + 1, etichetta: `${lettera}${i - primo + 1}`, membri,
+      primo: i === primo, ultimo: i === ultimo, tipo: membri === 2 ? 'superset' : 'circuito',
+      indici: Array.from({ length: membri }, (_, k) => primo + k)
+    };
+  });
+}
