@@ -20,7 +20,7 @@ import { fusoDiUtenteId, linguaDiUtenteId } from '../i18n/destinatario.js';
 import { creaNotifica } from '../services/notifiche.service.js';
 import { chiaveGiorno, fusoDi, inizioGiorno } from '../utils/date.js';
 import { creaEsercizio } from '../services/esercizi.service.js';
-import { eliminaScheda } from '../services/schede.service.js';
+import { eliminaScheda, copiaEserciziScheda } from '../services/schede.service.js';
 import { normalizzaGruppi } from '../utils/superset.js';
 import { tagliaTitolo } from '../validators/schede.schema.js';
 
@@ -581,14 +581,7 @@ router.post('/clienti/:id/assegna-scheda', valida({ body: schemaAssegnaScheda })
         livello: schedaOriginale.livello,
         visibilita: 'PERSONALE',
         esercizi: {
-          create: schedaOriginale.esercizi.map(e => ({
-            esercizioId: e.esercizioId,
-            serieTarget: e.serieTarget,
-            repTarget: e.repTarget,
-            recuperoSecondi: e.recuperoSecondi,
-            ordineEsecuzione: e.ordineEsecuzione,
-            gruppo: e.gruppo
-          }))
+          create: copiaEserciziScheda(schedaOriginale.esercizi)
         }
       },
       include: {

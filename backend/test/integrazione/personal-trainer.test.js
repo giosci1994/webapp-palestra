@@ -4,7 +4,7 @@ import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { avviaServer } from '../supporto/server.js';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
-import { creaUtente, creaScheda, tokenPer } from '../supporto/dati.js';
+import { creaUtente, creaScheda, creaEsercizio, tokenPer } from '../supporto/dati.js';
 
 let server;
 let utente;
@@ -89,6 +89,48 @@ describe('a plan assigned by the trainer', () => {
 
     const dashboard = await server.richiesta('GET', '/utenti/mio-pt/dashboard', { token: tokenPer(cliente) });
     assert.deepEqual(dashboard.corpo.dati.schedeAssegnate.map(s => s.titolo).sort(), ['Forza (from your PT)', 'Vecchia (da PT)']);
+  });
+
+  it('keeps every field of the exercises, notes included, like a clone', async () => {
+    const cliente = await creaUtente();
+    await prisma.iscrizionePT.create({ data: { utenteId: cliente.id, trainerId: trainer.id, stato: 'ATTIVA' } });
+    const [tapis, panca, rematore, squat] = await Promise.all([creaEsercizio(), creaEsercizio(), creaEsercizio(), creaEsercizio()]);
+    // Saved out of order on purpose, and with a note longer than today's
+    // 500-character limit (older notes may be): it is copied as it is
+    const notaLunga = 'Scapole addotte, discesa in tre secondi. '.repeat(15).trim();
+    const originale = await prisma.schedaAllenamento.create({
+      data: {
+        creatoreId: trainer.id,
+        titolo: 'Completa',
+        esercizi: {
+          create: [
+            { esercizioId: squat.id, ordineEsecuzione: 4, serieTarget: 5, repTarget: '5', recuperoSecondi: 180, note: 'Talloni a terra' },
+            { esercizioId: tapis.id, ordineEsecuzione: 1, serieTarget: 1, repTarget: null, recuperoSecondi: 0, riscaldamento: true,
+              durataMinuti: 10, velocitaKmh: 6.5, inclinazione: 2.5, livelloResistenza: 4, distanzaKm: 1.2, note: 'Passo svelto' },
+            { esercizioId: panca.id, ordineEsecuzione: 2, serieTarget: 4, repTarget: '8-10', recuperoSecondi: 0, gruppo: 1, note: notaLunga },
+            { esercizioId: rematore.id, ordineEsecuzione: 3, serieTarget: 4, repTarget: '10', recuperoSecondi: 90, gruppo: 1 }
+          ]
+        }
+      }
+    });
+    assert.ok(notaLunga.length > 500);
+
+    const campi = ({ id, schedaId, ...resto }) => resto;
+    const eserciziDi = async schedaId => (await prisma.esercizioScheda.findMany({
+      where: { schedaId }, orderBy: { ordineEsecuzione: 'asc' }
+    })).map(campi);
+    const attesi = await eserciziDi(originale.id);
+    assert.equal(attesi.length, 4);
+
+    const assegnata = await server.richiesta('POST', `/pt/clienti/${cliente.id}/assegna-scheda`, {
+      token: tokenPer(trainer), corpo: { schedaId: originale.id }
+    });
+    assert.equal(assegnata.stato, 201);
+    assert.deepEqual(await eserciziDi(assegnata.corpo.dati.id), attesi);
+
+    const clonata = await server.richiesta('POST', `/schede/${originale.id}/clona`, { token: tokenPer(trainer) });
+    assert.equal(clonata.stato, 201);
+    assert.deepEqual(await eserciziDi(clonata.corpo.dati.id), attesi);
   });
 });
 
