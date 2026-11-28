@@ -40,6 +40,18 @@ export function macchinaCardio(testo) {
 }
 
 /**
+ * Whether an exercise of the catalogue is cardio: its muscle group is
+ * "Cardio" or its equipment is a cardio machine. `esercizio` needs
+ * `gruppoMuscoloPrimario` and `attrezzatura.categoria` (SELEZIONE_CARDIO).
+ */
+export function eEsercizioCardio(esercizio) {
+  return esercizio?.gruppoMuscoloPrimario === 'Cardio' || esercizio?.attrezzatura?.categoria === 'CARDIO';
+}
+
+/** The fields eEsercizioCardio reads, for a Prisma `select` */
+export const SELEZIONE_CARDIO = { gruppoMuscoloPrimario: true, attrezzatura: { select: { categoria: true } } };
+
+/**
  * The exercise of a machine in the database: by its name, its Italian name,
  * or the name the seed used to give it (the equipment's, "Tapis Roulant"),
  * for a row the 20261026 migration left as it was.

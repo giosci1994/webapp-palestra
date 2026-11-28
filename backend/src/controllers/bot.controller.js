@@ -93,8 +93,8 @@ export async function guidaEsercizi(req, res, next) {
 
 export async function guidaAggiungi(req, res, next) {
   try {
-    const { esercizioId, serie, ripetizioni } = req.body;
-    const dati = await botService.aggiungiEsercizioGuidato(req.utenteTelegram.id, esercizioId, serie, ripetizioni);
+    const { esercizioId, serie, ripetizioni, durataMinuti } = req.body;
+    const dati = await botService.aggiungiEsercizioGuidato(req.utenteTelegram.id, esercizioId, serie, ripetizioni, durataMinuti);
     res.json({ successo: true, dati });
   } catch (errore) { next(errore); }
 }

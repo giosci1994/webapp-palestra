@@ -56,9 +56,18 @@ export const schemaVoceForza = z.object({
   recuperoSecondi: campi.recuperoSecondi
 });
 
+/**
+ * The duration of a cardio entry when nobody gives one: without it the entry
+ * has no cardio value at all and the app and the bot take it for strength.
+ */
+export const DURATA_CARDIO_PREDEFINITA = 10;
+
+/** Minutes of a cardio entry: the app's limits, missing or empty the default */
+const durataMinuti = campi.durataMinuti.transform(v => v ?? DURATA_CARDIO_PREDEFINITA);
+
 /** The values of a cardio entry (`aggiungi_cardio` of the AI), with the app's limits */
 export const schemaVoceCardio = z.object({
-  durataMinuti: campi.durataMinuti,
+  durataMinuti,
   velocitaKmh: campi.velocitaKmh,
   inclinazione: campi.inclinazione,
   livelloResistenza: campi.livelloResistenza,
@@ -108,8 +117,11 @@ export const schemaGuidaEsercizi = z.object({
   }
 });
 
-/** POST /guida/aggiungi */
-export const schemaGuidaAggiungi = schemaVoceForza.omit({ recuperoSecondi: true }).extend({ chatId: idChat });
+/**
+ * POST /guida/aggiungi: sets and reps for a strength exercise, minutes for a
+ * cardio one (the handler looks at the exercise and keeps what fits)
+ */
+export const schemaGuidaAggiungi = schemaVoceForza.omit({ recuperoSecondi: true }).extend({ chatId: idChat, durataMinuti });
 
 /** POST /guida/termina: the title is optional (the handler picks one) */
 export const schemaGuidaTermina = z.object({

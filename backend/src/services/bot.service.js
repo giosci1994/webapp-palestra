@@ -13,11 +13,11 @@ import redis from '../config/redis.js';
 import { ErroreApp, ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
-import { macchinaCardio, dovEsercizioCardio } from '../utils/macchineCardio.js';
+import { macchinaCardio, dovEsercizioCardio, eEsercizioCardio, SELEZIONE_CARDIO } from '../utils/macchineCardio.js';
 import { fusoCorrente } from '../utils/date.js';
-import { gruppiDi } from '../utils/superset.js';
+import { gruppiDi, eCardioOriscaldamento } from '../utils/superset.js';
 import { testoDelProblema } from '../middleware/validazione.js';
-import { schemaVoceForza, schemaVoceCardio } from '../validators/bot.schema.js';
+import { schemaVoceForza, schemaVoceCardio, DURATA_CARDIO_PREDEFINITA } from '../validators/bot.schema.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -334,7 +334,7 @@ const dichiarazioniFunzioni = [
       type: Type.OBJECT,
       properties: {
         macchina: { type: Type.STRING, description: 'Macchina cardio: tapis roulant, cyclette, ellittica, vogatore, stepper o air bike' },
-        durataMinuti: { type: Type.INTEGER, description: 'Durata in minuti' },
+        durataMinuti: { type: Type.INTEGER, description: `Durata in minuti (se l'utente non la dice, ${DURATA_CARDIO_PREDEFINITA})` },
         velocitaKmh: { type: Type.NUMBER, description: 'Velocità in km/h (opzionale)' },
         inclinazione: { type: Type.NUMBER, description: 'Inclinazione/pendenza in % (opzionale)' },
         livelloResistenza: { type: Type.INTEGER, description: 'Livello di resistenza (opzionale)' },
@@ -381,6 +381,7 @@ function dettagliCardio(e) {
 
 /** The line of a strength exercise: "1. Name — 3x10 (rest 90s)", without the rest when the plan has none */
 function rigaForza(n, nome, serie, ripetizioni, recupero) {
+  ripetizioni ??= '—';
   return t(recupero != null ? 'botService.voce.forza' : 'botService.voce.forzaSenzaRecupero', { n, nome, serie, ripetizioni, recupero });
 }
 
@@ -390,7 +391,7 @@ function rigaForza(n, nome, serie, ripetizioni, recupero) {
  * the rest after the round.
  */
 function rigaMembro(posto, nome, serie, ripetizioni, recupero) {
-  const valori = { n: posto.etichetta, nome, serie, ripetizioni, recupero };
+  const valori = { n: posto.etichetta, nome, serie, ripetizioni: ripetizioni ?? '—', recupero };
   if (!recupero) return t('botService.voce.forzaSenzaRecupero', valori);
   return t(posto.ultimo ? 'botService.voce.forzaDopoGiro' : 'botService.voce.forzaPausa', valori);
 }
@@ -436,7 +437,8 @@ function vociDellaScheda(esercizi) {
           esercizioId: e.esercizioId,
           ordineEsecuzione: i + 1,
           riscaldamento: !!e.riscaldamento,
-          durataMinuti: valoreOPredefinito(cardio.durataMinuti, e.durataMinuti, null),
+          // A draft entry saved without minutes takes the default (bot.schema.js)
+          durataMinuti: valoreOPredefinito(cardio.durataMinuti, e.durataMinuti, DURATA_CARDIO_PREDEFINITA),
           velocitaKmh: valoreOPredefinito(cardio.velocitaKmh, e.velocitaKmh, null),
           inclinazione: valoreOPredefinito(cardio.inclinazione, e.inclinazione, null),
           livelloResistenza: valoreOPredefinito(cardio.livelloResistenza, e.livelloResistenza, null),
@@ -459,6 +461,26 @@ function vociDellaScheda(esercizi) {
 /** The title of a new plan: a text that is not empty, or the default one */
 const titoloScheda = titolo => (typeof titolo === 'string' && titolo.trim() ? titolo.trim() : t('botService.titoloSchedaPredefinito'));
 
+/**
+ * A cardio entry of the draft. `valori` are already checked by schemaVoceCardio
+ * (the minutes have their default there); the plan gets 1 set and no rest
+ * like the app (vociDellaScheda).
+ */
+function voceCardio(esercizio, valori = {}, riscaldamento = false) {
+  return {
+    tipo: 'CARDIO',
+    esercizioId: esercizio.id,
+    nome: esercizio.nome,
+    nomeIt: esercizio.nomeIt,
+    riscaldamento: !!riscaldamento,
+    durataMinuti: valori.durataMinuti ?? DURATA_CARDIO_PREDEFINITA,
+    velocitaKmh: valori.velocitaKmh ?? null,
+    inclinazione: valori.inclinazione ?? null,
+    livelloResistenza: valori.livelloResistenza ?? null,
+    distanzaKm: valori.distanzaKm ?? null
+  };
+}
+
 async function eseguiFunzione(nome, args, utente, stato) {
   switch (nome) {
     case 'cerca_esercizio': {
@@ -473,9 +495,24 @@ async function eseguiFunzione(nome, args, utente, stato) {
       const { esercizioId, serie, ripetizioni, recuperoSecondi } = controllo.data;
       const es = await prisma.esercizio.findUnique({
         where: { id: esercizioId },
-        select: { id: true, nome: true, nomeIt: true }
+        select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO }
       });
       if (!es) return { errore: 'Esercizio non trovato. Usa prima cerca_esercizio.' };
+      if (eEsercizioCardio(es)) {
+        // A cardio machine found by cerca_esercizio: saved as cardio, never as
+        // sets x reps, whatever the model sent. The model is told, so it can
+        // replace it (rimuovi_ultimo + aggiungi_cardio) with the user's values.
+        const voce = voceCardio(es);
+        stato.bozza.esercizi.push(voce);
+        return {
+          ok: true,
+          aggiunto: nomeMostrato(es),
+          cardio: true,
+          durataMinuti: voce.durataMinuti,
+          nota: `Esercizio cardio: aggiunto come cardio di ${voce.durataMinuti} minuti, non a serie e ripetizioni. Per il cardio usa aggiungi_cardio.`,
+          totaleEsercizi: stato.bozza.esercizi.length
+        };
+      }
       const voce = {
         tipo: 'FORZA',
         esercizioId: es.id,
@@ -497,18 +534,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
       if (!macchina) {
         return { errore: 'Macchina cardio non riconosciuta. Disponibili: tapis roulant, cyclette, ellittica, vogatore, stepper, air bike.' };
       }
-      const voce = {
-        tipo: 'CARDIO',
-        esercizioId: macchina.id,
-        nome: macchina.nome,
-        nomeIt: macchina.nomeIt,
-        riscaldamento: !!args.riscaldamento,
-        durataMinuti: valori.durataMinuti ?? null,
-        velocitaKmh: valori.velocitaKmh ?? null,
-        inclinazione: valori.inclinazione ?? null,
-        livelloResistenza: valori.livelloResistenza ?? null,
-        distanzaKm: valori.distanzaKm ?? null
-      };
+      const voce = voceCardio(macchina, valori, args.riscaldamento);
       stato.bozza.esercizi.push(voce);
       return { ok: true, aggiunto: nomeMostrato(macchina), riscaldamento: voce.riscaldamento, totaleEsercizi: stato.bozza.esercizi.length };
     }
@@ -668,7 +694,7 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
     where: { id: parseInt(schedaId) },
     include: {
       esercizi: {
-        include: { esercizio: { select: { nome: true, nomeIt: true, gruppoMuscoloPrimario: true } } },
+        include: { esercizio: { select: { nome: true, nomeIt: true, ...SELEZIONE_CARDIO } } },
         orderBy: { ordineEsecuzione: 'asc' }
       }
     }
@@ -681,8 +707,9 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
   // Superset or circuit of each entry: A1, A2... (null outside a group)
   const posti = gruppiDi(scheda.esercizi);
   const righe = scheda.esercizi.map((e, i) => {
-    const eCardio = e.riscaldamento || e.durataMinuti != null || e.velocitaKmh != null ||
-                    e.livelloResistenza != null || e.distanzaKm != null;
+    // The server's test (utils/superset.js), and a cardio exercise saved
+    // without values still reads as cardio, not as "1x— (rest 0s)"
+    const eCardio = eCardioOriscaldamento(e) || eEsercizioCardio(e.esercizio);
     const nome = nomeMostrato(e.esercizio);
     if (eCardio) {
       const dettagli = dettagliCardio(e);
@@ -765,15 +792,18 @@ async function eserciziPiuUsatiIds(utenteId) {
   return usati.map(u => u.esercizioId);
 }
 
+/** An exercise on a button of the guided creation: `cardio` asks for minutes instead of sets x reps */
+const voceElenco = e => ({ id: e.id, nome: nomeMostrato(e), cardio: eEsercizioCardio(e) });
+
 /** Exercises of a muscle group, with the user's most used at the top (C4). */
 export async function eserciziPerGruppo(utenteId, gruppo, limite = 12) {
   const [esercizi, usatiIds] = await Promise.all([
-    prisma.esercizio.findMany({ where: { gruppoMuscoloPrimario: gruppo }, select: { id: true, nome: true, nomeIt: true } }),
+    prisma.esercizio.findMany({ where: { gruppoMuscoloPrimario: gruppo }, select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO } }),
     eserciziPiuUsatiIds(utenteId)
   ]);
   const rank = new Map(usatiIds.map((id, i) => [id, i]));
   esercizi.sort((a, b) => (rank.has(a.id) ? rank.get(a.id) : 1e9) - (rank.has(b.id) ? rank.get(b.id) : 1e9));
-  return esercizi.slice(0, limite).map(e => ({ id: e.id, nome: nomeMostrato(e) }));
+  return esercizi.slice(0, limite).map(voceElenco);
 }
 
 /** The user's N most used exercises (the "più usati" (most used) shortcut). */
@@ -781,25 +811,31 @@ export async function eserciziPiuUsati(utenteId, limite = 12) {
   const ids = await eserciziPiuUsatiIds(utenteId);
   if (!ids.length) return [];
   const top = ids.slice(0, limite);
-  const esercizi = await prisma.esercizio.findMany({ where: { id: { in: top } }, select: { id: true, nome: true, nomeIt: true } });
+  const esercizi = await prisma.esercizio.findMany({ where: { id: { in: top } }, select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO } });
   const ordine = new Map(top.map((id, i) => [id, i]));
-  return esercizi.sort((a, b) => ordine.get(a.id) - ordine.get(b.id)).map(e => ({ id: e.id, nome: nomeMostrato(e) }));
+  return esercizi.sort((a, b) => ordine.get(a.id) - ordine.get(b.id)).map(voceElenco);
 }
 
 /**
  * Adds an exercise (by id) to the draft, from the guided creation. The values
  * are already checked by the route (validators/bot.schema.js); missing, the defaults.
+ * A cardio exercise becomes a cardio entry with its minutes, whatever button
+ * sent it (an old sets x reps button too); the others take sets and reps.
  */
-export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, ripetizioni) {
-  const es = await prisma.esercizio.findUnique({ where: { id: esercizioId }, select: { id: true, nome: true, nomeIt: true } });
+export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, ripetizioni, durataMinuti) {
+  const es = await prisma.esercizio.findUnique({ where: { id: esercizioId }, select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO } });
   if (!es) throw new ErroreNonTrovato(t('botService.esercizioNonTrovato'));
   const stato = await caricaStato(utenteId);
-  stato.bozza.esercizi.push({
-    tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
-    serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90
-  });
+  const cardio = eEsercizioCardio(es);
+  const voce = cardio
+    ? voceCardio(es, { durataMinuti })
+    : { tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
+        serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90 };
+  stato.bozza.esercizi.push(voce);
   await salvaStato(utenteId, stato);
-  return { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length };
+  const dati = { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length, cardio };
+  if (cardio) dati.durataMinuti = voce.durataMinuti;
+  return dati;
 }
 
 /** Turns the draft into a workout plan (guided creation). */

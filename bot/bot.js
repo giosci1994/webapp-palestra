@@ -104,6 +104,9 @@ bot.command('statistiche', async (ctx) => {
 });
 
 // --- /guidata: button-based creation by categories ---
+// A cardio exercise (the backend says so) asks for minutes, the others for sets x reps
+const pulsanteEsercizio = (e) => (e.cardio ? `gcx:${e.id}` : `gex:${e.id}`);
+
 async function mostraCategorie(ctx) {
   const r = await api(ctx, 'guida/categorie', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
@@ -124,7 +127,7 @@ bot.callbackQuery(/^gcat:(.+)$/, async (ctx) => {
     const es = r.corpo.dati.esercizi || [];
     if (!es.length) { await ctx.reply(t(ctx, 'nessunPiuUsato')); await mostraCategorie(ctx); return; }
     const tastiera = new InlineKeyboard();
-    es.forEach(e => tastiera.text(e.nome, `gex:${e.id}`).row());
+    es.forEach(e => tastiera.text(e.nome, pulsanteEsercizio(e)).row());
     await ctx.reply(t(ctx, 'eserciziPiuUsati'), { reply_markup: tastiera });
     return;
   }
@@ -145,7 +148,7 @@ bot.callbackQuery(/^ggrp:(.+)$/, async (ctx) => {
   const es = r.corpo.dati.esercizi || [];
   if (!es.length) { await ctx.reply(t(ctx, 'nessunEsercizio')); return; }
   const tastiera = new InlineKeyboard();
-  es.forEach(e => tastiera.text(e.nome, `gex:${e.id}`).row());
+  es.forEach(e => tastiera.text(e.nome, pulsanteEsercizio(e)).row());
   await ctx.reply(t(ctx, 'scegliEsercizio', { gruppo: r.corpo.dati.etichettaGruppo || gruppo }), { reply_markup: tastiera });
 });
 
@@ -158,17 +161,37 @@ bot.callbackQuery(/^gex:(\d+)$/, async (ctx) => {
   await ctx.reply(t(ctx, 'serieRipetizioni'), { reply_markup: tastiera });
 });
 
+bot.callbackQuery(/^gcx:(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const id = ctx.match[1];
+  const tastiera = new InlineKeyboard();
+  [10, 15, 20, 30].forEach(minuti => tastiera.text(`${minuti} min`, `gcadd:${id}:${minuti}`));
+  await ctx.reply(t(ctx, 'minutiCardio'), { reply_markup: tastiera.row() });
+});
+
+/** The answer after an exercise is added: the backend tells whether it became cardio */
+async function rispondiAggiunto(ctx, r, serie, rip) {
+  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  const d = r.corpo.dati;
+  const tastiera = new InlineKeyboard().text(t(ctx, 'aggiungiAltro'), 'gmenu').text(t(ctx, 'termina'), 'gfine').row();
+  const testo = d.cardio
+    ? t(ctx, 'aggiuntoCardio', { nome: d.aggiunto, minuti: d.durataMinuti, count: d.totaleEsercizi })
+    : t(ctx, 'aggiunto', { nome: d.aggiunto, serie, ripetizioni: rip, count: d.totaleEsercizi });
+  await ctx.reply(testo, { parse_mode: 'Markdown', reply_markup: tastiera });
+}
+
+bot.callbackQuery(/^gcadd:(\d+):(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const id = ctx.match[1], minuti = ctx.match[2];
+  const r = await api(ctx, 'guida/aggiungi', { chatId: chatId(ctx), esercizioId: id, durataMinuti: minuti });
+  await rispondiAggiunto(ctx, r);
+});
+
 bot.callbackQuery(/^gadd:(\d+):(\d+):(\S+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
   const id = ctx.match[1], serie = ctx.match[2], rip = ctx.match[3];
   const r = await api(ctx, 'guida/aggiungi', { chatId: chatId(ctx), esercizioId: id, serie, ripetizioni: rip });
-  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  const d = r.corpo.dati;
-  const tastiera = new InlineKeyboard().text(t(ctx, 'aggiungiAltro'), 'gmenu').text(t(ctx, 'termina'), 'gfine').row();
-  await ctx.reply(
-    t(ctx, 'aggiunto', { nome: d.aggiunto, serie, ripetizioni: rip, count: d.totaleEsercizi }),
-    { parse_mode: 'Markdown', reply_markup: tastiera }
-  );
+  await rispondiAggiunto(ctx, r, serie, rip);
 });
 
 bot.callbackQuery('gfine', async (ctx) => {

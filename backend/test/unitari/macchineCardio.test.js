@@ -1,7 +1,8 @@
 // The cardio machines the Telegram bot recognises in what the user writes.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { MACCHINE_CARDIO, macchinaCardio } from '../../src/utils/macchineCardio.js';
+import { MACCHINE_CARDIO, macchinaCardio, eEsercizioCardio } from '../../src/utils/macchineCardio.js';
+import { schemaVoceCardio, schemaGuidaAggiungi, DURATA_CARDIO_PREDEFINITA } from '../../src/validators/bot.schema.js';
 
 const nome = testo => macchinaCardio(testo)?.nome ?? null;
 
@@ -34,5 +35,27 @@ describe('cardio machines', () => {
     assert.equal(nome(''), null);
     assert.equal(nome(null), null);
     assert.equal(nome('panca piana'), null);
+  });
+});
+
+describe('a cardio exercise of the catalogue', () => {
+  it('is cardio by its muscle group or by its equipment', () => {
+    assert.equal(eEsercizioCardio({ gruppoMuscoloPrimario: 'Cardio', attrezzatura: null }), true);
+    assert.equal(eEsercizioCardio({ gruppoMuscoloPrimario: 'Quadricipiti', attrezzatura: { categoria: 'CARDIO' } }), true);
+    assert.equal(eEsercizioCardio({ gruppoMuscoloPrimario: 'Petto', attrezzatura: { categoria: 'PESI_LIBERI' } }), false);
+    assert.equal(eEsercizioCardio({ gruppoMuscoloPrimario: 'Petto' }), false);
+    assert.equal(eEsercizioCardio(null), false);
+  });
+});
+
+describe('the minutes of a cardio entry from the bot', () => {
+  it('missing, null or empty take the default; the app\'s limits still hold', () => {
+    assert.equal(DURATA_CARDIO_PREDEFINITA, 10);
+    for (const corpo of [{}, { durataMinuti: null }, { durataMinuti: '' }]) {
+      assert.equal(schemaVoceCardio.parse(corpo).durataMinuti, 10);
+    }
+    assert.equal(schemaVoceCardio.parse({ durataMinuti: '25' }).durataMinuti, 25);
+    assert.equal(schemaVoceCardio.safeParse({ durataMinuti: 1441 }).success, false);
+    assert.equal(schemaGuidaAggiungi.parse({ chatId: 1, esercizioId: 2, durataMinuti: '15' }).durataMinuti, 15);
   });
 });
