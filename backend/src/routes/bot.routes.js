@@ -11,12 +11,17 @@ import {
   schemaSoloChat, schemaCollega, schemaMessaggio, schemaScheda,
   schemaGuidaGruppi, schemaGuidaEsercizi, schemaGuidaAggiungi, schemaGuidaTermina
 } from '../validators/bot.schema.js';
+import { limitatoreBot, limitatoreBotTotale } from '../middleware/limitatore.js';
 import { collega, messaggio, annulla, schede, scheda, statistiche, guidaCategorie, guidaGruppi, guidaEsercizi, guidaAggiungi, guidaTermina } from '../controllers/bot.controller.js';
 
 const router = Router();
 
 // Shared secret required on every bot route
 router.use(verificaSegretoBot);
+// Their own limit, per Telegram chat, then one for the whole bot (they skip
+// the global one, see limitatore.js)
+router.use(limitatoreBot);
+router.use(limitatoreBotTotale);
 
 // Initial linking (chatId not linked yet)
 router.post('/collega', valida({ body: schemaCollega }), collega);

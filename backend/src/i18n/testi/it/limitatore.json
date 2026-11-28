@@ -2,5 +2,7 @@
   "troppeRichieste": "Troppe richieste, riprova tra qualche minuto.",
   "troppiTentativiAuth": "Troppi tentativi di autenticazione, riprova tra 15 minuti.",
   "troppeRichiesteAI": "Troppe richieste all'assistente AI, riprova tra un minuto.",
-  "troppeSegnalazioni": "Troppe segnalazioni di affluenza, riprova più tardi."
+  "troppeSegnalazioni": "Troppe segnalazioni di affluenza, riprova più tardi.",
+  "troppeRichiesteBot": "Troppe richieste da questa chat, riprova tra qualche minuto.",
+  "troppeRichiesteBotTotali": "Il bot sta ricevendo troppe richieste, riprova tra qualche minuto."
 }
