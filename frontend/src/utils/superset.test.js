@@ -56,6 +56,12 @@ describe('eCardioOriscaldamento', () => {
     expect(eCardioOriscaldamento({ velocitaKmh: 9 })).toBe(true);
     expect(eCardioOriscaldamento({ distanzaKm: 2 })).toBe(true);
   });
+
+  it('an entry with only the incline is cardio', () => {
+    expect(eCardioOriscaldamento({ serieTarget: 1, inclinazione: 5 })).toBe(true);
+    expect(eCardioOriscaldamento({ inclinazione: 0 })).toBe(true);
+    expect(eCardioOriscaldamento({ serieTarget: 3, inclinazione: null })).toBe(false);
+  });
 });
 
 describe('labels', () => {

@@ -15,7 +15,7 @@ import { useAuth } from '../contesti/AuthContesto.jsx';
 import { useAllenamentoInCorso } from '../contesti/AllenamentoInCorsoContesto.jsx';
 import StellaPreferita from '../componenti/comuni/StellaPreferita.jsx';
 import { usePreferiti } from '../hooks/usePreferiti.js';
-import { gruppiDi } from '../utils/superset.js';
+import { gruppiDi, eCardioOriscaldamento } from '../utils/superset.js';
 
 export default function DettaglioScheda() {
   const { t } = useLingua();
@@ -174,8 +174,7 @@ export default function DettaglioScheda() {
           {scheda.esercizi?.map((es, i, tutti) => {
             // Superset or circuit: A1, A2... and the rest after the round on the last member
             const posto = gruppiDi(tutti)[i];
-            const cardio = es.riscaldamento || es.durataMinuti != null || es.velocitaKmh != null ||
-                           es.livelloResistenza != null || es.distanzaKm != null;
+            const cardio = eCardioOriscaldamento(es);
             const partiCardio = [];
             if (es.durataMinuti != null) partiCardio.push(`${es.durataMinuti} min`);
             if (es.velocitaKmh != null) partiCardio.push(`${es.velocitaKmh} km/h`);
