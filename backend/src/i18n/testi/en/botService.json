@@ -7,6 +7,7 @@
   "messaggioTroppoLungo": "Message too long (max 1000 characters)",
   "limiteAI": "AI request limit reached, try again shortly. ⏳",
   "erroreAI": "Something went wrong with the AI assistant, try again shortly.",
+  "statoNonDisponibile": "The bot's memory can't be reached right now: try again in a moment. ⏳",
   "rispostaVuota": "Ok 👍",
   "schedaNonTrovata": "Plan not found",
   "esercizioNonTrovato": "Exercise not found",

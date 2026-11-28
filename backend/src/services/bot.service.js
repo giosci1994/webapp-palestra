@@ -30,6 +30,11 @@ function ottieniClientAI() {
   return clientAI;
 }
 
+/** For the tests: a fake Gemini client (null goes back to the real one) */
+export function impostaClientAI(client) {
+  clientAI = client;
+}
+
 const MODELLO = 'gemini-2.5-flash';
 
 // ============================================
@@ -207,27 +212,47 @@ function statoVuoto() {
   return { storia: [], bozza: { titolo: null, livello: null, esercizi: [] } };
 }
 
+/**
+ * Redis unreachable: a clear 503 instead of an empty draft, otherwise the
+ * guided creation says "Draft: 1 exercise" and then "the draft is empty".
+ */
+function statoNonDisponibile(e, azione) {
+  logger.warn({ errore: e.message }, `Impossibile ${azione} lo stato bot su Redis`);
+  return new ErroreApp(t('botService.statoNonDisponibile'), 503, 'BOT_STATO_NON_DISPONIBILE');
+}
+
 async function caricaStato(utenteId) {
+  let raw;
   try {
-    const raw = await redis.get(chiaveStato(utenteId));
-    if (raw) return JSON.parse(raw);
+    raw = await redis.get(chiaveStato(utenteId));
   } catch (e) {
-    logger.warn({ errore: e.message }, 'Impossibile leggere lo stato bot da Redis');
+    throw statoNonDisponibile(e, 'leggere');
   }
-  return statoVuoto();
+  if (!raw) return statoVuoto();
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    // A damaged state: start again rather than block the user
+    logger.warn({ errore: e.message }, 'Stato bot illeggibile su Redis');
+    return statoVuoto();
+  }
 }
 
 async function salvaStato(utenteId, stato) {
   try {
     await redis.set(chiaveStato(utenteId), JSON.stringify(stato), 'EX', TTL_STATO);
   } catch (e) {
-    logger.warn({ errore: e.message }, 'Impossibile salvare lo stato bot su Redis');
+    throw statoNonDisponibile(e, 'salvare');
   }
 }
 
 /** Cancels the current draft/conversation. */
 export async function annullaBozza(utenteId) {
-  try { await redis.del(chiaveStato(utenteId)); } catch { /* ignore */ }
+  try {
+    await redis.del(chiaveStato(utenteId));
+  } catch (e) {
+    throw statoNonDisponibile(e, 'cancellare');
+  }
   return { successo: true };
 }
 
@@ -491,6 +516,18 @@ async function eseguiFunzione(nome, args, utente, stato) {
   }
 }
 
+/** The functions that change the draft: their result is saved at once */
+const FUNZIONI_CHE_CAMBIANO = new Set(['aggiungi_esercizio', 'aggiungi_cardio', 'rimuovi_ultimo', 'termina_scheda']);
+
+/** Adds a user message and the answer to the history (the last 16 entries) */
+function aggiungiAllaStoria(stato, testo, risposta) {
+  stato.storia = [
+    ...(stato.storia || []),
+    { role: 'user', text: testo },
+    { role: 'model', text: risposta }
+  ].slice(-16);
+}
+
 /** Processes a user message and returns the bot's answer. */
 export async function elaboraMessaggio(utente, testo) {
   if (!testo || !testo.trim()) throw new ErroreValidazione(t('botService.messaggioVuoto'));
@@ -507,6 +544,8 @@ export async function elaboraMessaggio(utente, testo) {
   const systemInstruction = promptSistema() + '\n\n--- STATO BOZZA ---\n' + riepilogoBozza(stato.bozza);
 
   let rispostaFinale = '';
+  // What the functions have already done in this message (they are saved at once)
+  const azioni = [];
   try {
     for (let i = 0; i < 6; i++) {
       const risposta = await ai.models.generateContent({
@@ -526,6 +565,14 @@ export async function elaboraMessaggio(utente, testo) {
         const partiRisposta = [];
         for (const c of chiamate) {
           const risultato = await eseguiFunzione(c.name, c.args || {}, utente, stato);
+          if (FUNZIONI_CHE_CAMBIANO.has(c.name) && risultato.ok) {
+            // Saved before the next call to Gemini: if that one fails, the
+            // added exercises are not lost and a saved plan does not stay in
+            // the draft (the user writing "done" again would save it twice)
+            await salvaStato(utente.id, stato);
+            const cosa = risultato.aggiunto || risultato.rimosso || risultato.titolo;
+            azioni.push(cosa ? `${c.name}: ${cosa}` : c.name);
+          }
           partiRisposta.push({ functionResponse: { name: c.name, response: risultato } });
         }
         contents.push({ role: 'user', parts: partiRisposta });
@@ -537,6 +584,13 @@ export async function elaboraMessaggio(utente, testo) {
     }
   } catch (errore) {
     logger.error({ utenteId: utente.id, errore: errore.message }, 'Errore motore bot Gemini');
+    if (azioni.length) {
+      // The draft is already saved: the history says what was done, so the
+      // model does not do it again when the user repeats the message (with
+      // Redis unreachable this save fails too, and the 503 goes on)
+      aggiungiAllaStoria(stato, testo, `[Risposta interrotta da un errore. Azioni già eseguite: ${azioni.join('; ')}]`);
+      await salvaStato(utente.id, stato).catch(() => {});
+    }
     if (errore instanceof ErroreApp) throw errore;
     if (errore.message?.includes('429') || errore.message?.toLowerCase().includes('quota')) {
       throw new ErroreApp(t('botService.limiteAI'), 429, 'AI_RATE_LIMIT');
@@ -546,12 +600,7 @@ export async function elaboraMessaggio(utente, testo) {
 
   if (!rispostaFinale) rispostaFinale = t('botService.rispostaVuota');
 
-  stato.storia = [
-    ...(stato.storia || []),
-    { role: 'user', text: testo },
-    { role: 'model', text: rispostaFinale }
-  ].slice(-16);
-
+  aggiungiAllaStoria(stato, testo, rispostaFinale);
   await salvaStato(utente.id, stato);
 
   return { risposta: rispostaFinale };
