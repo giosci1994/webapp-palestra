@@ -104,3 +104,70 @@ export function gruppiDi(esercizi) {
     };
   });
 }
+
+// --- Joining and splitting (the bot's draft) ---
+// The same rules as the plan editor's buttons (frontend utils/superset.js):
+// the bot joins and splits the entries of its draft the way the app does.
+
+/** First and last position of the group of the entry at `idx` (a normalized list) */
+function estremi(lista, idx) {
+  let primo = idx;
+  let ultimo = idx;
+  while (primo > 0 && lista[primo - 1].gruppo === lista[idx].gruppo) primo--;
+  while (ultimo < lista.length - 1 && lista[ultimo + 1].gruppo === lista[idx].gruppo) ultimo++;
+  return { primo, ultimo };
+}
+
+/** Whether the entry at `idx` can be joined with the next one: both strength, not already in the same group */
+export function puoUnire(esercizi, idx) {
+  const lista = normalizzaGruppi(esercizi);
+  const a = lista[idx];
+  const b = lista[idx + 1];
+  if (!a || !b || eCardioOriscaldamento(a) || eCardioOriscaldamento(b)) return false;
+  return a.gruppo == null || a.gruppo !== b.gruppo;
+}
+
+/**
+ * Joins the entry at `idx` with the next one. If either is already in a
+ * group the other joins it (two groups become one). The member that stops
+ * being the last of its group gets a pause of 0 before the next; the new
+ * last keeps its rest, which becomes the rest after the round.
+ */
+export function unisci(esercizi, idx) {
+  if (!puoUnire(esercizi, idx)) return normalizzaGruppi(esercizi);
+  const lista = normalizzaGruppi(esercizi);
+  const numero = lista[idx].gruppo ?? lista[idx + 1].gruppo ?? Math.max(0, ...lista.map(e => e.gruppo ?? 0)) + 1;
+  const daCambiare = new Set([lista[idx].gruppo, lista[idx + 1].gruppo].filter(g => g != null));
+  const risultato = lista.map((e, i) =>
+    (i === idx || i === idx + 1 || daCambiare.has(e.gruppo) ? { ...e, gruppo: numero } : e));
+  // The entry at idx is now followed by a member of the same round
+  risultato[idx] = { ...risultato[idx], recuperoSecondi: 0 };
+  return normalizzaGruppi(risultato);
+}
+
+/**
+ * Takes the entry at `idx` out of its group. A middle member moves right
+ * after the group, so the others stay together; if one member is left the
+ * group goes away. The member leaving takes the rest after the round; when
+ * the last one leaves, the new last gets that rest too.
+ */
+export function separa(esercizi, idx) {
+  const lista = normalizzaGruppi(esercizi);
+  if (lista[idx]?.gruppo == null) return lista;
+  const { primo, ultimo } = estremi(lista, idx);
+  const recuperoGiro = lista[ultimo].recuperoSecondi;
+  const risultato = [...lista];
+  if (idx === ultimo) {
+    risultato[idx - 1] = { ...risultato[idx - 1], recuperoSecondi: recuperoGiro };
+    risultato[idx] = { ...risultato[idx], gruppo: null };
+    return normalizzaGruppi(risultato);
+  }
+  const uscito = { ...risultato[idx], gruppo: null, recuperoSecondi: recuperoGiro };
+  if (idx === primo) {
+    risultato[idx] = uscito;
+    return normalizzaGruppi(risultato);
+  }
+  risultato.splice(idx, 1);
+  risultato.splice(ultimo, 0, uscito);
+  return normalizzaGruppi(risultato);
+}

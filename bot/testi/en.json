@@ -46,5 +46,11 @@
   "ricomincia": "🔄 Start again",
   "chiediTitolo": "📝 What should I call the plan? Write me the title, or use the suggested one: <b>{titolo}</b>",
   "usaTitoloProposto": "✅ Use the suggested title",
-  "toltoDalCatalogo": "⚠️ Removed <b>{nome}</b>: it is no longer in the catalog."
+  "toltoDalCatalogo": "⚠️ Removed <b>{nome}</b>: it is no longer in the catalog.",
+  "pulsanteNota": "📝 Note",
+  "pulsanteUnisci": "🔗 Join the previous one",
+  "chiediNota": "📝 Write me the note for <b>{nome}</b> (technique, tempo, grip…): your next message becomes the note.",
+  "notaSalvata": "📝 Note saved on <b>{nome}</b>.\n\n{riepilogo}",
+  "unitoSuperset": "🔗 Done: <b>Superset {lettera}</b>.\n\n{riepilogo}",
+  "unitoCircuito": "🔗 Done: <b>Circuit {lettera}</b>.\n\n{riepilogo}"
 }

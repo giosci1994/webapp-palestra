@@ -9,5 +9,8 @@
   "ripetizioniTroppoLunghe": "The reps are too long (at most 30 characters, for example 8-12)",
   "soloCardioNonValido": "The \"cardio\" choice is not valid",
   "offsetNonValido": "The page is not valid",
-  "titoloTroppoLungo": "The title is too long (at most 100 characters)"
+  "titoloTroppoLungo": "The title is too long (at most 100 characters)",
+  "posizioneNonValida": "The position is not valid (a number from 1, as in the draft summary)",
+  "posizioniNonValide": "At least two positions of the draft are needed (numbers from 1)",
+  "posizioniNonContigue": "The entries to join must be next to each other in the draft"
 }

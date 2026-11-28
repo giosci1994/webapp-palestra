@@ -102,7 +102,7 @@ describe('bot guided creation: cardio', () => {
 
     const aggiunto = await bot('guida/aggiungi', { esercizioId: macchina.id, durataMinuti: '20' });
     assert.equal(aggiunto.stato, 200);
-    assert.deepEqual(aggiunto.corpo.dati, { aggiunto: 'Treadmill', totaleEsercizi: 1, cardio: true, durataMinuti: 20 });
+    assert.deepEqual(aggiunto.corpo.dati, { aggiunto: 'Treadmill', totaleEsercizi: 1, cardio: true, durataMinuti: 20, nota: false, unibile: false });
     await bot('guida/termina', { titolo: 'Run' });
 
     await prisma.schedaAllenamento.deleteMany({ where: { titolo: { not: 'Run' } } });
