@@ -178,7 +178,8 @@ describe('bot: a draft saved before the checks does not block "finish"', () => {
     return scheda.esercizi.map(e => [e.serieTarget, e.repTarget, e.recuperoSecondi, e.durataMinuti, e.velocitaKmh, e.distanzaKm]);
   };
   // The wrong values take the defaults, the right ones (rest 0 included) stay
-  const ATTESE = [[3, '8-12', 90, null, null, null], [4, '10', 0, null, null, null], [1, null, 0, null, null, 5]];
+  // The cardio entry's wrong minutes take the cardio default (10), like missing ones
+  const ATTESE = [[3, '8-12', 90, null, null, null], [4, '10', 0, null, null, null], [1, null, 0, 10, null, 5]];
 
   it('from the guided creation', async () => {
     const utente = await utenteCollegato();
