@@ -268,3 +268,54 @@ describe('a workout thrown away', () => {
     expect(chiamate).toEqual([]);
   });
 });
+
+describe('eliminaSerie: una serie tolta con lo scorrimento', () => {
+  const elimina = (ora, voce) => accoda(utente, {
+    tipo: 'eliminaSerie', sessione: SESSIONE, dati: { idClient: voce.id }
+  }, archivio, alle(ora));
+
+  it('parte dopo la serie, in ordine, come DELETE con la chiave della serie', async () => {
+    const prima = serie('08:10');
+    elimina('08:11', prima);
+    const { chiama, chiamate } = serverFinto();
+    expect(await inviaCoda(utente, { chiama, archivio })).toEqual({ inviate: 2, rimaste: 0 });
+    expect(chiamate.map(c => `${c.metodo} ${c.percorso}`)).toEqual([
+      'POST /sessioni/7/serie', `DELETE /sessioni/7/serie/${prima.id}`
+    ]);
+    expect(chiamate[1].body).toBeUndefined();
+  });
+
+  it("senza rete resta in coda dopo la serie", async () => {
+    const prima = serie('08:10');
+    elimina('08:11', prima);
+    const chiama = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    expect(await inviaCoda(utente, { chiama, archivio })).toEqual({ inviate: 0, rimaste: 2 });
+    expect(leggiCoda(utente, archivio).map(v => v.tipo)).toEqual(['serie', 'eliminaSerie']);
+  });
+
+  it("l'allenamento passato non ha le serie eliminate, e le altre sono rinumerate", () => {
+    const uno = serie('08:10', { serieNumero: 1, tipo: 'LAVORO' });
+    const drop = serie('08:11', { serieNumero: 1, tipo: 'DROP', pesoEffettivo: 60 });
+    const due = serie('08:15', { serieNumero: 2, tipo: 'LAVORO' });
+    const tre = serie('08:20', { serieNumero: 3, tipo: 'LAVORO' });
+    const via = elimina('08:21', uno);
+    // Logged after the deletion: the phone has already given it the next number
+    const dopo = serie('08:25', { serieNumero: 3, tipo: 'LAVORO' });
+    expect(sessionePassataDa([uno, drop, due, tre, via, dopo]).serie).toEqual([
+      { ...due.dati, serieNumero: 1 },
+      { ...tre.dati, serieNumero: 2 },
+      dopo.dati
+    ]);
+  });
+
+  it("un'eliminazione di una serie gia' inviata non cambia l'allenamento passato", () => {
+    const uno = serie('08:10');
+    const voci = [uno, accoda(utente, { tipo: 'eliminaSerie', sessione: SESSIONE, dati: { idClient: 'gia-inviata-1234' } }, archivio)];
+    expect(sessionePassataDa(voci).serie).toEqual([uno.dati]);
+  });
+
+  it('con tutte le serie eliminate non resta niente da salvare', () => {
+    const uno = serie('08:10');
+    expect(sessionePassataDa([uno, elimina('08:11', uno)])).toBeNull();
+  });
+});

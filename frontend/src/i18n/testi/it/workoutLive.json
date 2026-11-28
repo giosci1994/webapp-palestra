@@ -151,5 +151,21 @@
     "vuoto": "Allenamento libero: aggiungi gli esercizi che vuoi fare, uno alla volta.",
     "aggiungi": "Aggiungi un esercizio",
     "esci": "Esci"
+  },
+  "scorri": {
+    "suggerimento": "Scorri una serie: a sinistra la elimini, a destra la copi",
+    "capito": "Ho capito",
+    "eliminata": "Serie {numero} eliminata",
+    "eliminatoRiscaldamento": "Riscaldamento eliminato",
+    "eliminatoDrop": "Drop eliminato",
+    "copiata": "Copiata come serie {numero}",
+    "copiatoRiscaldamento": "Riscaldamento copiato",
+    "annulla": "Annulla",
+    "azioni": "Azioni per {nome}",
+    "copia": "Copia",
+    "elimina": "Elimina",
+    "nomeSerie": "la serie {numero}",
+    "nomeRiscaldamento": "il riscaldamento {numero}",
+    "nomeDrop": "il drop della serie {numero}"
   }
 }

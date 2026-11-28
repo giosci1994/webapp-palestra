@@ -43,6 +43,8 @@ router.delete('/:id', controller.eliminaSessione);
 
 // --- Set logging inside a session ---
 router.post('/:id/serie', controller.logSerie);
+// DELETE /api/v1/sessioni/:id/serie/:idClient — Delete a set by the phone's key (swipe in the live workout)
+router.delete('/:id/serie/:idClient', controller.eliminaSerie);
 
 // --- How busy the gym is (the banner during a workout) ---
 router.post('/:id/affluenza', limitatoreSegnalazioni, valida({ body: schemaSegnalaAffluenza }), segnalaAffluenza);

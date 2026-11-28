@@ -3,7 +3,7 @@
 // Mobile-first interface for the workout
 // ============================================
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, useLocation, useNavigate, Link } from 'react-router-dom';
 import { api } from '../config/api.js';
 import { useAuth } from '../contesti/AuthContesto.jsx';
@@ -25,10 +25,12 @@ import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { leggiRecupero, salvaRecupero, togliRecupero } from '../utils/recupero.js';
 import { passoDopoSerie, giroDi, gruppiDi } from '../utils/superset.js';
+import { ATTESA_ANNULLA_MS, rinumera, copiaDi, serieOggiDopoCopia, suggerimentoDaMostrare, segnaSuggerimentoVisto } from '../utils/scorriSerie.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaData, formattaDurata, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import FineAllenamento from '../componenti/specifici/FineAllenamento.jsx';
+import RigaSerieScorrevole from '../componenti/specifici/RigaSerieScorrevole.jsx';
 import BannerAffluenza from '../componenti/specifici/BannerAffluenza.jsx';
 
 /** The load proposal by outcome: label (a translation key) and colors of the card */
@@ -157,9 +159,72 @@ export default function WorkoutLive() {
 
   /** Queue a set (done or skipped) and try to send it right away */
   const registraSerie = (dati) => {
+    // A deletion waiting for its "Undo" goes first: the numbers of this set
+    // already count it, and the server must see them in the same order
+    chiudiAvviso();
     const voce = accoda(utenteId, { tipo: 'serie', sessione: perLaCoda(sessione), dati });
     inviaOra(utenteId).catch(err => console.error('Invio della serie:', err));
     return voce;
+  };
+
+  // --- Swipe a set (utils/scorriSerie.js, RigaSerieScorrevole) ---
+  // The notice with "Undo" after a set deleted or copied. A deletion changes
+  // the list on the phone right away and reaches the server (the queue's
+  // eliminaSerie) only when the notice goes away: after ATTESA_ANNULLA_MS, or
+  // earlier when something else must come after it (another set, "Termina",
+  // leaving the page or the app). A copy is already logged: its "Undo"
+  // deletes it.
+  const [avviso, setAvviso] = useState(null);
+  const avvisoRef = useRef(null);
+  const timerAvvisoRef = useRef(null);
+  const [suggerimentoScorri, setSuggerimentoScorri] = useState(() => suggerimentoDaMostrare());
+
+  const inviaEliminazione = (idClient) => {
+    accoda(utenteId, { tipo: 'eliminaSerie', sessione: perLaCoda(sessione), dati: { idClient } });
+    inviaOra(utenteId).catch(err => console.error('Invio dell\'eliminazione:', err));
+  };
+
+  const mostraAvviso = (dati) => {
+    clearTimeout(timerAvvisoRef.current);
+    avvisoRef.current = dati;
+    setAvviso(dati);
+    timerAvvisoRef.current = setTimeout(chiudiAvviso, ATTESA_ANNULLA_MS);
+  };
+
+  /** The notice goes away: a deletion waiting for it is sent now */
+  function chiudiAvviso() {
+    clearTimeout(timerAvvisoRef.current);
+    const attuale = avvisoRef.current;
+    avvisoRef.current = null;
+    if (!attuale) return;
+    setAvviso(null);
+    if (attuale.genere === 'elimina') inviaEliminazione(attuale.idClient);
+  }
+
+  /** The notice goes away without sending anything (the workout is being thrown away) */
+  const scartaAvviso = () => {
+    clearTimeout(timerAvvisoRef.current);
+    avvisoRef.current = null;
+    setAvviso(null);
+  };
+
+  // Leaving the page or the app (it may be closed from the background) sends
+  // the deletion: the list saved on the phone no longer has that set
+  const chiudiAvvisoRef = useRef(chiudiAvviso);
+  useLayoutEffect(() => { chiudiAvvisoRef.current = chiudiAvviso; });
+  useEffect(() => {
+    const nascosta = () => { if (document.visibilityState === 'hidden') chiudiAvvisoRef.current(); };
+    document.addEventListener('visibilitychange', nascosta);
+    return () => {
+      document.removeEventListener('visibilitychange', nascosta);
+      chiudiAvvisoRef.current();
+    };
+  }, []);
+
+  const vistoSuggerimento = () => {
+    if (!suggerimentoScorri) return;
+    setSuggerimentoScorri(false);
+    segnaSuggerimentoVisto();
   };
 
   const salvaProgressi = useCallback((stato) => {
@@ -637,6 +702,98 @@ export default function WorkoutLive() {
     }
   };
 
+  // --- Swipe a set: delete (left) and copy (right) ---
+  // Only while the workout is open on the phone: not once finished, nor with
+  // "Termina" queued. The rows are the current exercise's sets.
+  const scorriAttivo = !giaConclusa && !idChiusura && !mostraRiepilogo;
+  const tipoDi = s => s.tipo ?? 'LAVORO';
+
+  /**
+   * Deletes a set done on the phone now (with its drop sets, the following
+   * ones renumbered) and on the server when the notice expires. In a
+   * superset or circuit the member simply has one set less: the turns are
+   * counted from the sets, so they stay consistent.
+   */
+  const eliminaSerieFatta = (serie) => {
+    if (!scorriAttivo || !serie.idClient) return;
+    vistoSuggerimento();
+    // A deletion still waiting goes now: the list below already counts it
+    chiudiAvviso();
+    const { serie: dopo, via } = rinumera(serieCompletate, serie.idClient);
+    if (!via.length) return;
+    const lavoro = tipoDi(serie) === 'LAVORO';
+    const corrente = serie.esercizioId === esercizioAttuale?.esercizioId;
+    const serieDopo = lavoro && corrente ? Math.max(1, serieCorrente - 1) : serieCorrente;
+    salvaProgressi({ ...statoAttuale(), serieCompletate: dopo, serieCorrente: serieDopo });
+    setSerieCompletate(dopo);
+    setSerieCorrente(serieDopo);
+    const messaggio = tipoDi(serie) === 'RISCALDAMENTO' ? t('workoutLive.scorri.eliminatoRiscaldamento')
+      : tipoDi(serie) === 'DROP' ? t('workoutLive.scorri.eliminatoDrop')
+        : t('workoutLive.scorri.eliminata', { numero: serie.serieNumero });
+    mostraAvviso({ genere: 'elimina', idClient: serie.idClient, prima: serieCompletate, esercizioId: serie.esercizioId, lavoro, messaggio });
+  };
+
+  /**
+   * Logs the same set again as the exercise's next one, right away (so it
+   * works offline too). It does not start the rest nor move to another
+   * exercise; past today's sets it adds one. In a superset or circuit it is
+   * one more set of this member only: the next step still comes from the
+   * counts (passoDopoSerie). false if it could not be logged.
+   */
+  const copiaSerieFatta = (serie) => {
+    if (!scorriAttivo || inviandoRef.current || !esercizioAttuale || serie.esercizioId !== esercizioAttuale.esercizioId) return false;
+    const lavoro = tipoDi(serie) === 'LAVORO';
+    const oggiPrima = esercizioAttuale.serieOggi;
+    const oggi = lavoro ? serieOggiDopoCopia(serieDiOggi(esercizioAttuale) ?? 0, fatteDi(esercizioIdx)) : null;
+    if (lavoro && oggi == null) return false;
+    const dati = copiaDi(serie, { prossimoNumero: serieCorrente, riscaldamenti: riscaldamenti.length });
+    if (!dati) return false;
+    vistoSuggerimento();
+    riposaUnAttimo();
+    const voce = registraSerie(dati);
+    const nuoveCompletate = [...serieCompletate, { ...dati, idClient: voce.id, registrataIl: voce.il }];
+    const alzata = lavoro && oggi !== serieDiOggi(esercizioAttuale);
+    const eserciziDopo = alzata
+      ? esercizi.map((es, i) => (i === esercizioIdx ? { ...es, serieOggi: oggi } : es))
+      : esercizi;
+    const serieDopo = lavoro ? serieCorrente + 1 : serieCorrente;
+    salvaProgressi({ ...statoAttuale(), serieCompletate: nuoveCompletate, serieCorrente: serieDopo, eserciziLive: eserciziDopo });
+    setSerieCompletate(nuoveCompletate);
+    setSerieCorrente(serieDopo);
+    if (alzata) setEserciziLive(eserciziDopo);
+    mostraAvviso({
+      genere: 'copia', idClient: voce.id, esercizioId: serie.esercizioId, lavoro,
+      ...(alzata && { indice: esercizioIdx, oggiPrima }),
+      messaggio: lavoro ? t('workoutLive.scorri.copiata', { numero: dati.serieNumero }) : t('workoutLive.scorri.copiatoRiscaldamento')
+    });
+    return true;
+  };
+
+  /** "Undo": a deletion puts the set back (nothing was sent); a copy is deleted */
+  const annullaAvviso = () => {
+    const a = avvisoRef.current;
+    scartaAvviso();
+    if (!a) return;
+    const corrente = a.esercizioId === esercizioAttuale?.esercizioId;
+    if (a.genere === 'elimina') {
+      const serieDopo = a.lavoro && corrente ? serieCorrente + 1 : serieCorrente;
+      salvaProgressi({ ...statoAttuale(), serieCompletate: a.prima, serieCorrente: serieDopo });
+      setSerieCompletate(a.prima);
+      setSerieCorrente(serieDopo);
+      return;
+    }
+    const { serie: dopo } = rinumera(serieCompletate, a.idClient);
+    const serieDopo = a.lavoro && corrente ? Math.max(1, serieCorrente - 1) : serieCorrente;
+    const eserciziDopo = a.indice != null
+      ? esercizi.map((es, i) => (i === a.indice ? { ...es, serieOggi: a.oggiPrima } : es))
+      : esercizi;
+    salvaProgressi({ ...statoAttuale(), serieCompletate: dopo, serieCorrente: serieDopo, eserciziLive: eserciziDopo });
+    setSerieCompletate(dopo);
+    setSerieCorrente(serieDopo);
+    if (a.indice != null) setEserciziLive(eserciziDopo);
+    inviaEliminazione(a.idClient);
+  };
+
   /**
    * @param {number} secondi
    * @param {boolean} inCima - rest at the top, above the next exercise
@@ -704,6 +861,8 @@ export default function WorkoutLive() {
     if (chiudendo) return;
     setChiudendo(true);
     setFineScelta(fine);
+    // A deletion waiting for its "Undo" goes before "Termina"
+    chiudiAvviso();
     const voce = accoda(utenteId, {
       tipo: 'completa', sessione: perLaCoda(sessione), dati: { noteFinali: '', fine: new Date(fine).toISOString() }
     });
@@ -728,6 +887,7 @@ export default function WorkoutLive() {
   const eliminaAllenamento = async () => {
     if (eliminando || !confirm(t('workoutLive.elimina.conferma'))) return;
     setEliminando(true);
+    scartaAvviso();
     const voci = togliSessioneDallaCoda(utenteId, sessione.id);
     try {
       await api.delete(`/sessioni/${sessione.id}`);
@@ -1189,24 +1349,37 @@ export default function WorkoutLive() {
                   className="overflow-hidden"
                 >
                   <div className="flex flex-col gap-1 pt-1">
-                    {serieEsercizio.map((s, i) => (
-                      <div key={s.idClient ?? s.id ?? i}
-                           className={`flex items-center justify-between px-3 py-2 rounded-[var(--raggio-sm)] ${
-                             s.tipo === 'RISCALDAMENTO' ? 'bg-[var(--bg-terziario)]' : 'bg-[var(--successo-dim)]'
-                           } ${s.tipo === 'DROP' ? 'ml-6' : ''}`}>
-                        <span className={`text-sm font-medium ${s.tipo === 'RISCALDAMENTO' ? 'text-[var(--testo-secondario)]' : 'text-[var(--successo)]'}`}>
-                          {s.tipo === 'RISCALDAMENTO'
-                            ? t('workoutLive.serieFatte.riscaldamento')
-                            : s.tipo === 'DROP' ? t('workoutLive.drop.etichetta') : t('workoutLive.serieFatte.serie', { numero: s.serieNumero ?? i + 1 })}
-                        </span>
-                        <span className="text-sm">
-                          {s.durataMinuti ? (
-                            `${s.durataMinuti} min ${s.livelloResistenza ? t('workoutLive.serieFatte.livello', { livello: s.livelloResistenza }) : ''}`
-                          ) : (
-                            `${formattaPeso(s.pesoEffettivo)} kg × ${s.repEffettive}`
-                          )}
-                        </span>
+                    {scorriAttivo && suggerimentoScorri && (
+                      <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-[var(--raggio-sm)] border border-dashed border-[var(--bordo)] text-xs text-[var(--testo-secondario)]">
+                        <span>↔ {t('workoutLive.scorri.suggerimento')}</span>
+                        <button type="button" onClick={vistoSuggerimento} className="shrink-0 font-semibold text-[var(--accent)]">
+                          {t('workoutLive.scorri.capito')}
+                        </button>
                       </div>
+                    )}
+                    {serieEsercizio.map((s, i) => (
+                      <RigaSerieScorrevole
+                        key={s.idClient ?? s.id ?? i}
+                        attivo={scorriAttivo && Boolean(s.idClient)}
+                        copiabile={s.tipo !== 'DROP'}
+                        onElimina={() => eliminaSerieFatta(s)}
+                        onCopia={() => copiaSerieFatta(s)}
+                        nome={s.tipo === 'RISCALDAMENTO'
+                          ? t('workoutLive.scorri.nomeRiscaldamento', { numero: s.serieNumero })
+                          : s.tipo === 'DROP' ? t('workoutLive.scorri.nomeDrop', { numero: s.serieNumero })
+                            : t('workoutLive.scorri.nomeSerie', { numero: s.serieNumero ?? i + 1 })}
+                        classe={`${s.tipo === 'RISCALDAMENTO' ? 'bg-[var(--bg-terziario)]' : 'bg-[var(--successo-dim)]'} ${s.tipo === 'DROP' ? 'ml-6' : ''}`}
+                        etichetta={
+                          <span className={s.tipo === 'RISCALDAMENTO' ? 'text-[var(--testo-secondario)]' : 'text-[var(--successo)]'}>
+                            {s.tipo === 'RISCALDAMENTO'
+                              ? t('workoutLive.serieFatte.riscaldamento')
+                              : s.tipo === 'DROP' ? t('workoutLive.drop.etichetta') : t('workoutLive.serieFatte.serie', { numero: s.serieNumero ?? i + 1 })}
+                          </span>
+                        }
+                        valore={s.durataMinuti
+                          ? `${s.durataMinuti} min ${s.livelloResistenza ? t('workoutLive.serieFatte.livello', { livello: s.livelloResistenza }) : ''}`
+                          : `${formattaPeso(s.pesoEffettivo)} kg × ${s.repEffettive}`}
+                      />
                     ))}
                   </div>
                 </motion.div>
@@ -1214,6 +1387,19 @@ export default function WorkoutLive() {
             </AnimatePresence>
           </div>
         )}
+
+        {/* The notice after a set deleted or copied, with "Undo" (always in the page, so screen readers hear it) */}
+        <div aria-live="polite" className="fixed inset-x-4 z-50 flex justify-center pointer-events-none"
+             style={{ bottom: 'calc(var(--safe-bottom) + 16px)' }}>
+          {avviso && (
+            <div className="pointer-events-auto flex items-center gap-3 w-full max-w-md px-4 py-3 rounded-[var(--raggio-md)] border border-[var(--bordo)] bg-[var(--bg-secondario)] shadow-[var(--ombra-modale)]">
+              <span className="flex-1 text-sm text-[var(--testo-primario)]">{avviso.messaggio}</span>
+              <button type="button" onClick={annullaAvviso} className="shrink-0 text-sm font-semibold text-[var(--accent)]">
+                {t('workoutLive.scorri.annulla')}
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Rest timer overlay */}
         <AnimatePresence>
