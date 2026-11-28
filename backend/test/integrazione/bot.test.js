@@ -111,6 +111,37 @@ describe('bot: the language of a linked user', () => {
     assert.equal(english.etichettaGruppo, 'Chest');
   });
 
+  it('a plan with a superset: labels A1, A2, the pause and the rest after the round', async () => {
+    const utente = await utenteCollegato({ lingua: 'en' });
+    const panca = await creaEsercizio({ nome: 'Bench Press', nomeIt: 'Panca piana', gruppoMuscoloPrimario: 'Petto' });
+    const rematore = await creaEsercizio({ nome: 'Barbell Row', nomeIt: 'Rematore', gruppoMuscoloPrimario: 'Schiena' });
+    const curl = await creaEsercizio({ nome: 'Curl', gruppoMuscoloPrimario: 'Bicipiti' });
+    const scheda = await creaScheda(utente, [panca, rematore, curl]);
+    const imposta = (esercizio, data) => prisma.esercizioScheda.updateMany({ where: { schedaId: scheda.id, esercizioId: esercizio.id }, data });
+    await imposta(panca, { gruppo: 1, recuperoSecondi: 0 });
+    await imposta(rematore, { gruppo: 1, recuperoSecondi: 120 });
+    await imposta(curl, { recuperoSecondi: 60 });
+
+    const inglese = (await bot('scheda', { chatId: CHAT_ID, schedaId: scheda.id }, 'it')).corpo.dati.testo;
+    assert.match(inglese, /🔗 Superset A\nA1\. Bench Press — 3x8-12\n/);
+    assert.match(inglese, /A2\. Barbell Row — 3x8-12 \(rest 120s after the round\)/);
+    assert.match(inglese, /3\. Curl — 3x8-12 \(rest 60s\)$/);
+
+    await imposta(panca, { recuperoSecondi: 15 });
+    await prisma.utente.update({ where: { id: utente.id }, data: { lingua: 'it' } });
+    const italiano = (await bot('scheda', { chatId: CHAT_ID, schedaId: scheda.id }, 'en')).corpo.dati.testo;
+    assert.match(italiano, /A1\. Panca piana — 3x8-12 \(pausa 15s\)/);
+    assert.match(italiano, /🔗 Superset A\nA1\. Panca piana/);
+    assert.match(italiano, /A2\. Rematore — 3x8-12 \(rec 120s dopo il giro\)/);
+
+    // Three members make a circuit, with its own heading
+    await imposta(curl, { gruppo: 1 });
+    const circuito = (await bot('scheda', { chatId: CHAT_ID, schedaId: scheda.id }, 'en')).corpo.dati.testo;
+    assert.match(circuito, /🔗 Circuito A\nA1\. Panca piana/);
+    assert.match(circuito, /A3\. Curl — 3x8-12 \(rec 60s dopo il giro\)/);
+    assert.equal((circuito.match(/🔗/g) || []).length, 1);
+  });
+
   it('the guided creation sends back the data as it is, with the names to show', async () => {
     await utenteCollegato({ lingua: 'en' });
     await creaEsercizio({ gruppoMuscoloPrimario: 'Petto', bodyRegion: 'Parte Superiore' });

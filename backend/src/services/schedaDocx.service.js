@@ -9,6 +9,7 @@ import {
 } from 'docx';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { fusoCorrente } from '../utils/date.js';
+import { gruppiDi } from '../utils/superset.js';
 
 // Palette and sizes copied from the template the user provided: navy blue
 // for headers and session titles, neutral grays for the body.
@@ -80,20 +81,44 @@ function serieEReps(voce) {
   return voce.repTarget || '—';
 }
 
-/** Rest in the template's notation: 90" instead of 90s. */
-function recupero(voce) {
-  return voce.recuperoSecondi ? `${voce.recuperoSecondi}"` : '—';
+/**
+ * Rest in the template's notation: 90" instead of 90s. In a superset or
+ * circuit a member's rest is the pause before the next member (often none:
+ * "—"), and the last member's is the rest after the round.
+ */
+function recupero(voce, posto) {
+  if (!voce.recuperoSecondi) return '—';
+  if (posto?.ultimo) return t('schedaDocxService.recuperoDopoGiro', { secondi: voce.recuperoSecondi });
+  return `${voce.recuperoSecondi}"`;
+}
+
+/**
+ * On the first member of a superset or circuit: "Superset with A2 Rows,
+ * 4 rounds". The rounds are the members' sets, when they are all the same.
+ */
+function notaGruppo(posto, esercizi) {
+  if (!posto?.primo) return null;
+  const altri = posto.indici.slice(1)
+    .map((indice, k) => `${posto.lettera}${k + 2} ${nomeEsercizio(esercizi[indice].esercizio)}`)
+    .join(', ');
+  const serie = new Set(posto.indici.map(indice => esercizi[indice].serieTarget));
+  const giri = serie.size === 1 ? [...serie][0] : null;
+  const testo = t(`schedaDocxService.${posto.tipo}`, { altri });
+  return giri ? `${testo}, ${t('schedaDocxService.giri', { count: giri })}` : testo;
 }
 
 /**
  * The "Technical Notes" column.
  *
- * In order of precedence: the note written for this exercise in this plan,
+ * First the superset or circuit the exercise opens, if any. Then, in order
+ * of precedence: the note written for this exercise in this plan,
  * then the exercise's generic description, finally muscle group and
  * equipment. Plus the cardio parameters where needed.
  */
-function note(voce) {
+function note(voce, notaDelGruppo = null) {
   const parti = [];
+
+  if (notaDelGruppo) parti.push(notaDelGruppo);
 
   if (voce.riscaldamento) parti.push(t('schedaDocxService.riscaldamento'));
 
@@ -122,6 +147,8 @@ function note(voce) {
 }
 
 function tabellaEsercizi(esercizi) {
+  // Superset or circuit of each entry: A1, A2... (null outside a group)
+  const posti = gruppiDi(esercizi);
   const intestazioni = ['esercizio', 'serieReps', 'recupero', 'noteTecniche'];
 
   const righe = [
@@ -134,14 +161,17 @@ function tabellaEsercizi(esercizi) {
         dimensione: 19
       }))
     }),
-    ...esercizi.map(voce => new TableRow({
-      children: [
-        cella(nomeEsercizio(voce.esercizio), { grassetto: true, colore: C.cellaForte }),
-        cella(serieEReps(voce)),
-        cella(recupero(voce)),
-        cella(note(voce))
-      ]
-    }))
+    ...esercizi.map((voce, i) => {
+      const nome = nomeEsercizio(voce.esercizio);
+      return new TableRow({
+        children: [
+          cella(posti[i] ? `${posti[i].etichetta} · ${nome}` : nome, { grassetto: true, colore: C.cellaForte }),
+          cella(serieEReps(voce)),
+          cella(recupero(voce, posti[i])),
+          cella(note(voce, notaGruppo(posti[i], esercizi)))
+        ]
+      });
+    })
   ];
 
   return new Table({ columnWidths: COLONNE, width: { size: 9936, type: WidthType.DXA }, rows: righe });

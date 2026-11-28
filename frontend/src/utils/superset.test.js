@@ -4,7 +4,7 @@ import { describe, it, expect } from 'vitest';
 import {
   normalizzaGruppi, eCardioOriscaldamento, letteraGruppo, gruppiDi, blocchiDi, puoUnire,
   unisci, separa, impostaGiri, giriDi, ultimoDelGruppo, sposta, leggiSecondi,
-  passoDopoSerie, giroDi, membroDiTurno, RECUPERO_PREDEFINITO
+  passoDopoSerie, giroDi, membroDiTurno, RECUPERO_PREDEFINITO, blocchiStorico
 } from './superset.js';
 
 const voce = (esercizioId, gruppo, altro = {}) => ({ esercizioId, gruppo, ...altro });
@@ -362,5 +362,36 @@ describe('membroDiTurno (resuming a workout)', () => {
   it('a member already finished does not count, outside a group the index itself', () => {
     expect(membroDiTurno([forza(1, 1, 0, 4), forza(2, 1, 60, 2)], [3, 2], 0)).toBe(0);
     expect(membroDiTurno(scheda, [0, 0, 0], 0)).toBe(0);
+  });
+});
+
+describe('blocchiStorico (a past workout in the history)', () => {
+  // An exercise of the history: its group that day and the ids of its sets
+  const fatto = (esercizioId, gruppo, ...idSerie) => ({ esercizio: { id: esercizioId }, gruppo, serie: idSerie.map(id => ({ id })) });
+  const vista = blocchi => blocchi.map(b => (b.gruppo == null
+    ? b.voci[0].es.esercizio.id
+    : [b.lettera, b.tipo, b.voci.map(v => `${v.etichetta}:${v.es.esercizio.id}`)]));
+
+  it('a workout without groups: one block per exercise, same order and indexes', () => {
+    const esercizi = [fatto(3, null, 5), fatto(1, null, 1), fatto(2, null, 3)];
+    const blocchi = blocchiStorico(esercizi);
+    expect(vista(blocchi)).toEqual([3, 1, 2]);
+    expect(blocchi.map(b => b.voci[0].indice)).toEqual([0, 1, 2]);
+  });
+
+  it('the members of a superset together, at the place of the first, in the order they were started', () => {
+    // The history lists exercises by id: the rows (id 2) were started after the bench (id 7)
+    const esercizi = [fatto(1, null, 1, 2), fatto(2, 1, 11, 13), fatto(5, null, 20), fatto(7, 1, 10, 12)];
+    expect(vista(blocchiStorico(esercizi))).toEqual([1, ['A', 'superset', ['A1:7', 'A2:2']], 5]);
+  });
+
+  it('a circuit keeps the letter of its plan; a group with one exercise left is no group', () => {
+    const esercizi = [fatto(1, 1, 4), fatto(2, 2, 1), fatto(3, 2, 2), fatto(4, 2, 3)];
+    expect(vista(blocchiStorico(esercizi))).toEqual([1, ['B', 'circuito', ['B1:2', 'B2:3', 'B3:4']]]);
+  });
+
+  it('members without sets keep the order of the list', () => {
+    const esercizi = [fatto(1, 1), fatto(2, 1)];
+    expect(vista(blocchiStorico(esercizi))).toEqual([['A', 'superset', ['A1:1', 'A2:2']]]);
   });
 });

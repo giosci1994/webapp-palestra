@@ -35,6 +35,10 @@
   "voce": {
     "forza": "{n}. {nome} — {serie}x{ripetizioni} (rec {recupero}s)",
     "forzaSenzaRecupero": "{n}. {nome} — {serie}x{ripetizioni}",
+    "forzaPausa": "{n}. {nome} — {serie}x{ripetizioni} (pausa {recupero}s)",
+    "forzaDopoGiro": "{n}. {nome} — {serie}x{ripetizioni} (rec {recupero}s dopo il giro)",
+    "superset": "🔗 Superset {lettera}",
+    "circuito": "🔗 Circuito {lettera}",
     "cardio": "{n}. {etichetta}: {nome}",
     "cardioDettagli": "{n}. {etichetta}: {nome} — {dettagli}",
     "cardioScheda": "{n}. {icona} {nome}",

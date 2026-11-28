@@ -66,4 +66,42 @@ describe('Word export of a plan', () => {
     assert.equal(conLingua('en', () => nomeFileDocumento('')), 'plan.docx');
     assert.equal(conLingua('en', () => nomeFileDocumento('Push A')), 'Push-A.docx');
   });
+
+  it('a superset and a circuit: labels, pause, rest after the round and the note with the rounds', async () => {
+    const forza = (nome, nomeIt, altro) => ({
+      serieTarget: 4, repTarget: '8', recuperoSecondi: 0,
+      esercizio: { nome, nomeIt, gruppoMuscoloPrimario: 'Petto', attrezzatura: null }, ...altro
+    });
+    const conGruppi = {
+      ...scheda,
+      esercizi: [
+        forza('Bench Press', 'Panca piana', { gruppo: 5 }),
+        forza('Barbell Row', 'Rematore', { gruppo: 5, recuperoSecondi: 120 }),
+        forza('Squat', 'Squat', { gruppo: 9, recuperoSecondi: 15 }),
+        forza('Lunge', 'Affondi', { gruppo: 9, serieTarget: 3 }),
+        forza('Plank', 'Plank', { gruppo: 9, recuperoSecondi: 60 }),
+        forza('Curl', 'Curl', { recuperoSecondi: 90 })
+      ]
+    };
+    // The XML writes the seconds' " as &quot;
+    const leggibile = async lingua => (await genera(lingua, [conGruppi])).replaceAll('&quot;', '"');
+    const italiano = await leggibile('it');
+    for (const atteso of ['A1 · Panca piana', 'A2 · Rematore', '120" dopo il giro', 'Superset con A2 Rematore, 4 giri',
+      'B1 · Squat', 'B2 · Affondi', 'B3 · Plank', '15"', '60" dopo il giro', 'Circuito con B2 Affondi, B3 Plank', '90"']) {
+      assert.ok(italiano.includes(atteso), atteso);
+    }
+    // Different sets in the circuit: no rounds; the plain exercise has no label
+    assert.ok(!italiano.includes('B3 Plank, '));
+    assert.ok(!italiano.includes('· Curl'));
+
+    const en = await leggibile('en');
+    for (const atteso of ['A1 · Bench Press', '120" after round', 'Superset with A2 Barbell Row, 4 rounds', 'Circuit with B2 Lunge, B3 Plank']) {
+      assert.ok(en.includes(atteso), atteso);
+    }
+  });
+
+  it('a plan without groups has no labels', async () => {
+    const testo = await genera('it');
+    assert.ok(!/A1 ·|Superset|dopo il giro/.test(testo));
+  });
 });

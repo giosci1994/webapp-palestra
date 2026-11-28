@@ -2,7 +2,7 @@
 // a group, and which group a logged set belongs to.
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizzaGruppi, gruppiPerEsercizio, eCardioOriscaldamento } from '../../src/utils/superset.js';
+import { normalizzaGruppi, gruppiPerEsercizio, eCardioOriscaldamento, gruppiDi, letteraGruppo } from '../../src/utils/superset.js';
 import { schemaCreaScheda } from '../../src/validators/schede.schema.js';
 import { eserciziDaSessione, formattaPerStorico } from '../../src/controllers/sessioni.controller.js';
 
@@ -112,5 +112,24 @@ describe('the group in the history and in "save as plan"', () => {
   it('sets logged before the column existed give no group', () => {
     const [a, b] = eserciziDaSessione([serie(1, undefined), serie(2, undefined)]);
     assert.deepEqual([a.gruppo, b.gruppo], [null, null]);
+  });
+});
+
+describe('gruppiDi (the labels of the Word export and the bot)', () => {
+  it('A1, A2 for a superset, B1, B2, B3 for a circuit, nothing outside', () => {
+    const posti = gruppiDi([voce(1, 4), voce(2, 4), voce(3, null), voce(4, 8), voce(5, 8), voce(6, 8)]);
+    assert.deepEqual(posti.map(p => p?.etichetta ?? null), ['A1', 'A2', null, 'B1', 'B2', 'B3']);
+    assert.deepEqual([posti[0].tipo, posti[3].tipo], ['superset', 'circuito']);
+    assert.deepEqual(posti.map(p => (p ? [p.primo, p.ultimo] : null)),
+      [[true, false], [false, true], null, [true, false], [false, false], [false, true]]);
+    assert.deepEqual(posti[4].indici, [3, 4, 5]);
+  });
+
+  it('a number left alone and a plan without groups have no labels', () => {
+    assert.deepEqual(gruppiDi([voce(1, 1), voce(2, null), voce(3, null)]), [null, null, null]);
+  });
+
+  it('letters A to Z, then AA', () => {
+    assert.deepEqual([1, 2, 26, 27, 28].map(letteraGruppo), ['A', 'B', 'Z', 'AA', 'AB']);
   });
 });

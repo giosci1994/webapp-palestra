@@ -29,5 +29,10 @@
   "numeroSerie_other": "{count} sets",
   "riscaldamento": "Warm-up",
   "pendenza": "incline {valore}%",
-  "resistenza": "resistance {valore}"
+  "resistenza": "resistance {valore}",
+  "recuperoDopoGiro": "{secondi}\" after round",
+  "superset": "Superset with {altri}",
+  "circuito": "Circuit with {altri}",
+  "giri_one": "{count} round",
+  "giri_other": "{count} rounds"
 }
