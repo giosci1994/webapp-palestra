@@ -175,6 +175,10 @@ describe('bot AI: a failure halfway through a message', () => {
 
 describe('bot: Redis unreachable', () => {
   const giu = async () => { throw new Error('Connection is closed.'); };
+  // Only the conversation state fails to save: the user's lock (bot:blocco:)
+  // uses SET too, and must not be what answers 503 here
+  const setVero = redis.set.bind(redis);
+  const setGiuSulloStato = (chiave, ...resto) => (chiave.startsWith('bot:stato:') ? giu() : setVero(chiave, ...resto));
 
   it('the AI engine answers 503 instead of starting from an empty draft', async () => {
     await utenteCollegato();
@@ -189,14 +193,14 @@ describe('bot: Redis unreachable', () => {
     const esercizio = await creaEsercizio({ nome: 'Deadlift' });
     await utenteCollegato();
     geminiFinto([chiama('aggiungi_esercizio', { esercizioId: esercizio.id, serie: 3, ripetizioni: '5' }), { text: 'Added' }]);
-    mock.method(redis, 'set', giu);
+    mock.method(redis, 'set', setGiuSulloStato);
     assert.equal((await bot('messaggio', { testo: '3x5 deadlift' })).stato, 503);
   });
 
   it('the guided creation does not say "Draft: 1 exercise" when it cannot save it', async () => {
     const esercizio = await creaEsercizio({ nome: 'Row' });
     await utenteCollegato();
-    mock.method(redis, 'set', giu);
+    mock.method(redis, 'set', setGiuSulloStato);
     assert.equal((await bot('guida/aggiungi', { esercizioId: esercizio.id })).stato, 503);
     mock.restoreAll();
 

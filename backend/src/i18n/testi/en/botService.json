@@ -8,6 +8,8 @@
   "limiteAI": "AI request limit reached, try again shortly. ⏳",
   "erroreAI": "Something went wrong with the AI assistant, try again shortly.",
   "statoNonDisponibile": "The bot's memory can't be reached right now: try again in a moment. ⏳",
+  "richiestaInCorso": "I'm still working on your previous request: wait for my answer, then try again. ⏳",
+  "schedaNonSalvata": "I couldn't save the plan: your draft is still here, try again. 🙏",
   "rispostaVuota": "Ok 👍",
   "schedaNonTrovata": "Plan not found",
   "esercizioNonTrovato": "Exercise not found",
@@ -53,16 +55,16 @@
     "distanza": "{valore} km"
   },
   "scheda": {
-    "testo": "📋 *{titolo}*\nLevel: {livello}\n\n{righe}",
+    "testo": "📋 <b>{titolo}</b>\nLevel: {livello}\n\n{righe}",
     "nessunEsercizio": "(no exercises)"
   },
   "statistiche": {
-    "titolo": "*📊 Your stats*",
-    "totali": "🏋️ Total workouts: *{valore}*",
-    "ultimi7Giorni": "📅 Last 7 days: *{valore}*",
-    "volume": "📦 Total volume: *{valore} kg*",
-    "tempo": "⏱️ Total time: *{valore} h*",
-    "record": "🏆 Personal records: *{valore}*",
-    "ultimoAllenamento": "_Last workout: {data}_"
+    "titolo": "<b>📊 Your stats</b>",
+    "totali": "🏋️ Total workouts: <b>{valore}</b>",
+    "ultimi7Giorni": "📅 Last 7 days: <b>{valore}</b>",
+    "volume": "📦 Total volume: <b>{valore} kg</b>",
+    "tempo": "⏱️ Total time: <b>{valore} h</b>",
+    "record": "🏆 Personal records: <b>{valore}</b>",
+    "ultimoAllenamento": "<i>Last workout: {data}</i>"
   }
 }

@@ -8,6 +8,8 @@
   "limiteAI": "Limite di richieste AI raggiunto, riprova tra poco. ⏳",
   "erroreAI": "Errore con l'assistente AI, riprova tra poco.",
   "statoNonDisponibile": "La memoria del bot non è raggiungibile in questo momento: riprova tra poco. ⏳",
+  "richiestaInCorso": "Sto ancora lavorando alla richiesta precedente: aspetta la mia risposta e poi riprova. ⏳",
+  "schedaNonSalvata": "Non sono riuscito a salvare la scheda: la bozza è ancora qui, riprova. 🙏",
   "rispostaVuota": "Ok 👍",
   "schedaNonTrovata": "Scheda non trovata",
   "esercizioNonTrovato": "Esercizio non trovato",
@@ -53,16 +55,16 @@
     "distanza": "{valore} km"
   },
   "scheda": {
-    "testo": "📋 *{titolo}*\nLivello: {livello}\n\n{righe}",
+    "testo": "📋 <b>{titolo}</b>\nLivello: {livello}\n\n{righe}",
     "nessunEsercizio": "(nessun esercizio)"
   },
   "statistiche": {
-    "titolo": "*📊 Le tue statistiche*",
-    "totali": "🏋️ Allenamenti totali: *{valore}*",
-    "ultimi7Giorni": "📅 Ultimi 7 giorni: *{valore}*",
-    "volume": "📦 Volume totale: *{valore} kg*",
-    "tempo": "⏱️ Tempo totale: *{valore} h*",
-    "record": "🏆 Record personali: *{valore}*",
-    "ultimoAllenamento": "_Ultimo allenamento: {data}_"
+    "titolo": "<b>📊 Le tue statistiche</b>",
+    "totali": "🏋️ Allenamenti totali: <b>{valore}</b>",
+    "ultimi7Giorni": "📅 Ultimi 7 giorni: <b>{valore}</b>",
+    "volume": "📦 Volume totale: <b>{valore} kg</b>",
+    "tempo": "⏱️ Tempo totale: <b>{valore} h</b>",
+    "record": "🏆 Record personali: <b>{valore}</b>",
+    "ultimoAllenamento": "<i>Ultimo allenamento: {data}</i>"
   }
 }

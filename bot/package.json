@@ -9,6 +9,7 @@
     "start": "node bot.js"
   },
   "dependencies": {
+    "@grammyjs/runner": "2.0.3",
     "grammy": "^1.21.0"
   }
 }

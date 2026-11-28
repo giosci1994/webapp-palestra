@@ -28,8 +28,8 @@ describe('bot texts', () => {
     }
   });
 
-  it('every key bot.js asks for exists in English', () => {
-    const codice = readFileSync(join(BOT, 'bot.js'), 'utf8');
+  it('every key bot.js and formato.js ask for exists in English', () => {
+    const codice = ['bot.js', 'formato.js'].map(file => readFileSync(join(BOT, file), 'utf8')).join('\n');
     const usate = [...codice.matchAll(/\b(?:t\(ctx|tLingua\(lingua), '(\w+)'/g)].map(m => m[1]);
     assert.ok(usate.length > 20);
     const esiste = chiave => chiave in en || `${chiave}_other` in en;

@@ -12,6 +12,7 @@ import prisma from '../config/database.js';
 import redis from '../config/redis.js';
 import { ErroreApp, ErroreValidazione, ErroreNonTrovato } from '../utils/errori.js';
 import logger from '../utils/logger.js';
+import { escapeHtml } from './telegram.service.js';
 import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { macchinaCardio, dovEsercizioCardio, eEsercizioCardio, SELEZIONE_CARDIO } from '../utils/macchineCardio.js';
 import { fusoCorrente } from '../utils/date.js';
@@ -256,6 +257,79 @@ export async function annullaBozza(utenteId) {
     throw statoNonDisponibile(e, 'cancellare');
   }
   return { successo: true };
+}
+
+// ============================================
+// ONE CHANGE AT A TIME PER USER (Redis lock)
+// ============================================
+// The bot handles different chats in parallel: two requests of the same user
+// (a double tap on "Finish", a message while the AI is still answering) must
+// not both read the draft, change it and write it back, or one change is lost
+// and a plan can be saved twice. The lock expires on its own, so a crash
+// never blocks the user for more than three minutes; it covers an AI answer
+// with all its rounds with Gemini, even a slow one (the bot stops waiting
+// after 30 s, the backend goes on).
+const DURATA_BLOCCO_MS = 180 * 1000;
+const chiaveBlocco = (utenteId) => `bot:blocco:${utenteId}`;
+// Deletes the lock only if it is still ours: after it has expired another
+// request may hold it
+const SBLOCCA_SE_MIO = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+
+/**
+ * Runs `lavoro` holding the user's lock. Busy: 409 BOT_OCCUPATO (the request
+ * conflicts with one still running, it is not a quota: it can be repeated as
+ * soon as the bot answers). Redis unreachable: the usual 503.
+ */
+async function conBloccoUtente(utenteId, lavoro) {
+  const chiave = chiaveBlocco(utenteId);
+  const gettone = crypto.randomUUID();
+  let preso;
+  try {
+    preso = await redis.set(chiave, gettone, 'PX', DURATA_BLOCCO_MS, 'NX');
+  } catch (e) {
+    throw statoNonDisponibile(e, 'bloccare');
+  }
+  if (preso !== 'OK') throw new ErroreApp(t('botService.richiestaInCorso'), 409, 'BOT_OCCUPATO');
+  try {
+    return await lavoro();
+  } finally {
+    await redis.eval(SBLOCCA_SE_MIO, 1, chiave, gettone).catch((e) => {
+      // It expires on its own
+      logger.warn({ errore: e.message }, 'Impossibile rilasciare il blocco bot su Redis');
+    });
+  }
+}
+
+/**
+ * Empties the draft in Redis before a plan is created from it, then creates
+ * the plan with `crea`. Redis failing: a 503 and no plan (the draft is still
+ * there). The database failing: the draft is put back as it was and the error
+ * goes on. Never a plan with its draft still full, which "finish" again would
+ * save twice.
+ * The database error becomes a 500 BOT_SCHEDA_NON_SALVATA that says the draft
+ * is still there (not "AI error": the AI did its part).
+ */
+async function salvaSchedaDallaBozza(utenteId, stato, crea) {
+  const bozzaPrima = stato.bozza;
+  stato.bozza = { titolo: null, livello: null, esercizi: [] };
+  try {
+    await salvaStato(utenteId, stato);
+  } catch (e) {
+    stato.bozza = bozzaPrima;
+    throw e;
+  }
+  try {
+    return await crea();
+  } catch (e) {
+    logger.error({ utenteId, errore: e.message }, 'Scheda bot non salvata nel database');
+    stato.bozza = bozzaPrima;
+    await salvaStato(utenteId, stato).catch((errore) => {
+      logger.error({ utenteId, errore: errore.message }, 'Bozza bot non ripristinata dopo un errore del database');
+    });
+    // 500, not 503: nothing says the failure is temporary (a plan the
+    // database refuses fails again); the text still invites a retry
+    throw new ErroreApp(t('botService.schedaNonSalvata'), 500, 'BOT_SCHEDA_NON_SALVATA');
+  }
 }
 
 async function verificaRateLimit(utenteId) {
@@ -553,7 +627,8 @@ async function eseguiFunzione(nome, args, utente, stato) {
       const livello = livelliValidi.includes(String(args.livello || '').toUpperCase())
         ? String(args.livello).toUpperCase() : 'BASE';
 
-      const scheda = await prisma.schedaAllenamento.create({
+      const riepilogo = riepilogoBozza(stato.bozza);
+      const scheda = await salvaSchedaDallaBozza(utente.id, stato, () => prisma.schedaAllenamento.create({
         data: {
           titolo: titoloScheda(args.titolo),
           descrizione: t('botService.descrizioneScheda'),
@@ -563,10 +638,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
           esercizi: { create: voci }
         },
         include: { esercizi: true }
-      });
-
-      const riepilogo = riepilogoBozza(stato.bozza);
-      stato.bozza = { titolo: null, livello: null, esercizi: [] };
+      }));
       return { ok: true, schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length, riepilogo };
     }
     default:
@@ -594,6 +666,11 @@ export async function elaboraMessaggio(utente, testo) {
   await verificaRateLimit(utente.id);
 
   const ai = ottieniClientAI();
+  return conBloccoUtente(utente.id, () => rispondiAlMessaggio(ai, utente, testo));
+}
+
+/** The AI engine for one message, with the user's lock held */
+async function rispondiAlMessaggio(ai, utente, testo) {
   const stato = await caricaStato(utente.id);
 
   const contents = (stato.storia || []).map((m) => ({ role: m.role, parts: [{ text: m.text }] }));
@@ -688,7 +765,7 @@ export async function listaSchedeUtente(utenteId) {
   }));
 }
 
-/** A workout plan's details formatted as text (Telegram Markdown). */
+/** A workout plan's details formatted as text (Telegram HTML: the names and the title are escaped). */
 export async function dettaglioSchedaTesto(utenteId, schedaId) {
   const scheda = await prisma.schedaAllenamento.findUnique({
     where: { id: parseInt(schedaId) },
@@ -710,7 +787,9 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
     // The server's test (utils/superset.js), and a cardio exercise saved
     // without values still reads as cardio, not as "1x— (rest 0s)"
     const eCardio = eCardioOriscaldamento(e) || eEsercizioCardio(e.esercizio);
-    const nome = nomeMostrato(e.esercizio);
+    const nome = escapeHtml(nomeMostrato(e.esercizio));
+    // Reps are free text in the app
+    const ripetizioni = e.repTarget == null ? e.repTarget : escapeHtml(e.repTarget);
     if (eCardio) {
       const dettagli = dettagliCardio(e);
       return t(dettagli ? 'botService.voce.cardioSchedaDettagli' : 'botService.voce.cardioScheda', {
@@ -719,22 +798,22 @@ export async function dettaglioSchedaTesto(utenteId, schedaId) {
     }
     if (posti[i]) {
       // A heading line above the first member: "Superset A" (2) or "Circuit A" (3+)
-      const riga = rigaMembro(posti[i], nome, e.serieTarget, e.repTarget, e.recuperoSecondi);
+      const riga = rigaMembro(posti[i], nome, e.serieTarget, ripetizioni, e.recuperoSecondi);
       if (!posti[i].primo) return riga;
       const titolo = t(posti[i].tipo === 'superset' ? 'botService.voce.superset' : 'botService.voce.circuito', { lettera: posti[i].lettera });
       return `${titolo}\n${riga}`;
     }
-    return rigaForza(i + 1, nome, e.serieTarget, e.repTarget, e.recuperoSecondi);
+    return rigaForza(i + 1, nome, e.serieTarget, ripetizioni, e.recuperoSecondi);
   });
   const testo = t('botService.scheda.testo', {
-    titolo: scheda.titolo,
-    livello: traduciODato(`botService.livelli.${scheda.livello}`, scheda.livello),
+    titolo: escapeHtml(scheda.titolo),
+    livello: escapeHtml(traduciODato(`botService.livelli.${scheda.livello}`, scheda.livello)),
     righe: righe.join('\n') || t('botService.scheda.nessunEsercizio')
   });
   return { id: scheda.id, titolo: scheda.titolo, testo, numEsercizi: scheda.esercizi.length };
 }
 
-/** Summary of the user's stats, ready to send on Telegram (Markdown). */
+/** Summary of the user's stats, ready to send on Telegram (HTML; only numbers and a date go in). */
 export async function statisticheTesto(utenteId) {
   const setteGiorniFa = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [totSessioni, sessioni7g, agg, record, ultima] = await Promise.all([
@@ -825,33 +904,35 @@ export async function eserciziPiuUsati(utenteId, limite = 12) {
 export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, ripetizioni, durataMinuti) {
   const es = await prisma.esercizio.findUnique({ where: { id: esercizioId }, select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO } });
   if (!es) throw new ErroreNonTrovato(t('botService.esercizioNonTrovato'));
-  const stato = await caricaStato(utenteId);
-  const cardio = eEsercizioCardio(es);
-  const voce = cardio
-    ? voceCardio(es, { durataMinuti })
-    : { tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
-        serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90 };
-  stato.bozza.esercizi.push(voce);
-  await salvaStato(utenteId, stato);
-  const dati = { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length, cardio };
-  if (cardio) dati.durataMinuti = voce.durataMinuti;
-  return dati;
+  return conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    const cardio = eEsercizioCardio(es);
+    const voce = cardio
+      ? voceCardio(es, { durataMinuti })
+      : { tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
+          serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90 };
+    stato.bozza.esercizi.push(voce);
+    await salvaStato(utenteId, stato);
+    const dati = { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length, cardio };
+    if (cardio) dati.durataMinuti = voce.durataMinuti;
+    return dati;
+  });
 }
 
 /** Turns the draft into a workout plan (guided creation). */
 export async function terminaSchedaGuidata(utenteId, titolo = null) {
-  const stato = await caricaStato(utenteId);
-  const voci = vociDellaScheda(stato.bozza.esercizi);
-  if (!voci.length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
-  const scheda = await prisma.schedaAllenamento.create({
-    data: {
-      titolo: titoloScheda(titolo), descrizione: t('botService.descrizioneScheda'),
-      livello: 'BASE', visibilita: 'PERSONALE', creatoreId: utenteId,
-      esercizi: { create: voci }
-    },
-    include: { esercizi: true }
+  return conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    const voci = vociDellaScheda(stato.bozza.esercizi);
+    if (!voci.length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
+    const scheda = await salvaSchedaDallaBozza(utenteId, stato, () => prisma.schedaAllenamento.create({
+      data: {
+        titolo: titoloScheda(titolo), descrizione: t('botService.descrizioneScheda'),
+        livello: 'BASE', visibilita: 'PERSONALE', creatoreId: utenteId,
+        esercizi: { create: voci }
+      },
+      include: { esercizi: true }
+    }));
+    return { schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length };
   });
-  stato.bozza = { titolo: null, livello: null, esercizi: [] };
-  await salvaStato(utenteId, stato);
-  return { schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length };
 }

@@ -4,9 +4,14 @@
 // with the X-Bot-Secret header. All the logic (AI, matching, DB) is in the backend.
 // ============================================
 
-import { Bot, InlineKeyboard } from 'grammy';
+import { Bot } from 'grammy';
+import { run, sequentialize } from '@grammyjs/runner';
 import { createServer } from 'node:http';
 import { t, tLingua, ricordaLingua } from './testi.js';
+import {
+  HTML, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata,
+  tastieraSchede, tastieraCategorie, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti, tastieraDopoAggiunta
+} from './formato.js';
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:3000';
@@ -16,6 +21,11 @@ if (!TOKEN) { console.error('❌ TELEGRAM_BOT_TOKEN mancante'); process.exit(1);
 if (!BOT_SECRET) { console.error('❌ BOT_SECRET mancante'); process.exit(1); }
 
 const bot = new Bot(TOKEN);
+
+// The runner handles updates in parallel: one user waiting for the AI does not
+// make the others wait. Within one chat they stay in order (the draft is
+// changed one step at a time; the backend also locks per user).
+bot.use(sequentialize(chiaveChat));
 
 // --- Helper: calls the backend ---
 const TIMEOUT_BACKEND = 30000;
@@ -43,14 +53,6 @@ async function api(ctx, percorso, body) {
     return { ok: false, status: 0, corpo: { messaggio: t(ctx, 'backendNonRaggiungibile') } };
   }
 }
-
-function messaggioErrore(ctx, r) {
-  if (r.status === 409 && r.corpo?.codice === 'NON_COLLEGATO') return t(ctx, 'nonCollegato');
-  return `⚠️ ${r.corpo?.messaggio || t(ctx, 'erroreGenerico')}`;
-}
-
-/** The name to show for a region or muscle group: the backend sends it back as is to pick it, with the label in `etichette` */
-const etichetta = (dati, nome) => dati.etichette?.[nome] || nome;
 
 const chatId = (ctx) => String(ctx.chat.id);
 
@@ -89,30 +91,22 @@ bot.command('schede', async (ctx) => {
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   const schede = r.corpo.dati || [];
   if (!schede.length) { await ctx.reply(t(ctx, 'nessunaScheda')); return; }
-  const tastiera = new InlineKeyboard();
-  schede.slice(0, 20).forEach((s) => {
-    tastiera.text(`${s.titolo} (${s.numEsercizi})`, `scheda:${s.id}`).row();
-  });
-  await ctx.reply(t(ctx, 'leTueSchede'), { reply_markup: tastiera });
+  await ctx.reply(t(ctx, 'leTueSchede'), { reply_markup: tastieraSchede(schede) });
 });
 
 // --- /statistiche ---
 bot.command('statistiche', async (ctx) => {
   const r = await api(ctx, 'statistiche', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  await ctx.reply(r.corpo.dati.testo, { parse_mode: 'Markdown' });
+  // HTML, escaped by the backend
+  await ctx.reply(r.corpo.dati.testo, HTML);
 });
 
 // --- /guidata: button-based creation by categories ---
-// A cardio exercise (the backend says so) asks for minutes, the others for sets x reps
-const pulsanteEsercizio = (e) => (e.cardio ? `gcx:${e.id}` : `gex:${e.id}`);
-
 async function mostraCategorie(ctx) {
   const r = await api(ctx, 'guida/categorie', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  const tastiera = new InlineKeyboard().text(t(ctx, 'guidataPiuUsati'), 'gcat:__usati__').row();
-  (r.corpo.dati.regioni || []).forEach(reg => tastiera.text(etichetta(r.corpo.dati, reg), `gcat:${reg}`).row());
-  await ctx.reply(t(ctx, 'guidataInizio'), { reply_markup: tastiera });
+  await ctx.reply(t(ctx, 'guidataInizio'), { reply_markup: tastieraCategorie(ctx, r.corpo.dati) });
 }
 bot.command('guidata', (ctx) => mostraCategorie(ctx));
 
@@ -126,18 +120,14 @@ bot.callbackQuery(/^gcat:(.+)$/, async (ctx) => {
     if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
     const es = r.corpo.dati.esercizi || [];
     if (!es.length) { await ctx.reply(t(ctx, 'nessunPiuUsato')); await mostraCategorie(ctx); return; }
-    const tastiera = new InlineKeyboard();
-    es.forEach(e => tastiera.text(e.nome, pulsanteEsercizio(e)).row());
-    await ctx.reply(t(ctx, 'eserciziPiuUsati'), { reply_markup: tastiera });
+    await ctx.reply(t(ctx, 'eserciziPiuUsati'), { reply_markup: tastieraEsercizi(es) });
     return;
   }
   const r = await api(ctx, 'guida/gruppi', { chatId: chatId(ctx), bodyRegion: reg });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   const gruppi = r.corpo.dati.gruppi || [];
   if (!gruppi.length) { await ctx.reply(t(ctx, 'nessunGruppo')); return; }
-  const tastiera = new InlineKeyboard();
-  gruppi.forEach(g => tastiera.text(etichetta(r.corpo.dati, g), `ggrp:${g}`).row());
-  await ctx.reply(t(ctx, 'scegliGruppo', { regione: r.corpo.dati.etichettaRegione || reg }), { reply_markup: tastiera });
+  await ctx.reply(t(ctx, 'scegliGruppo', { regione: r.corpo.dati.etichettaRegione || reg }), { reply_markup: tastieraGruppi(r.corpo.dati) });
 });
 
 bot.callbackQuery(/^ggrp:(.+)$/, async (ctx) => {
@@ -147,37 +137,23 @@ bot.callbackQuery(/^ggrp:(.+)$/, async (ctx) => {
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   const es = r.corpo.dati.esercizi || [];
   if (!es.length) { await ctx.reply(t(ctx, 'nessunEsercizio')); return; }
-  const tastiera = new InlineKeyboard();
-  es.forEach(e => tastiera.text(e.nome, pulsanteEsercizio(e)).row());
-  await ctx.reply(t(ctx, 'scegliEsercizio', { gruppo: r.corpo.dati.etichettaGruppo || gruppo }), { reply_markup: tastiera });
+  await ctx.reply(t(ctx, 'scegliEsercizio', { gruppo: r.corpo.dati.etichettaGruppo || gruppo }), { reply_markup: tastieraEsercizi(es) });
 });
 
 bot.callbackQuery(/^gex:(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
-  const id = ctx.match[1];
-  const tastiera = new InlineKeyboard()
-    .text('3×8', `gadd:${id}:3:8`).text('3×10', `gadd:${id}:3:10`).text('3×12', `gadd:${id}:3:12`).row()
-    .text('4×10', `gadd:${id}:4:10`).text('4×12', `gadd:${id}:4:12`).text('3×8-12', `gadd:${id}:3:8-12`).row();
-  await ctx.reply(t(ctx, 'serieRipetizioni'), { reply_markup: tastiera });
+  await ctx.reply(t(ctx, 'serieRipetizioni'), { reply_markup: tastieraSerie(ctx.match[1]) });
 });
 
 bot.callbackQuery(/^gcx:(\d+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
-  const id = ctx.match[1];
-  const tastiera = new InlineKeyboard();
-  [10, 15, 20, 30].forEach(minuti => tastiera.text(`${minuti} min`, `gcadd:${id}:${minuti}`));
-  await ctx.reply(t(ctx, 'minutiCardio'), { reply_markup: tastiera.row() });
+  await ctx.reply(t(ctx, 'minutiCardio'), { reply_markup: tastieraMinuti(ctx.match[1]) });
 });
 
 /** The answer after an exercise is added: the backend tells whether it became cardio */
 async function rispondiAggiunto(ctx, r, serie, rip) {
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  const d = r.corpo.dati;
-  const tastiera = new InlineKeyboard().text(t(ctx, 'aggiungiAltro'), 'gmenu').text(t(ctx, 'termina'), 'gfine').row();
-  const testo = d.cardio
-    ? t(ctx, 'aggiuntoCardio', { nome: d.aggiunto, minuti: d.durataMinuti, count: d.totaleEsercizi })
-    : t(ctx, 'aggiunto', { nome: d.aggiunto, serie, ripetizioni: rip, count: d.totaleEsercizi });
-  await ctx.reply(testo, { parse_mode: 'Markdown', reply_markup: tastiera });
+  await ctx.reply(testoAggiunto(ctx, r.corpo.dati, serie, rip), { ...HTML, reply_markup: tastieraDopoAggiunta(ctx) });
 }
 
 bot.callbackQuery(/^gcadd:(\d+):(\d+)$/, async (ctx) => {
@@ -198,8 +174,7 @@ bot.callbackQuery('gfine', async (ctx) => {
   await ctx.answerCallbackQuery();
   const r = await api(ctx, 'guida/termina', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  const d = r.corpo.dati;
-  await ctx.reply(t(ctx, 'schedaSalvata', { titolo: d.titolo, count: d.numEsercizi }), { parse_mode: 'Markdown' });
+  await ctx.reply(testoSchedaSalvata(ctx, r.corpo.dati), HTML);
 });
 
 // --- Callback: plan details ---
@@ -208,13 +183,15 @@ bot.callbackQuery(/^scheda:(\d+)$/, async (ctx) => {
   const schedaId = ctx.match[1];
   const r = await api(ctx, 'scheda', { chatId: chatId(ctx), schedaId });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  await ctx.reply(r.corpo.dati.testo, { parse_mode: 'Markdown' });
+  // HTML, escaped by the backend
+  await ctx.reply(r.corpo.dati.testo, HTML);
 });
 
 // --- Free-text messages -> conversational engine ---
 bot.on('message:text', async (ctx) => {
   const testo = ctx.message.text || '';
-  if (testo.startsWith('/')) return; // commands are handled above
+  // The known commands are handled above: any other gets what the bot can do
+  if (testo.startsWith('/')) { await ctx.reply(testoComandoSconosciuto(ctx)); return; }
   await ctx.replyWithChatAction('typing').catch(() => {});
   const r = await api(ctx, 'messaggio', { chatId: chatId(ctx), testo });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
@@ -222,8 +199,15 @@ bot.on('message:text', async (ctx) => {
 });
 
 // --- Global error handling ---
-bot.catch((err) => {
+// A failed reply (Telegram refusing a message, the network) must not leave
+// the user without an answer: the generic error, if Telegram takes even that
+bot.catch(async (err) => {
   console.error('Errore bot:', err.error?.message || err.message || err);
+  try {
+    if (err.ctx?.chat) await err.ctx.reply(`⚠️ ${t(err.ctx, 'erroreGenerico')}`);
+  } catch (e) {
+    console.error('Risposta di errore non inviata:', e.message);
+  }
 });
 
 // Status signal for the container healthcheck.
@@ -232,34 +216,63 @@ bot.catch((err) => {
 // with the bot disconnected from Telegram. Here the response turns positive
 // only after Telegram has confirmed the start.
 let avviato = false;
+let runner = null;
+const attivo = () => avviato && !!runner?.isRunning();
 const PORTA_STATO = Number(process.env.PORTA_STATO) || 3001;
-createServer((req, res) => {
+const serverStato = createServer((req, res) => {
   if (req.url === '/stato') {
-    res.writeHead(avviato ? 200 : 503, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ avviato }));
+    res.writeHead(attivo() ? 200 : 503, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ avviato: attivo() }));
     return;
   }
   res.writeHead(404); res.end();
 }).listen(PORTA_STATO, '127.0.0.1');
 
-bot.start({
-  onStart: async (info) => {
-    avviato = true;
-    console.log(`🤖 GymBot avviato come @${info.username}`);
-    try {
-      // English for everybody, Italian for Telegram users whose language is Italian
-      const comandi = (lingua) => [
-        { command: 'nuova', description: tLingua(lingua, 'comandoNuova') },
-        { command: 'guidata', description: tLingua(lingua, 'comandoGuidata') },
-        { command: 'schede', description: tLingua(lingua, 'comandoSchede') },
-        { command: 'statistiche', description: tLingua(lingua, 'comandoStatistiche') },
-        { command: 'annulla', description: tLingua(lingua, 'comandoAnnulla') },
-        { command: 'start', description: tLingua(lingua, 'comandoStart') }
-      ];
-      await bot.api.setMyCommands(comandi('en'));
-      await bot.api.setMyCommands(comandi('it'), { language_code: 'it' });
-    } catch (e) {
-      console.error('setMyCommands fallito:', e.message);
-    }
+async function impostaComandi() {
+  try {
+    // English for everybody, Italian for Telegram users whose language is Italian
+    const comandi = (lingua) => [
+      { command: 'nuova', description: tLingua(lingua, 'comandoNuova') },
+      { command: 'guidata', description: tLingua(lingua, 'comandoGuidata') },
+      { command: 'schede', description: tLingua(lingua, 'comandoSchede') },
+      { command: 'statistiche', description: tLingua(lingua, 'comandoStatistiche') },
+      { command: 'annulla', description: tLingua(lingua, 'comandoAnnulla') },
+      { command: 'start', description: tLingua(lingua, 'comandoStart') }
+    ];
+    await bot.api.setMyCommands(comandi('en'));
+    await bot.api.setMyCommands(comandi('it'), { language_code: 'it' });
+  } catch (e) {
+    console.error('setMyCommands fallito:', e.message);
   }
+}
+
+// Stops taking updates, lets the ones in progress finish, then exits
+// (docker stop sends SIGTERM)
+async function arresta(segnale) {
+  console.log(`${segnale}: arresto del bot`);
+  avviato = false;
+  try {
+    if (runner?.isRunning()) await runner.stop();
+  } finally {
+    serverStato.close();
+    process.exit(0);
+  }
+}
+process.once('SIGINT', () => arresta('SIGINT'));
+process.once('SIGTERM', () => arresta('SIGTERM'));
+
+// Like bot.start(): Telegram confirms the token (getMe), long polling needs no
+// webhook, then the runner starts fetching updates
+async function avvia() {
+  await bot.init();
+  await bot.api.deleteWebhook();
+  runner = run(bot);
+  avviato = true;
+  console.log(`🤖 GymBot avviato come @${bot.botInfo.username}`);
+  await impostaComandi();
+}
+
+avvia().catch((e) => {
+  console.error('Avvio del bot fallito:', e.message);
+  process.exit(1);
 });
