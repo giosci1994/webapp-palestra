@@ -11,7 +11,7 @@ import { nomeEsercizio, nomeGruppo, nomeAttrezzatura, formattaNumero } from '../
 import { useLingua } from '../../hooks/useLingua.js';
 import Testo from '../../i18n/Testo.jsx';
 import { api } from '../../config/api.js';
-import { GRUPPI_MUSCOLARI, LIVELLI, RIPETIZIONI_MASSIME, TITOLO_MASSIMO } from '../../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, LIVELLI, RIPETIZIONI_MASSIME, TITOLO_MASSIMO, NOTE_MASSIME } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   normalizzaGruppi, gruppiDi, blocchiDi, puoUnire, unisci, separa, impostaGiri, giriDi, ultimoDelGruppo,
@@ -165,6 +165,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
           type="text"
           value={es.note || ''}
           onChange={e => aggiornaPianoEsercizio(idx, 'note', e.target.value)}
+          maxLength={NOTE_MASSIME}
           placeholder={t('creaScheda.notaTecnica')}
           className="w-full mt-2 px-3 py-2 rounded-[var(--raggio-sm)] text-xs bg-[var(--bg-terziario)] text-[var(--testo-primario)] border border-[var(--bordo-light)] focus:border-[var(--accent)] focus:outline-none"
         />

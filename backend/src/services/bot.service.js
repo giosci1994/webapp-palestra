@@ -21,7 +21,7 @@ import { testoDelProblema } from '../middleware/validazione.js';
 import {
   schemaVoceForza, schemaVoceCardio, schemaUnisciSuperset, schemaSeparaSuperset, nota as schemaNota, DURATA_CARDIO_PREDEFINITA
 } from '../validators/bot.schema.js';
-import { TITOLO_MASSIMO } from '../validators/schede.schema.js';
+import { TITOLO_MASSIMO, NOTE_MASSIME } from '../validators/schede.schema.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -841,7 +841,12 @@ export async function elaboraMessaggio(utente, testo) {
     return { scheda: await terminaSchedaGuidata(utente.id, titolo) };
   }
   // After "Note" the next text is the note of the last entry
-  if (attendeNota(statoAttuale)) return { nota: await salvaNotaGuidata(utente.id, testo.trim()) };
+  if (attendeNota(statoAttuale)) {
+    // Too long: a clear 400 and the draft keeps waiting, so a shorter note can follow
+    const nota = testo.trim();
+    if (nota.length > NOTE_MASSIME) throw new ErroreValidazione(t('schedeSchema.noteTroppoLunghe'));
+    return { nota: await salvaNotaGuidata(utente.id, nota) };
+  }
 
   await verificaRateLimit(utente.id);
 

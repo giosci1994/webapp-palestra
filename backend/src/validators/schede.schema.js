@@ -71,6 +71,14 @@ export function tagliaTitolo(titolo) {
   return ultimo >= 0xD800 && ultimo <= 0xDBFF ? taglio.slice(0, -1) : taglio;
 }
 
+/**
+ * The longest note of an exercise in a plan (technique, tempo, grip), in the
+ * app and from the bot. Plans saved before the limit keep their longer notes:
+ * cloning copies them from the database without this check, and saving the
+ * plan again from the editor asks to shorten them.
+ */
+export const NOTE_MASSIME = 500;
+
 /** The longest reps text: "8-12", "10-8-6-4", "30 sec" and the like (the bot uses it too) */
 export const RIPETIZIONI_MASSIME = 30;
 
@@ -105,7 +113,8 @@ export const schemaEsercizioInScheda = z.object({
   serieTarget: numeroFacoltativo('schedeSchema.serieTargetNonValido', { max: 1000 }),
   repTarget: ripetizioniFacoltative(),
   recuperoSecondi: numeroFacoltativo('schedeSchema.recuperoSecondiNonValido', { max: 86400 }),
-  note: testoFacoltativo('schedeSchema.noteNonValide'),
+  note: z.string({ error: 'schedeSchema.noteNonValide' })
+    .max(NOTE_MASSIME, { error: 'schedeSchema.noteTroppoLunghe' }).nullable().optional(),
   // Superset or circuit (utils/superset.js): a group left with one member,
   // or not next to its others, is fixed by the handler, not refused
   gruppo: numeroFacoltativo('schedeSchema.gruppoNonValido', { min: 1, max: 1000 }),
