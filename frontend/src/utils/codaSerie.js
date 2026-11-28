@@ -15,10 +15,13 @@
 // - One queue per user: whoever logs out and whoever logs in on the same phone
 //   do not swap sets, and those of the user who logged out are sent when they
 //   come back.
+// - A set deleted with a swipe (utils/scorriSerie.js) is an entry too
+//   (eliminaSerie, by the set's key): it goes after the set, in order.
 // - If the workout is no longer on the server (open and without sets for a
 //   day, the server deletes it), the entries become a past workout.
 
 import { apiChiamata } from '../config/api.js';
+import { rinumera } from './scorriSerie.js';
 
 const PREFISSO = 'gymmaster_coda_serie_';
 /** Past this time a request hanging on a network that does not answer is dropped: it is retried later */
@@ -80,8 +83,9 @@ export function ascoltaCoda(avvisa) {
 /**
  * Queues an entry and returns it with its key and time.
  * @param {number} utenteId
- * @param {{ tipo: 'serie'|'completa', sessione: { id: number, schedaId: number, dataInizio: string }, dati: object }} voce
- *   serie: the fields of POST /sessioni/:id/serie; completa: { noteFinali, fine }
+ * @param {{ tipo: 'serie'|'eliminaSerie'|'completa', sessione: { id: number, schedaId: number, dataInizio: string }, dati: object }} voce
+ *   serie: the fields of POST /sessioni/:id/serie; eliminaSerie: { idClient } of
+ *   the set to delete; completa: { noteFinali, fine }
  */
 export function accoda(utenteId, voce, archivio = globalThis.localStorage, adesso = new Date()) {
   const completa = { id: nuovoId(), il: adesso.toISOString(), ...voce };
@@ -139,7 +143,7 @@ export function esitoErrore(errore) {
  * is gone from the server, built from its queued entries; null if there is nothing to save.
  */
 export function sessionePassataDa(voci) {
-  const serie = voci.filter(v => v.tipo === 'serie');
+  const serie = conEliminazioni(voci);
   if (!serie.length) return null;
   const { schedaId, dataInizio } = serie[0].sessione;
   const chiusura = voci.find(v => v.tipo === 'completa');
@@ -157,10 +161,33 @@ export function sessionePassataDa(voci) {
   };
 }
 
+/**
+ * The 'serie' entries without those deleted by an 'eliminaSerie' entry after
+ * them, renumbered as the server would (utils/scorriSerie.js, rinumera). A
+ * deletion of a set no longer in the queue (already sent) changes nothing.
+ */
+function conEliminazioni(voci) {
+  let righe = [];
+  for (const v of voci) {
+    if (v.tipo === 'serie') righe.push({ ...v.dati, idClient: v.id, voce: v });
+    if (v.tipo === 'eliminaSerie') righe = rinumera(righe, v.dati?.idClient).serie;
+  }
+  return righe.map(({ voce, ...dati }) => {
+    delete dati.idClient;
+    return { ...voce, dati };
+  });
+}
+
 const segnale = () => globalThis.AbortSignal?.timeout?.(ATTESA_MAX_MS);
 
 function inviaVoce(chiama, voce) {
   const { id: sessioneId } = voce.sessione;
+  if (voce.tipo === 'eliminaSerie') {
+    // Idempotent on the server: a set already deleted answers 200, a 404 means the workout is gone
+    return chiama(`/sessioni/${sessioneId}/serie/${encodeURIComponent(voce.dati.idClient)}`, {
+      metodo: 'DELETE', signal: segnale()
+    });
+  }
   if (voce.tipo === 'completa') {
     return chiama(`/sessioni/${sessioneId}/completa`, {
       metodo: 'PATCH', body: { ...voce.dati, conclusaIl: voce.il }, signal: segnale()

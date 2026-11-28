@@ -799,6 +799,93 @@ export async function logSerie(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
+/**
+ * The sets whose number moves down when the set `eliminata` is deleted, and
+ * by how much: the following ones of the same exercise in the same
+ * numbering. Warm-up sets are numbered on their own; working sets (done or
+ * skipped) and the drop sets that carry their number share the other
+ * numbering; deleting a drop set moves nothing. Pure, so the phone's
+ * renumbering (frontend utils/scorriSerie.js) can follow the same rule.
+ * @returns {{ via: object[], dopo: object[] }} via: the rows to delete
+ *   (a working set with its drop sets); dopo: the rows to number one lower
+ */
+export function serieDaRinumerare(serie, eliminata) {
+  const stesso = serie.filter(s => s.esercizioId === eliminata.esercizioId);
+  if (eliminata.tipo === 'DROP') return { via: [eliminata], dopo: [] };
+  if (eliminata.tipo === 'RISCALDAMENTO') {
+    return {
+      via: [eliminata],
+      dopo: stesso.filter(s => s.tipo === 'RISCALDAMENTO' && s.serieNumero > eliminata.serieNumero)
+    };
+  }
+  const numerazione = stesso.filter(s => s.tipo !== 'RISCALDAMENTO');
+  return {
+    via: [eliminata, ...numerazione.filter(s => s.tipo === 'DROP' && s.serieNumero === eliminata.serieNumero)],
+    dopo: numerazione.filter(s => s.serieNumero > eliminata.serieNumero)
+  };
+}
+
+/**
+ * DELETE /sessioni/:id/serie/:idClient — Deletes a set from the live workout
+ *
+ * The phone sends it from its queue (utils/codaSerie.js, entry
+ * 'eliminaSerie') once the "Undo" notice has expired, by the key the phone
+ * gave the set: it may arrive right after the set itself, both from the
+ * queue. A working set goes with its drop sets, and the following sets of the
+ * exercise move down one number, as the phone does, so the next set does not
+ * become a second "set 3". On a workout already closed (by the server's check
+ * while the phone had no network) volume and records follow.
+ *
+ * Idempotent: a set already deleted (the response got lost and the phone
+ * retries) answers 200 with eliminata false. 404 only when the workout is
+ * gone, which the queue reads as such.
+ */
+export async function eliminaSerie(req, res, next) {
+  try {
+    const sessioneId = parseInt(req.params.id);
+    const { idClient } = req.params;
+    if (!ID_CLIENT.test(idClient)) throw new ErroreValidazione(t('sessioniController.idClientNonValido'));
+
+    const sessione = await prisma.sessioneAllenamento.findUnique({
+      where: { id: sessioneId },
+      include: { logSerie: true }
+    });
+    if (!sessione) throw new ErroreNonTrovato(t('sessioniController.sessioneNonTrovata'));
+    if (sessione.utenteId !== req.utente.id && req.utente.ruolo !== 'SUPERADMIN') {
+      throw new ErroreNonAutorizzato(t('sessioniController.nonPuoiModificare'));
+    }
+
+    const eliminata = sessione.logSerie.find(l => l.idClient === idClient);
+    if (!eliminata) return res.json({ successo: true, dati: { eliminata: false } });
+
+    const { via, dopo } = serieDaRinumerare(sessione.logSerie, eliminata);
+    const recordPersonali = await prisma.$transaction(async (tx) => {
+      await tx.logSerie.deleteMany({ where: { id: { in: via.map(l => l.id) }, sessioneId } });
+      if (dopo.length > 0) {
+        await tx.logSerie.updateMany({
+          where: { id: { in: dopo.map(l => l.id) }, sessioneId },
+          data: { serieNumero: { decrement: 1 } }
+        });
+      }
+      if (!sessione.dataFine) return [];
+      // Closed already: the volume without these sets, and the records
+      // realigned as after a correction from the history
+      const tolte = new Set(via.map(l => l.id));
+      const restano = sessione.logSerie.filter(l => !tolte.has(l.id));
+      await tx.sessioneAllenamento.update({
+        where: { id: sessioneId },
+        data: { volumeTotaleKg: Math.round(volumeDi(restano) * 10) / 10 }
+      });
+      const pesi = new Set(sessione.logSerie
+        .filter(l => l.esercizioId === eliminata.esercizioId && l.completato)
+        .map(l => l.pesoEffettivo));
+      return riallineaRecord(tx, sessione.utenteId, new Map([[eliminata.esercizioId, pesi]]));
+    });
+
+    res.json({ successo: true, dati: { eliminata: true, serie: via.length, rinumerate: dopo.length }, recordPersonali });
+  } catch (errore) { next(errore); }
+}
+
 /** Deletes a workout */
 export async function eliminaSessione(req, res, next) {
   try {

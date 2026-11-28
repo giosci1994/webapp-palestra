@@ -151,5 +151,21 @@
     "vuoto": "Free workout: add the exercises you want to do, one at a time.",
     "aggiungi": "Add an exercise",
     "esci": "Leave"
+  },
+  "scorri": {
+    "suggerimento": "Swipe a set: left to delete it, right to copy it",
+    "capito": "Got it",
+    "eliminata": "Set {numero} deleted",
+    "eliminatoRiscaldamento": "Warm-up set deleted",
+    "eliminatoDrop": "Drop set deleted",
+    "copiata": "Copied as set {numero}",
+    "copiatoRiscaldamento": "Warm-up set copied",
+    "annulla": "Undo",
+    "azioni": "Actions for {nome}",
+    "copia": "Copy",
+    "elimina": "Delete",
+    "nomeSerie": "set {numero}",
+    "nomeRiscaldamento": "warm-up set {numero}",
+    "nomeDrop": "the drop set of set {numero}"
   }
 }
