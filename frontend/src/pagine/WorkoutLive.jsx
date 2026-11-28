@@ -24,7 +24,7 @@ import { bilanciereDi, dischiPerLato, descriviDischi } from '../utils/dischi.js'
 import { useWakeLock } from '../hooks/useWakeLock.js';
 import { useTimer, formattaTempo } from '../hooks/useTimer.js';
 import { leggiRecupero, salvaRecupero, togliRecupero } from '../utils/recupero.js';
-import { passoDopoSerie, giroDi, gruppiDi } from '../utils/superset.js';
+import { passoDopoSerie, giroDi, gruppiDi, eCardioOriscaldamento } from '../utils/superset.js';
 import { ATTESA_ANNULLA_MS, rinumera, copiaDi, serieOggiDopoCopia, suggerimentoDaMostrare, segnaSuggerimentoVisto } from '../utils/scorriSerie.js';
 import { RPE_LABELS, RIAPERTURA_MAX_MINUTI } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaData, formattaDurata, nomeEsercizio, nomeGruppo, nomeAttrezzatura } from '../utils/formattatori.js';
@@ -1707,7 +1707,7 @@ export default function WorkoutLive() {
                   const tutteSeriFatte = esercizioCompletato(idx);
                   const seriFatte = contaSeriePerEsercizio(idx);
                   const inCorso = idx === esercizioIdx;
-                  const cardioItem = es.durataMinuti != null || es.riscaldamento;
+                  const cardioItem = eCardioOriscaldamento(es);
                   return (
                     <button
                       key={es.id || idx}

@@ -15,7 +15,7 @@ import { GRUPPI_MUSCOLARI, LIVELLI, RIPETIZIONI_MASSIME } from '../../utils/cost
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   normalizzaGruppi, gruppiDi, blocchiDi, puoUnire, unisci, separa, impostaGiri, giriDi, ultimoDelGruppo,
-  sposta, leggiSecondi, letteraGruppo
+  sposta, leggiSecondi, letteraGruppo, eCardioOriscaldamento
 } from '../../utils/superset.js';
 import { RiquadroGruppo, PulsanteUnisci, PulsanteSepara } from './SupersetEditor.jsx';
 
@@ -178,9 +178,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
       const payload = {
         ...form,
         esercizi: eserciziSelezionati.map(e => {
-          const cardio = e.riscaldamento || e.durataMinuti != null || e.velocitaKmh != null ||
-                         e.livelloResistenza != null || e.distanzaKm != null;
-          if (cardio) {
+          if (eCardioOriscaldamento(e)) {
             return {
               esercizioId: e.esercizioId,
               serieTarget: e.serieTarget ?? 1,
