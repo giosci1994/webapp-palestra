@@ -30,6 +30,9 @@ export const GRUPPI_MUSCOLARI = {
 /** The longest title of a plan: the server refuses longer ones (schede.schema.js) */
 export const TITOLO_MASSIMO = 100;
 
+/** The longest note of an exercise in a plan: the server refuses longer ones (schede.schema.js) */
+export const NOTE_MASSIME = 500;
+
 /** The longest reps text in a plan ("8-12", "10-8-6-4"): the server refuses longer ones (schede.schema.js) */
 export const RIPETIZIONI_MASSIME = 30;
 

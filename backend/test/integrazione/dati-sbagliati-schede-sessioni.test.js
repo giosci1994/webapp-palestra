@@ -272,6 +272,51 @@ describe('the reps text: at most 30 characters, like the bot', () => {
   });
 });
 
+describe('the exercise notes: at most 500 characters, like the bot', () => {
+  const lunghe = 'x'.repeat(501);
+  const giuste = 'x'.repeat(500);
+  const MESSAGGIO_IT = "Le note dell'esercizio sono troppo lunghe (al massimo 500 caratteri)";
+  const MESSAGGIO_EN = 'The exercise notes are too long (at most 500 characters)';
+  const corpo = note => ({ titolo: 'x', esercizi: [{ esercizioId: panca.id, note }] });
+
+  it('POST /schede: 501 characters are a 400 in the language of the request, 500 are saved', async () => {
+    const italiano = await chiedi('POST', '/schede', corpo(lunghe));
+    assert.equal(italiano.stato, 400);
+    assert.deepEqual(messaggi(italiano), { 'esercizi.0.note': MESSAGGIO_IT });
+    const inglese = await chiedi('POST', '/schede', corpo(lunghe), 'en');
+    assert.deepEqual(messaggi(inglese), { 'esercizi.0.note': MESSAGGIO_EN });
+    assert.equal(await conta('schedaAllenamento'), 1);
+
+    const buona = await chiedi('POST', '/schede', corpo(giuste));
+    assert.equal(buona.stato, 201);
+    assert.equal(buona.corpo.dati.esercizi[0].note, giuste);
+  });
+
+  it('PUT /schede/:id has the same limit', async () => {
+    const rifiutata = await chiedi('PUT', `/schede/${scheda.id}`, { esercizi: [{ esercizioId: panca.id, note: lunghe }] }, 'en');
+    assert.equal(rifiutata.stato, 400);
+    assert.deepEqual(messaggi(rifiutata), { 'esercizi.0.note': MESSAGGIO_EN });
+    assert.equal((await prisma.esercizioScheda.findFirst({ where: { schedaId: scheda.id } })).note, null);
+    const buona = await chiedi('PUT', `/schede/${scheda.id}`, { esercizi: [{ esercizioId: panca.id, note: giuste }] });
+    assert.equal(buona.stato, 200);
+    assert.equal((await prisma.esercizioScheda.findFirst({ where: { schedaId: scheda.id } })).note, giuste);
+  });
+
+  it('a plan saved before the limit, with a longer note, is still read and cloned as it is; saving it again asks to shorten it', async () => {
+    const vecchia = 'x'.repeat(800);
+    await prisma.esercizioScheda.updateMany({ where: { schedaId: scheda.id }, data: { note: vecchia } });
+    const letta = await chiedi('GET', `/schede/${scheda.id}`);
+    assert.equal(letta.stato, 200);
+    assert.equal(letta.corpo.dati.esercizi[0].note, vecchia);
+    const copia = await chiedi('POST', `/schede/${scheda.id}/clona`);
+    assert.equal(copia.stato, 201);
+    assert.equal(copia.corpo.dati.esercizi[0].note, vecchia);
+    assert.equal((await chiedi('PUT', `/schede/${scheda.id}`, { descrizione: 'new' })).stato, 200);
+    const diNuovo = await chiedi('PUT', `/schede/${scheda.id}`, { esercizi: [{ esercizioId: panca.id, note: vecchia }] });
+    assert.deepEqual(messaggi(diNuovo), { 'esercizi.0.note': MESSAGGIO_IT });
+  });
+});
+
 describe('the plan title: at most 100 characters, like the bot', () => {
   const lungo = 'x'.repeat(101);
   const giusto = 'x'.repeat(100);

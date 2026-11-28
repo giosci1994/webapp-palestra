@@ -198,6 +198,23 @@ describe('bot AI: notes and supersets', () => {
     assert.equal(gemini.risposte[0].response.errore, 'The notes must be text');
     assert.equal(await statoSalvato(utente).then(s => s.bozza.esercizi.length), 0);
   });
+  it('a note over 500 characters goes back to the model as an error; 500 enter the draft', async () => {
+    const utente = await utenteCollegato();
+    const panca = await creaEsercizio({ nome: 'Bench Press' });
+    const gemini = geminiFinto([
+      chiama('aggiungi_esercizio', { esercizioId: panca.id, note: 'x'.repeat(501) }),
+      { text: 'Too long' }
+    ]);
+    assert.equal((await bot('messaggio', { testo: 'bench' })).stato, 200);
+    assert.equal(gemini.risposte[0].response.errore, 'The exercise notes are too long (at most 500 characters)');
+    assert.equal(await statoSalvato(utente).then(s => s.bozza.esercizi.length), 0);
+
+    // Measured after trimming, like the guided creation
+    const ancora = geminiFinto([chiama('aggiungi_esercizio', { esercizioId: panca.id, note: ` ${'x'.repeat(500)} ` }), { text: 'Added' }]);
+    assert.equal((await bot('messaggio', { testo: 'bench' })).stato, 200);
+    assert.equal(ancora.risposte[0].response.ok, true);
+    assert.equal((await statoSalvato(utente)).bozza.esercizi[0].note, 'x'.repeat(500));
+  });
 });
 
 describe('bot guided creation: "Note"', () => {
@@ -229,6 +246,31 @@ describe('bot guided creation: "Note"', () => {
     assert.match((await bot('messaggio', { testo: lunga })).corpo.dati.nota.riepilogo, /📝 x{39}…$/);
     await bot('guida/termina', { titolo: 'Push' });
     assert.equal((await voci(utente))[0].note, lunga);
+  });
+
+  it('a note over 500 characters is a clear 400 in the language of the chat and the wait goes on; 500 are saved', async () => {
+    const utente = await utenteCollegato();
+    const panca = await creaEsercizio({ nome: 'Bench Press' });
+    await bot('guida/aggiungi', { esercizioId: panca.id });
+    await bot('guida/nota');
+    const gemini = geminiFinto([]);
+
+    const inglese = await bot('messaggio', { testo: 'x'.repeat(501) });
+    assert.equal(inglese.stato, 400);
+    assert.equal(inglese.corpo.messaggio, 'The exercise notes are too long (at most 500 characters)');
+    // The bot answers in the language of the user, not of the request
+    await prisma.utente.update({ where: { id: utente.id }, data: { lingua: 'it' } });
+    const italiano = await bot('messaggio', { testo: 'x'.repeat(501) }, 'it');
+    assert.equal(italiano.stato, 400);
+    assert.equal(italiano.corpo.messaggio, "Le note dell'esercizio sono troppo lunghe (al massimo 500 caratteri)");
+    assert.equal(gemini.numero, 0);
+    const stato = await statoSalvato(utente);
+    assert.equal(stato.bozza.esercizi[0].note, undefined);
+    assert.equal(typeof stato.attesaNotaFino, 'number');
+
+    assert.equal((await bot('messaggio', { testo: `  ${'x'.repeat(500)}  ` })).stato, 200);
+    await bot('guida/termina', { titolo: 'Push' });
+    assert.equal((await voci(utente))[0].note, 'x'.repeat(500));
   });
 
   it('a wait that has expired: the text goes to the AI', async () => {

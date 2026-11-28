@@ -50,7 +50,7 @@ const ripetizioni = z.preprocess(
 
 /**
  * The technique note of a strength entry: text like the app's, with the
- * app's limit (none); spaces around are cut and empty means "no note"
+ * app's limit (NOTE_MASSIME); spaces around are cut and empty means "no note"
  */
 export const nota = z.preprocess(
   v => (typeof v === 'string' ? (v.trim() || undefined) : v),
