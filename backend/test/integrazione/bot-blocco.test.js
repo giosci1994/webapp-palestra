@@ -37,7 +37,7 @@ beforeEach(async () => {
   const chiavi = await redis.keys('bot:*');
   if (chiavi.length) await redis.del(...chiavi);
 });
-afterEach(() => mock.restoreAll());
+afterEach(() => { mock.restoreAll(); databaseSu(); });
 
 async function bot(percorso, corpo = {}, lingua = 'en') {
   const risposta = await fetch(`${base}/${percorso}`, {
@@ -79,6 +79,14 @@ async function statoSalvato(utente) {
 const schedeDi = utente => prisma.schedaAllenamento.count({ where: { creatoreId: utente.id } });
 
 const giu = async () => { throw new Error('Connection is closed.'); };
+/**
+ * The database refuses to create plans until databaseSu(). Prisma's model
+ * methods are not plain properties that mock.method can wrap: the method is
+ * replaced and put back by hand (afterEach too).
+ */
+const creaSchedaVero = prisma.schedaAllenamento.create;
+const databaseGiu = () => { prisma.schedaAllenamento.create = async () => { throw new Error('Database unreachable'); }; };
+const databaseSu = () => { prisma.schedaAllenamento.create = creaSchedaVero; };
 const setVero = redis.set.bind(redis);
 /** SET fails only on the conversation state, and only from the n-th call on */
 function setGiuSulloStato(dallaVolta = 1) {
@@ -170,8 +178,7 @@ describe('bot: "finish" empties the draft first, then creates the plan', () => {
     const esercizio = await creaEsercizio({ nome: 'Row' });
     await bot('guida/aggiungi', { esercizioId: esercizio.id, serie: 4, ripetizioni: '10' });
     const prima = await statoSalvato(utente);
-    // The exercise disappears from the catalog: the plan cannot reference it
-    await prisma.esercizio.delete({ where: { id: esercizio.id } });
+    databaseGiu();
 
     const risposta = await bot('guida/termina');
     assert.equal(risposta.stato, 500);
@@ -185,6 +192,11 @@ describe('bot: "finish" empties the draft first, then creates the plan', () => {
     const italiano = await bot('guida/termina', {}, 'it');
     assert.equal(italiano.stato, 500);
     assert.equal(italiano.corpo.messaggio, 'Non sono riuscito a salvare la scheda: la bozza è ancora qui, riprova. 🙏');
+
+    // The database is back: "finish" again saves exactly one plan
+    databaseSu();
+    assert.equal((await bot('guida/termina')).stato, 200);
+    assert.equal(await schedeDi(utente), 1);
   });
 
   it('AI: Redis failing to empty the draft creates no plan', async () => {
@@ -212,7 +224,7 @@ describe('bot: "finish" empties the draft first, then creates the plan', () => {
     ]);
     await bot('messaggio', { testo: 'squat and lunges' });
     const prima = await statoSalvato(utente);
-    await prisma.esercizio.delete({ where: { id: altro.id } });
+    databaseGiu();
 
     geminiFinto([chiama('termina_scheda', { titolo: 'Legs' }), { text: 'Saved!' }]);
     // Not "Something went wrong with the AI assistant" (502): the AI did its part
@@ -223,8 +235,8 @@ describe('bot: "finish" empties the draft first, then creates the plan', () => {
     assert.equal(await schedeDi(utente), 0);
     assert.deepEqual((await statoSalvato(utente)).bozza, prima.bozza);
 
-    // The exercise is back: "done" again saves exactly one plan
-    await prisma.esercizio.create({ data: { id: altro.id, nome: 'Lunge', gruppoMuscoloPrimario: 'Petto' } });
+    // The database is back: "done" again saves exactly one plan
+    databaseSu();
     geminiFinto([chiama('termina_scheda', { titolo: 'Legs' }), { text: 'Saved!' }]);
     assert.equal((await bot('messaggio', { testo: 'done' })).stato, 200);
     assert.equal(await schedeDi(utente), 1);

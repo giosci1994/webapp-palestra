@@ -4,7 +4,7 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { prisma, svuotaDatabase } from '../supporto/database.js';
-import { creaUtente, creaEsercizio, creaScheda } from '../supporto/dati.js';
+import { creaUtente, creaEsercizio, creaScheda, titoloDiOggi } from '../supporto/dati.js';
 import { creaServer } from '../../src/app.js';
 import redis from '../../src/config/redis.js';
 import { RICHIESTE_BOT_PER_CHAT, RICHIESTE_BOT_TOTALI, CHIAVE_BOT_TOTALE, limitatoreBotTotale, chiaveChatBot } from '../../src/middleware/limitatore.js';
@@ -161,7 +161,7 @@ describe('bot: the language of a linked user', () => {
     const aggiunto = await bot('guida/aggiungi', { chatId: CHAT_ID, esercizioId: esercizio.id, serie: 3, ripetizioni: '10' }, 'it');
     assert.equal(aggiunto.corpo.dati.aggiunto, 'Bench Press');
     const fine = await bot('guida/termina', { chatId: CHAT_ID }, 'it');
-    assert.equal(fine.corpo.dati.titolo, 'Plan from Telegram');
+    assert.equal(fine.corpo.dati.titolo, titoloDiOggi('en'));
     const salvata = await prisma.schedaAllenamento.findFirst({ where: { creatoreId: utente.id } });
     assert.equal(salvata.descrizione, 'Created via the Telegram bot');
   });

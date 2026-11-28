@@ -5,8 +5,9 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  escapeHtml, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata,
-  tastiera, tastieraSchede, tastieraCategorie, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti, tastieraDopoAggiunta
+  escapeHtml, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
+  tastiera, tastieraSchede, tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
+  tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio
 } from '../../../bot/formato.js';
 
 const utente = codice => ({ from: { language_code: codice }, chat: { id: 4242 } });
@@ -85,9 +86,60 @@ describe('bot formatting: keyboards', () => {
   });
 
   it('every callback data fits Telegram\'s 64 bytes', () => {
-    const tutti = [tastieraSerie(2147483647), tastieraMinuti(2147483647), tastieraSchede([{ id: 2147483647, titolo: 'x', numEsercizi: 1 }])]
-      .flatMap(m => m.inline_keyboard.flat().map(b => b.callback_data));
+    // The longest group name of the catalog is 18 bytes; offsets go up to 100000
+    const gruppo = 'Flessori dell\'Anca';
+    const tutti = [
+      tastieraSerie(2147483647), tastieraMinuti(2147483647), tastieraSchede([{ id: 2147483647, titolo: 'x', numEsercizi: 1 }]),
+      tastieraGruppi({ gruppi: [gruppo] }), tastieraCategorie(en, { cardio: true, regioni: ['Tutto il Corpo'] }),
+      tastieraEsercizi([{ id: 2147483647, nome: 'x', cardio: true }], en, { precedente: 99988, successivo: 100000 }, o => datiPaginaGruppo(gruppo, o)),
+      tastieraEsercizi([], en, { precedente: 99988, successivo: 100000 }, datiPaginaCardio),
+      tastieraBozzaInCorso(en, 3), tastieraTitolo(en)
+    ].flatMap(m => m.inline_keyboard.flat().map(b => b.callback_data));
     assert.deepEqual(tutti.filter(d => Buffer.byteLength(d) > 64), []);
+  });
+
+  it('a button whose data would pass 64 bytes is left out, the others stay', () => {
+    const lungo = 'à'.repeat(40);
+    assert.deepEqual(bottoni(tastieraGruppi({ gruppi: ['Petto', lungo] })), [[['Petto', 'ggrp:Petto']]]);
+    assert.deepEqual(bottoni(tastiera([[['A', 'a'], ['B', 'b'.repeat(65)]]])), [[['A', 'a']]]);
+  });
+});
+
+describe('bot formatting: the guided creation, step by step', () => {
+  it('the categories: "Cardio / warm-up" after the most used, only when the catalog has cardio', () => {
+    assert.deepEqual(bottoni(tastieraCategorie(ita, { cardio: true, regioni: ['Core'] })),
+      [[['⭐ I tuoi più usati', 'gcat:__usati__']], [['🏃 Cardio / riscaldamento', 'gcat:__cardio__']], [['Core', 'gcat:Core']]]);
+    assert.deepEqual(bottoni(tastieraCategorie(en, { cardio: false, regioni: [] })), [[['⭐ Your most used', 'gcat:__usati__']]]);
+  });
+
+  it('a page of exercises: "◀ Back" and "More ▶" only towards the pages there are', () => {
+    const es = [{ id: 1, nome: 'A' }, { id: 2, nome: 'B', cardio: true }];
+    const versoPetto = o => datiPaginaGruppo('Petto', o);
+    assert.deepEqual(bottoni(tastieraEsercizi(es, ita, { precedente: null, successivo: 12 }, versoPetto)),
+      [[['A', 'gex:1']], [['B', 'gcx:2']], [['Altri ▶', 'gpg:12:Petto']]]);
+    assert.deepEqual(bottoni(tastieraEsercizi(es, en, { precedente: 0, successivo: 24 }, versoPetto)).at(-1),
+      [['◀ Back', 'gpg:0:Petto'], ['More ▶', 'gpg:24:Petto']]);
+    assert.deepEqual(bottoni(tastieraEsercizi(es, en, { precedente: 12, successivo: null }, datiPaginaCardio)).at(-1), [['◀ Back', 'gcar:12']]);
+    // One page only, or no navigation asked for: no extra row
+    assert.equal(bottoni(tastieraEsercizi(es, en, { precedente: null, successivo: null }, versoPetto)).length, 2);
+    assert.equal(bottoni(tastieraEsercizi(es)).length, 2);
+  });
+
+  it('/guidata with a draft: continue (with the count) or start again', () => {
+    assert.deepEqual(bottoni(tastieraBozzaInCorso(ita, 1)), [[['▶️ Continua la bozza (1 esercizio)', 'gcont']], [['🔄 Ricomincia', 'griniz']]]);
+    assert.deepEqual(bottoni(tastieraBozzaInCorso(en, 3)), [[['▶️ Continue the draft (3 exercises)', 'gcont']], [['🔄 Start again', 'griniz']]]);
+  });
+
+  it('"Finish": the question for the title, escaped, with the suggested title and "add more"', () => {
+    assert.equal(testoChiediTitolo(en, { titoloProposto: 'Plan <from> & Telegram' }),
+      '📝 What should I call the plan? Write me the title, or use the suggested one: <b>Plan &lt;from&gt; &amp; Telegram</b>');
+    assert.deepEqual(bottoni(tastieraTitolo(ita)), [[['✅ Usa il titolo proposto', 'gtit']], [['➕ Aggiungi altro', 'gmenu']]]);
+  });
+
+  it('the plan saved: the exercises taken out of the catalog come first, escaped', () => {
+    assert.equal(testoSchedaSalvata(ita, { titolo: 'Gambe', numEsercizi: 2, tolti: ['Affondo <bulgaro>'] }),
+      '⚠️ Tolto <b>Affondo &lt;bulgaro&gt;</b>: non è più nel catalogo.\n🎉 Scheda <b>Gambe</b> salvata con 2 esercizi!\nVedila con /schede');
+    assert.equal(testoSchedaSalvata(en, { titolo: 'Legs', numEsercizi: 1, tolti: [] }), '🎉 Plan <b>Legs</b> saved with 1 exercise!\nSee it with /schede');
   });
 });
 

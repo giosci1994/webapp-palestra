@@ -18,7 +18,7 @@ import { macchinaCardio, dovEsercizioCardio, eEsercizioCardio, SELEZIONE_CARDIO 
 import { fusoCorrente } from '../utils/date.js';
 import { gruppiDi, eCardioOriscaldamento } from '../utils/superset.js';
 import { testoDelProblema } from '../middleware/validazione.js';
-import { schemaVoceForza, schemaVoceCardio, DURATA_CARDIO_PREDEFINITA } from '../validators/bot.schema.js';
+import { schemaVoceForza, schemaVoceCardio, DURATA_CARDIO_PREDEFINITA, TITOLO_MASSIMO } from '../validators/bot.schema.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -311,18 +311,24 @@ async function conBloccoUtente(utenteId, lavoro) {
  */
 async function salvaSchedaDallaBozza(utenteId, stato, crea) {
   const bozzaPrima = stato.bozza;
+  const attesaPrima = stato.attesaTitoloFino;
+  const rimetti = () => {
+    stato.bozza = bozzaPrima;
+    if (attesaPrima) stato.attesaTitoloFino = attesaPrima;
+  };
   stato.bozza = { titolo: null, livello: null, esercizi: [] };
+  delete stato.attesaTitoloFino;
   try {
     await salvaStato(utenteId, stato);
   } catch (e) {
-    stato.bozza = bozzaPrima;
+    rimetti();
     throw e;
   }
   try {
     return await crea();
   } catch (e) {
     logger.error({ utenteId, errore: e.message }, 'Scheda bot non salvata nel database');
-    stato.bozza = bozzaPrima;
+    rimetti();
     await salvaStato(utenteId, stato).catch((errore) => {
       logger.error({ utenteId, errore: errore.message }, 'Bozza bot non ripristinata dopo un errore del database');
     });
@@ -330,6 +336,28 @@ async function salvaSchedaDallaBozza(utenteId, stato, crea) {
     // database refuses fails again); the text still invites a retry
     throw new ErroreApp(t('botService.schedaNonSalvata'), 500, 'BOT_SCHEDA_NON_SALVATA');
   }
+}
+
+/**
+ * Takes out of the draft the entries whose exercise is no longer in the
+ * catalog: the plan could not reference them, and "finish" would fail every
+ * time (the draft is put back as it was). Returns the names taken out, once
+ * each, for the user.
+ */
+async function togliEserciziSpariti(stato) {
+  const ids = [...new Set(stato.bozza.esercizi.map(e => e.esercizioId).filter(id => forza.esercizioId.safeParse(id).success))];
+  if (!ids.length) return [];
+  const esistenti = new Set((await prisma.esercizio.findMany({ where: { id: { in: ids } }, select: { id: true } })).map(e => e.id));
+  const tolti = stato.bozza.esercizi.filter(e => ids.includes(e.esercizioId) && !esistenti.has(e.esercizioId));
+  if (!tolti.length) return [];
+  stato.bozza.esercizi = stato.bozza.esercizi.filter(e => !tolti.includes(e));
+  return [...new Set(tolti.map(nomeMostrato))];
+}
+
+/** All the exercises of the draft were taken out: the draft, now empty, is saved, and the user is told */
+async function bozzaSvuotata(utenteId, stato, tolti) {
+  await salvaStato(utenteId, stato);
+  return t('botService.bozzaSenzaEsercizi', { nomi: tolti.join(', ') });
 }
 
 async function verificaRateLimit(utenteId) {
@@ -532,8 +560,18 @@ function vociDellaScheda(esercizi) {
     });
 }
 
+/**
+ * The default title of a plan from the bot: "Plan of 28/11", with today's day
+ * and month in the user's time zone (the request runs in it, bot.auth.js) and
+ * the locale of their language (en-GB and it-IT both write day/month)
+ */
+function titoloPredefinito() {
+  const data = new Intl.DateTimeFormat(localeDi(), { day: '2-digit', month: '2-digit', timeZone: fusoCorrente() }).format(new Date());
+  return t('botService.titoloSchedaPredefinito', { data });
+}
+
 /** The title of a new plan: a text that is not empty, or the default one */
-const titoloScheda = titolo => (typeof titolo === 'string' && titolo.trim() ? titolo.trim() : t('botService.titoloSchedaPredefinito'));
+const titoloScheda = titolo => (typeof titolo === 'string' && titolo.trim() ? titolo.trim() : titoloPredefinito());
 
 /**
  * A cardio entry of the draft. `valori` are already checked by schemaVoceCardio
@@ -619,7 +657,13 @@ async function eseguiFunzione(nome, args, utente, stato) {
       return { ok: true, rimosso: rimosso ? nomeMostrato(rimosso) : null, totaleEsercizi: stato.bozza.esercizi.length };
     }
     case 'termina_scheda': {
+      const tolti = await togliEserciziSpariti(stato);
       const voci = vociDellaScheda(stato.bozza.esercizi);
+      if (!voci.length && tolti.length) {
+        // The user is told by rispondiAlMessaggio (tolti), not by the model
+        await bozzaSvuotata(utente.id, stato, tolti);
+        return { errore: `Gli esercizi della bozza (${tolti.join(', ')}) non sono più nel catalogo: la bozza ora è vuota.`, tolti, bozzaSvuotata: true };
+      }
       if (!voci.length) {
         return { errore: 'La bozza è vuota: aggiungi almeno un esercizio prima di terminare.' };
       }
@@ -639,7 +683,12 @@ async function eseguiFunzione(nome, args, utente, stato) {
         },
         include: { esercizi: true }
       }));
-      return { ok: true, schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length, riepilogo };
+      const fatto = { ok: true, schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length, riepilogo };
+      if (tolti.length) {
+        fatto.tolti = tolti;
+        fatto.nota = `Tolti dalla bozza perché non sono più nel catalogo: ${tolti.join(', ')}.`;
+      }
+      return fatto;
     }
     default:
       return { errore: `Funzione sconosciuta: ${nome}` };
@@ -663,6 +712,14 @@ export async function elaboraMessaggio(utente, testo) {
   if (!testo || !testo.trim()) throw new ErroreValidazione(t('botService.messaggioVuoto'));
   if (testo.length > 1000) throw new ErroreValidazione(t('botService.messaggioTroppoLungo'));
 
+  // After "Finish" in the guided creation the next text is the plan's title,
+  // not a message for the AI
+  if (attendeTitolo(await caricaStato(utente.id))) {
+    const titolo = testo.trim();
+    if (titolo.length > TITOLO_MASSIMO) throw new ErroreValidazione(t('botSchema.titoloTroppoLungo'));
+    return { scheda: await terminaSchedaGuidata(utente.id, titolo) };
+  }
+
   await verificaRateLimit(utente.id);
 
   const ai = ottieniClientAI();
@@ -681,6 +738,9 @@ async function rispondiAlMessaggio(ai, utente, testo) {
   let rispostaFinale = '';
   // What the functions have already done in this message (they are saved at once)
   const azioni = [];
+  // Exercises taken out of the draft because they left the catalog: the user
+  // is told by the bot itself, whatever the model writes
+  const avvisi = [];
   try {
     for (let i = 0; i < 6; i++) {
       const risposta = await ai.models.generateContent({
@@ -700,6 +760,8 @@ async function rispondiAlMessaggio(ai, utente, testo) {
         const partiRisposta = [];
         for (const c of chiamate) {
           const risultato = await eseguiFunzione(c.name, c.args || {}, utente, stato);
+          if (risultato.bozzaSvuotata) avvisi.push(t('botService.bozzaSenzaEsercizi', { nomi: risultato.tolti.join(', ') }));
+          else if (risultato.tolti) avvisi.push(t('botService.eserciziTolti', { nomi: risultato.tolti.join(', ') }));
           if (FUNZIONI_CHE_CAMBIANO.has(c.name) && risultato.ok) {
             // Saved before the next call to Gemini: if that one fails, the
             // added exercises are not lost and a saved plan does not stay in
@@ -738,7 +800,7 @@ async function rispondiAlMessaggio(ai, utente, testo) {
   aggiungiAllaStoria(stato, testo, rispostaFinale);
   await salvaStato(utente.id, stato);
 
-  return { risposta: rispostaFinale };
+  return { risposta: [rispostaFinale, ...avvisi].join('\n\n') };
 }
 
 // ============================================
@@ -874,15 +936,59 @@ async function eserciziPiuUsatiIds(utenteId) {
 /** An exercise on a button of the guided creation: `cardio` asks for minutes instead of sets x reps */
 const voceElenco = e => ({ id: e.id, nome: nomeMostrato(e), cardio: eEsercizioCardio(e) });
 
-/** Exercises of a muscle group, with the user's most used at the top (C4). */
-export async function eserciziPerGruppo(utenteId, gruppo, limite = 12) {
+/** Exercises on one page of the guided creation */
+export const ESERCIZI_PER_PAGINA = 12;
+
+/** The exercises that are cardio for eEsercizioCardio, as a Prisma `where` */
+const DOVE_CARDIO = { OR: [{ gruppoMuscoloPrimario: 'Cardio' }, { attrezzatura: { categoria: 'CARDIO' } }] };
+
+/**
+ * One page of exercises for the guided creation: the user's most used first,
+ * then by the name shown, alphabetically in the user's language (the id
+ * breaks ties). The order is the same at every request, so a page offset in
+ * the button gives the next exercises, never the same ones again. The catalog
+ * has no popularity of its own, and the plans of all users are too few to
+ * rank 1300 exercises: alphabetical is the order one can scan.
+ * `precedente` and `successivo` are the offsets of the other pages, or null.
+ */
+async function paginaEsercizi(utenteId, where, offset = 0) {
   const [esercizi, usatiIds] = await Promise.all([
-    prisma.esercizio.findMany({ where: { gruppoMuscoloPrimario: gruppo }, select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO } }),
+    prisma.esercizio.findMany({ where, select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO } }),
     eserciziPiuUsatiIds(utenteId)
   ]);
   const rank = new Map(usatiIds.map((id, i) => [id, i]));
-  esercizi.sort((a, b) => (rank.has(a.id) ? rank.get(a.id) : 1e9) - (rank.has(b.id) ? rank.get(b.id) : 1e9));
-  return esercizi.slice(0, limite).map(voceElenco);
+  const posto = e => (rank.has(e.id) ? rank.get(e.id) : Infinity);
+  const confronta = new Intl.Collator(linguaCorrente(), { sensitivity: 'base', numeric: true }).compare;
+  const voci = esercizi.map(e => ({ e, nome: nomeMostrato(e) }));
+  voci.sort((a, b) => (posto(a.e) - posto(b.e)) || confronta(a.nome, b.nome) || (a.e.id - b.e.id));
+  // An offset past the end (the catalog changed) shows the last page
+  const inizio = Math.min(offset, Math.max(0, Math.floor((voci.length - 1) / ESERCIZI_PER_PAGINA) * ESERCIZI_PER_PAGINA));
+  const fine = inizio + ESERCIZI_PER_PAGINA;
+  return {
+    esercizi: voci.slice(inizio, fine).map(v => voceElenco(v.e)),
+    offset: inizio,
+    totale: voci.length,
+    precedente: inizio > 0 ? Math.max(0, inizio - ESERCIZI_PER_PAGINA) : null,
+    successivo: fine < voci.length ? fine : null
+  };
+}
+
+/** One page of the exercises of a muscle group (C4: the user's most used at the top) */
+export function eserciziPerGruppo(utenteId, gruppo, offset = 0) {
+  return paginaEsercizi(utenteId, { gruppoMuscoloPrimario: gruppo }, offset);
+}
+
+/**
+ * One page of the cardio exercises ("Cardio / warm-up" in the guided
+ * creation): the machines have no body region, so no region shows them
+ */
+export function eserciziCardio(utenteId, offset = 0) {
+  return paginaEsercizi(utenteId, DOVE_CARDIO, offset);
+}
+
+/** Whether the catalog has cardio exercises, for the "Cardio / warm-up" button */
+export async function ciSonoEserciziCardio() {
+  return (await prisma.esercizio.count({ where: DOVE_CARDIO })) > 0;
 }
 
 /** The user's N most used exercises (the "più usati" (most used) shortcut). */
@@ -912,6 +1018,8 @@ export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, rip
       : { tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
           serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90 };
     stato.bozza.esercizi.push(voce);
+    // Adding again after "Finish": the next text is no longer the title
+    delete stato.attesaTitoloFino;
     await salvaStato(utenteId, stato);
     const dati = { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length, cardio };
     if (cardio) dati.durataMinuti = voce.durataMinuti;
@@ -919,11 +1027,52 @@ export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, rip
   });
 }
 
-/** Turns the draft into a workout plan (guided creation). */
+// ─── The title at the end of the guided creation ───
+// "Finish" asks for the title: until it comes (or the user adds another
+// exercise, goes back to the categories, cancels) the next text is the title.
+// The wait ends on its own: a text written much later goes to the AI.
+const ATTESA_TITOLO_MS = 15 * 60 * 1000;
+
+/** Whether the draft is waiting for its title */
+const attendeTitolo = stato => typeof stato.attesaTitoloFino === 'number' && stato.attesaTitoloFino > Date.now();
+
+/** The number of entries in the user's draft (read only, no lock) */
+export async function numeroEserciziBozza(utenteId) {
+  return (await caricaStato(utenteId)).bozza.esercizi.length;
+}
+
+/** "Finish" in the guided creation: the draft waits for its title, the default one is proposed */
+export async function chiediTitoloGuidata(utenteId) {
+  return conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    if (!vociDellaScheda(stato.bozza.esercizi).length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
+    stato.attesaTitoloFino = Date.now() + ATTESA_TITOLO_MS;
+    await salvaStato(utenteId, stato);
+    return { titoloProposto: titoloScheda(null), numEsercizi: stato.bozza.esercizi.length };
+  });
+}
+
+/** Back to the categories: the draft no longer waits for a title */
+export async function smettiDiAttendereTitolo(utenteId) {
+  if (!attendeTitolo(await caricaStato(utenteId))) return;
+  await conBloccoUtente(utenteId, async () => {
+    const stato = await caricaStato(utenteId);
+    delete stato.attesaTitoloFino;
+    await salvaStato(utenteId, stato);
+  });
+}
+
+/**
+ * Turns the draft into a workout plan (guided creation), with the given title
+ * or the default one. The exercises no longer in the catalog are taken out
+ * first (`tolti`); none left, a clear 400 and the emptied draft.
+ */
 export async function terminaSchedaGuidata(utenteId, titolo = null) {
   return conBloccoUtente(utenteId, async () => {
     const stato = await caricaStato(utenteId);
+    const tolti = await togliEserciziSpariti(stato);
     const voci = vociDellaScheda(stato.bozza.esercizi);
+    if (!voci.length && tolti.length) throw new ErroreValidazione(await bozzaSvuotata(utenteId, stato, tolti));
     if (!voci.length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
     const scheda = await salvaSchedaDallaBozza(utenteId, stato, () => prisma.schedaAllenamento.create({
       data: {
@@ -933,6 +1082,6 @@ export async function terminaSchedaGuidata(utenteId, titolo = null) {
       },
       include: { esercizi: true }
     }));
-    return { schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length };
+    return { schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length, tolti };
   });
 }

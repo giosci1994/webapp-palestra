@@ -95,3 +95,9 @@ export function creaRecord(utente, esercizio, peso, dataRecord = new Date()) {
     data: { utenteId: utente.id, esercizioId: esercizio.id, pesoMaxRaggiunto: peso, dataRecord }
   });
 }
+
+/** The default title of a plan from the bot: today's day/month in the time zone given (the gym's by default) */
+export function titoloDiOggi(lingua = 'en', fuso = 'Europe/Copenhagen') {
+  const data = new Intl.DateTimeFormat(lingua === 'it' ? 'it-IT' : 'en-GB', { day: '2-digit', month: '2-digit', timeZone: fuso }).format(new Date());
+  return lingua === 'it' ? `Scheda del ${data}` : `Plan of ${data}`;
+}

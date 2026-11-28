@@ -6,5 +6,8 @@
   "regioneNonValida": "La regione del corpo non è valida",
   "gruppoNonValido": "Il gruppo muscolare non è valido",
   "soloPiuUsatiNonValido": "La scelta «più usati» non è valida",
-  "ripetizioniTroppoLunghe": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)"
+  "ripetizioniTroppoLunghe": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)",
+  "soloCardioNonValido": "La scelta «cardio» non è valida",
+  "offsetNonValido": "La pagina non è valida",
+  "titoloTroppoLungo": "Il titolo è troppo lungo (al massimo 100 caratteri)"
 }

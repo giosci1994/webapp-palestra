@@ -9,8 +9,9 @@ import { run, sequentialize } from '@grammyjs/runner';
 import { createServer } from 'node:http';
 import { t, tLingua, ricordaLingua } from './testi.js';
 import {
-  HTML, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata,
-  tastieraSchede, tastieraCategorie, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti, tastieraDopoAggiunta
+  HTML, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
+  tastieraSchede, tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
+  tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio
 } from './formato.js';
 
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -103,14 +104,60 @@ bot.command('statistiche', async (ctx) => {
 });
 
 // --- /guidata: button-based creation by categories ---
-async function mostraCategorie(ctx) {
+// With a draft that is not empty, /guidata first asks whether to go on with it
+// (the exercises dictated to the AI in the last hours would end up in the plan)
+async function mostraCategorie(ctx, chiediDellaBozza = false) {
   const r = await api(ctx, 'guida/categorie', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  const numero = r.corpo.dati.bozza?.numEsercizi || 0;
+  if (chiediDellaBozza && numero > 0) {
+    await ctx.reply(t(ctx, 'bozzaInCorso', { count: numero }), { reply_markup: tastieraBozzaInCorso(ctx, numero) });
+    return;
+  }
   await ctx.reply(t(ctx, 'guidataInizio'), { reply_markup: tastieraCategorie(ctx, r.corpo.dati) });
 }
-bot.command('guidata', (ctx) => mostraCategorie(ctx));
+bot.command('guidata', (ctx) => mostraCategorie(ctx, true));
 
-bot.callbackQuery('gmenu', async (ctx) => { await ctx.answerCallbackQuery(); await mostraCategorie(ctx); });
+bot.callbackQuery(['gmenu', 'gcont'], async (ctx) => { await ctx.answerCallbackQuery(); await mostraCategorie(ctx); });
+
+// "Start again": the draft is cleared, like /nuova
+bot.callbackQuery('griniz', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const r = await api(ctx, 'annulla', { chatId: chatId(ctx) });
+  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  await mostraCategorie(ctx);
+});
+
+/**
+ * A page of exercises. A "More ▶" / "◀ Back" button changes the message it is
+ * on instead of sending a new one (a new message if Telegram refuses, for
+ * example on a very old message).
+ */
+async function mostraPaginaEsercizi(ctx, corpo, testo, versoPagina, cambiaMessaggio) {
+  const r = await api(ctx, 'guida/esercizi', { chatId: chatId(ctx), ...corpo });
+  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return null; }
+  const dati = r.corpo.dati;
+  if (!dati.esercizi?.length) return dati;
+  const extra = { reply_markup: tastieraEsercizi(dati.esercizi, ctx, dati, versoPagina) };
+  const scritto = typeof testo === 'function' ? testo(dati) : testo;
+  if (cambiaMessaggio) {
+    try { await ctx.editMessageText(scritto, extra); return dati; } catch { /* a new message below */ }
+  }
+  await ctx.reply(scritto, extra);
+  return dati;
+}
+
+const testoGruppo = (ctx, gruppo) => (dati) => t(ctx, 'scegliEsercizio', { gruppo: dati.etichettaGruppo || gruppo });
+
+async function mostraCardio(ctx, offset, cambiaMessaggio) {
+  const dati = await mostraPaginaEsercizi(ctx, { soloCardio: true, offset }, t(ctx, 'scegliCardio'), datiPaginaCardio, cambiaMessaggio);
+  if (dati && !dati.esercizi?.length) await ctx.reply(t(ctx, 'nessunCardio'));
+}
+
+bot.callbackQuery(/^gcar:(\d+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await mostraCardio(ctx, Number(ctx.match[1]), true);
+});
 
 bot.callbackQuery(/^gcat:(.+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
@@ -123,6 +170,7 @@ bot.callbackQuery(/^gcat:(.+)$/, async (ctx) => {
     await ctx.reply(t(ctx, 'eserciziPiuUsati'), { reply_markup: tastieraEsercizi(es) });
     return;
   }
+  if (reg === '__cardio__') { await mostraCardio(ctx, 0, false); return; }
   const r = await api(ctx, 'guida/gruppi', { chatId: chatId(ctx), bodyRegion: reg });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   const gruppi = r.corpo.dati.gruppi || [];
@@ -130,14 +178,22 @@ bot.callbackQuery(/^gcat:(.+)$/, async (ctx) => {
   await ctx.reply(t(ctx, 'scegliGruppo', { regione: r.corpo.dati.etichettaRegione || reg }), { reply_markup: tastieraGruppi(r.corpo.dati) });
 });
 
+// A muscle group: its first page in a new message, the other pages from
+// "More ▶" / "◀ Back" in the same message
+async function mostraGruppo(ctx, gruppo, offset, cambiaMessaggio) {
+  const versoPagina = (altro) => datiPaginaGruppo(gruppo, altro);
+  const dati = await mostraPaginaEsercizi(ctx, { gruppo, offset }, testoGruppo(ctx, gruppo), versoPagina, cambiaMessaggio);
+  if (dati && !dati.esercizi?.length) await ctx.reply(t(ctx, 'nessunEsercizio'));
+}
+
 bot.callbackQuery(/^ggrp:(.+)$/, async (ctx) => {
   await ctx.answerCallbackQuery();
-  const gruppo = ctx.match[1];
-  const r = await api(ctx, 'guida/esercizi', { chatId: chatId(ctx), gruppo });
-  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  const es = r.corpo.dati.esercizi || [];
-  if (!es.length) { await ctx.reply(t(ctx, 'nessunEsercizio')); return; }
-  await ctx.reply(t(ctx, 'scegliEsercizio', { gruppo: r.corpo.dati.etichettaGruppo || gruppo }), { reply_markup: tastieraEsercizi(es) });
+  await mostraGruppo(ctx, ctx.match[1], 0, false);
+});
+
+bot.callbackQuery(/^gpg:(\d+):(.+)$/, async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await mostraGruppo(ctx, ctx.match[2], Number(ctx.match[1]), true);
 });
 
 bot.callbackQuery(/^gex:(\d+)$/, async (ctx) => {
@@ -170,7 +226,16 @@ bot.callbackQuery(/^gadd:(\d+):(\d+):(\S+)$/, async (ctx) => {
   await rispondiAggiunto(ctx, r, serie, rip);
 });
 
+// "Finish" asks for the title: the next text is the title (the backend
+// knows it is waiting), or the button takes the proposed one
 bot.callbackQuery('gfine', async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const r = await api(ctx, 'guida/titolo', { chatId: chatId(ctx) });
+  if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  await ctx.reply(testoChiediTitolo(ctx, r.corpo.dati), { ...HTML, reply_markup: tastieraTitolo(ctx) });
+});
+
+bot.callbackQuery('gtit', async (ctx) => {
   await ctx.answerCallbackQuery();
   const r = await api(ctx, 'guida/termina', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
@@ -195,6 +260,8 @@ bot.on('message:text', async (ctx) => {
   await ctx.replyWithChatAction('typing').catch(() => {});
   const r = await api(ctx, 'messaggio', { chatId: chatId(ctx), testo });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
+  // The text was the title the guided creation asked for: the plan is saved
+  if (r.corpo.dati.scheda) { await ctx.reply(testoSchedaSalvata(ctx, r.corpo.dati.scheda), HTML); return; }
   await ctx.reply(r.corpo.dati.risposta);
 });
 

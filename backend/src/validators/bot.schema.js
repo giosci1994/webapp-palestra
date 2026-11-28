@@ -106,13 +106,18 @@ export const schemaGuidaGruppi = z.object({
   bodyRegion: nomeDaElenco('botSchema.regioneNonValida')
 }, CORPO_NON_VALIDO);
 
-/** POST /guida/esercizi: a muscle group, or the "most used" shortcut */
+/**
+ * POST /guida/esercizi: a muscle group, the cardio exercises or the "most
+ * used" shortcut, from the page that starts at `offset` (missing: the first)
+ */
 export const schemaGuidaEsercizi = z.object({
   chatId: idChat,
   gruppo: nomeDaElenco('botSchema.gruppoNonValido').optional(),
-  soloPiuUsati: z.boolean({ error: 'botSchema.soloPiuUsatiNonValido' }).optional()
+  soloPiuUsati: z.boolean({ error: 'botSchema.soloPiuUsatiNonValido' }).optional(),
+  soloCardio: z.boolean({ error: 'botSchema.soloCardioNonValido' }).optional(),
+  offset: numero('botSchema.offsetNonValido', { min: 0, max: 100000, vuoto: 'nullo' }).nullable().optional()
 }, CORPO_NON_VALIDO).superRefine((corpo, ctx) => {
-  if (!corpo.soloPiuUsati && !corpo.gruppo) {
+  if (!corpo.soloPiuUsati && !corpo.soloCardio && !corpo.gruppo) {
     ctx.addIssue({ code: 'custom', path: ['gruppo'], message: 'botSchema.gruppoNonValido' });
   }
 });
@@ -123,8 +128,16 @@ export const schemaGuidaEsercizi = z.object({
  */
 export const schemaGuidaAggiungi = schemaVoceForza.omit({ recuperoSecondi: true }).extend({ chatId: idChat, durataMinuti });
 
-/** POST /guida/termina: the title is optional (the handler picks one) */
+/**
+ * The longest title of a plan from the bot. The app's plan schema has no
+ * limit; this one keeps a title the user types in Telegram readable on the
+ * buttons of /schede.
+ */
+export const TITOLO_MASSIMO = 100;
+
+/** POST /guida/termina: the title is optional (missing or empty, the handler picks one) */
 export const schemaGuidaTermina = z.object({
   chatId: idChat,
-  titolo: z.string({ error: 'schedeSchema.titoloNonValido' }).nullable().optional()
+  titolo: z.string({ error: 'schedeSchema.titoloNonValido' }).trim()
+    .max(TITOLO_MASSIMO, { error: 'botSchema.titoloTroppoLungo' }).nullable().optional()
 }, CORPO_NON_VALIDO);
