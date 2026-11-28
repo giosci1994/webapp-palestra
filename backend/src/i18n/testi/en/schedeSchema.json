@@ -19,5 +19,6 @@
   "livelloResistenzaNonValido": "The resistance level is not valid",
   "distanzaKmNonValida": "The distance is not valid",
   "gruppoNonValido": "The superset group is not valid",
-  "repTargetTroppoLungo": "The reps are too long (at most 30 characters, for example 8-12)"
+  "repTargetTroppoLungo": "The reps are too long (at most 30 characters, for example 8-12)",
+  "titoloTroppoLungo": "The title is too long (at most 100 characters)"
 }

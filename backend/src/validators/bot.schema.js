@@ -8,7 +8,7 @@
 // The messages are translation keys (middleware/validazione.js translates them).
 
 import { z } from 'zod';
-import { numero, schemaEsercizioInScheda, RIPETIZIONI_MASSIME } from './schede.schema.js';
+import { numero, schemaEsercizioInScheda, RIPETIZIONI_MASSIME, TITOLO_MASSIMO } from './schede.schema.js';
 
 const campi = schemaEsercizioInScheda.shape;
 
@@ -127,13 +127,6 @@ export const schemaGuidaEsercizi = z.object({
  * cardio one (the handler looks at the exercise and keeps what fits)
  */
 export const schemaGuidaAggiungi = schemaVoceForza.omit({ recuperoSecondi: true }).extend({ chatId: idChat, durataMinuti });
-
-/**
- * The longest title of a plan from the bot. The app's plan schema has no
- * limit; this one keeps a title the user types in Telegram readable on the
- * buttons of /schede.
- */
-export const TITOLO_MASSIMO = 100;
 
 /** POST /guida/termina: the title is optional (missing or empty, the handler picks one) */
 export const schemaGuidaTermina = z.object({

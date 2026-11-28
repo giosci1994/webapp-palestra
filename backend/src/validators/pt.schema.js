@@ -14,7 +14,7 @@
 
 import { z } from 'zod';
 import { ID_MASSIMO } from '../middleware/validazione.js';
-import { RIPETIZIONI_MASSIME } from './schede.schema.js';
+import { RIPETIZIONI_MASSIME, TITOLO_MASSIMO } from './schede.schema.js';
 
 // Appointments are instants; PostgreSQL (through Prisma) takes four-digit years
 const ANNO_MINIMO = 1900;
@@ -122,7 +122,9 @@ const schemaEsercizioScheda = z.object({
  * handler says so with its own message, so they can be missing here.
  */
 export const schemaNuovaScheda = z.object({
-  titolo: testo('ptSchema.titoloNonValido').nullish(),
+  titolo: testo('ptSchema.titoloNonValido')
+    .refine(valore => valore.length <= TITOLO_MASSIMO, 'ptSchema.titoloTroppoLungo')
+    .nullish(),
   descrizione: testo('ptSchema.descrizioneNonValida').nullish(),
   livello: unoDi(LIVELLI, 'ptSchema.livelloNonValido').nullish(),
   esercizi: z.array(schemaEsercizioScheda, { error: 'ptSchema.eserciziNonValidi' })

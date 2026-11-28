@@ -22,6 +22,7 @@ import { chiaveGiorno, fusoDi, inizioGiorno } from '../utils/date.js';
 import { creaEsercizio } from '../services/esercizi.service.js';
 import { eliminaScheda } from '../services/schede.service.js';
 import { normalizzaGruppi } from '../utils/superset.js';
+import { tagliaTitolo } from '../validators/schede.schema.js';
 
 const router = Router();
 // Ids in the URL are positive integers (middleware/validazione.js)
@@ -575,7 +576,7 @@ router.post('/clienti/:id/assegna-scheda', valida({ body: schemaAssegnaScheda })
       data: {
         creatoreId: clienteId,
         assegnataDaPTId: trainerId,
-        titolo: t('ptRoutes.titoloSchedaAssegnata', { titolo: schedaOriginale.titolo }, lingua),
+        titolo: tagliaTitolo(t('ptRoutes.titoloSchedaAssegnata', { titolo: schedaOriginale.titolo }, lingua)),
         descrizione: schedaOriginale.descrizione,
         livello: schedaOriginale.livello,
         visibilita: 'PERSONALE',

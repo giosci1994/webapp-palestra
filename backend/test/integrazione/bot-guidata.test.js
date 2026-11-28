@@ -11,7 +11,7 @@ import { creaUtente, creaEsercizio, creaScheda, titoloDiOggi } from '../supporto
 import { creaServer } from '../../src/app.js';
 import redis from '../../src/config/redis.js';
 import { impostaClientAI, ESERCIZI_PER_PAGINA } from '../../src/services/bot.service.js';
-import { TITOLO_MASSIMO } from '../../src/validators/bot.schema.js';
+import { TITOLO_MASSIMO } from '../../src/validators/schede.schema.js';
 
 const SEGRETO = 'segreto-di-prova-del-bot';
 const CHAT_ID = 777005;

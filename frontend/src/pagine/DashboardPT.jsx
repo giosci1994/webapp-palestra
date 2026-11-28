@@ -11,7 +11,7 @@ import { useLingua } from '../hooks/useLingua.js';
 import Testo from '../i18n/Testo.jsx';
 import { localeCorrente } from '../i18n/index.js';
 import { indicizzaEsercizi, cerca } from '../utils/ricerca.js';
-import { LIVELLI, GRUPPI_MUSCOLARI, RIPETIZIONI_MASSIME } from '../utils/costanti.js';
+import { LIVELLI, GRUPPI_MUSCOLARI, RIPETIZIONI_MASSIME, TITOLO_MASSIMO } from '../utils/costanti.js';
 import { formattaPeso, formattaNumero, formattaDurata, formattaDataRelativa, nomeEsercizio, nomeGruppo, titoloAllenamento, istanteDaCampoLocale, giornoLocaleDi } from '../utils/formattatori.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -633,7 +633,7 @@ export default function DashboardPT() {
             <div className="glass-card p-5">
               <h3 className="font-bold text-lg mb-4">{t('dashboardPT.creaNuovaScheda')}</h3>
               <div className="flex flex-col gap-3">
-                <input type="text" value={formScheda.titolo} onChange={e => setFormScheda(p => ({...p, titolo: e.target.value}))} className="campo-input" placeholder={t('dashboardPT.titoloScheda')} />
+                <input type="text" value={formScheda.titolo} onChange={e => setFormScheda(p => ({...p, titolo: e.target.value}))} maxLength={TITOLO_MASSIMO} className="campo-input" placeholder={t('dashboardPT.titoloScheda')} />
                 <textarea value={formScheda.descrizione} onChange={e => setFormScheda(p => ({...p, descrizione: e.target.value}))} className="campo-input min-h-[50px] resize-none" placeholder={t('dashboardPT.descrizioneOpzionale')} rows="2" />
                 <select value={formScheda.livello} onChange={e => setFormScheda(p => ({...p, livello: e.target.value}))} className="campo-input">
                   <option value="BASE">{t(LIVELLI.BASE.label)}</option>
