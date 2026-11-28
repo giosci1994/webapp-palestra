@@ -16,6 +16,8 @@ import { t, linguaCorrente, localeDi } from '../i18n/index.js';
 import { macchinaCardio, dovEsercizioCardio } from '../utils/macchineCardio.js';
 import { fusoCorrente } from '../utils/date.js';
 import { gruppiDi } from '../utils/superset.js';
+import { testoDelProblema } from '../middleware/validazione.js';
+import { schemaVoceForza, schemaVoceCardio } from '../validators/bot.schema.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -410,6 +412,53 @@ function riepilogoBozza(bozza) {
   });
 }
 
+/** A value checked again with the schema of its field, or the default when it is missing or wrong */
+function valoreOPredefinito(schema, valore, predefinito) {
+  const risultato = schema.safeParse(valore);
+  return risultato.success && risultato.data != null ? risultato.data : predefinito;
+}
+
+const forza = schemaVoceForza.shape;
+const cardio = schemaVoceCardio.shape;
+
+/**
+ * The plan's entries from the draft. A draft saved before the checks existed
+ * can hold values the plan does not accept (99999999999 sets made every
+ * "finish" a 500 until /annulla): each value is checked again with the same
+ * limits, and a wrong one takes the default instead of blocking the plan.
+ */
+function vociDellaScheda(esercizi) {
+  return esercizi
+    .filter(e => forza.esercizioId.safeParse(e.esercizioId).success)
+    .map((e, i) => {
+      if (e.tipo === 'CARDIO') {
+        return {
+          esercizioId: e.esercizioId,
+          ordineEsecuzione: i + 1,
+          riscaldamento: !!e.riscaldamento,
+          durataMinuti: valoreOPredefinito(cardio.durataMinuti, e.durataMinuti, null),
+          velocitaKmh: valoreOPredefinito(cardio.velocitaKmh, e.velocitaKmh, null),
+          inclinazione: valoreOPredefinito(cardio.inclinazione, e.inclinazione, null),
+          livelloResistenza: valoreOPredefinito(cardio.livelloResistenza, e.livelloResistenza, null),
+          distanzaKm: valoreOPredefinito(cardio.distanzaKm, e.distanzaKm, null),
+          serieTarget: 1,        // keeps the live workout working (WorkoutLive)
+          repTarget: null,
+          recuperoSecondi: 0
+        };
+      }
+      return {
+        esercizioId: e.esercizioId,
+        serieTarget: valoreOPredefinito(forza.serie, e.serie, 3),
+        repTarget: valoreOPredefinito(forza.ripetizioni, e.ripetizioni, '8-12'),
+        recuperoSecondi: valoreOPredefinito(forza.recuperoSecondi, e.recuperoSecondi, 90),
+        ordineEsecuzione: i + 1
+      };
+    });
+}
+
+/** The title of a new plan: a text that is not empty, or the default one */
+const titoloScheda = titolo => (typeof titolo === 'string' && titolo.trim() ? titolo.trim() : t('botService.titoloSchedaPredefinito'));
+
 async function eseguiFunzione(nome, args, utente, stato) {
   switch (nome) {
     case 'cerca_esercizio': {
@@ -417,8 +466,13 @@ async function eseguiFunzione(nome, args, utente, stato) {
       return { candidati };
     }
     case 'aggiungi_esercizio': {
+      // The same limits as a plan in the app: a wrong value goes back to the
+      // model as an error and never enters the draft
+      const controllo = schemaVoceForza.safeParse(args);
+      if (!controllo.success) return { errore: testoDelProblema(controllo.error.issues[0]) };
+      const { esercizioId, serie, ripetizioni, recuperoSecondi } = controllo.data;
       const es = await prisma.esercizio.findUnique({
-        where: { id: parseInt(args.esercizioId) },
+        where: { id: esercizioId },
         select: { id: true, nome: true, nomeIt: true }
       });
       if (!es) return { errore: 'Esercizio non trovato. Usa prima cerca_esercizio.' };
@@ -427,16 +481,18 @@ async function eseguiFunzione(nome, args, utente, stato) {
         esercizioId: es.id,
         nome: es.nome,
         nomeIt: es.nomeIt,
-        serie: parseInt(args.serie) || 3,
-        ripetizioni: String(args.ripetizioni || '8-12'),
-        // 0 is a valid rest (no pause); missing or not a number, the default
-        recuperoSecondi: Number.isInteger(parseInt(args.recuperoSecondi)) && parseInt(args.recuperoSecondi) >= 0
-          ? parseInt(args.recuperoSecondi) : 90
+        serie: serie ?? 3,
+        ripetizioni: ripetizioni ?? '8-12',
+        // 0 is a valid rest (no pause); missing, the default
+        recuperoSecondi: recuperoSecondi ?? 90
       };
       stato.bozza.esercizi.push(voce);
       return { ok: true, aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length };
     }
     case 'aggiungi_cardio': {
+      const controllo = schemaVoceCardio.safeParse(args);
+      if (!controllo.success) return { errore: testoDelProblema(controllo.error.issues[0]) };
+      const valori = controllo.data;
       const macchina = await risolviMacchinaCardio(args.macchina);
       if (!macchina) {
         return { errore: 'Macchina cardio non riconosciuta. Disponibili: tapis roulant, cyclette, ellittica, vogatore, stepper, air bike.' };
@@ -447,11 +503,11 @@ async function eseguiFunzione(nome, args, utente, stato) {
         nome: macchina.nome,
         nomeIt: macchina.nomeIt,
         riscaldamento: !!args.riscaldamento,
-        durataMinuti: args.durataMinuti != null ? parseInt(args.durataMinuti) : null,
-        velocitaKmh: args.velocitaKmh != null ? parseFloat(args.velocitaKmh) : null,
-        inclinazione: args.inclinazione != null ? parseFloat(args.inclinazione) : null,
-        livelloResistenza: args.livelloResistenza != null ? parseInt(args.livelloResistenza) : null,
-        distanzaKm: args.distanzaKm != null ? parseFloat(args.distanzaKm) : null
+        durataMinuti: valori.durataMinuti ?? null,
+        velocitaKmh: valori.velocitaKmh ?? null,
+        inclinazione: valori.inclinazione ?? null,
+        livelloResistenza: valori.livelloResistenza ?? null,
+        distanzaKm: valori.distanzaKm ?? null
       };
       stato.bozza.esercizi.push(voce);
       return { ok: true, aggiunto: nomeMostrato(macchina), riscaldamento: voce.riscaldamento, totaleEsercizi: stato.bozza.esercizi.length };
@@ -463,7 +519,8 @@ async function eseguiFunzione(nome, args, utente, stato) {
       return { ok: true, rimosso: rimosso ? nomeMostrato(rimosso) : null, totaleEsercizi: stato.bozza.esercizi.length };
     }
     case 'termina_scheda': {
-      if (!stato.bozza.esercizi.length) {
+      const voci = vociDellaScheda(stato.bozza.esercizi);
+      if (!voci.length) {
         return { errore: 'La bozza è vuota: aggiungi almeno un esercizio prima di terminare.' };
       }
       const livelliValidi = ['BASE', 'INTERMEDIO', 'AVANZATO'];
@@ -472,37 +529,12 @@ async function eseguiFunzione(nome, args, utente, stato) {
 
       const scheda = await prisma.schedaAllenamento.create({
         data: {
-          titolo: args.titolo || t('botService.titoloSchedaPredefinito'),
+          titolo: titoloScheda(args.titolo),
           descrizione: t('botService.descrizioneScheda'),
           livello,
           visibilita: 'PERSONALE',
           creatoreId: utente.id,
-          esercizi: {
-            create: stato.bozza.esercizi.map((e, i) => {
-              if (e.tipo === 'CARDIO') {
-                return {
-                  esercizioId: e.esercizioId,
-                  ordineEsecuzione: i + 1,
-                  riscaldamento: !!e.riscaldamento,
-                  durataMinuti: e.durataMinuti ?? null,
-                  velocitaKmh: e.velocitaKmh ?? null,
-                  inclinazione: e.inclinazione ?? null,
-                  livelloResistenza: e.livelloResistenza ?? null,
-                  distanzaKm: e.distanzaKm ?? null,
-                  serieTarget: 1,        // keeps the live workout working (WorkoutLive)
-                  repTarget: null,
-                  recuperoSecondi: 0
-                };
-              }
-              return {
-                esercizioId: e.esercizioId,
-                serieTarget: e.serie,
-                repTarget: e.ripetizioni,
-                recuperoSecondi: e.recuperoSecondi,
-                ordineEsecuzione: i + 1
-              };
-            })
-          }
+          esercizi: { create: voci }
         },
         include: { esercizi: true }
       });
@@ -754,14 +786,17 @@ export async function eserciziPiuUsati(utenteId, limite = 12) {
   return esercizi.sort((a, b) => ordine.get(a.id) - ordine.get(b.id)).map(e => ({ id: e.id, nome: nomeMostrato(e) }));
 }
 
-/** Adds an exercise (by id) to the draft, from the guided creation. */
-export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie = 3, ripetizioni = '8-12') {
-  const es = await prisma.esercizio.findUnique({ where: { id: parseInt(esercizioId) }, select: { id: true, nome: true, nomeIt: true } });
+/**
+ * Adds an exercise (by id) to the draft, from the guided creation. The values
+ * are already checked by the route (validators/bot.schema.js); missing, the defaults.
+ */
+export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie, ripetizioni) {
+  const es = await prisma.esercizio.findUnique({ where: { id: esercizioId }, select: { id: true, nome: true, nomeIt: true } });
   if (!es) throw new ErroreNonTrovato(t('botService.esercizioNonTrovato'));
   const stato = await caricaStato(utenteId);
   stato.bozza.esercizi.push({
     tipo: 'FORZA', esercizioId: es.id, nome: es.nome, nomeIt: es.nomeIt,
-    serie: parseInt(serie) || 3, ripetizioni: String(ripetizioni || '8-12'), recuperoSecondi: 90
+    serie: serie ?? 3, ripetizioni: ripetizioni ?? '8-12', recuperoSecondi: 90
   });
   await salvaStato(utenteId, stato);
   return { aggiunto: nomeMostrato(es), totaleEsercizi: stato.bozza.esercizi.length };
@@ -770,19 +805,13 @@ export async function aggiungiEsercizioGuidato(utenteId, esercizioId, serie = 3,
 /** Turns the draft into a workout plan (guided creation). */
 export async function terminaSchedaGuidata(utenteId, titolo = null) {
   const stato = await caricaStato(utenteId);
-  if (!stato.bozza.esercizi.length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
+  const voci = vociDellaScheda(stato.bozza.esercizi);
+  if (!voci.length) throw new ErroreValidazione(t('botService.bozzaVuotaGuidata'));
   const scheda = await prisma.schedaAllenamento.create({
     data: {
-      titolo: titolo || t('botService.titoloSchedaPredefinito'), descrizione: t('botService.descrizioneScheda'),
+      titolo: titoloScheda(titolo), descrizione: t('botService.descrizioneScheda'),
       livello: 'BASE', visibilita: 'PERSONALE', creatoreId: utenteId,
-      esercizi: {
-        create: stato.bozza.esercizi.map((e, i) => {
-          if (e.tipo === 'CARDIO') {
-            return { esercizioId: e.esercizioId, ordineEsecuzione: i + 1, riscaldamento: !!e.riscaldamento, durataMinuti: e.durataMinuti ?? null, velocitaKmh: e.velocitaKmh ?? null, inclinazione: e.inclinazione ?? null, livelloResistenza: e.livelloResistenza ?? null, distanzaKm: e.distanzaKm ?? null, serieTarget: 1, repTarget: null, recuperoSecondi: 0 };
-          }
-          return { esercizioId: e.esercizioId, serieTarget: e.serie, repTarget: e.ripetizioni, recuperoSecondi: e.recuperoSecondi, ordineEsecuzione: i + 1 };
-        })
-      }
+      esercizi: { create: voci }
     },
     include: { esercizi: true }
   });

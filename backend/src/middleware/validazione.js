@@ -12,7 +12,7 @@ import { t } from '../i18n/index.js';
  * language. Zod's own default messages ("Invalid input: ...") are not keys and stay.
  */
 const eUnaChiave = messaggio => /^\w+\.[\w.]+$/.test(messaggio);
-const testoDelProblema = problema => (eUnaChiave(problema.message) ? t(problema.message) : problema.message);
+export const testoDelProblema = problema => (eUnaChiave(problema.message) ? t(problema.message) : problema.message);
 
 /**
  * The issues of a failed parse, as zod 3 gave them. Zod 4 still runs the

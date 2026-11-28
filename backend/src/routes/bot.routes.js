@@ -6,6 +6,11 @@
 
 import { Router } from 'express';
 import { verificaSegretoBot, risolviUtenteTelegram } from '../middleware/bot.auth.js';
+import { valida } from '../middleware/validazione.js';
+import {
+  schemaSoloChat, schemaCollega, schemaMessaggio, schemaScheda,
+  schemaGuidaGruppi, schemaGuidaEsercizi, schemaGuidaAggiungi, schemaGuidaTermina
+} from '../validators/bot.schema.js';
 import { collega, messaggio, annulla, schede, scheda, statistiche, guidaCategorie, guidaGruppi, guidaEsercizi, guidaAggiungi, guidaTermina } from '../controllers/bot.controller.js';
 
 const router = Router();
@@ -14,20 +19,21 @@ const router = Router();
 router.use(verificaSegretoBot);
 
 // Initial linking (chatId not linked yet)
-router.post('/collega', collega);
+router.post('/collega', valida({ body: schemaCollega }), collega);
 
-// Routes that need an account already linked
-router.post('/messaggio', risolviUtenteTelegram, messaggio);
-router.post('/annulla', risolviUtenteTelegram, annulla);
-router.post('/schede', risolviUtenteTelegram, schede);
-router.post('/scheda', risolviUtenteTelegram, scheda);
-router.post('/statistiche', risolviUtenteTelegram, statistiche);
+// Routes that need an account already linked. The body is checked after the
+// user is found, so a wrong value is told in the language of their account
+router.post('/messaggio', risolviUtenteTelegram, valida({ body: schemaMessaggio }), messaggio);
+router.post('/annulla', risolviUtenteTelegram, valida({ body: schemaSoloChat }), annulla);
+router.post('/schede', risolviUtenteTelegram, valida({ body: schemaSoloChat }), schede);
+router.post('/scheda', risolviUtenteTelegram, valida({ body: schemaScheda }), scheda);
+router.post('/statistiche', risolviUtenteTelegram, valida({ body: schemaSoloChat }), statistiche);
 
 // Guided creation with buttons
-router.post('/guida/categorie', risolviUtenteTelegram, guidaCategorie);
-router.post('/guida/gruppi', risolviUtenteTelegram, guidaGruppi);
-router.post('/guida/esercizi', risolviUtenteTelegram, guidaEsercizi);
-router.post('/guida/aggiungi', risolviUtenteTelegram, guidaAggiungi);
-router.post('/guida/termina', risolviUtenteTelegram, guidaTermina);
+router.post('/guida/categorie', risolviUtenteTelegram, valida({ body: schemaSoloChat }), guidaCategorie);
+router.post('/guida/gruppi', risolviUtenteTelegram, valida({ body: schemaGuidaGruppi }), guidaGruppi);
+router.post('/guida/esercizi', risolviUtenteTelegram, valida({ body: schemaGuidaEsercizi }), guidaEsercizi);
+router.post('/guida/aggiungi', risolviUtenteTelegram, valida({ body: schemaGuidaAggiungi }), guidaAggiungi);
+router.post('/guida/termina', risolviUtenteTelegram, valida({ body: schemaGuidaTermina }), guidaTermina);
 
 export default router;

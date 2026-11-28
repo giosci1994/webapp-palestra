@@ -9,6 +9,7 @@ import prisma from '../config/database.js';
 import { ErroreNonAutorizzato, ErroreValidazione } from '../utils/errori.js';
 import { t, conLingua, linguaSupportata } from '../i18n/index.js';
 import { conFuso, fusoDi } from '../utils/date.js';
+import { idChat } from '../validators/bot.schema.js';
 
 /**
  * Compares two secrets in constant time: the time of the answer says nothing
@@ -36,13 +37,12 @@ export function verificaSegretoBot(req, res, next) {
  */
 export async function risolviUtenteTelegram(req, res, next) {
   try {
-    const chatId = req.body?.chatId;
-    if (chatId === undefined || chatId === null || chatId === '') {
-      throw new ErroreValidazione(t('botAuth.chatIdMancante'));
-    }
+    // Missing or not an integer ("abc" made BigInt() throw: a 500)
+    const chatId = idChat.safeParse(req.body?.chatId);
+    if (!chatId.success) throw new ErroreValidazione(t(chatId.error.issues[0].message));
 
     const collegamento = await prisma.collegamentoTelegram.findUnique({
-      where: { telegramChatId: BigInt(chatId) },
+      where: { telegramChatId: BigInt(chatId.data) },
       include: {
         utente: { select: { id: true, nome: true, ruolo: true, stato: true, palestraId: true, lingua: true, linguaApp: true, fusoOrario: true } }
       }
