@@ -17,12 +17,19 @@ const regolePlurali = {};
 const categoria = (lingua, n) => (regolePlurali[lingua] ??= new Intl.PluralRules(lingua)).select(n);
 
 // The language of the linked account for each chat, as the backend last
-// answered in it (Content-Language): the bot's own texts follow it too
+// answered in it (Content-Language): the bot's own texts follow it too.
+// At most CHAT_RICORDATE chats: the one used least recently is forgotten
+// first (a Map keeps the order of insertion), and only falls back to the
+// Telegram app's language until the backend answers it again.
 const lingueChat = new Map();
+export const CHAT_RICORDATE = 10000;
 
 /** Remembers the language the backend answered this chat in */
 export function ricordaLingua(ctx, lingua) {
-  if (ctx?.chat?.id != null && Object.hasOwn(TESTI, lingua ?? '')) lingueChat.set(ctx.chat.id, lingua);
+  if (ctx?.chat?.id == null || !Object.hasOwn(TESTI, lingua ?? '')) return;
+  lingueChat.delete(ctx.chat.id);
+  lingueChat.set(ctx.chat.id, lingua);
+  if (lingueChat.size > CHAT_RICORDATE) lingueChat.delete(lingueChat.keys().next().value);
 }
 
 /**

@@ -32,7 +32,7 @@ export async function annulla(req, res, next) {
   } catch (errore) { next(errore); }
 }
 
-/** POST /api/v1/bot/schede { chatId } — list of the user's plans */
+/** POST /api/v1/bot/schede { chatId } — the user's own plans and the global ones */
 export async function schede(req, res, next) {
   try {
     const dati = await botService.listaSchedeUtente(req.utenteTelegram.id);

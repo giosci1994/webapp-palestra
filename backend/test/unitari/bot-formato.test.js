@@ -8,7 +8,7 @@ import {
   escapeHtml, chiaveChat, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
   tastiera, tastieraSchede, tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
   tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio,
-  testoChiediNota, tastieraNota, testoNotaSalvata, testoUnito, dividiHtml, messaggiHtml, CARATTERI_MESSAGGIO_MASSIMI
+  testoChiediNota, tastieraNota, testoNotaSalvata, testoUnito, dividiHtml, messaggiHtml, CARATTERI_MESSAGGIO_MASSIMI, messaggiSchede
 } from '../../../bot/formato.js';
 
 const utente = codice => ({ from: { language_code: codice }, chat: { id: 4242 } });
@@ -33,7 +33,7 @@ describe('bot formatting: escaping', () => {
   });
 
   it('the plan saved: the title is escaped', () => {
-    assert.equal(testoSchedaSalvata(en, { titolo: 'A <i>*', numEsercizi: 1 }), '🎉 Plan <b>A &lt;i&gt;*</b> saved with 1 exercise!\nSee it with /schede');
+    assert.equal(testoSchedaSalvata(en, { titolo: 'A <i>*', numEsercizi: 1 }), '🎉 Plan <b>A &lt;i&gt;*</b> saved with 1 exercise!\nSee it with /plans');
   });
 });
 
@@ -45,11 +45,14 @@ describe('bot formatting: errors and unknown commands', () => {
     assert.equal(messaggioErrore(ita, { status: 0 }), '⚠️ Si è verificato un errore, riprova.');
   });
 
-  it('an unknown command gets the list of commands, in the user\'s language', () => {
-    for (const [ctx, inizio] of [[en, /^🤔 I don't know that command/], [ita, /^🤔 Non conosco questo comando/]]) {
+  it('an unknown command gets the list of commands, with the names of the user\'s language', () => {
+    for (const [ctx, inizio, comandi] of [
+      [en, /^🤔 I don't know that command/, ['/new', '/guided', '/plans', '/stats', '/cancel', '/start']],
+      [ita, /^🤔 Non conosco questo comando/, ['/nuova', '/guidata', '/schede', '/statistiche', '/annulla', '/start']]
+    ]) {
       const testo = testoComandoSconosciuto(ctx);
       assert.match(testo, inizio);
-      for (const comando of ['/nuova', '/guidata', '/schede', '/statistiche', '/annulla', '/start']) assert.ok(testo.includes(comando), comando);
+      for (const comando of comandi) assert.match(testo, new RegExp(`${comando} — `), comando);
     }
   });
 });
@@ -66,6 +69,21 @@ describe('bot formatting: keyboards', () => {
     const righe = bottoni(tastieraSchede(schede));
     assert.equal(righe.length, 20);
     assert.deepEqual(righe[0], [['P_0 <x> (0)', 'scheda:1']]);
+  });
+
+  it('/schede: own plans, then global ones, each in a message with "…N more in the app"', () => {
+    const scheda = (id, titolo) => ({ id, titolo, numEsercizi: 2 });
+    const tutti = messaggiSchede(ita, { proprie: [scheda(1, 'Mia')], globali: [scheda(2, 'Palestra')], altreProprie: 3, altreGlobali: 1 });
+    assert.deepEqual(tutti.map(([testo, extra]) => [testo, bottoni(extra.reply_markup)]), [
+      ['📚 Le tue schede:\n…e altre 3 nell\'app.', [[['Mia (2)', 'scheda:1']]]],
+      ['🌍 Schede globali:\n…e un\'altra nell\'app.', [[['Palestra (2)', 'scheda:2']]]]
+    ]);
+    // Nothing more in the app: just the heading
+    assert.deepEqual(messaggiSchede(en, { proprie: [scheda(1, 'Mine')], globali: [], altreProprie: 0, altreGlobali: 0 }).map(([testo]) => testo), ['📚 Your plans:']);
+    // No own plan: how to make one, then the global ones
+    assert.deepEqual(messaggiSchede(en, { proprie: [], globali: [scheda(2, 'Gym')], altreProprie: 0, altreGlobali: 4 }).map(([testo]) => testo),
+      ['You don\'t have any plans of your own yet. Create one with /new! 💪', '🌍 Global plans:\n…and 4 more in the app.']);
+    assert.deepEqual(messaggiSchede(en, { proprie: [], globali: [] }), [['You don\'t have any plans yet. Create one with /new! 💪', {}]]);
   });
 
   it('guided creation: the most used first, then regions and groups with their labels', () => {
@@ -140,7 +158,7 @@ describe('bot formatting: the guided creation, step by step', () => {
   it('the plan saved: the exercises taken out of the catalog come first, escaped', () => {
     assert.equal(testoSchedaSalvata(ita, { titolo: 'Gambe', numEsercizi: 2, tolti: ['Affondo <bulgaro>'] }),
       '⚠️ Tolto <b>Affondo &lt;bulgaro&gt;</b>: non è più nel catalogo.\n🎉 Scheda <b>Gambe</b> salvata con 2 esercizi!\nVedila con /schede');
-    assert.equal(testoSchedaSalvata(en, { titolo: 'Legs', numEsercizi: 1, tolti: [] }), '🎉 Plan <b>Legs</b> saved with 1 exercise!\nSee it with /schede');
+    assert.equal(testoSchedaSalvata(en, { titolo: 'Legs', numEsercizi: 1, tolti: [] }), '🎉 Plan <b>Legs</b> saved with 1 exercise!\nSee it with /plans');
   });
 });
 

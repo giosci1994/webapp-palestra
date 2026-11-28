@@ -115,7 +115,6 @@ describe('bot AI: notes and supersets', () => {
     assert.deepEqual({ ok: unito.ok, gruppo: unito.gruppo, tipo: unito.tipo, membri: unito.membri }, { ok: true, gruppo: 'A', tipo: 'superset', membri: 2 });
     const riepilogo = gemini.risposte.find(r => r.name === 'mostra_bozza').response.riepilogo;
     assert.equal(riepilogo, [
-      'Title: (to be defined)',
       'Items (3):',
       '🔗 Superset A',
       '1 · A1. Bench Press — 4x8',
@@ -155,8 +154,8 @@ describe('bot AI: notes and supersets', () => {
     const errori = gemini.risposte.map(r => r.response.errore);
     assert.deepEqual(errori, [
       'The entries to join must be next to each other in the draft',
-      'Posizione 4 fuori dalla bozza: le voci sono 3.',
-      'Cardio e riscaldamento non si uniscono in un superset (posizione 2).',
+      'Position 4 is outside the draft: it has 3 entries.',
+      'Cardio and warm-up entries cannot join a superset (position 2).',
       'At least two positions of the draft are needed (numbers from 1)',
       'The position is not valid (a number from 1, as in the draft summary)',
       'At least two positions of the draft are needed (numbers from 1)'
@@ -178,7 +177,7 @@ describe('bot AI: notes and supersets', () => {
     ]);
     assert.equal((await bot('messaggio', { testo: 'circuit, then drop the last' })).stato, 200);
     assert.equal(gemini.risposte[3].response.tipo, 'circuito');
-    assert.equal(gemini.risposte[4].response.errore, 'Posizione 9 fuori dalla bozza: le voci sono 3.');
+    assert.equal(gemini.risposte[4].response.errore, 'Position 9 is outside the draft: it has 3 entries.');
     const bozza = (await statoSalvato(utente)).bozza.esercizi;
     assert.deepEqual(bozza.map(e => [e.esercizioId, e.gruppo, e.recuperoSecondi]), [[a.id, 1, 0], [b.id, 1, 120]]);
 
@@ -235,7 +234,7 @@ describe('bot guided creation: "Note"', () => {
     assert.equal(gemini.numero, 0);
     const { nota } = risposta.corpo.dati;
     assert.equal(nota.nome, 'Bench <Press>');
-    assert.equal(nota.riepilogo, 'Title: (to be defined)\nItems (1):\n1. Bench &lt;Press&gt; — 3x8 (rest 90s)\n   📝 elbows &lt;45°&gt; &amp; slow');
+    assert.equal(nota.riepilogo, 'Items (1):\n1. Bench &lt;Press&gt; — 3x8 (rest 90s)\n   📝 elbows &lt;45°&gt; &amp; slow');
     const stato = await statoSalvato(utente);
     assert.equal(stato.bozza.esercizi[0].note, 'elbows <45°> & slow');
     assert.equal(stato.attesaNotaFino, undefined);
@@ -335,7 +334,7 @@ describe('bot guided creation: "Join the previous one"', () => {
     const circuito = await bot('guida/unisci');
     assert.equal(circuito.corpo.dati.tipo, 'circuito');
     assert.equal(circuito.corpo.dati.riepilogo, [
-      'Title: (to be defined)', 'Items (3):', '🔗 Circuit A',
+      'Items (3):', '🔗 Circuit A',
       '1 · A1. Squat — 3x8-12', '2 · A2. Lunge — 3x8-12', '3 · A3. Calf &lt;raise&gt; — 3x8-12 (rest 90s after the round)'
     ].join('\n'));
 

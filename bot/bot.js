@@ -7,10 +7,11 @@
 import { Bot } from 'grammy';
 import { run, sequentialize } from '@grammyjs/runner';
 import { createServer } from 'node:http';
-import { t, tLingua, ricordaLingua } from './testi.js';
+import { t, ricordaLingua } from './testi.js';
+import { nomiComando, menuComandi } from './comandi.js';
 import {
-  chiaveChat, messaggiHtml, messaggioErrore, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
-  tastieraSchede, tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
+  chiaveChat, messaggiHtml, messaggioErrore, messaggiSchede, testoComandoSconosciuto, testoAggiunto, testoSchedaSalvata, testoChiediTitolo,
+  tastieraCategorie, tastieraBozzaInCorso, tastieraGruppi, tastieraEsercizi, tastieraSerie, tastieraMinuti,
   tastieraDopoAggiunta, tastieraTitolo, datiPaginaGruppo, datiPaginaCardio,
   testoChiediNota, tastieraNota, testoNotaSalvata, testoUnito
 } from './formato.js';
@@ -65,7 +66,7 @@ async function rispondiHtml(ctx, testo, extra = {}) {
 }
 
 // --- /start [code] ---
-bot.command('start', async (ctx) => {
+bot.command(nomiComando('start'), async (ctx) => {
   const codice = (ctx.match || '').trim();
   if (codice) {
     const r = await api(ctx, 'collega', { chatId: chatId(ctx), codice });
@@ -79,38 +80,38 @@ bot.command('start', async (ctx) => {
   await ctx.reply(t(ctx, 'benvenuto'));
 });
 
-// --- /nuova: starts the guided creation (clears the draft) ---
-bot.command('nuova', async (ctx) => {
+// Every command answers to its Italian and its English name (comandi.js)
+
+// --- /nuova, /new: starts the creation by text (clears the draft) ---
+bot.command(nomiComando('nuova'), async (ctx) => {
   const r = await api(ctx, 'annulla', { chatId: chatId(ctx) });
   if (!r.ok && r.status === 409) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   await ctx.reply(t(ctx, 'nuova'));
 });
 
-// --- /annulla ---
-bot.command('annulla', async (ctx) => {
+// --- /annulla, /cancel ---
+bot.command(nomiComando('annulla'), async (ctx) => {
   const r = await api(ctx, 'annulla', { chatId: chatId(ctx) });
   if (!r.ok && r.status === 409) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   await ctx.reply(t(ctx, 'bozzaAnnullata'));
 });
 
-// --- /schede ---
-bot.command('schede', async (ctx) => {
+// --- /schede, /plans: the own plans, then the global ones ---
+bot.command(nomiComando('schede'), async (ctx) => {
   const r = await api(ctx, 'schede', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
-  const schede = r.corpo.dati || [];
-  if (!schede.length) { await ctx.reply(t(ctx, 'nessunaScheda')); return; }
-  await ctx.reply(t(ctx, 'leTueSchede'), { reply_markup: tastieraSchede(schede) });
+  for (const [testo, extra] of messaggiSchede(ctx, r.corpo.dati)) await ctx.reply(testo, extra);
 });
 
-// --- /statistiche ---
-bot.command('statistiche', async (ctx) => {
+// --- /statistiche, /stats ---
+bot.command(nomiComando('statistiche'), async (ctx) => {
   const r = await api(ctx, 'statistiche', { chatId: chatId(ctx) });
   if (!r.ok) { await ctx.reply(messaggioErrore(ctx, r)); return; }
   // HTML, escaped by the backend
   await rispondiHtml(ctx, r.corpo.dati.testo);
 });
 
-// --- /guidata: button-based creation by categories ---
+// --- /guidata, /guided: button-based creation by categories ---
 // With a draft that is not empty, /guidata first asks whether to go on with it
 // (the exercises dictated to the AI in the last hours would end up in the plan)
 async function mostraCategorie(ctx, chiediDellaBozza = false) {
@@ -123,7 +124,7 @@ async function mostraCategorie(ctx, chiediDellaBozza = false) {
   }
   await ctx.reply(t(ctx, 'guidataInizio'), { reply_markup: tastieraCategorie(ctx, r.corpo.dati) });
 }
-bot.command('guidata', (ctx) => mostraCategorie(ctx, true));
+bot.command(nomiComando('guidata'), (ctx) => mostraCategorie(ctx, true));
 
 bot.callbackQuery(['gmenu', 'gcont'], async (ctx) => { await ctx.answerCallbackQuery(); await mostraCategorie(ctx); });
 
@@ -278,7 +279,7 @@ bot.callbackQuery(/^scheda:(\d+)$/, async (ctx) => {
 // --- Free-text messages -> conversational engine ---
 bot.on('message:text', async (ctx) => {
   const testo = ctx.message.text || '';
-  // The known commands are handled above: any other gets what the bot can do
+  // The known commands, in both languages, are handled above: any other gets what the bot can do
   if (testo.startsWith('/')) { await ctx.reply(testoComandoSconosciuto(ctx)); return; }
   await ctx.replyWithChatAction('typing').catch(() => {});
   const r = await api(ctx, 'messaggio', { chatId: chatId(ctx), testo });
@@ -325,17 +326,10 @@ const serverStato = createServer((req, res) => {
 
 async function impostaComandi() {
   try {
-    // English for everybody, Italian for Telegram users whose language is Italian
-    const comandi = (lingua) => [
-      { command: 'nuova', description: tLingua(lingua, 'comandoNuova') },
-      { command: 'guidata', description: tLingua(lingua, 'comandoGuidata') },
-      { command: 'schede', description: tLingua(lingua, 'comandoSchede') },
-      { command: 'statistiche', description: tLingua(lingua, 'comandoStatistiche') },
-      { command: 'annulla', description: tLingua(lingua, 'comandoAnnulla') },
-      { command: 'start', description: tLingua(lingua, 'comandoStart') }
-    ];
-    await bot.api.setMyCommands(comandi('en'));
-    await bot.api.setMyCommands(comandi('it'), { language_code: 'it' });
+    // The English commands for everybody, the Italian ones for Telegram users
+    // whose language is Italian (both names work for everybody)
+    await bot.api.setMyCommands(menuComandi('en'));
+    await bot.api.setMyCommands(menuComandi('it'), { language_code: 'it' });
   } catch (e) {
     console.error('setMyCommands fallito:', e.message);
   }

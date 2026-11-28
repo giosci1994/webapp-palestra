@@ -161,7 +161,7 @@ describe('bot AI: a failure halfway through a message', () => {
     const gemini = geminiFinto([chiama('termina_scheda', { titolo: 'Legs' }), { text: 'Your plan is already saved' }]);
     const ancora = await bot('messaggio', { testo: 'done' });
     assert.equal(ancora.stato, 200);
-    assert.match(gemini.richieste[1].contents.at(-1).parts[0].functionResponse.response.errore, /bozza è vuota/);
+    assert.match(gemini.richieste[1].contents.at(-1).parts[0].functionResponse.response.errore, /^The draft is empty/);
     assert.equal(await prisma.schedaAllenamento.count({ where: { creatoreId: utente.id } }), 1);
   });
 
