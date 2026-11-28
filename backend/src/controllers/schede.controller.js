@@ -7,7 +7,7 @@ import { ErroreNonTrovato, ErroreNonAutorizzato, ErroreValidazione } from '../ut
 import { generaDocxSchede, nomeFileDocumento } from '../services/schedaDocx.service.js';
 import { t } from '../i18n/index.js';
 import { ID_MASSIMO } from '../middleware/validazione.js';
-import { eliminaScheda as eliminaSchedaTenendoAllenamenti } from '../services/schede.service.js';
+import { eliminaScheda as eliminaSchedaTenendoAllenamenti, mappaEsercizioScheda, copiaEserciziScheda } from '../services/schede.service.js';
 import { normalizzaGruppi } from '../utils/superset.js';
 import { tagliaTitolo } from '../validators/schede.schema.js';
 
@@ -25,27 +25,6 @@ async function verificaEserciziEsistenti(ids) {
   })).map(e => e.id));
   const mancante = richiesti.find(id => !esistenti.has(id));
   if (mancante !== undefined) throw new ErroreNonTrovato(t('schedeController.esercizioNonTrovato', { id: mancante }));
-}
-
-// Maps an exercise entry (from the client) to EsercizioScheda data, keeping
-// the cardio fields (duration/speed/incline/resistance/distance + warm-up)
-// and the superset group, already passed through normalizzaGruppi.
-function mappaEsercizioScheda(e, ordine) {
-  return {
-    esercizioId: e.esercizioId,
-    serieTarget: e.serieTarget != null ? e.serieTarget : 3,
-    repTarget: e.repTarget !== undefined ? e.repTarget : '8-12',
-    recuperoSecondi: e.recuperoSecondi != null ? e.recuperoSecondi : 90,
-    ordineEsecuzione: ordine,
-    gruppo: e.gruppo ?? null,
-    note: e.note?.trim() || null,
-    riscaldamento: !!e.riscaldamento,
-    durataMinuti: e.durataMinuti != null ? e.durataMinuti : null,
-    velocitaKmh: e.velocitaKmh != null ? e.velocitaKmh : null,
-    inclinazione: e.inclinazione != null ? e.inclinazione : null,
-    livelloResistenza: e.livelloResistenza != null ? e.livelloResistenza : null,
-    distanzaKm: e.distanzaKm != null ? e.distanzaKm : null
-  };
 }
 
 /** List of the user's plans + global plans */
@@ -166,7 +145,7 @@ export async function clonaScheda(req, res, next) {
         visibilita: 'PERSONALE',
         creatoreId: req.utente.id,
         esercizi: sorgente.esercizi.length ? {
-          create: normalizzaGruppi(sorgente.esercizi).map((e, i) => mappaEsercizioScheda(e, i + 1))
+          create: copiaEserciziScheda(sorgente.esercizi)
         } : undefined
       },
       include: {
