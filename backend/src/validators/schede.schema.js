@@ -63,8 +63,11 @@ const unoDi = (valori, messaggio, { vuotoAmmesso }) => {
   return vuotoAmmesso ? z.preprocess(v => (v === null || v === '' ? undefined : v), scelta) : scelta;
 };
 
-/** An exercise inside a plan, as the plan editor sends it (cardio fields included) */
-const schemaEsercizioInScheda = z.object({
+/**
+ * An exercise inside a plan, as the plan editor sends it (cardio fields
+ * included). The bot checks its entries with the same fields (bot.schema.js).
+ */
+export const schemaEsercizioInScheda = z.object({
   esercizioId: numero('schedeSchema.esercizioIdNonValido', { min: 1, obbligatorio: 'schedeSchema.esercizioIdObbligatorio' }),
   serieTarget: numeroFacoltativo('schedeSchema.serieTargetNonValido', { max: 1000 }),
   repTarget: testoFacoltativo('schedeSchema.repTargetNonValido'),

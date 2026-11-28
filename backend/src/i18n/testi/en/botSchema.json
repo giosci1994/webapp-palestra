@@ -1,0 +1,10 @@
+{
+  "chatIdNonValido": "The chatId is not valid",
+  "codiceNonValido": "The code must be text",
+  "testoNonValido": "The message must be text",
+  "schedaIdNonValido": "The plan is not valid",
+  "regioneNonValida": "The body region is not valid",
+  "gruppoNonValido": "The muscle group is not valid",
+  "soloPiuUsatiNonValido": "The \"most used\" choice is not valid",
+  "ripetizioniTroppoLunghe": "The reps are too long (at most 30 characters, for example 8-12)"
+}

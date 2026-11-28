@@ -1,0 +1,10 @@
+{
+  "chatIdNonValido": "Il chatId non è valido",
+  "codiceNonValido": "Il codice deve essere un testo",
+  "testoNonValido": "Il messaggio deve essere un testo",
+  "schedaIdNonValido": "La scheda non è valida",
+  "regioneNonValida": "La regione del corpo non è valida",
+  "gruppoNonValido": "Il gruppo muscolare non è valido",
+  "soloPiuUsatiNonValido": "La scelta «più usati» non è valida",
+  "ripetizioniTroppoLunghe": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)"
+}
