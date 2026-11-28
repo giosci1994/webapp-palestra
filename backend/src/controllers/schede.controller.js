@@ -9,6 +9,7 @@ import { t } from '../i18n/index.js';
 import { ID_MASSIMO } from '../middleware/validazione.js';
 import { eliminaScheda as eliminaSchedaTenendoAllenamenti } from '../services/schede.service.js';
 import { normalizzaGruppi } from '../utils/superset.js';
+import { tagliaTitolo } from '../validators/schede.schema.js';
 
 /**
  * Throws a 404 if one of the exercises does not exist: without the check the
@@ -159,7 +160,7 @@ export async function clonaScheda(req, res, next) {
 
     const nuova = await prisma.schedaAllenamento.create({
       data: {
-        titolo: t('schedeController.copiaTitolo', { titolo: sorgente.titolo }),
+        titolo: tagliaTitolo(t('schedeController.copiaTitolo', { titolo: sorgente.titolo })),
         descrizione: sorgente.descrizione,
         livello: sorgente.livello,
         visibilita: 'PERSONALE',

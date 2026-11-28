@@ -298,6 +298,46 @@ describe('POST /pt/schede: the reps text', () => {
   });
 });
 
+describe('POST /pt/schede: the title', () => {
+  let panca;
+  beforeEach(async () => { panca = await creaEsercizio(); });
+  const corpo = titolo => ({ titolo, esercizi: [{ esercizioId: panca.id }] });
+
+  it('101 characters are a 400 in the language of the request, 100 are saved', async () => {
+    const [italiano] = await rifiutati('POST', '/pt/schede', [corpo('x'.repeat(101))], 'titolo');
+    assert.equal(italiano.corpo.dettagli[0].messaggio, 'Il titolo è troppo lungo: al massimo 100 caratteri');
+    const inglese = await comePT('POST', '/pt/schede', corpo('x'.repeat(101)), 'en');
+    assert.equal(inglese.corpo.dettagli[0].messaggio, 'The title is too long: at most 100 characters');
+    assert.equal(await prisma.schedaAllenamento.count(), 0);
+
+    const buona = await comePT('POST', '/pt/schede', corpo('x'.repeat(100)));
+    assert.equal(buona.stato, 201);
+    assert.equal(buona.corpo.dati.titolo, 'x'.repeat(100));
+  });
+
+  it('a plan saved before the limit, with a longer title, is still assigned, its copy cut to 100', async () => {
+    const originale = await creaScheda(trainer, [panca]);
+    const vecchio = 'x'.repeat(150);
+    await prisma.schedaAllenamento.update({ where: { id: originale.id }, data: { titolo: vecchio } });
+    const risposta = await comePT('POST', `/pt/clienti/${cliente.id}/assegna-scheda`, { schedaId: originale.id });
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.titolo, vecchio.slice(0, 100));
+  });
+
+  it('a plan with a 100-character title is assigned with a title cut to 100, never half of an emoji', async () => {
+    const originale = await creaScheda(trainer, [panca]);
+    await prisma.schedaAllenamento.update({ where: { id: originale.id }, data: { titolo: 'x'.repeat(100) } });
+    const risposta = await comePT('POST', `/pt/clienti/${cliente.id}/assegna-scheda`, { schedaId: originale.id });
+    assert.equal(risposta.stato, 201);
+    assert.equal(risposta.corpo.dati.titolo, 'x'.repeat(100));
+
+    await prisma.schedaAllenamento.update({ where: { id: originale.id }, data: { titolo: `${'x'.repeat(99)}💪` } });
+    const conEmoji = await comePT('POST', `/pt/clienti/${cliente.id}/assegna-scheda`, { schedaId: originale.id });
+    assert.equal(conEmoji.stato, 201);
+    assert.equal(conEmoji.corpo.dati.titolo, 'x'.repeat(99));
+  });
+});
+
 describe('POST /pt/clienti/:id/assegna-scheda', () => {
   it('a plan id that is not one is a 400, nothing is created', async () => {
     await creaScheda(trainer);

@@ -245,6 +245,26 @@ describe('bot AI: the function arguments get the same limits', () => {
     assert.deepEqual(voci.map(e => [e.serie, e.ripetizioni, e.recuperoSecondi]), [[4, '10', 0], [2, '12', 86400], [3, '8-12', 90]]);
   });
 
+  it('a plan title over 100 characters goes back to the model as an error, nothing is saved', async () => {
+    const utente = await utenteCollegato();
+    const esercizio = await creaEsercizio({ nome: 'Bench Press' });
+    const richieste = geminiFinto([
+      chiama('aggiungi_esercizio', { esercizioId: esercizio.id }),
+      chiama('termina_scheda', { titolo: 'x'.repeat(101) }),
+      { text: 'That title is too long' }
+    ]);
+    assert.equal((await bot('messaggio', { testo: 'bench press, then finish' })).stato, 200);
+    assert.deepEqual(rispostaFunzione(richieste, 2), { errore: 'The title is too long (at most 100 characters)' });
+    assert.equal(await prisma.schedaAllenamento.count(), 0);
+    assert.equal((await statoSalvato(utente)).bozza.esercizi.length, 1);
+
+    // Measured after trimming, like the guided creation: 100 characters are saved
+    const ancora = geminiFinto([chiama('termina_scheda', { titolo: `  ${'x'.repeat(100)}  ` }), { text: 'Saved!' }]);
+    assert.equal((await bot('messaggio', { testo: 'finish' })).stato, 200);
+    assert.equal(rispostaFunzione(ancora, 1).ok, true);
+    assert.equal((await prisma.schedaAllenamento.findFirst({ where: { creatoreId: utente.id } })).titolo, 'x'.repeat(100));
+  });
+
   it('a cardio entry out of range goes back to the model as an error', async () => {
     const utente = await utenteCollegato();
     // The values are checked before the machine is looked up in the catalog

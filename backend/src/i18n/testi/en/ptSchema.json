@@ -23,5 +23,6 @@
   "destinatarioIdNonValido": "The recipient ID is not valid",
   "prioritaNonValida": "The priority must be normale, importante or urgente",
   "gruppoNonValido": "The superset group is not valid",
-  "repTargetTroppoLungo": "The repetitions are too long: at most 30 characters, for example \"8-12\""
+  "repTargetTroppoLungo": "The repetitions are too long: at most 30 characters, for example \"8-12\"",
+  "titoloTroppoLungo": "The title is too long: at most 100 characters"
 }

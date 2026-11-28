@@ -18,7 +18,8 @@ import { macchinaCardio, dovEsercizioCardio, eEsercizioCardio, SELEZIONE_CARDIO 
 import { fusoCorrente } from '../utils/date.js';
 import { gruppiDi, eCardioOriscaldamento } from '../utils/superset.js';
 import { testoDelProblema } from '../middleware/validazione.js';
-import { schemaVoceForza, schemaVoceCardio, DURATA_CARDIO_PREDEFINITA, TITOLO_MASSIMO } from '../validators/bot.schema.js';
+import { schemaVoceForza, schemaVoceCardio, DURATA_CARDIO_PREDEFINITA } from '../validators/bot.schema.js';
+import { TITOLO_MASSIMO } from '../validators/schede.schema.js';
 
 // --- Gemini client (lazy) ---
 let clientAI = null;
@@ -657,6 +658,11 @@ async function eseguiFunzione(nome, args, utente, stato) {
       return { ok: true, rimosso: rimosso ? nomeMostrato(rimosso) : null, totaleEsercizi: stato.bozza.esercizi.length };
     }
     case 'termina_scheda': {
+      // Like the other arguments: a title over the limit goes back to the
+      // model as an error (it can shorten it), and nothing is saved
+      if (typeof args.titolo === 'string' && args.titolo.trim().length > TITOLO_MASSIMO) {
+        return { errore: t('botSchema.titoloTroppoLungo') };
+      }
       const tolti = await togliEserciziSpariti(stato);
       const voci = vociDellaScheda(stato.bozza.esercizi);
       if (!voci.length && tolti.length) {

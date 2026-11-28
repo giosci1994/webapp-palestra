@@ -51,6 +51,26 @@ const numeroFacoltativo = (messaggio, opzioni) => numero(messaggio, { ...opzioni
 /** Optional text, null allowed */
 const testoFacoltativo = messaggio => z.string({ error: messaggio }).nullable().optional();
 
+/**
+ * The longest title of a plan, in the app, for the PT and from the bot (it
+ * keeps a title readable on the bot's /schede buttons). Plans saved before
+ * the limit keep their longer titles until they are edited.
+ */
+export const TITOLO_MASSIMO = 100;
+
+/**
+ * A title made by the server (a copy, a plan assigned by the PT) cut to
+ * TITOLO_MASSIMO, so it can be saved again from the editor. The limit counts
+ * UTF-16 units like the schemas; the end goes, never half of an emoji.
+ */
+export function tagliaTitolo(titolo) {
+  if (titolo.length <= TITOLO_MASSIMO) return titolo;
+  const taglio = titolo.slice(0, TITOLO_MASSIMO);
+  const ultimo = taglio.charCodeAt(taglio.length - 1);
+  // The first half of a surrogate pair, its second half cut off
+  return ultimo >= 0xD800 && ultimo <= 0xDBFF ? taglio.slice(0, -1) : taglio;
+}
+
 /** The longest reps text: "8-12", "10-8-6-4", "30 sec" and the like (the bot uses it too) */
 export const RIPETIZIONI_MASSIME = 30;
 
@@ -108,7 +128,8 @@ const elencoEsercizi = z
  * required"): here only its type.
  */
 export const schemaCreaScheda = z.object({
-  titolo: testoFacoltativo('schedeSchema.titoloNonValido'),
+  titolo: z.string({ error: 'schedeSchema.titoloNonValido' })
+    .max(TITOLO_MASSIMO, { error: 'schedeSchema.titoloTroppoLungo' }).nullable().optional(),
   descrizione: testoFacoltativo('schedeSchema.descrizioneNonValida'),
   livello: unoDi(LIVELLI, 'schedeSchema.livelloNonValido', { vuotoAmmesso: true }),
   visibilita: unoDi(VISIBILITA, 'schedeSchema.visibilitaNonValida', { vuotoAmmesso: true }),
@@ -117,7 +138,8 @@ export const schemaCreaScheda = z.object({
 
 /** Schema for PUT /schede/:id: what is not sent stays as it is */
 export const schemaAggiornaScheda = z.object({
-  titolo: z.string({ error: 'schedeSchema.titoloNonValido' }).optional(),
+  titolo: z.string({ error: 'schedeSchema.titoloNonValido' })
+    .max(TITOLO_MASSIMO, { error: 'schedeSchema.titoloTroppoLungo' }).optional(),
   descrizione: testoFacoltativo('schedeSchema.descrizioneNonValida'),
   livello: unoDi(LIVELLI, 'schedeSchema.livelloNonValido', { vuotoAmmesso: false }),
   visibilita: unoDi(VISIBILITA, 'schedeSchema.visibilitaNonValida', { vuotoAmmesso: false }),

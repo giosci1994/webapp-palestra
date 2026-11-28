@@ -19,5 +19,6 @@
   "livelloResistenzaNonValido": "Il livello di resistenza non è valido",
   "distanzaKmNonValida": "La distanza non è valida",
   "gruppoNonValido": "Il gruppo del superset non è valido",
-  "repTargetTroppoLungo": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)"
+  "repTargetTroppoLungo": "Le ripetizioni sono troppo lunghe (al massimo 30 caratteri, ad esempio 8-12)",
+  "titoloTroppoLungo": "Il titolo è troppo lungo (al massimo 100 caratteri)"
 }

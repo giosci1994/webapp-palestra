@@ -11,7 +11,7 @@ import { nomeEsercizio, nomeGruppo, nomeAttrezzatura, formattaNumero } from '../
 import { useLingua } from '../../hooks/useLingua.js';
 import Testo from '../../i18n/Testo.jsx';
 import { api } from '../../config/api.js';
-import { GRUPPI_MUSCOLARI, LIVELLI, RIPETIZIONI_MASSIME } from '../../utils/costanti.js';
+import { GRUPPI_MUSCOLARI, LIVELLI, RIPETIZIONI_MASSIME, TITOLO_MASSIMO } from '../../utils/costanti.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   normalizzaGruppi, gruppiDi, blocchiDi, puoUnire, unisci, separa, impostaGiri, giriDi, ultimoDelGruppo,
@@ -250,7 +250,7 @@ export default function CreaScheda({ onChiudi, onCreata, schedaEsistente = null 
               <div>
                 <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('creaScheda.titoloCampo')}</label>
                 <input type="text" value={form.titolo} onChange={e => setForm(p => ({...p, titolo: e.target.value}))}
-                       className="campo-input" placeholder={t('creaScheda.titoloPlaceholder')} autoFocus />
+                       maxLength={TITOLO_MASSIMO} className="campo-input" placeholder={t('creaScheda.titoloPlaceholder')} autoFocus />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2 text-[var(--testo-secondario)]">{t('creaScheda.descrizione')}</label>

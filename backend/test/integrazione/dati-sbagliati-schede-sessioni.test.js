@@ -272,6 +272,65 @@ describe('the reps text: at most 30 characters, like the bot', () => {
   });
 });
 
+describe('the plan title: at most 100 characters, like the bot', () => {
+  const lungo = 'x'.repeat(101);
+  const giusto = 'x'.repeat(100);
+  const MESSAGGIO_IT = 'Il titolo è troppo lungo (al massimo 100 caratteri)';
+  const MESSAGGIO_EN = 'The title is too long (at most 100 characters)';
+
+  it('POST /schede: 101 characters are a 400 in the language of the request, 100 are saved', async () => {
+    const italiano = await chiedi('POST', '/schede', { titolo: lungo });
+    assert.equal(italiano.stato, 400);
+    assert.deepEqual(messaggi(italiano), { titolo: MESSAGGIO_IT });
+    const inglese = await chiedi('POST', '/schede', { titolo: lungo }, 'en');
+    assert.deepEqual(messaggi(inglese), { titolo: MESSAGGIO_EN });
+    assert.equal(await conta('schedaAllenamento'), 1);
+
+    const buona = await chiedi('POST', '/schede', { titolo: giusto });
+    assert.equal(buona.stato, 201);
+    assert.equal(buona.corpo.dati.titolo, giusto);
+  });
+
+  it('PUT /schede/:id has the same limit', async () => {
+    const rifiutata = await chiedi('PUT', `/schede/${scheda.id}`, { titolo: lungo });
+    assert.equal(rifiutata.stato, 400);
+    assert.deepEqual(messaggi(rifiutata), { titolo: MESSAGGIO_IT });
+    assert.equal((await prisma.schedaAllenamento.findUnique({ where: { id: scheda.id } })).titolo, scheda.titolo);
+    const buona = await chiedi('PUT', `/schede/${scheda.id}`, { titolo: giusto });
+    assert.equal(buona.stato, 200);
+    assert.equal((await prisma.schedaAllenamento.findUnique({ where: { id: scheda.id } })).titolo, giusto);
+  });
+
+  it('a plan saved before the limit, with a longer title, is still read, cloned (the copy cut) and edited without touching the title', async () => {
+    const vecchio = 'x'.repeat(150);
+    await prisma.schedaAllenamento.update({ where: { id: scheda.id }, data: { titolo: vecchio } });
+    const letta = await chiedi('GET', `/schede/${scheda.id}`);
+    assert.equal(letta.stato, 200);
+    assert.equal(letta.corpo.dati.titolo, vecchio);
+    assert.equal((await chiedi('POST', `/schede/${scheda.id}/clona`)).stato, 201);
+    assert.equal((await chiedi('PUT', `/schede/${scheda.id}`, { descrizione: 'new' })).stato, 200);
+    // Saving it again with its title asks to shorten it
+    const conTitolo = await chiedi('PUT', `/schede/${scheda.id}`, { titolo: vecchio });
+    assert.deepEqual(messaggi(conTitolo), { titolo: MESSAGGIO_IT });
+  });
+
+  it('the copy of a plan with a 100-character title is cut to 100 and can be saved again', async () => {
+    await prisma.schedaAllenamento.update({ where: { id: scheda.id }, data: { titolo: giusto } });
+    const copia = await chiedi('POST', `/schede/${scheda.id}/clona`);
+    assert.equal(copia.stato, 201);
+    assert.equal(copia.corpo.dati.titolo, giusto);
+    assert.equal((await chiedi('PUT', `/schede/${copia.corpo.dati.id}`, { titolo: copia.corpo.dati.titolo })).stato, 200);
+  });
+
+  it('the cut never leaves half of an emoji', async () => {
+    // 99 units and an emoji (two units): the cut at 100 would split it
+    await prisma.schedaAllenamento.update({ where: { id: scheda.id }, data: { titolo: `${'x'.repeat(99)}💪` } });
+    const copia = await chiedi('POST', `/schede/${scheda.id}/clona`);
+    assert.equal(copia.stato, 201);
+    assert.equal(copia.corpo.dati.titolo, 'x'.repeat(99));
+  });
+});
+
 describe('POST /sessioni', () => {
   it('a wrong plan id: 400 in the language of the app, no workout started', async () => {
     const italiano = await chiedi('POST', '/sessioni', { schedaId: 'abc' });
