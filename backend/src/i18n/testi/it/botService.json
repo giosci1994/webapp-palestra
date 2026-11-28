@@ -36,8 +36,7 @@
   },
   "bozza": {
     "vuota": "La bozza è vuota.",
-    "titoloDaDefinire": "(da definire)",
-    "riepilogo": "Titolo: {titolo}\nVoci ({numero}):\n{righe}"
+    "riepilogo": "Voci ({numero}):\n{righe}"
   },
   "voce": {
     "forza": "{n}. {nome} — {serie}x{ripetizioni} (rec {recupero}s)",

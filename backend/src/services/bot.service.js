@@ -215,7 +215,7 @@ const TTL_STATO = 6 * 60 * 60; // 6 hours
 const chiaveStato = (utenteId) => `bot:stato:${utenteId}`;
 
 function statoVuoto() {
-  return { storia: [], bozza: { titolo: null, livello: null, esercizi: [] } };
+  return { storia: [], bozza: { esercizi: [] } };
 }
 
 /**
@@ -321,7 +321,7 @@ async function salvaSchedaDallaBozza(utenteId, stato, crea) {
     if (attesaPrima) stato.attesaTitoloFino = attesaPrima;
     if (attesaNotaPrima) stato.attesaNotaFino = attesaNotaPrima;
   };
-  stato.bozza = { titolo: null, livello: null, esercizi: [] };
+  stato.bozza = { esercizi: [] };
   smettiDiAttendere(stato);
   try {
     await salvaStato(utenteId, stato);
@@ -386,7 +386,8 @@ async function verificaRateLimit(utenteId) {
 /**
  * The instructions for the model, built per request: it must answer in the
  * user's language (the instructions themselves stay in Italian). The tool
- * results (exercise names, the draft summary) are in that language too.
+ * results (exercise names, the draft summary) are in that language too; the
+ * errors and hints meant only for the model are in English, like the code.
  */
 function promptSistema() {
   const nomeLingua = new Intl.DisplayNames(['it'], { type: 'language' }).of(linguaCorrente());
@@ -579,7 +580,6 @@ function riepilogoBozza(bozza, { html = false } = {}) {
     return e.note ? riga + rigaNota(e.note, NOTA_IN_BOZZA, html) : riga;
   });
   return t('botService.bozza.riepilogo', {
-    titolo: testo(bozza.titolo) || t('botService.bozza.titoloDaDefinire'),
     numero: bozza.esercizi.length,
     righe: righe.join('\n')
   });
@@ -674,10 +674,10 @@ function voceCardio(esercizio, valori = {}, riscaldamento = false) {
 function unisciVoci(stato, posizioni) {
   const lista = stato.bozza.esercizi;
   const indici = [...posizioni].sort((a, b) => a - b).map(p => p - 1);
-  if (indici.at(-1) >= lista.length) return { errore: `Posizione ${indici.at(-1) + 1} fuori dalla bozza: le voci sono ${lista.length}.` };
+  if (indici.at(-1) >= lista.length) return { errore: `Position ${indici.at(-1) + 1} is outside the draft: it has ${lista.length} entries.` };
   const cardio = indici.filter(i => eVoceCardio(lista[i]));
   if (cardio.length) {
-    return { errore: `Cardio e riscaldamento non si uniscono in un superset (posizione ${cardio.map(i => i + 1).join(', ')}).` };
+    return { errore: `Cardio and warm-up entries cannot join a superset (position ${cardio.map(i => i + 1).join(', ')}).` };
   }
   let nuova = lista;
   for (const i of indici.slice(0, -1)) nuova = unisci(nuova, i);
@@ -702,7 +702,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
         where: { id: esercizioId },
         select: { id: true, nome: true, nomeIt: true, ...SELEZIONE_CARDIO }
       });
-      if (!es) return { errore: 'Esercizio non trovato. Usa prima cerca_esercizio.' };
+      if (!es) return { errore: 'Exercise not found. Use cerca_esercizio first.' };
       if (eEsercizioCardio(es)) {
         // A cardio machine found by cerca_esercizio: saved as cardio, never as
         // sets x reps, whatever the model sent. The model is told, so it can
@@ -714,7 +714,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
           aggiunto: nomeMostrato(es),
           cardio: true,
           durataMinuti: voce.durataMinuti,
-          nota: `Esercizio cardio: aggiunto come cardio di ${voce.durataMinuti} minuti, non a serie e ripetizioni. Per il cardio usa aggiungi_cardio.`,
+          nota: `Cardio exercise: added as ${voce.durataMinuti} minutes of cardio, not as sets and reps. For cardio use aggiungi_cardio.`,
           totaleEsercizi: stato.bozza.esercizi.length
         };
       }
@@ -738,7 +738,7 @@ async function eseguiFunzione(nome, args, utente, stato) {
       const valori = controllo.data;
       const macchina = await risolviMacchinaCardio(args.macchina);
       if (!macchina) {
-        return { errore: 'Macchina cardio non riconosciuta. Disponibili: tapis roulant, cyclette, ellittica, vogatore, stepper, air bike.' };
+        return { errore: 'Cardio machine not recognised. Available: tapis roulant, cyclette, ellittica, vogatore, stepper, air bike.' };
       }
       const voce = voceCardio(macchina, valori, args.riscaldamento);
       stato.bozza.esercizi.push(voce);
@@ -766,8 +766,8 @@ async function eseguiFunzione(nome, args, utente, stato) {
       if (!controllo.success) return { errore: testoDelProblema(controllo.error.issues[0]) };
       const indice = controllo.data.posizione - 1;
       const lista = stato.bozza.esercizi;
-      if (indice >= lista.length) return { errore: `Posizione ${indice + 1} fuori dalla bozza: le voci sono ${lista.length}.` };
-      if (!gruppiDi(lista)[indice]) return { errore: `La voce ${indice + 1} non è in un superset o circuito.` };
+      if (indice >= lista.length) return { errore: `Position ${indice + 1} is outside the draft: it has ${lista.length} entries.` };
+      if (!gruppiDi(lista)[indice]) return { errore: `Entry ${indice + 1} is not in a superset or circuit.` };
       stato.bozza.esercizi = separa(lista, indice);
       return { ok: true, separato: nomeMostrato(lista[indice]), riepilogo: riepilogoBozza(stato.bozza), totaleEsercizi: lista.length };
     }
@@ -782,10 +782,10 @@ async function eseguiFunzione(nome, args, utente, stato) {
       if (!voci.length && tolti.length) {
         // The user is told by rispondiAlMessaggio (tolti), not by the model
         await bozzaSvuotata(utente.id, stato, tolti);
-        return { errore: `Gli esercizi della bozza (${tolti.join(', ')}) non sono più nel catalogo: la bozza ora è vuota.`, tolti, bozzaSvuotata: true };
+        return { errore: `The draft's exercises (${tolti.join(', ')}) are no longer in the catalog: the draft is now empty.`, tolti, bozzaSvuotata: true };
       }
       if (!voci.length) {
-        return { errore: 'La bozza è vuota: aggiungi almeno un esercizio prima di terminare.' };
+        return { errore: 'The draft is empty: add at least one exercise before finishing.' };
       }
       const livelliValidi = ['BASE', 'INTERMEDIO', 'AVANZATO'];
       const livello = livelliValidi.includes(String(args.livello || '').toUpperCase())
@@ -806,12 +806,12 @@ async function eseguiFunzione(nome, args, utente, stato) {
       const fatto = { ok: true, schedaId: scheda.id, titolo: scheda.titolo, numEsercizi: scheda.esercizi.length, riepilogo };
       if (tolti.length) {
         fatto.tolti = tolti;
-        fatto.nota = `Tolti dalla bozza perché non sono più nel catalogo: ${tolti.join(', ')}.`;
+        fatto.nota = `Removed from the draft because they are no longer in the catalog: ${tolti.join(', ')}.`;
       }
       return fatto;
     }
     default:
-      return { errore: `Funzione sconosciuta: ${nome}` };
+      return { errore: `Unknown function: ${nome}` };
   }
 }
 
@@ -935,24 +935,36 @@ async function rispondiAlMessaggio(ai, utente, testo) {
 // READING WORKOUT PLANS
 // ============================================
 
-/** The user's workout plans + global plans, in a compact form for the bot. */
+/** How many plans of each list /schede shows on its buttons (the rest is in the app) */
+export const SCHEDE_PER_ELENCO = 15;
+
+/**
+ * The user's own plans and the global ones, in two lists (newest first) for
+ * the bot, each with how many more there are in the app. A global plan the
+ * user created is in the global list only.
+ */
 export async function listaSchedeUtente(utenteId) {
-  const schede = await prisma.schedaAllenamento.findMany({
-    where: { OR: [{ creatoreId: utenteId, assegnataDaPTId: null }, { visibilita: 'GLOBALE' }] },
-    select: {
-      id: true, titolo: true, livello: true, visibilita: true,
-      _count: { select: { esercizi: true } }
-    },
+  const dove = {
+    proprie: { creatoreId: utenteId, assegnataDaPTId: null, visibilita: 'PERSONALE' },
+    globali: { visibilita: 'GLOBALE' }
+  };
+  const elenco = where => prisma.schedaAllenamento.findMany({
+    where,
+    select: { id: true, titolo: true, livello: true, _count: { select: { esercizi: true } } },
     orderBy: { creatoIl: 'desc' },
-    take: 30
+    take: SCHEDE_PER_ELENCO
   });
-  return schede.map((s) => ({
-    id: s.id,
-    titolo: s.titolo,
-    livello: s.livello,
-    globale: s.visibilita === 'GLOBALE',
-    numEsercizi: s._count.esercizi
-  }));
+  const [proprie, globali, totaleProprie, totaleGlobali] = await Promise.all([
+    elenco(dove.proprie), elenco(dove.globali),
+    prisma.schedaAllenamento.count({ where: dove.proprie }), prisma.schedaAllenamento.count({ where: dove.globali })
+  ]);
+  const compatta = s => ({ id: s.id, titolo: s.titolo, livello: s.livello, numEsercizi: s._count.esercizi });
+  return {
+    proprie: proprie.map(compatta),
+    globali: globali.map(compatta),
+    altreProprie: Math.max(0, totaleProprie - proprie.length),
+    altreGlobali: Math.max(0, totaleGlobali - globali.length)
+  };
 }
 
 /** A workout plan's details formatted as text (Telegram HTML: the names and the title are escaped). */

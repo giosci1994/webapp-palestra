@@ -1,5 +1,5 @@
 {
-  "backendNonRaggiungibile": "Backend non raggiungibile, riprova tra poco.",
+  "backendNonRaggiungibile": "Server non raggiungibile, riprova tra poco.",
   "nonCollegato": "🔗 Non sei ancora collegato. Apri GymMaster → Profilo → \"Collega Telegram\" e inviami il codice.",
   "erroreGenerico": "Si è verificato un errore, riprova.",
   "codiceNonValido": "Codice non valido o scaduto.",
@@ -9,6 +9,10 @@
   "bozzaAnnullata": "🗑️ Bozza annullata.",
   "nessunaScheda": "Non hai ancora schede. Creane una con /nuova! 💪",
   "leTueSchede": "📚 Le tue schede:",
+  "schedeGlobali": "🌍 Schede globali:",
+  "altreNellApp_one": "…e un'altra nell'app.",
+  "altreNellApp_other": "…e altre {count} nell'app.",
+  "nessunaSchedaTua": "Non hai ancora schede tue. Creane una con /nuova! 💪",
   "guidataPiuUsati": "⭐ I tuoi più usati",
   "guidataInizio": "🧩 Creazione guidata — scegli da dove partire:",
   "nessunPiuUsato": "Non hai ancora esercizi ricorrenti — scegli una categoria.",

@@ -36,8 +36,7 @@
   },
   "bozza": {
     "vuota": "The draft is empty.",
-    "titoloDaDefinire": "(to be defined)",
-    "riepilogo": "Title: {titolo}\nItems ({numero}):\n{righe}"
+    "riepilogo": "Items ({numero}):\n{righe}"
   },
   "voce": {
     "forza": "{n}. {nome} — {serie}x{ripetizioni} (rest {recupero}s)",

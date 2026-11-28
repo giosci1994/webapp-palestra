@@ -56,8 +56,9 @@ export async function risolviUtenteTelegram(req, res, next) {
       });
     }
 
-    // The bot sends no Accept-Language: the answers go to the linked user, in
-    // their language (Profile choice, then the app's last one, then the request's)
+    // The bot forwards the Telegram app's language as Accept-Language
+    // (req.lingua): for a linked user their account's language wins (Profile
+    // choice, then the app's last one), Telegram's is the fallback
     const { utente } = collegamento;
     const lingua = linguaSupportata(utente.lingua) || linguaSupportata(utente.linguaApp) || req.lingua;
 

@@ -70,7 +70,7 @@ describe('bot: HTML formatting', () => {
     assert.doesNotMatch(testo, /&(?!(amp|lt|gt);)/);
     // The list of plans is shown on buttons, as plain text: the title as it is
     const schede = await bot('schede');
-    assert.equal(schede.corpo.dati[0].titolo, 'Upper_A *heavy* [1] `v2` <i>&');
+    assert.equal(schede.corpo.dati.proprie[0].titolo, 'Upper_A *heavy* [1] `v2` <i>&');
   });
 
   it('statistics: HTML tags, no Markdown left', async () => {
@@ -79,5 +79,36 @@ describe('bot: HTML formatting', () => {
     assert.match(testo, /^<b>📊 Your stats<\/b>/);
     assert.match(testo, /Total workouts: <b>0<\/b>/);
     assert.doesNotMatch(testo, /[*_]/);
+  });
+});
+
+describe('bot: /schede, own plans and global ones', () => {
+  it('two lists, newest first, each with how many more are in the app', async () => {
+    const utente = await utenteCollegato();
+    const altro = await creaUtente();
+    // 17 own plans, a day apart: the newest 15 are listed, 2 more in the app
+    for (let i = 0; i < 17; i++) {
+      await creaScheda(utente, [], { titolo: `Mine ${i}`, creatoIl: new Date(Date.UTC(2026, 0, 1 + i)) });
+    }
+    await creaScheda(altro, [], { titolo: 'Gym A', visibilita: 'GLOBALE', creatoIl: new Date(Date.UTC(2026, 1, 1)) });
+    await creaScheda(utente, [], { titolo: 'Gym B', visibilita: 'GLOBALE', creatoIl: new Date(Date.UTC(2026, 1, 2)) });
+    // Neither listed: another user's personal plan, a plan from a personal trainer
+    await creaScheda(altro, [], { titolo: 'Not mine' });
+    await creaScheda(utente, [], { titolo: 'From the PT', assegnataDaPTId: altro.id });
+
+    const risposta = await bot('schede');
+    assert.equal(risposta.stato, 200);
+    const { proprie, globali, altreProprie, altreGlobali } = risposta.corpo.dati;
+    assert.equal(proprie.length, 15);
+    assert.deepEqual([proprie[0].titolo, proprie.at(-1).titolo, altreProprie], ['Mine 16', 'Mine 2', 2]);
+    // A global plan of the user is in the global list only
+    assert.deepEqual([globali.map(s => s.titolo), altreGlobali], [['Gym B', 'Gym A'], 0]);
+    assert.deepEqual(Object.keys(proprie[0]).sort(), ['id', 'livello', 'numEsercizi', 'titolo']);
+  });
+
+  it('no plans at all: two empty lists', async () => {
+    await utenteCollegato();
+    const risposta = await bot('schede');
+    assert.deepEqual(risposta.corpo.dati, { proprie: [], globali: [], altreProprie: 0, altreGlobali: 0 });
   });
 });

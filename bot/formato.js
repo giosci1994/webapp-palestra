@@ -141,6 +141,24 @@ const inColonna = (bottoni) => tastiera(bottoni.map(b => [b]));
 /** /schede: the first 20 plans, with their number of exercises */
 export const tastieraSchede = (schede) => inColonna(schede.slice(0, 20).map(s => [`${s.titolo} (${s.numEsercizi})`, `scheda:${s.id}`]));
 
+/** A list's heading, with "…and N more in the app" when the backend sent only the newest */
+const conAltre = (ctx, testo, altre) => (altre > 0 ? `${testo}\n${t(ctx, 'altreNellApp', { count: altre })}` : testo);
+
+/**
+ * /schede: the user's own plans, then the global ones, each list in its own
+ * message with its buttons (plain text: the titles are on the buttons).
+ * No own plan: how to make one, then the global ones. [[text, options], ...]
+ */
+export function messaggiSchede(ctx, dati = {}) {
+  const { proprie = [], globali = [], altreProprie = 0, altreGlobali = 0 } = dati;
+  if (!proprie.length && !globali.length) return [[t(ctx, 'nessunaScheda'), {}]];
+  const messaggi = [proprie.length
+    ? [conAltre(ctx, t(ctx, 'leTueSchede'), altreProprie), { reply_markup: tastieraSchede(proprie) }]
+    : [t(ctx, 'nessunaSchedaTua'), {}]];
+  if (globali.length) messaggi.push([conAltre(ctx, t(ctx, 'schedeGlobali'), altreGlobali), { reply_markup: tastieraSchede(globali) }]);
+  return messaggi;
+}
+
 /** /guidata: the most used, cardio (when the catalog has it), then the body regions */
 export function tastieraCategorie(ctx, dati) {
   const cardio = dati.cardio ? [[t(ctx, 'guidataCardio'), 'gcat:__cardio__']] : [];
